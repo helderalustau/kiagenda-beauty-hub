@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,27 +37,14 @@ const SuperAdminDashboard = () => {
     fetchPlanConfigurations();
   }, []);
 
-  useEffect(() => {
-    console.log('Categorias carregadas:', categories);
-  }, [categories]);
-
   const validateForm = (salonData: any) => {
     const errors = [];
     
-    if (!salonData.name.trim()) {
-      errors.push('Nome do estabelecimento é obrigatório');
-    }
     if (!salonData.owner_name.trim()) {
       errors.push('Nome do responsável é obrigatório');
     }
     if (!salonData.phone.trim()) {
       errors.push('Telefone é obrigatório');
-    }
-    if (!salonData.address.trim()) {
-      errors.push('Endereço é obrigatório');
-    }
-    if (!salonData.category_id) {
-      errors.push('Categoria é obrigatória');
     }
 
     return errors;
@@ -84,27 +70,10 @@ const SuperAdminDashboard = () => {
       
       if (result.success && result.salon) {
         console.log('Salon created successfully, ID:', result.salon.id);
-        
-        // Upload do banner se foi selecionado
-        if (bannerFile) {
-          console.log('Uploading banner file...');
-          const uploadResult = await uploadSalonBanner(bannerFile, result.salon.id);
-          console.log('Banner upload result:', uploadResult);
-          
-          if (!uploadResult.success) {
-            toast({
-              title: "Aviso",
-              description: `Estabelecimento criado, mas houve erro no upload do banner: ${uploadResult.message}`,
-              variant: "destructive"
-            });
-          } else {
-            console.log('Banner uploaded successfully');
-          }
-        }
 
         toast({
           title: "Sucesso",
-          description: "Estabelecimento criado com sucesso!"
+          description: "Estabelecimento criado com sucesso! Configure-o na próxima etapa."
         });
         
         // Refresh data
@@ -234,7 +203,6 @@ const SuperAdminDashboard = () => {
               </div>
 
               <SuperAdminCreateSalonDialog
-                categories={categories}
                 onCreateSalon={handleCreateSalon}
                 isSubmitting={isSubmitting}
               />

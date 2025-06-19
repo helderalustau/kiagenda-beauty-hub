@@ -1,97 +1,73 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Plus, Check, ChevronsUpDown } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Category } from '@/hooks/useSupabaseData';
-import { cn } from "@/lib/utils";
 
 interface SuperAdminCreateSalonDialogProps {
-  categories: Category[];
   onCreateSalon: (salonData: any, bannerFile: File | null) => Promise<void>;
   isSubmitting: boolean;
 }
 
-const SuperAdminCreateSalonDialog = ({ categories, onCreateSalon, isSubmitting }: SuperAdminCreateSalonDialogProps) => {
+const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdminCreateSalonDialogProps) => {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [categoryComboboxOpen, setCategoryComboboxOpen] = useState(false);
   const [newSalon, setNewSalon] = useState({
-    name: '',
     owner_name: '',
     phone: '',
-    address: '',
-    plan: 'bronze' as 'bronze' | 'prata' | 'gold',
-    category_id: ''
+    plan: 'bronze' as 'bronze' | 'prata' | 'gold'
   });
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-
-  const handleBannerSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Erro",
-          description: "Por favor, selecione apenas arquivos de imagem",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "Erro",
-          description: "A imagem deve ter no máximo 5MB",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setBannerFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setBannerPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSubmit = async () => {
-    await onCreateSalon(newSalon, bannerFile);
+    // Validate required fields
+    if (!newSalon.owner_name.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome do responsável é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!newSalon.phone.trim()) {
+      toast({
+        title: "Erro",
+        description: "Telefone é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create salon with temporary name and category - these will be updated in setup
+    const salonData = {
+      name: 'Estabelecimento Temporário',
+      category_id: '00000000-0000-0000-0000-000000000000', // Temporary UUID
+      ...newSalon,
+      address: 'Endereço será preenchido na configuração'
+    };
+
+    await onCreateSalon(salonData, null);
+    
     // Reset form and close dialog
     setShowCreateDialog(false);
     setNewSalon({
-      name: '',
       owner_name: '',
       phone: '',
-      address: '',
-      plan: 'bronze',
-      category_id: ''
+      plan: 'bronze'
     });
-    setBannerFile(null);
-    setBannerPreview(null);
   };
 
   const resetForm = () => {
     setShowCreateDialog(false);
     setNewSalon({
-      name: '',
       owner_name: '',
       phone: '',
-      address: '',
-      plan: 'bronze',
-      category_id: ''
+      plan: 'bronze'
     });
-    setBannerFile(null);
-    setBannerPreview(null);
   };
-
-  const selectedCategory = categories.find(cat => cat.id === newSalon.category_id);
 
   return (
     <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -105,77 +81,10 @@ const SuperAdminCreateSalonDialog = ({ categories, onCreateSalon, isSubmitting }
         <DialogHeader>
           <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
           <DialogDescription>
-            Preencha os dados do novo estabelecimento. Todos os campos marcados com * são obrigatórios.
+            Preencha os dados básicos do administrador. O nome e categoria do estabelecimento serão definidos na próxima etapa.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="salon-name">Nome do Estabelecimento *</Label>
-            <Input
-              id="salon-name"
-              value={newSalon.name}
-              onChange={(e) => setNewSalon({...newSalon, name: e.target.value})}
-              placeholder="Nome do salão"
-              className={!newSalon.name.trim() ? "border-red-300" : ""}
-            />
-          </div>
-          
-          <div>
-            <Label>Categoria *</Label>
-            <Popover open={categoryComboboxOpen} onOpenChange={setCategoryComboboxOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={categoryComboboxOpen}
-                  className={cn(
-                    "w-full justify-between",
-                    !newSalon.category_id && "text-muted-foreground border-red-300"
-                  )}
-                >
-                  {selectedCategory ? selectedCategory.name : "Selecione a categoria..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Buscar categoria..." />
-                  <CommandList>
-                    <CommandEmpty>
-                      {categories.length === 0 ? "Carregando categorias..." : "Nenhuma categoria encontrada."}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {categories.map((category) => (
-                        <CommandItem
-                          key={category.id}
-                          value={category.name}
-                          onSelect={() => {
-                            console.log('Categoria selecionada:', category.id, category.name);
-                            setNewSalon({...newSalon, category_id: category.id});
-                            setCategoryComboboxOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              newSalon.category_id === category.id ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {category.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            {categories.length === 0 && (
-              <p className="text-sm text-orange-600 mt-1">
-                Carregando categorias... Se o problema persistir, verifique o banco de dados.
-              </p>
-            )}
-          </div>
-          
           <div>
             <Label htmlFor="owner-name">Nome do Responsável *</Label>
             <Input
@@ -196,40 +105,19 @@ const SuperAdminCreateSalonDialog = ({ categories, onCreateSalon, isSubmitting }
               className={!newSalon.phone.trim() ? "border-red-300" : ""}
             />
           </div>
-          <div>
-            <Label htmlFor="address">Endereço *</Label>
-            <Input
-              id="address"
-              value={newSalon.address}
-              onChange={(e) => setNewSalon({...newSalon, address: e.target.value})}
-              placeholder="Endereço completo"
-              className={!newSalon.address.trim() ? "border-red-300" : ""}
-            />
-          </div>
           
-          {/* Upload de Banner */}
           <div>
-            <Label htmlFor="banner-upload">Banner do Estabelecimento</Label>
-            <Input
-              id="banner-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleBannerSelect}
-              className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Opcional. Máximo 5MB. Se não fornecido, será usado um banner genérico.
-            </p>
-            
-            {bannerPreview && (
-              <div className="mt-2 relative rounded-lg overflow-hidden bg-gray-100 aspect-[2/1] max-w-xs">
-                <img
-                  src={bannerPreview}
-                  alt="Preview do banner"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            <Label htmlFor="plan">Plano</Label>
+            <select
+              id="plan"
+              value={newSalon.plan}
+              onChange={(e) => setNewSalon({...newSalon, plan: e.target.value as 'bronze' | 'prata' | 'gold'})}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="bronze">Bronze</option>
+              <option value="prata">Prata</option>
+              <option value="gold">Gold</option>
+            </select>
           </div>
         </div>
         <div className="flex space-x-2 mt-6">
@@ -242,7 +130,7 @@ const SuperAdminCreateSalonDialog = ({ categories, onCreateSalon, isSubmitting }
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={isSubmitting || categories.length === 0}
+            disabled={isSubmitting}
             className="min-w-[120px]"
           >
             {isSubmitting ? "Criando..." : "Criar Estabelecimento"}

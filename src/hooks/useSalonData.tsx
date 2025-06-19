@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Salon } from './useSupabaseData';
@@ -15,20 +14,11 @@ export const useSalonData = () => {
       console.log('Creating salon with data:', salonData);
       
       // Validate required fields
-      if (!salonData.name?.trim()) {
-        return { success: false, message: 'Nome do estabelecimento é obrigatório' };
-      }
       if (!salonData.owner_name?.trim()) {
         return { success: false, message: 'Nome do responsável é obrigatório' };
       }
       if (!salonData.phone?.trim()) {
         return { success: false, message: 'Telefone é obrigatório' };
-      }
-      if (!salonData.address?.trim()) {
-        return { success: false, message: 'Endereço é obrigatório' };
-      }
-      if (!salonData.category_id?.trim()) {
-        return { success: false, message: 'Categoria é obrigatória' };
       }
 
       // Clean the data before inserting
@@ -36,7 +26,7 @@ export const useSalonData = () => {
         name: salonData.name.trim(),
         owner_name: salonData.owner_name.trim(),
         phone: salonData.phone.trim(),
-        address: salonData.address.trim(),
+        address: salonData.address,
         category_id: salonData.category_id,
         plan: salonData.plan || 'bronze',
         is_open: false,
@@ -256,6 +246,8 @@ export const useSalonData = () => {
         return { success: false, message: 'Erro ao atualizar estabelecimento' };
       }
 
+      // Update local state
+      setSalon(data as Salon);
       return { success: true, salon: data };
     } catch (error) {
       console.error('Error updating salon:', error);

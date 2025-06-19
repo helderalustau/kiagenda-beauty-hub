@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
@@ -6,6 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { setupSteps } from '@/components/salon-setup/SetupSteps';
 import ProgressIndicator from '@/components/salon-setup/ProgressIndicator';
 import BasicInfoStep from '@/components/salon-setup/BasicInfoStep';
+import BasicSalonInfoStep from '@/components/salon-setup/BasicSalonInfoStep';
 import AddressStep from '@/components/salon-setup/AddressStep';
 import ContactStep from '@/components/salon-setup/ContactStep';
 import HoursStep from '@/components/salon-setup/HoursStep';
@@ -15,11 +15,14 @@ import NavigationButtons from '@/components/salon-setup/NavigationButtons';
 const SalonSetup = () => {
   const { 
     salon, 
+    categories,
     presetServices, 
+    fetchCategories,
     fetchPresetServices,
     completeSalonSetup, 
     createServicesFromPresets,
     fetchSalonData,
+    updateSalon,
     loading 
   } = useSupabaseData();
   
@@ -27,6 +30,8 @@ const SalonSetup = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isFinishing, setIsFinishing] = useState(false);
   const [formData, setFormData] = useState({
+    salon_name: '',
+    category_id: '',
     street_number: '',
     city: '',
     state: '',
@@ -98,14 +103,17 @@ const SalonSetup = () => {
       }, 2000);
     }
     
+    fetchCategories();
     fetchPresetServices();
-  }, [fetchSalonData, fetchPresetServices, toast]);
+  }, [fetchSalonData, fetchCategories, fetchPresetServices, toast]);
 
   useEffect(() => {
     if (salon) {
       console.log('Estabelecimento carregado:', salon);
       setFormData(prev => ({
         ...prev,
+        salon_name: salon.name === 'Estabelecimento Temporário' ? '' : salon.name,
+        category_id: salon.category_id === '00000000-0000-0000-0000-000000000000' ? '' : salon.category_id || '',
         street_number: salon.street_number || '',
         city: salon.city || '',
         state: salon.state || '',
@@ -115,7 +123,47 @@ const SalonSetup = () => {
     }
   }, [salon]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Validate current step before proceeding
+    if (currentStep === 1) {
+      // Validate salon name and category
+      if (!formData.salon_name?.trim()) {
+        toast({
+          title: "Erro",
+          description: "Nome do estabelecimento é obrigatório",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!formData.category_id) {
+        toast({
+          title: "Erro",
+          description: "Categoria é obrigatória",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update salon with name and category
+      if (salon) {
+        const updateResult = await updateSalon({
+          id: salon.id,
+          name: formData.salon_name,
+          category_id: formData.category_id
+        });
+
+        if (!updateResult.success) {
+          toast({
+            title: "Erro",
+            description: "Erro ao atualizar informações do estabelecimento",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+    }
+
     if (currentStep < setupSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -189,7 +237,7 @@ const SalonSetup = () => {
       console.log('Salon ID:', salon.id);
       console.log('Dados do formulário:', formData);
 
-      // Validar campos obrigatórios
+      // Validate required fields
       if (!formData.street_number?.trim()) {
         toast({
           title: "Erro",
@@ -226,8 +274,18 @@ const SalonSetup = () => {
         return;
       }
 
+      // Complete setup with remaining data
+      const setupData = {
+        street_number: formData.street_number,
+        city: formData.city,
+        state: formData.state,
+        contact_phone: formData.contact_phone,
+        opening_hours: formData.opening_hours,
+        address: `${formData.street_number}, ${formData.city}, ${formData.state}`
+      };
+
       console.log('Chamando completeSalonSetup...');
-      const setupResult = await completeSalonSetup(salon.id, formData);
+      const setupResult = await completeSalonSetup(salon.id, setupData);
       console.log('Resultado da configuração:', setupResult);
       
       if (!setupResult.success) {
@@ -239,7 +297,7 @@ const SalonSetup = () => {
         return;
       }
 
-      // Criar serviços selecionados
+      // Create selected services
       const servicesToCreate = Object.entries(selectedServices)
         .filter(([_, data]) => data.selected && data.price > 0)
         .map(([presetId, data]) => ({ presetId, price: data.price }));
@@ -311,12 +369,20 @@ const SalonSetup = () => {
       case 0:
         return <BasicInfoStep salon={salon} />;
       case 1:
-        return <AddressStep formData={formData} setFormData={setFormData} />;
+        return (
+          <BasicSalonInfoStep 
+            formData={formData} 
+            setFormData={setFormData} 
+            categories={categories}
+          />
+        );
       case 2:
-        return <ContactStep formData={formData} setFormData={setFormData} />;
+        return <AddressStep formData={formData} setFormData={setFormData} />;
       case 3:
-        return <HoursStep formData={formData} setFormData={setFormData} />;
+        return <ContactStep formData={formData} setFormData={setFormData} />;
       case 4:
+        return <HoursStep formData={formData} setFormData={setFormData} />;
+      case 5:
         return (
           <ServicesStep
             presetServices={presetServices}

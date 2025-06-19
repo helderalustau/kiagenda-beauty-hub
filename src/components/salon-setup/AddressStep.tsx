@@ -19,8 +19,17 @@ interface AddressStepProps {
 const AddressStep = ({ formData, setFormData }: AddressStepProps) => {
   return (
     <div className="space-y-4">
+      <div className="text-center py-4 mb-6">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">
+          Endereço do Estabelecimento
+        </h3>
+        <p className="text-gray-600">
+          Forneça o endereço completo onde seu estabelecimento está localizado.
+        </p>
+      </div>
+
       <div>
-        <Label htmlFor="street_number">Nome da Rua e Número</Label>
+        <Label htmlFor="street_number">Nome da Rua e Número *</Label>
         <Input
           id="street_number"
           value={formData.street_number}
@@ -29,7 +38,7 @@ const AddressStep = ({ formData, setFormData }: AddressStepProps) => {
         />
       </div>
       <div>
-        <Label htmlFor="city">Cidade</Label>
+        <Label htmlFor="city">Cidade *</Label>
         <Input
           id="city"
           value={formData.city}
@@ -38,7 +47,7 @@ const AddressStep = ({ formData, setFormData }: AddressStepProps) => {
         />
       </div>
       <div>
-        <Label htmlFor="state">Estado</Label>
+        <Label htmlFor="state">Estado *</Label>
         <Input
           id="state"
           value={formData.state}
