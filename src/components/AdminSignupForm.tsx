@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuthData } from '@/hooks/useAuthData';
-import { Eye, EyeOff, User, Mail, Phone, Building, Shield, Calendar, Camera, MapPin } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Phone, Shield, Calendar, Camera, MapPin } from "lucide-react";
 
 interface AdminSignupData {
-  salon_id: string;
   name: string;
   password: string;
   email: string;
@@ -26,13 +26,11 @@ interface AdminSignupFormProps {
 
 const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
   const { toast } = useToast();
-  const { salons, fetchAllSalons, categories, fetchCategories } = useSupabaseData();
   const { registerAdmin, loading } = useAuthData();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState<AdminSignupData>({
-    salon_id: '',
     name: '',
     password: '',
     email: '',
@@ -42,11 +40,6 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
   });
 
   const [errors, setErrors] = useState<Partial<AdminSignupData>>({});
-
-  useEffect(() => {
-    fetchAllSalons();
-    fetchCategories();
-  }, [fetchAllSalons, fetchCategories]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<AdminSignupData> = {};
@@ -78,11 +71,6 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
       newErrors.phone = 'Telefone é obrigatório';
     } else if (formData.phone.replace(/\D/g, '').length < 10) {
       newErrors.phone = 'Telefone deve ter pelo menos 10 dígitos';
-    }
-
-    // Validar estabelecimento
-    if (!formData.salon_id) {
-      newErrors.salon_id = 'Tipo de Negócio é obrigatório';
     }
 
     setErrors(newErrors);
@@ -132,7 +120,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
       console.log('Criando conta de administrador com dados:', formData);
 
       const result = await registerAdmin(
-        formData.salon_id,
+        null, // salon_id removido
         formData.name.trim(),
         formData.password,
         formData.email.trim(),
@@ -148,7 +136,6 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
         
         // Limpar formulário
         setFormData({
-          salon_id: '',
           name: '',
           password: '',
           email: '',
@@ -178,17 +165,6 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
       dateStyle: 'short',
       timeStyle: 'short'
     }).format(new Date());
-  };
-
-  const getSalonInfo = (salonId: string) => {
-    const salon = salons.find(s => s.id === salonId);
-    if (!salon) return null;
-    
-    const category = categories.find(c => c.id === salon.category_id);
-    return {
-      ...salon,
-      categoryName: category?.name || 'Categoria não encontrada'
-    };
   };
 
   return (
@@ -332,44 +308,6 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
               </div>
             </div>
 
-            {/* Tipo de Negócio */}
-            <div className="space-y-2">
-              <Label htmlFor="salon" className="flex items-center gap-2 text-sm font-medium">
-                <Building className="h-4 w-4 text-blue-600" />
-                Tipo de Negócio *
-              </Label>
-              <Select
-                value={formData.salon_id}
-                onValueChange={(value) => handleInputChange('salon_id', value)}
-                disabled={submitting}
-              >
-                <SelectTrigger className={`transition-all ${errors.salon_id ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}>
-                  <SelectValue placeholder="Selecione seu tipo de negócio" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                  {salons.map((salon) => {
-                    const salonInfo = getSalonInfo(salon.id);
-                    return (
-                      <SelectItem key={salon.id} value={salon.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{salon.name}</span>
-                          <span className="text-xs text-gray-500">
-                            {salonInfo?.categoryName} • {salon.city || 'Localização não informada'}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              {errors.salon_id && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <span className="h-1 w-1 bg-red-500 rounded-full"></span>
-                  {errors.salon_id}
-                </p>
-              )}
-            </div>
-
             {/* Função/Cargo */}
             <div className="space-y-2">
               <Label htmlFor="role" className="flex items-center gap-2 text-sm font-medium">
@@ -464,8 +402,8 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
               Informações da Conta
             </h4>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Sua conta será vinculada ao tipo de negócio selecionado</li>
-              <li>• Você receberá acesso completo ao painel administrativo</li>
+              <li>• Sua conta será criada com as informações fornecidas</li>
+              <li>• Você receberá acesso ao painel administrativo</li>
               <li>• A data de criação será registrada automaticamente</li>
               <li>• Todos os dados são protegidos e criptografados</li>
             </ul>
