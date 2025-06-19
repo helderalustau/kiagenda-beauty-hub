@@ -54,15 +54,16 @@ const BasicSalonInfoStep = ({ formData, updateFormData, categories }: BasicSalon
             console.log('Categoria selecionada:', value);
             updateFormData({ category_id: value });
           }}
+          disabled={categories.length === 0}
         >
           <SelectTrigger className={!formData.category_id ? "border-red-300" : ""}>
-            <SelectValue placeholder="Selecione a categoria..." />
+            <SelectValue placeholder={categories.length === 0 ? "Carregando categorias..." : "Selecione a categoria..."} />
           </SelectTrigger>
           <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
             {categories.length === 0 ? (
-              <SelectItem value="" disabled>
+              <div className="p-2 text-sm text-gray-500 text-center">
                 Carregando categorias...
-              </SelectItem>
+              </div>
             ) : (
               categories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
