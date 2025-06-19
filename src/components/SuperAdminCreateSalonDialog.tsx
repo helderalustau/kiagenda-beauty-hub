@@ -81,7 +81,7 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
         <DialogHeader>
           <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
           <DialogDescription>
-            Preencha apenas os dados básicos do responsável. O nome e categoria do estabelecimento serão definidos na configuração inicial.
+            Preencha os dados básicos do responsável. O nome e categoria do estabelecimento serão definidos na configuração inicial.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
