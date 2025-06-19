@@ -53,15 +53,33 @@ export interface Appointment {
   salon_id: string;
   client_id: string;
   service_id: string;
+  user_id?: string;
   appointment_date: string;
   appointment_time: string;
-  status: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   notes?: string;
-  client?: Client;
-  service?: Service;
-  deleted_at?: string;
   created_at?: string;
   updated_at?: string;
+  deleted_at?: string;
+  // Relações
+  salon?: {
+    id: string;
+    name: string;
+    address?: string;
+    phone?: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+    price: number;
+    duration_minutes: number;
+  };
+  client?: {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string;
+  };
 }
 
 export interface AdminUser {

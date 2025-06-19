@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, Scissors, LogOut, User, Store } from "lucide-react";
-import { useSupabaseData, Client, Salon, Appointment } from '@/hooks/useSupabaseData';
+import { useSupabaseData, Client, Salon, Appointment, Service } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import ClientProfile from '@/components/ClientProfile';
 import SalonList from '@/components/SalonList';
@@ -18,13 +17,15 @@ const ClientDashboard = () => {
     fetchAllSalons, 
     fetchCategories,
     getClientByPhone,
-    fetchClientAppointments
+    fetchClientAppointments,
+    fetchSalonServices
   } = useSupabaseData();
   const { toast } = useToast();
   
   const [client, setClient] = useState<Client | null>(null);
   const [clientAppointments, setClientAppointments] = useState<Appointment[]>([]);
   const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
+  const [salonServices, setSalonServices] = useState<Service[]>([]);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -66,14 +67,20 @@ const ClientDashboard = () => {
     window.location.href = '/';
   };
 
-  const handleBookService = (salon: Salon) => {
+  const handleBookService = async (salon: Salon) => {
     setSelectedSalon(salon);
+    
+    // Buscar serviços do salão
+    const services = await fetchSalonServices(salon.id);
+    setSalonServices(services);
+    
     setShowBookingModal(true);
   };
 
   const handleBookingSuccess = () => {
     setShowBookingModal(false);
     setSelectedSalon(null);
+    setSalonServices([]);
     loadClientData(); // Recarregar appointments
     toast({
       title: "Sucesso",
@@ -272,17 +279,22 @@ const ClientDashboard = () => {
       </div>
 
       {/* Modal de Agendamento */}
-      {showBookingModal && selectedSalon && (
+      {showBookingModal && selectedSalon && client && (
         <BookingModal
-          salon={selectedSalon}
-          clientName={client.name}
-          clientPhone={client.phone}
-          clientEmail={client.email}
+          isOpen={showBookingModal}
           onClose={() => {
             setShowBookingModal(false);
             setSelectedSalon(null);
+            setSalonServices([]);
           }}
-          onSuccess={handleBookingSuccess}
+          salon={selectedSalon}
+          services={salonServices}
+          clientData={{
+            id: client.id,
+            name: client.name,
+            email: client.email || '',
+            phone: client.phone
+          }}
         />
       )}
     </div>
