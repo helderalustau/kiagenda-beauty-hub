@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,14 +87,14 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
       return;
     }
 
-    const result = await registerAdmin(
-      salon?.id || '',
-      newUserData.name,
-      newUserData.password,
-      newUserData.email,
-      newUserData.phone,
-      newUserData.role
-    );
+    const result = await registerAdmin({
+      salonId: salon?.id || '',
+      name: newUserData.name,
+      password: newUserData.password,
+      email: newUserData.email,
+      phone: newUserData.phone,
+      role: newUserData.role
+    });
 
     if (result.success) {
       toast({
@@ -111,7 +110,7 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
         role: 'collaborator'
       });
       onRefresh();
-    } else if (result.needsUpgrade) {
+    } else if (result.message && result.message.includes('limite')) {
       setShowUserDialog(false);
       setShowUpgradeDialog(true);
     } else {
@@ -126,11 +125,14 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
   const handleUpdateUser = async () => {
     if (!editingUser) return;
 
-    const result = await updateAdminUser(editingUser.id, {
-      name: editingUser.name,
-      email: editingUser.email,
-      phone: editingUser.phone,
-      role: editingUser.role
+    const result = await updateAdminUser({
+      userId: editingUser.id,
+      userData: {
+        name: editingUser.name,
+        email: editingUser.email,
+        phone: editingUser.phone,
+        role: editingUser.role
+      }
     });
 
     if (result.success) {
