@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 import { useAuthData } from './useAuthData';
 import { useSalonData } from './useSalonData';
 import { useAppointmentData } from './useAppointmentData';
