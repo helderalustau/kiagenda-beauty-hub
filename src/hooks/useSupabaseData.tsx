@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from './useAuthData';
@@ -29,6 +28,7 @@ export interface Salon {
   max_attendants?: number;
   category_id?: string;
   category?: Category;
+  unique_slug?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -192,6 +192,7 @@ export const useSupabaseData = () => {
     
     // Salon methods
     fetchSalonData: salonData.fetchSalonData,
+    fetchSalonBySlug: salonData.fetchSalonBySlug,
     fetchAllSalons: salonData.fetchAllSalons,
     createSalon: salonData.createSalon,
     completeSalonSetup: salonData.completeSalonSetup,

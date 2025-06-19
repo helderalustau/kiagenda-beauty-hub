@@ -309,6 +309,7 @@ export type Database = {
           setup_completed: boolean | null
           state: string | null
           street_number: string | null
+          unique_slug: string | null
           updated_at: string
         }
         Insert: {
@@ -330,6 +331,7 @@ export type Database = {
           setup_completed?: boolean | null
           state?: string | null
           street_number?: string | null
+          unique_slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -351,6 +353,7 @@ export type Database = {
           setup_completed?: boolean | null
           state?: string | null
           street_number?: string | null
+          unique_slug?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -459,6 +462,10 @@ export type Database = {
       cleanup_salons_without_admins: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      generate_unique_slug: {
+        Args: { salon_name: string }
+        Returns: string
       }
     }
     Enums: {

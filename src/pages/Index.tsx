@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Scissors, Users } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
@@ -16,13 +17,17 @@ const Index = () => {
     senha: '', 
     email: '', 
     telefone: '', 
-    salao: '', 
-    endereco: '' 
+    salao: '',
+    categoryId: ''
   });
   const [loading, setLoading] = useState(false);
 
-  const { authenticateClient, authenticateAdmin, registerClient, createSalon, registerAdmin } = useSupabaseData();
+  const { authenticateClient, authenticateAdmin, registerClient, createSalon, registerAdmin, categories, fetchCategories } = useSupabaseData();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handleClientLogin = async () => {
     if (!clientForm.nome || !clientForm.senha) {
@@ -124,7 +129,7 @@ const Index = () => {
   };
 
   const handleAdminRegister = async () => {
-    if (!adminForm.nome || !adminForm.senha || !adminForm.email || !adminForm.salao) {
+    if (!adminForm.nome || !adminForm.senha || !adminForm.email || !adminForm.salao || !adminForm.categoryId) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos obrigatórios",
@@ -140,8 +145,9 @@ const Index = () => {
       const salonResult = await createSalon({
         name: adminForm.salao,
         owner_name: adminForm.nome,
-        phone: adminForm.telefone || adminForm.email, // fallback para email se não tiver telefone
-        address: adminForm.endereco,
+        phone: adminForm.telefone || adminForm.email,
+        address: 'Endereço a ser configurado',
+        category_id: adminForm.categoryId,
         plan: 'bronze'
       });
 
@@ -415,13 +421,22 @@ const Index = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="salon-address-reg">Endereço *</Label>
-                        <Input
-                          id="salon-address-reg"
-                          placeholder="Endereço completo do salão"
-                          value={adminForm.endereco}
-                          onChange={(e) => setAdminForm({...adminForm, endereco: e.target.value})}
-                        />
+                        <Label htmlFor="category-select">Categoria *</Label>
+                        <Select
+                          value={adminForm.categoryId}
+                          onValueChange={(value) => setAdminForm({...adminForm, categoryId: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a categoria do estabelecimento" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <Button 
                         onClick={handleAdminRegister}

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Salon } from './useSupabaseData';
@@ -98,6 +99,37 @@ export const useSalonData = () => {
       setSalon(data as Salon);
     } catch (error) {
       console.error('Error fetching salon data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch salon by slug
+  const fetchSalonBySlug = async (slug: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('salons')
+        .select(`
+          *,
+          categories (
+            id,
+            name,
+            description
+          )
+        `)
+        .eq('unique_slug', slug)
+        .single();
+
+      if (error) {
+        console.error('Error fetching salon by slug:', error);
+        return null;
+      }
+
+      return data as Salon;
+    } catch (error) {
+      console.error('Error fetching salon by slug:', error);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -302,6 +334,7 @@ export const useSalonData = () => {
     loading,
     createSalon,
     fetchSalonData,
+    fetchSalonBySlug,
     fetchAllSalons,
     toggleSalonStatus,
     uploadSalonBanner,
