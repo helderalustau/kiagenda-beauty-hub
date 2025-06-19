@@ -81,7 +81,7 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
         <DialogHeader>
           <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
           <DialogDescription>
-            Preencha os dados básicos do responsável. O nome e categoria do estabelecimento serão definidos na configuração inicial.
+            Preencha apenas os dados básicos do responsável. O nome e categoria do estabelecimento serão definidos na configuração inicial.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -92,7 +92,6 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
               value={newSalon.owner_name}
               onChange={(e) => setNewSalon({...newSalon, owner_name: e.target.value})}
               placeholder="Nome do proprietário"
-              className={!newSalon.owner_name.trim() ? "border-red-300" : ""}
             />
           </div>
           <div>
@@ -102,7 +101,6 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
               value={newSalon.phone}
               onChange={(e) => setNewSalon({...newSalon, phone: e.target.value})}
               placeholder="(11) 99999-9999"
-              className={!newSalon.phone.trim() ? "border-red-300" : ""}
             />
           </div>
           
