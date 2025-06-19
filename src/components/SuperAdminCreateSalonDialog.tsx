@@ -1,13 +1,14 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Plus, Check, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Category } from '@/hooks/useSupabaseData';
+import { cn } from "@/lib/utils";
 
 interface SuperAdminCreateSalonDialogProps {
   categories: Category[];
@@ -18,6 +19,7 @@ interface SuperAdminCreateSalonDialogProps {
 const SuperAdminCreateSalonDialog = ({ categories, onCreateSalon, isSubmitting }: SuperAdminCreateSalonDialogProps) => {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [categoryComboboxOpen, setCategoryComboboxOpen] = useState(false);
   const [newSalon, setNewSalon] = useState({
     name: '',
     owner_name: '',
@@ -89,6 +91,8 @@ const SuperAdminCreateSalonDialog = ({ categories, onCreateSalon, isSubmitting }
     setBannerPreview(null);
   };
 
+  const selectedCategory = categories.find(cat => cat.id === newSalon.category_id);
+
   return (
     <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
       <DialogTrigger asChild>
@@ -117,31 +121,54 @@ const SuperAdminCreateSalonDialog = ({ categories, onCreateSalon, isSubmitting }
           </div>
           
           <div>
-            <Label htmlFor="category">Categoria *</Label>
-            <Select 
-              value={newSalon.category_id} 
-              onValueChange={(value) => {
-                console.log('Categoria selecionada:', value);
-                setNewSalon({...newSalon, category_id: value});
-              }}
-            >
-              <SelectTrigger className={!newSalon.category_id ? "border-red-300" : ""}>
-                <SelectValue placeholder="Selecione a categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.length > 0 ? (
-                  categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="" disabled>
-                    Carregando categorias...
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <Label>Categoria *</Label>
+            <Popover open={categoryComboboxOpen} onOpenChange={setCategoryComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={categoryComboboxOpen}
+                  className={cn(
+                    "w-full justify-between",
+                    !newSalon.category_id && "text-muted-foreground border-red-300"
+                  )}
+                >
+                  {selectedCategory ? selectedCategory.name : "Selecione a categoria..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar categoria..." />
+                  <CommandList>
+                    <CommandEmpty>
+                      {categories.length === 0 ? "Carregando categorias..." : "Nenhuma categoria encontrada."}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {categories.map((category) => (
+                        <CommandItem
+                          key={category.id}
+                          value={category.name}
+                          onSelect={() => {
+                            console.log('Categoria selecionada:', category.id, category.name);
+                            setNewSalon({...newSalon, category_id: category.id});
+                            setCategoryComboboxOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              newSalon.category_id === category.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {category.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             {categories.length === 0 && (
               <p className="text-sm text-orange-600 mt-1">
                 Carregando categorias... Se o problema persistir, verifique o banco de dados.
