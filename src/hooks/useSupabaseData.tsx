@@ -10,6 +10,7 @@ export interface Salon {
   plan: 'bronze' | 'prata' | 'gold';
   notification_sound: string;
   max_attendants: number;
+  created_at: string;
 }
 
 export interface Service {

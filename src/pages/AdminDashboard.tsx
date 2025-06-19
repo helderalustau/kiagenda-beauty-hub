@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Home, Plus, LogOut, Settings, UserPlus, CheckCheck, ListChecks, BarChart3, Bell, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, Home, Plus, LogOut, Settings, UserPlus, CheckCheck, ListChecks, BarChart3, Bell, ChevronsUpDown, Users, Calendar } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -18,12 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Calendar } from "@/components/ui/calendar"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon } from "@radix-ui/react-icons"
+import { CalendarIcon } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
 import {
