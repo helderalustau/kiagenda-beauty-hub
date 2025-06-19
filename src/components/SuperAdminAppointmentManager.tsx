@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, User, Scissors, Restore, Trash2, Filter } from "lucide-react";
+import { Calendar, Clock, User, Scissors, RotateCcw, Trash2, Filter } from "lucide-react";
 import { Appointment, useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 
@@ -227,7 +228,7 @@ const SuperAdminAppointmentManager = ({ salonId, salonName }: SuperAdminAppointm
                                 size="sm"
                                 className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                               >
-                                <Restore className="h-4 w-4 mr-1" />
+                                <RotateCcw className="h-4 w-4 mr-1" />
                                 Restaurar
                               </Button>
                             </AlertDialogTrigger>

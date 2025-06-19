@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -131,7 +132,8 @@ export const useSupabaseData = () => {
           targetSalonId = salonData.id;
           setSalon({
             ...salonData,
-            plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+            plan: salonData.plan as 'bronze' | 'prata' | 'gold',
+            banner_image_url: salonData.banner_image_url || null
           });
         }
       } else {
@@ -145,7 +147,8 @@ export const useSupabaseData = () => {
         if (salonData) {
           setSalon({
             ...salonData,
-            plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+            plan: salonData.plan as 'bronze' | 'prata' | 'gold',
+            banner_image_url: salonData.banner_image_url || null
           });
         }
       }
@@ -210,7 +213,8 @@ export const useSupabaseData = () => {
       if (salonsData) {
         const typedSalons = salonsData.map(salon => ({
           ...salon,
-          plan: salon.plan as 'bronze' | 'prata' | 'gold'
+          plan: salon.plan as 'bronze' | 'prata' | 'gold',
+          banner_image_url: salon.banner_image_url || null
         }));
         setSalons(typedSalons);
       }
@@ -284,7 +288,8 @@ export const useSupabaseData = () => {
       if (salonData) {
         setSalon({
           ...salonData,
-          plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+          plan: salonData.plan as 'bronze' | 'prata' | 'gold',
+          banner_image_url: salonData.banner_image_url || null
         });
       }
 
@@ -318,7 +323,8 @@ export const useSupabaseData = () => {
       return {
         salon: salonData ? {
           ...salonData,
-          plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+          plan: salonData.plan as 'bronze' | 'prata' | 'gold',
+          banner_image_url: salonData.banner_image_url || null
         } : null,
         totalClients: uniqueClients,
         monthlyRevenue: Number(monthlyRevenue)
@@ -569,8 +575,14 @@ export const useSupabaseData = () => {
         .order('price');
       
       if (error) throw error;
-      setPlanConfigurations(data || []);
-      return { success: true, data };
+      
+      const typedConfigurations = (data || []).map(config => ({
+        ...config,
+        plan_type: config.plan_type as 'bronze' | 'prata' | 'gold'
+      }));
+      
+      setPlanConfigurations(typedConfigurations);
+      return { success: true, data: typedConfigurations };
     } catch (error) {
       console.error('Erro ao buscar configurações de planos:', error);
       return { success: false, message: 'Erro ao buscar configurações de planos' };
