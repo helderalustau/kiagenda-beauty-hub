@@ -48,8 +48,8 @@ const Index = () => {
       window.location.href = '/salon-selection';
     } else {
       toast({
-        title: "Erro",
-        description: result.message,
+        title: "Erro de Login",
+        description: "Nome ou senha incorretos. Verifique suas credenciais ou cadastre-se se ainda não possui uma conta.",
         variant: "destructive"
       });
     }
@@ -116,8 +116,8 @@ const Index = () => {
       }
     } else {
       toast({
-        title: "Erro",
-        description: result.message,
+        title: "Erro de Login",
+        description: "Nome ou senha incorretos. Se você ainda não possui uma conta de administrador, clique em 'Não tem conta? Cadastre-se' para criar seu estabelecimento.",
         variant: "destructive"
       });
     }
