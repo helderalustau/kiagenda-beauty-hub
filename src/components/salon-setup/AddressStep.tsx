@@ -20,12 +20,12 @@ const AddressStep = ({ formData, setFormData }: AddressStepProps) => {
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="street_number">Número da Rua</Label>
+        <Label htmlFor="street_number">Nome da Rua e Número</Label>
         <Input
           id="street_number"
           value={formData.street_number}
           onChange={(e) => setFormData({...formData, street_number: e.target.value})}
-          placeholder="Ex: 123"
+          placeholder="Ex: Rua das Flores, 123"
         />
       </div>
       <div>

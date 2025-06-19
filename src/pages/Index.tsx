@@ -258,7 +258,7 @@ const Index = () => {
             </span>
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Conectamos você aos melhores salões de beleza da cidade. 
+            Conectamos você com os melhores salões de beleza da cidade. 
             Agende quando quiser, de onde estiver.
           </p>
         </div>

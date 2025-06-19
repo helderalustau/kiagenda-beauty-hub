@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
@@ -125,6 +126,7 @@ const SalonSetup = () => {
       description: "Configuração do estabelecimento finalizada!"
     });
 
+    // Redirecionar para o Dashboard do Administrador
     window.location.href = '/admin-dashboard';
   };
 
