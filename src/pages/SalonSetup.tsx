@@ -182,7 +182,7 @@ const SalonSetup = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <setupSteps[currentStep].icon className="h-6 w-6" />
+                {React.createElement(setupSteps[currentStep].icon, { className: "h-6 w-6" })}
                 <span>{setupSteps[currentStep].title}</span>
               </CardTitle>
             </CardHeader>
