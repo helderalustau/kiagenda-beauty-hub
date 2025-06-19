@@ -1,184 +1,45 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { useToast } from "@/components/ui/use-toast";
 import { setupSteps } from '@/components/salon-setup/SetupSteps';
 import ProgressIndicator from '@/components/salon-setup/ProgressIndicator';
-import BasicInfoStep from '@/components/salon-setup/BasicInfoStep';
-import BasicSalonInfoStep from '@/components/salon-setup/BasicSalonInfoStep';
-import AddressStep from '@/components/salon-setup/AddressStep';
-import ContactStep from '@/components/salon-setup/ContactStep';
-import HoursStep from '@/components/salon-setup/HoursStep';
-import ServicesStep from '@/components/salon-setup/ServicesStep';
 import NavigationButtons from '@/components/salon-setup/NavigationButtons';
+import { StepRenderer } from '@/components/salon-setup/StepRenderer';
+import { useSalonSetup } from '@/hooks/useSalonSetup';
+import { useSetupHandlers } from '@/components/salon-setup/SetupHandlers';
 
 const SalonSetup = () => {
-  const { 
-    salon, 
+  const {
+    salon,
     categories,
-    presetServices, 
-    fetchCategories,
-    fetchPresetServices,
-    completeSalonSetup, 
+    presetServices,
+    loading,
+    currentStep,
+    setCurrentStep,
+    isFinishing,
+    setIsFinishing,
+    formData,
+    updateFormData,
+    selectedServices,
+    setSelectedServices,
+    completeSalonSetup,
     createServicesFromPresets,
-    fetchSalonData,
     updateSalon,
-    loading 
-  } = useSupabaseData();
-  
-  const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isFinishing, setIsFinishing] = useState(false);
-  const [formData, setFormData] = useState({
-    salon_name: '',
-    category_id: '',
-    street_number: '',
-    city: '',
-    state: '',
-    contact_phone: '',
-    opening_hours: {
-      monday: { open: '08:00', close: '18:00', closed: false },
-      tuesday: { open: '08:00', close: '18:00', closed: false },
-      wednesday: { open: '08:00', close: '18:00', closed: false },
-      thursday: { open: '08:00', close: '18:00', closed: false },
-      friday: { open: '08:00', close: '18:00', closed: false },
-      saturday: { open: '08:00', close: '16:00', closed: false },
-      sunday: { open: '08:00', close: '16:00', closed: true }
-    }
+    toast
+  } = useSalonSetup();
+
+  const { handleNext, handlePrevious, handleFinishSetup } = useSetupHandlers({
+    currentStep,
+    setCurrentStep,
+    formData,
+    salon,
+    updateSalon,
+    toast,
+    completeSalonSetup,
+    createServicesFromPresets,
+    selectedServices,
+    setIsFinishing
   });
-  
-  const [selectedServices, setSelectedServices] = useState<{ [key: string]: { selected: boolean; price: number } }>({});
-
-  // Create a helper function to update form data
-  const updateFormData = (updates: Partial<typeof formData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
-  };
-
-  useEffect(() => {
-    console.log('SalonSetup - Carregando dados iniciais...');
-    
-    // Buscar o salon_id do localStorage
-    const adminData = localStorage.getItem('adminData');
-    const selectedSalonId = localStorage.getItem('selectedSalonId');
-    
-    console.log('Admin data:', adminData);
-    console.log('Selected salon ID:', selectedSalonId);
-    
-    if (adminData) {
-      try {
-        const admin = JSON.parse(adminData);
-        const salonId = selectedSalonId || admin.salon_id;
-        
-        console.log('Salon ID encontrado:', salonId);
-        
-        if (salonId) {
-          console.log('Buscando dados do estabelecimento...');
-          fetchSalonData(salonId);
-        } else {
-          console.error('Salon ID não encontrado!');
-          toast({
-            title: "Erro",
-            description: "ID do estabelecimento não encontrado. Redirecionando...",
-            variant: "destructive"
-          });
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 2000);
-        }
-      } catch (error) {
-        console.error('Erro ao processar dados do admin:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar dados. Redirecionando...",
-          variant: "destructive"
-        });
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 2000);
-      }
-    } else {
-      console.error('Dados do admin não encontrados!');
-      toast({
-        title: "Erro",
-        description: "Dados do administrador não encontrados. Redirecionando...",
-        variant: "destructive"
-      });
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
-    }
-    
-    fetchCategories();
-    fetchPresetServices();
-  }, [fetchSalonData, fetchCategories, fetchPresetServices, toast]);
-
-  useEffect(() => {
-    if (salon) {
-      console.log('Estabelecimento carregado:', salon);
-      setFormData(prev => ({
-        ...prev,
-        salon_name: salon.name === 'Estabelecimento Temporário' ? '' : salon.name,
-        category_id: salon.category_id === '00000000-0000-0000-0000-000000000000' ? '' : salon.category_id || '',
-        street_number: salon.street_number || '',
-        city: salon.city || '',
-        state: salon.state || '',
-        contact_phone: salon.contact_phone || '',
-        opening_hours: salon.opening_hours || prev.opening_hours
-      }));
-    }
-  }, [salon]);
-
-  const handleNext = async () => {
-    // Validate current step before proceeding
-    if (currentStep === 1) {
-      // Validate salon name and category
-      if (!formData.salon_name?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Nome do estabelecimento é obrigatório",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (!formData.category_id) {
-        toast({
-          title: "Erro",
-          description: "Categoria é obrigatória",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Update salon with name and category
-      if (salon) {
-        const updateResult = await updateSalon({
-          id: salon.id,
-          name: formData.salon_name,
-          category_id: formData.category_id
-        });
-
-        if (!updateResult.success) {
-          toast({
-            title: "Erro",
-            description: "Erro ao atualizar informações do estabelecimento",
-            variant: "destructive"
-          });
-          return;
-        }
-      }
-    }
-
-    if (currentStep < setupSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
 
   const handleServiceToggle = (serviceId: string) => {
     setSelectedServices(prev => ({
@@ -198,153 +59,6 @@ const SalonSetup = () => {
         price
       }
     }));
-  };
-
-  const handleFinishSetup = async () => {
-    if (!salon) {
-      console.error('Salon não encontrado no state!');
-      
-      // Tentar buscar o salon_id novamente
-      const adminData = localStorage.getItem('adminData');
-      const selectedSalonId = localStorage.getItem('selectedSalonId');
-      
-      if (adminData || selectedSalonId) {
-        try {
-          const admin = adminData ? JSON.parse(adminData) : null;
-          const salonId = selectedSalonId || admin?.salon_id;
-          
-          if (salonId) {
-            console.log('Tentando buscar dados do salon novamente...');
-            await fetchSalonData(salonId);
-            
-            // Aguardar um pouco para o estado ser atualizado
-            setTimeout(() => {
-              handleFinishSetup();
-            }, 1000);
-            return;
-          }
-        } catch (error) {
-          console.error('Erro ao tentar recuperar dados do salon:', error);
-        }
-      }
-      
-      toast({
-        title: "Erro",
-        description: "Dados do estabelecimento não encontrados. Por favor, tente novamente.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setIsFinishing(true);
-      console.log('Iniciando finalização da configuração...');
-      console.log('Salon ID:', salon.id);
-      console.log('Dados do formulário:', formData);
-
-      // Validate required fields
-      if (!formData.street_number?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Nome da Rua e Número é obrigatório",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!formData.city?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Cidade é obrigatória",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!formData.state?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Estado é obrigatório",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!formData.contact_phone?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Telefone para contato é obrigatório",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Complete setup with remaining data
-      const setupData = {
-        street_number: formData.street_number,
-        city: formData.city,
-        state: formData.state,
-        contact_phone: formData.contact_phone,
-        opening_hours: formData.opening_hours,
-        address: `${formData.street_number}, ${formData.city}, ${formData.state}`
-      };
-
-      console.log('Chamando completeSalonSetup...');
-      const setupResult = await completeSalonSetup(salon.id, setupData);
-      console.log('Resultado da configuração:', setupResult);
-      
-      if (!setupResult.success) {
-        toast({
-          title: "Erro",
-          description: setupResult.message || "Erro ao finalizar configuração",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Create selected services
-      const servicesToCreate = Object.entries(selectedServices)
-        .filter(([_, data]) => data.selected && data.price > 0)
-        .map(([presetId, data]) => ({ presetId, price: data.price }));
-
-      console.log('Serviços para criar:', servicesToCreate);
-
-      if (servicesToCreate.length > 0) {
-        console.log('Criando serviços...');
-        const servicesResult = await createServicesFromPresets(salon.id, servicesToCreate);
-        console.log('Resultado dos serviços:', servicesResult);
-        
-        if (!servicesResult.success) {
-          toast({
-            title: "Aviso",
-            description: "Configuração salva, mas houve erro ao criar alguns serviços",
-            variant: "destructive"
-          });
-        }
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Configuração do estabelecimento finalizada com sucesso!"
-      });
-
-      console.log('Redirecionando para o dashboard do administrador...');
-      
-      // Aguardar um pouco para garantir que o toast seja exibido
-      setTimeout(() => {
-        window.location.href = '/admin-dashboard';
-      }, 1000);
-
-    } catch (error) {
-      console.error('Erro ao finalizar configuração:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao finalizar configuração",
-        variant: "destructive"
-      });
-    } finally {
-      setIsFinishing(false);
-    }
   };
 
   if (loading) {
@@ -369,39 +83,6 @@ const SalonSetup = () => {
     );
   }
 
-  const renderCurrentStep = () => {
-    switch (currentStep) {
-      case 0:
-        return <BasicInfoStep salon={salon} />;
-      case 1:
-        return (
-          <BasicSalonInfoStep 
-            formData={formData} 
-            updateFormData={updateFormData} 
-            categories={categories}
-          />
-        );
-      case 2:
-        return <AddressStep formData={formData} updateFormData={updateFormData} />;
-      case 3:
-        return <ContactStep formData={formData} updateFormData={updateFormData} />;
-      case 4:
-        return <HoursStep formData={formData} updateFormData={updateFormData} />;
-      case 5:
-        return (
-          <ServicesStep
-            presetServices={presetServices}
-            selectedServices={selectedServices}
-            onServiceToggle={handleServiceToggle}
-            onServicePriceChange={handleServicePriceChange}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Store the icon component in a variable before using it in JSX
   const Icon = setupSteps[currentStep].icon;
 
   return (
@@ -427,7 +108,17 @@ const SalonSetup = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-              {renderCurrentStep()}
+              <StepRenderer
+                currentStep={currentStep}
+                salon={salon}
+                formData={formData}
+                updateFormData={updateFormData}
+                categories={categories}
+                presetServices={presetServices}
+                selectedServices={selectedServices}
+                onServiceToggle={handleServiceToggle}
+                onServicePriceChange={handleServicePriceChange}
+              />
 
               <NavigationButtons
                 currentStep={currentStep}
