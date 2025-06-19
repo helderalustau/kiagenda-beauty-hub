@@ -6,13 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, MapPin, Phone, Crown, Scissors, Plus, Trash2, Edit, LogOut } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Scissors, Plus, LogOut, BarChart3, Users, Settings } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
+import SuperAdminStats from '@/components/SuperAdminStats';
+import SuperAdminSalonManager from '@/components/SuperAdminSalonManager';
 
 const SuperAdminDashboard = () => {
-  const { salons, fetchAllSalons, createSalon, deleteSalon, loading } = useSupabaseData();
+  const { salons, dashboardStats, fetchAllSalons, fetchDashboardStats, createSalon, loading } = useSupabaseData();
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newSalon, setNewSalon] = useState({
@@ -25,6 +27,7 @@ const SuperAdminDashboard = () => {
 
   useEffect(() => {
     fetchAllSalons();
+    fetchDashboardStats();
   }, []);
 
   const handleCreateSalon = async () => {
@@ -53,23 +56,7 @@ const SuperAdminDashboard = () => {
         plan: 'bronze'
       });
       fetchAllSalons();
-    } else {
-      toast({
-        title: "Erro",
-        description: result.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDeleteSalon = async (salonId: string) => {
-    const result = await deleteSalon(salonId);
-    
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Estabelecimento excluído com sucesso!"
-      });
+      fetchDashboardStats();
     } else {
       toast({
         title: "Erro",
@@ -85,22 +72,9 @@ const SuperAdminDashboard = () => {
     window.location.href = '/';
   };
 
-  const getPlanColor = (plan: string) => {
-    switch (plan) {
-      case 'bronze': return 'bg-amber-100 text-amber-800';
-      case 'prata': return 'bg-gray-100 text-gray-800';
-      case 'gold': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPlanName = (plan: string) => {
-    switch (plan) {
-      case 'bronze': return 'Bronze';
-      case 'prata': return 'Prata';
-      case 'gold': return 'Gold';
-      default: return 'Bronze';
-    }
+  const handleRefresh = () => {
+    fetchAllSalons();
+    fetchDashboardStats();
   };
 
   if (loading) {
@@ -134,7 +108,7 @@ const SuperAdminDashboard = () => {
                   <Scissors className="h-6 w-6 text-white" />
                 </div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
-                  Painel Super Admin
+                  Super Admin Dashboard
                 </h1>
               </div>
             </div>
@@ -151,172 +125,164 @@ const SuperAdminDashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Gerenciar Estabelecimentos
-            </h2>
-            <p className="text-lg text-gray-600">
-              Gerencie todos os estabelecimentos cadastrados no sistema
-            </p>
-          </div>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Visão Geral</span>
+            </TabsTrigger>
+            <TabsTrigger value="salons" className="flex items-center space-x-2">
+              <Users className="h-4 w-4" />
+              <span>Estabelecimentos</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>Configurações</span>
+            </TabsTrigger>
+          </TabsList>
 
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Estabelecimento
+          <TabsContent value="overview" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Visão Geral do Negócio
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Acompanhe as métricas e performance de todos os estabelecimentos
+                </p>
+              </div>
+              <Button 
+                onClick={handleRefresh}
+                variant="outline"
+              >
+                Atualizar Dados
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
-                <DialogDescription>
-                  Preencha os dados do novo estabelecimento
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="salon-name">Nome do Estabelecimento *</Label>
-                  <Input
-                    id="salon-name"
-                    value={newSalon.name}
-                    onChange={(e) => setNewSalon({...newSalon, name: e.target.value})}
-                    placeholder="Nome do salão"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="owner-name">Nome do Responsável *</Label>
-                  <Input
-                    id="owner-name"
-                    value={newSalon.owner_name}
-                    onChange={(e) => setNewSalon({...newSalon, owner_name: e.target.value})}
-                    placeholder="Nome do proprietário"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Telefone *</Label>
-                  <Input
-                    id="phone"
-                    value={newSalon.phone}
-                    onChange={(e) => setNewSalon({...newSalon, phone: e.target.value})}
-                    placeholder="(11) 99999-9999"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="address">Endereço *</Label>
-                  <Input
-                    id="address"
-                    value={newSalon.address}
-                    onChange={(e) => setNewSalon({...newSalon, address: e.target.value})}
-                    placeholder="Endereço completo"
-                  />
-                </div>
-              </div>
-              <div className="flex space-x-2 mt-6">
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleCreateSalon}>
-                  Criar Estabelecimento
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+            </div>
+            
+            <SuperAdminStats stats={dashboardStats} loading={loading} />
+          </TabsContent>
 
-        {salons.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-8 max-w-md mx-auto">
-              <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Nenhum estabelecimento encontrado
-              </h3>
-              <p className="text-gray-600">
-                Crie o primeiro estabelecimento clicando no botão acima.
+          <TabsContent value="salons" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Gerenciar Estabelecimentos
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Gerencie todos os estabelecimentos cadastrados no sistema
+                </p>
+              </div>
+
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Estabelecimento
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
+                    <DialogDescription>
+                      Preencha os dados do novo estabelecimento
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="salon-name">Nome do Estabelecimento *</Label>
+                      <Input
+                        id="salon-name"
+                        value={newSalon.name}
+                        onChange={(e) => setNewSalon({...newSalon, name: e.target.value})}
+                        placeholder="Nome do salão"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="owner-name">Nome do Responsável *</Label>
+                      <Input
+                        id="owner-name"
+                        value={newSalon.owner_name}
+                        onChange={(e) => setNewSalon({...newSalon, owner_name: e.target.value})}
+                        placeholder="Nome do proprietário"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Telefone *</Label>
+                      <Input
+                        id="phone"
+                        value={newSalon.phone}
+                        onChange={(e) => setNewSalon({...newSalon, phone: e.target.value})}
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address">Endereço *</Label>
+                      <Input
+                        id="address"
+                        value={newSalon.address}
+                        onChange={(e) => setNewSalon({...newSalon, address: e.target.value})}
+                        placeholder="Endereço completo"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex space-x-2 mt-6">
+                    <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleCreateSalon}>
+                      Criar Estabelecimento
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <SuperAdminSalonManager 
+              salons={salons} 
+              loading={loading} 
+              onRefresh={handleRefresh} 
+            />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Configurações do Sistema
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Configure as opções globais do sistema
               </p>
             </div>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {salons.map((salon) => (
-              <Card key={salon.id} className="bg-white/80 backdrop-blur-sm border-0">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold text-gray-900 mb-2">
-                        {salon.name}
-                      </CardTitle>
-                      <CardDescription className="text-gray-600">
-                        {salon.owner_name}
-                      </CardDescription>
-                    </div>
-                    <Badge className={`ml-2 ${getPlanColor(salon.plan)}`}>
-                      <Crown className="h-3 w-3 mr-1" />
-                      {getPlanName(salon.plan)}
-                    </Badge>
+            
+            <Card className="bg-white/80 backdrop-blur-sm border-0">
+              <CardHeader>
+                <CardTitle>Configurações de Planos</CardTitle>
+                <CardDescription>
+                  Valores e configurações dos planos de assinatura
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold text-amber-800">Plano Bronze</h4>
+                    <p className="text-sm text-gray-600">Básico</p>
+                    <p className="text-lg font-bold text-amber-800">R$ 29,90/mês</p>
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="truncate">{salon.address}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                      <span>{salon.phone}</span>
-                    </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold text-gray-800">Plano Prata</h4>
+                    <p className="text-sm text-gray-600">Intermediário</p>
+                    <p className="text-lg font-bold text-gray-800">R$ 59,90/mês</p>
                   </div>
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        localStorage.setItem('selectedSalonId', salon.id);
-                        window.location.href = '/admin-dashboard';
-                      }}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Gerenciar
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja excluir o estabelecimento "{salon.name}"? 
-                            Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteSalon(salon.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold text-yellow-800">Plano Gold</h4>
+                    <p className="text-sm text-gray-600">Premium</p>
+                    <p className="text-lg font-bold text-yellow-800">R$ 99,90/mês</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

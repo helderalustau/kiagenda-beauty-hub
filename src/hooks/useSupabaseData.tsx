@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,7 +35,7 @@ export interface AdminUser {
   name: string;
   email: string;
   phone: string;
-  role: 'admin' | 'manager' | 'collaborator';
+  role: 'admin' | 'manager' | 'collaborator' | 'super_admin';
   avatar_url: string;
 }
 
@@ -72,12 +71,30 @@ export interface Appointment {
   services?: Service;
 }
 
+export interface DashboardStats {
+  totalSalons: number;
+  salonsByPlan: {
+    bronze: number;
+    prata: number;
+    gold: number;
+  };
+  expectedRevenue: {
+    bronze: number;
+    prata: number;
+    gold: number;
+    total: number;
+  };
+  totalAppointments: number;
+  totalServices: number;
+}
+
 export const useSupabaseData = () => {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [salons, setSalons] = useState<Salon[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -185,6 +202,59 @@ export const useSupabaseData = () => {
       }
     } catch (error) {
       console.error('Erro ao buscar salões:', error);
+    }
+  };
+
+  const fetchDashboardStats = async () => {
+    try {
+      // Buscar estatísticas dos salões
+      const { data: salonsData } = await supabase
+        .from('salons')
+        .select('plan');
+      
+      if (salonsData) {
+        const salonsByPlan = {
+          bronze: salonsData.filter(s => s.plan === 'bronze').length,
+          prata: salonsData.filter(s => s.plan === 'prata').length,
+          gold: salonsData.filter(s => s.plan === 'gold').length,
+        };
+
+        // Valores dos planos (valores exemplo - ajustar conforme necessário)
+        const planPrices = {
+          bronze: 29.90,
+          prata: 59.90,
+          gold: 99.90,
+        };
+
+        const expectedRevenue = {
+          bronze: salonsByPlan.bronze * planPrices.bronze,
+          prata: salonsByPlan.prata * planPrices.prata,
+          gold: salonsByPlan.gold * planPrices.gold,
+          total: (salonsByPlan.bronze * planPrices.bronze) + 
+                 (salonsByPlan.prata * planPrices.prata) + 
+                 (salonsByPlan.gold * planPrices.gold),
+        };
+
+        // Buscar total de agendamentos
+        const { data: appointmentsData } = await supabase
+          .from('appointments')
+          .select('id');
+
+        // Buscar total de serviços
+        const { data: servicesData } = await supabase
+          .from('services')
+          .select('id');
+
+        setDashboardStats({
+          totalSalons: salonsData.length,
+          salonsByPlan,
+          expectedRevenue,
+          totalAppointments: appointmentsData?.length || 0,
+          totalServices: servicesData?.length || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error);
     }
   };
 
@@ -422,6 +492,7 @@ export const useSupabaseData = () => {
     appointments,
     services,
     adminUsers,
+    dashboardStats,
     loading,
     authenticateClient,
     authenticateAdmin,
@@ -435,6 +506,7 @@ export const useSupabaseData = () => {
     deleteAdminUser,
     createAppointment,
     fetchAllSalons,
+    fetchDashboardStats,
     refreshData: fetchData
   };
 };
