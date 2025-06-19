@@ -130,6 +130,30 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_auth: {
         Row: {
           created_at: string
@@ -162,28 +186,46 @@ export type Database = {
       }
       clients: {
         Row: {
+          city: string | null
           created_at: string
           email: string | null
+          house_number: string | null
           id: string
           name: string
+          neighborhood: string | null
           phone: string
+          state: string | null
+          street_address: string | null
           updated_at: string
+          zip_code: string | null
         }
         Insert: {
+          city?: string | null
           created_at?: string
           email?: string | null
+          house_number?: string | null
           id?: string
           name: string
+          neighborhood?: string | null
           phone: string
+          state?: string | null
+          street_address?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Update: {
+          city?: string | null
           created_at?: string
           email?: string | null
+          house_number?: string | null
           id?: string
           name?: string
+          neighborhood?: string | null
           phone?: string
+          state?: string | null
+          street_address?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -251,6 +293,7 @@ export type Database = {
         Row: {
           address: string
           banner_image_url: string | null
+          category_id: string
           city: string | null
           contact_phone: string | null
           created_at: string
@@ -271,6 +314,7 @@ export type Database = {
         Insert: {
           address: string
           banner_image_url?: string | null
+          category_id: string
           city?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -291,6 +335,7 @@ export type Database = {
         Update: {
           address?: string
           banner_image_url?: string | null
+          category_id?: string
           city?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -308,7 +353,15 @@ export type Database = {
           street_number?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "salons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {

@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Scissors, Plus, LogOut, BarChart3, Users, Settings, Upload, Trash } from "lucide-react";
@@ -17,9 +17,11 @@ import PlanConfigurationManager from '@/components/PlanConfigurationManager';
 const SuperAdminDashboard = () => {
   const { 
     salons, 
+    categories,
     dashboardStats, 
     planConfigurations,
     fetchAllSalons, 
+    fetchCategories,
     fetchDashboardStats, 
     fetchPlanConfigurations,
     createSalon, 
@@ -34,13 +36,15 @@ const SuperAdminDashboard = () => {
     owner_name: '',
     phone: '',
     address: '',
-    plan: 'bronze' as 'bronze' | 'prata' | 'gold'
+    plan: 'bronze' as 'bronze' | 'prata' | 'gold',
+    category_id: ''
   });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAllSalons();
+    fetchCategories();
     fetchDashboardStats();
     fetchPlanConfigurations();
   }, []);
@@ -76,7 +80,7 @@ const SuperAdminDashboard = () => {
   };
 
   const handleCreateSalon = async () => {
-    if (!newSalon.name || !newSalon.owner_name || !newSalon.phone || !newSalon.address) {
+    if (!newSalon.name || !newSalon.owner_name || !newSalon.phone || !newSalon.address || !newSalon.category_id) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos obrigatórios",
@@ -111,7 +115,8 @@ const SuperAdminDashboard = () => {
         owner_name: '',
         phone: '',
         address: '',
-        plan: 'bronze'
+        plan: 'bronze',
+        category_id: ''
       });
       setBannerFile(null);
       setBannerPreview(null);
@@ -291,6 +296,21 @@ const SuperAdminDashboard = () => {
                         onChange={(e) => setNewSalon({...newSalon, name: e.target.value})}
                         placeholder="Nome do salão"
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="category">Categoria *</Label>
+                      <Select value={newSalon.category_id} onValueChange={(value) => setNewSalon({...newSalon, category_id: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label htmlFor="owner-name">Nome do Responsável *</Label>

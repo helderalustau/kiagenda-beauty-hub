@@ -19,6 +19,8 @@ export interface Salon {
   setup_completed?: boolean;
   banner_image_url?: string;
   max_attendants?: number;
+  category_id?: string;
+  category?: Category;
   created_at?: string;
   updated_at?: string;
 }
@@ -38,6 +40,12 @@ export interface Client {
   name: string;
   phone: string;
   email?: string;
+  street_address?: string;
+  house_number?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
 }
 
 export interface Appointment {
@@ -104,9 +112,18 @@ export interface DashboardStats {
   };
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export const useSupabaseData = () => {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [salons, setSalons] = useState<Salon[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -310,7 +327,14 @@ export const useSupabaseData = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('salons')
-        .select('*')
+        .select(`
+          *,
+          categories (
+            id,
+            name,
+            description
+          )
+        `)
         .order('name');
 
       if (error) {
@@ -321,6 +345,53 @@ export const useSupabaseData = () => {
       setSalons(data as Salon[] || []);
     } catch (error) {
       console.error('Error fetching salons:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create category
+  const createCategory = async (categoryData: any) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .insert(categoryData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating category:', error);
+        return { success: false, message: 'Erro ao criar categoria' };
+      }
+
+      return { success: true, category: data };
+    } catch (error) {
+      console.error('Error creating category:', error);
+      return { success: false, message: 'Erro ao criar categoria' };
     } finally {
       setLoading(false);
     }
@@ -853,9 +924,88 @@ export const useSupabaseData = () => {
     }
   };
 
+  const updateClientProfile = async (clientId: string, profileData: any) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .update(profileData)
+        .eq('id', clientId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating client profile:', error);
+        return { success: false, message: 'Erro ao atualizar perfil' };
+      }
+
+      return { success: true, client: data };
+    } catch (error) {
+      console.error('Error updating client profile:', error);
+      return { success: false, message: 'Erro ao atualizar perfil' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchClientAppointments = async (clientId: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          services (*),
+          salons (
+            id,
+            name,
+            address,
+            phone
+          )
+        `)
+        .eq('client_id', clientId)
+        .is('deleted_at', null)
+        .order('appointment_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching client appointments:', error);
+        return { success: false, message: 'Erro ao buscar agendamentos' };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error fetching client appointments:', error);
+      return { success: false, message: 'Erro ao buscar agendamentos' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getClientByPhone = async (phone: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('phone', phone)
+        .single();
+
+      if (error) {
+        console.error('Error fetching client:', error);
+        return { success: false, message: 'Cliente não encontrado' };
+      }
+
+      return { success: true, client: data };
+    } catch (error) {
+      console.error('Error fetching client:', error);
+      return { success: false, message: 'Erro ao buscar cliente' };
+    }
+  };
+
   return {
     salon,
     salons,
+    categories,
     appointments,
     services,
     adminUsers,
@@ -865,6 +1015,7 @@ export const useSupabaseData = () => {
     loading,
     fetchSalonData,
     fetchAllSalons,
+    fetchCategories,
     fetchSalonServices,
     fetchPresetServices,
     fetchPlanConfigurations,
@@ -874,6 +1025,7 @@ export const useSupabaseData = () => {
     registerClient,
     registerAdmin,
     createSalon,
+    createCategory,
     createAppointment,
     completeSalonSetup,
     createServicesFromPresets,
@@ -889,6 +1041,9 @@ export const useSupabaseData = () => {
     updatePlanConfiguration,
     cleanupSalonsWithoutAdmins,
     updateAdminUser,
-    deleteAdminUser
+    deleteAdminUser,
+    updateClientProfile,
+    fetchClientAppointments,
+    getClientByPhone
   };
 };
