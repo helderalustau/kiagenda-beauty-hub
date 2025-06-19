@@ -44,11 +44,16 @@ const SuperAdminDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log('SuperAdminDashboard - Carregando dados iniciais...');
     fetchAllSalons();
     fetchCategories();
     fetchDashboardStats();
     fetchPlanConfigurations();
   }, []);
+
+  useEffect(() => {
+    console.log('Categorias carregadas:', categories);
+  }, [categories]);
 
   const handleBannerSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -347,29 +352,40 @@ const SuperAdminDashboard = () => {
                         className={!newSalon.name.trim() ? "border-red-300" : ""}
                       />
                     </div>
+                    
                     <div>
                       <Label htmlFor="category">Categoria *</Label>
                       <Select 
                         value={newSalon.category_id} 
-                        onValueChange={(value) => setNewSalon({...newSalon, category_id: value})}
+                        onValueChange={(value) => {
+                          console.log('Categoria selecionada:', value);
+                          setNewSalon({...newSalon, category_id: value});
+                        }}
                       >
                         <SelectTrigger className={!newSalon.category_id ? "border-red-300" : ""}>
                           <SelectValue placeholder="Selecione a categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
+                          {categories.length > 0 ? (
+                            categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="" disabled>
+                              Carregando categorias...
                             </SelectItem>
-                          ))}
+                          )}
                         </SelectContent>
                       </Select>
                       {categories.length === 0 && (
                         <p className="text-sm text-orange-600 mt-1">
-                          Nenhuma categoria encontrada. Verifique o banco de dados.
+                          Carregando categorias... Se o problema persistir, verifique o banco de dados.
                         </p>
                       )}
                     </div>
+                    
                     <div>
                       <Label htmlFor="owner-name">Nome do Responsável *</Label>
                       <Input
@@ -429,14 +445,26 @@ const SuperAdminDashboard = () => {
                   <div className="flex space-x-2 mt-6">
                     <Button 
                       variant="outline" 
-                      onClick={() => setShowCreateDialog(false)}
+                      onClick={() => {
+                        setShowCreateDialog(false);
+                        setNewSalon({
+                          name: '',
+                          owner_name: '',
+                          phone: '',
+                          address: '',
+                          plan: 'bronze',
+                          category_id: ''
+                        });
+                        setBannerFile(null);
+                        setBannerPreview(null);
+                      }}
                       disabled={isSubmitting}
                     >
                       Cancelar
                     </Button>
                     <Button 
                       onClick={handleCreateSalon}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || categories.length === 0}
                       className="min-w-[120px]"
                     >
                       {isSubmitting ? "Criando..." : "Criar Estabelecimento"}
