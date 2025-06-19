@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,9 @@ const AdminDashboard = () => {
     appointments, 
     services, 
     adminUsers, 
-    refreshData, 
+    fetchSalonData,
+    fetchSalonServices,
+    fetchAllAppointments,
     loading,
     updateAppointmentStatus
   } = useSupabaseData();
@@ -28,15 +31,21 @@ const AdminDashboard = () => {
   const [showNotification, setShowNotification] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    // Buscar dados ao carregar
+  const refreshData = async () => {
     const adminData = localStorage.getItem('adminData');
     if (adminData) {
       const admin = JSON.parse(adminData);
       if (admin.salon_id) {
-        refreshData(admin.salon_id);
+        await fetchSalonData(admin.salon_id);
+        await fetchSalonServices(admin.salon_id);
+        await fetchAllAppointments(admin.salon_id);
       }
     }
+  };
+
+  useEffect(() => {
+    // Buscar dados ao carregar
+    refreshData();
   }, []);
 
   // Verificar se a configuração foi concluída
@@ -70,9 +79,7 @@ const AdminDashboard = () => {
         description: "O cliente foi notificado sobre a confirmação."
       });
       // Recarregar dados
-      if (salon) {
-        refreshData(salon.id);
-      }
+      await refreshData();
     }
   };
 
@@ -86,9 +93,7 @@ const AdminDashboard = () => {
         description: "O cliente foi notificado sobre a recusa."
       });
       // Recarregar dados
-      if (salon) {
-        refreshData(salon.id);
-      }
+      await refreshData();
     }
   };
 
@@ -286,21 +291,21 @@ const AdminDashboard = () => {
             </div>
             <WeeklyCalendar 
               appointments={appointments}
-              onRefresh={() => refreshData(salon.id)}
+              onRefresh={refreshData}
             />
           </TabsContent>
 
           <TabsContent value="services" className="space-y-4 sm:space-y-6">
             <ServicesPage 
               services={services}
-              onRefresh={() => refreshData(salon.id)}
+              onRefresh={refreshData}
             />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4 sm:space-y-6">
             <SettingsPage 
               salon={salon}
-              onRefresh={() => refreshData(salon.id)}
+              onRefresh={refreshData}
             />
           </TabsContent>
         </Tabs>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,9 +38,9 @@ const Index = () => {
     const result = await authenticateClient(clientForm.nome, clientForm.senha);
     setLoading(false);
 
-    if (result.success) {
+    if (result.success && result.client) {
       localStorage.setItem('userType', 'client');
-      localStorage.setItem('clientData', JSON.stringify(result.user));
+      localStorage.setItem('clientData', JSON.stringify(result.client));
       toast({
         title: "Sucesso",
         description: "Login realizado com sucesso!"
@@ -70,9 +69,9 @@ const Index = () => {
     const result = await registerClient(clientForm.nome, clientForm.senha, clientForm.telefone, clientForm.email);
     setLoading(false);
 
-    if (result.success) {
+    if (result.success && result.client) {
       localStorage.setItem('userType', 'client');
-      localStorage.setItem('clientData', JSON.stringify(result.user));
+      localStorage.setItem('clientData', JSON.stringify(result.client));
       toast({
         title: "Sucesso",
         description: "Cadastro realizado com sucesso!"
@@ -101,16 +100,16 @@ const Index = () => {
     const result = await authenticateAdmin(adminForm.nome, adminForm.senha);
     setLoading(false);
 
-    if (result.success) {
+    if (result.success && result.admin) {
       localStorage.setItem('userType', 'admin');
-      localStorage.setItem('adminData', JSON.stringify(result.user));
+      localStorage.setItem('adminData', JSON.stringify(result.admin));
       toast({
         title: "Sucesso",
         description: "Login realizado com sucesso!"
       });
 
       // Verificar se é super admin
-      if (result.user.role === 'super_admin') {
+      if (result.admin.role === 'super_admin') {
         window.location.href = '/super-admin-dashboard';
       } else {
         window.location.href = '/admin-dashboard';
@@ -160,13 +159,13 @@ const Index = () => {
         'admin'
       );
 
-      if (!adminResult.success) {
+      if (!adminResult.success || !adminResult.admin) {
         throw new Error(adminResult.message || 'Erro ao criar usuário administrador');
       }
 
       // Salvar dados do admin no localStorage
       localStorage.setItem('userType', 'admin');
-      localStorage.setItem('adminData', JSON.stringify(adminResult.user));
+      localStorage.setItem('adminData', JSON.stringify(adminResult.admin));
       
       toast({
         title: "Sucesso",

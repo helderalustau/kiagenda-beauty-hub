@@ -36,7 +36,7 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
   );
   
   const weeklyRevenue = completedThisWeek.reduce((total, apt) => 
-    total + (apt.services?.price || 0), 0
+    total + (apt.service?.price || 0), 0
   );
 
   // Calcular uso mensal (simulado)
