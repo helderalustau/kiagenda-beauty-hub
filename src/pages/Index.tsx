@@ -5,32 +5,131 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Scissors, Users, Star } from "lucide-react";
+import { Calendar, Scissors, Users } from "lucide-react";
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const [userType, setUserType] = useState<'login' | 'register'>('login');
-  const [clientForm, setClientForm] = useState({ nome: '', telefone: '' });
+  const [clientForm, setClientForm] = useState({ nome: '', senha: '', telefone: '', email: '' });
   const [adminForm, setAdminForm] = useState({ 
-    responsavel: '', 
-    salao: '', 
+    nome: '', 
+    senha: '', 
+    email: '', 
     telefone: '', 
-    endereco: '', 
-    login: '', 
-    senha: '' 
+    salao: '', 
+    endereco: '' 
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleClientLogin = () => {
-    // Simular login - em produção conectaria com backend
-    localStorage.setItem('userType', 'client');
-    localStorage.setItem('clientData', JSON.stringify(clientForm));
-    window.location.href = '/client-dashboard';
+  const { authenticateClient, authenticateAdmin, registerClient } = useSupabaseData();
+  const { toast } = useToast();
+
+  const handleClientLogin = async () => {
+    if (!clientForm.nome || !clientForm.senha) {
+      toast({
+        title: "Erro",
+        description: "Preencha nome e senha",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    const result = await authenticateClient(clientForm.nome, clientForm.senha);
+    setLoading(false);
+
+    if (result.success) {
+      localStorage.setItem('userType', 'client');
+      localStorage.setItem('clientData', JSON.stringify(result.user));
+      toast({
+        title: "Sucesso",
+        description: "Login realizado com sucesso!"
+      });
+      window.location.href = '/client-dashboard';
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleAdminLogin = () => {
-    // Simular login - em produção conectaria com backend
-    localStorage.setItem('userType', 'admin');
-    localStorage.setItem('adminData', JSON.stringify(adminForm));
-    window.location.href = '/admin-dashboard';
+  const handleClientRegister = async () => {
+    if (!clientForm.nome || !clientForm.senha || !clientForm.telefone) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    const result = await registerClient(clientForm.nome, clientForm.senha, clientForm.telefone, clientForm.email);
+    setLoading(false);
+
+    if (result.success) {
+      localStorage.setItem('userType', 'client');
+      localStorage.setItem('clientData', JSON.stringify(result.user));
+      toast({
+        title: "Sucesso",
+        description: "Cadastro realizado com sucesso!"
+      });
+      window.location.href = '/client-dashboard';
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAdminLogin = async () => {
+    if (!adminForm.nome || !adminForm.senha) {
+      toast({
+        title: "Erro",
+        description: "Preencha nome e senha",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    const result = await authenticateAdmin(adminForm.nome, adminForm.senha);
+    setLoading(false);
+
+    if (result.success) {
+      localStorage.setItem('userType', 'admin');
+      localStorage.setItem('adminData', JSON.stringify(result.user));
+      toast({
+        title: "Sucesso",
+        description: "Login realizado com sucesso!"
+      });
+      window.location.href = '/admin-dashboard';
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAdminRegister = () => {
+    if (!adminForm.nome || !adminForm.senha || !adminForm.email || !adminForm.salao) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    localStorage.setItem('tempAdminData', JSON.stringify(adminForm));
+    window.location.href = '/plan-selection';
   };
 
   return (
@@ -55,10 +154,6 @@ const Index = () => {
               <span className="flex items-center space-x-1">
                 <Users className="h-4 w-4" />
                 <span>Salões Parceiros</span>
-              </span>
-              <span className="flex items-center space-x-1">
-                <Star className="h-4 w-4" />
-                <span>Avaliações</span>
               </span>
             </div>
           </div>
@@ -107,35 +202,55 @@ const Index = () => {
                   {userType === 'login' ? (
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="client-phone">Telefone</Label>
-                        <Input
-                          id="client-phone"
-                          type="tel"
-                          placeholder="(11) 99999-9999"
-                          value={clientForm.telefone}
-                          onChange={(e) => setClientForm({...clientForm, telefone: e.target.value})}
-                        />
-                      </div>
-                      <Button 
-                        onClick={handleClientLogin}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                      >
-                        Entrar como Cliente
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="client-name">Nome Completo</Label>
+                        <Label htmlFor="client-name">Nome</Label>
                         <Input
                           id="client-name"
-                          placeholder="Seu nome completo"
+                          placeholder="Seu nome"
                           value={clientForm.nome}
                           onChange={(e) => setClientForm({...clientForm, nome: e.target.value})}
                         />
                       </div>
                       <div>
-                        <Label htmlFor="client-phone-reg">Telefone</Label>
+                        <Label htmlFor="client-password">Senha</Label>
+                        <Input
+                          id="client-password"
+                          type="password"
+                          placeholder="Sua senha"
+                          value={clientForm.senha}
+                          onChange={(e) => setClientForm({...clientForm, senha: e.target.value})}
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleClientLogin}
+                        disabled={loading}
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                      >
+                        {loading ? 'Entrando...' : 'Entrar como Cliente'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="client-name-reg">Nome *</Label>
+                        <Input
+                          id="client-name-reg"
+                          placeholder="Seu nome"
+                          value={clientForm.nome}
+                          onChange={(e) => setClientForm({...clientForm, nome: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="client-password-reg">Senha *</Label>
+                        <Input
+                          id="client-password-reg"
+                          type="password"
+                          placeholder="Escolha uma senha"
+                          value={clientForm.senha}
+                          onChange={(e) => setClientForm({...clientForm, senha: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="client-phone-reg">Telefone *</Label>
                         <Input
                           id="client-phone-reg"
                           type="tel"
@@ -144,11 +259,22 @@ const Index = () => {
                           onChange={(e) => setClientForm({...clientForm, telefone: e.target.value})}
                         />
                       </div>
+                      <div>
+                        <Label htmlFor="client-email-reg">Email</Label>
+                        <Input
+                          id="client-email-reg"
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={clientForm.email}
+                          onChange={(e) => setClientForm({...clientForm, email: e.target.value})}
+                        />
+                      </div>
                       <Button 
-                        onClick={handleClientLogin}
+                        onClick={handleClientRegister}
+                        disabled={loading}
                         className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                       >
-                        Cadastrar como Cliente
+                        {loading ? 'Cadastrando...' : 'Cadastrar como Cliente'}
                       </Button>
                     </div>
                   )}
@@ -158,12 +284,12 @@ const Index = () => {
                   {userType === 'login' ? (
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="admin-login">Login</Label>
+                        <Label htmlFor="admin-name">Nome</Label>
                         <Input
-                          id="admin-login"
-                          placeholder="Seu login"
-                          value={adminForm.login}
-                          onChange={(e) => setAdminForm({...adminForm, login: e.target.value})}
+                          id="admin-name"
+                          placeholder="Seu nome"
+                          value={adminForm.nome}
+                          onChange={(e) => setAdminForm({...adminForm, nome: e.target.value})}
                         />
                       </div>
                       <div>
@@ -178,61 +304,25 @@ const Index = () => {
                       </div>
                       <Button 
                         onClick={handleAdminLogin}
+                        disabled={loading}
                         className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
                       >
-                        Entrar como Administrador
+                        {loading ? 'Entrando...' : 'Entrar como Administrador'}
                       </Button>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="admin-name">Nome do Responsável</Label>
+                        <Label htmlFor="admin-name-reg">Nome *</Label>
                         <Input
-                          id="admin-name"
+                          id="admin-name-reg"
                           placeholder="Nome do responsável"
-                          value={adminForm.responsavel}
-                          onChange={(e) => setAdminForm({...adminForm, responsavel: e.target.value})}
+                          value={adminForm.nome}
+                          onChange={(e) => setAdminForm({...adminForm, nome: e.target.value})}
                         />
                       </div>
                       <div>
-                        <Label htmlFor="salon-name">Nome do Salão</Label>
-                        <Input
-                          id="salon-name"
-                          placeholder="Nome do seu salão"
-                          value={adminForm.salao}
-                          onChange={(e) => setAdminForm({...adminForm, salao: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="admin-phone">Telefone</Label>
-                        <Input
-                          id="admin-phone"
-                          type="tel"
-                          placeholder="(11) 99999-9999"
-                          value={adminForm.telefone}
-                          onChange={(e) => setAdminForm({...adminForm, telefone: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="salon-address">Endereço</Label>
-                        <Input
-                          id="salon-address"
-                          placeholder="Endereço completo do salão"
-                          value={adminForm.endereco}
-                          onChange={(e) => setAdminForm({...adminForm, endereco: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="admin-login-reg">Login</Label>
-                        <Input
-                          id="admin-login-reg"
-                          placeholder="Escolha um login único"
-                          value={adminForm.login}
-                          onChange={(e) => setAdminForm({...adminForm, login: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="admin-password-reg">Senha</Label>
+                        <Label htmlFor="admin-password-reg">Senha *</Label>
                         <Input
                           id="admin-password-reg"
                           type="password"
@@ -241,11 +331,49 @@ const Index = () => {
                           onChange={(e) => setAdminForm({...adminForm, senha: e.target.value})}
                         />
                       </div>
+                      <div>
+                        <Label htmlFor="admin-email-reg">Email *</Label>
+                        <Input
+                          id="admin-email-reg"
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={adminForm.email}
+                          onChange={(e) => setAdminForm({...adminForm, email: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="admin-phone-reg">Telefone</Label>
+                        <Input
+                          id="admin-phone-reg"
+                          type="tel"
+                          placeholder="(11) 99999-9999"
+                          value={adminForm.telefone}
+                          onChange={(e) => setAdminForm({...adminForm, telefone: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="salon-name-reg">Nome do Salão *</Label>
+                        <Input
+                          id="salon-name-reg"
+                          placeholder="Nome do seu salão"
+                          value={adminForm.salao}
+                          onChange={(e) => setAdminForm({...adminForm, salao: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="salon-address-reg">Endereço *</Label>
+                        <Input
+                          id="salon-address-reg"
+                          placeholder="Endereço completo do salão"
+                          value={adminForm.endereco}
+                          onChange={(e) => setAdminForm({...adminForm, endereco: e.target.value})}
+                        />
+                      </div>
                       <Button 
-                        onClick={() => window.location.href = '/plan-selection'}
+                        onClick={handleAdminRegister}
                         className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
                       >
-                        Cadastrar Salão
+                        Continuar para Seleção de Plano
                       </Button>
                     </div>
                   )}

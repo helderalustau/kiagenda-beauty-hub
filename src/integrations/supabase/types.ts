@@ -9,6 +9,53 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_auth: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          password: string
+          phone: string | null
+          role: string
+          salon_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          password: string
+          phone?: string | null
+          role?: string
+          salon_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          password?: string
+          phone?: string | null
+          role?: string
+          salon_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_auth_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           appointment_date: string
@@ -80,6 +127,36 @@ export type Database = {
           },
         ]
       }
+      client_auth: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          password: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          password: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          password?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           created_at: string
@@ -112,6 +189,7 @@ export type Database = {
           address: string
           created_at: string
           id: string
+          max_attendants: number | null
           name: string
           notification_sound: string | null
           owner_name: string
@@ -123,6 +201,7 @@ export type Database = {
           address: string
           created_at?: string
           id?: string
+          max_attendants?: number | null
           name: string
           notification_sound?: string | null
           owner_name: string
@@ -134,6 +213,7 @@ export type Database = {
           address?: string
           created_at?: string
           id?: string
+          max_attendants?: number | null
           name?: string
           notification_sound?: string | null
           owner_name?: string
