@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,7 +82,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
 
     // Validar estabelecimento
     if (!formData.salon_id) {
-      newErrors.salon_id = 'Estabelecimento é obrigatório';
+      newErrors.salon_id = 'Tipo de Negócio é obrigatório';
     }
 
     setErrors(newErrors);
@@ -333,11 +332,11 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
               </div>
             </div>
 
-            {/* Estabelecimento */}
+            {/* Tipo de Negócio */}
             <div className="space-y-2">
               <Label htmlFor="salon" className="flex items-center gap-2 text-sm font-medium">
                 <Building className="h-4 w-4 text-blue-600" />
-                Estabelecimento *
+                Tipo de Negócio *
               </Label>
               <Select
                 value={formData.salon_id}
@@ -345,9 +344,9 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
                 disabled={submitting}
               >
                 <SelectTrigger className={`transition-all ${errors.salon_id ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}>
-                  <SelectValue placeholder="Selecione seu estabelecimento" />
+                  <SelectValue placeholder="Selecione seu tipo de negócio" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                   {salons.map((salon) => {
                     const salonInfo = getSalonInfo(salon.id);
                     return (
@@ -375,7 +374,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
             <div className="space-y-2">
               <Label htmlFor="role" className="flex items-center gap-2 text-sm font-medium">
                 <Shield className="h-4 w-4 text-blue-600" />
-                Função/Cargo no Estabelecimento
+                Função/Cargo no Negócio
               </Label>
               <Select
                 value={formData.role}
@@ -385,7 +384,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
                 <SelectTrigger className="focus:border-blue-500">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                   <SelectItem value="admin">
                     <div className="flex flex-col">
                       <span className="font-medium">Administrador</span>
@@ -465,7 +464,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
               Informações da Conta
             </h4>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Sua conta será vinculada ao estabelecimento selecionado</li>
+              <li>• Sua conta será vinculada ao tipo de negócio selecionado</li>
               <li>• Você receberá acesso completo ao painel administrativo</li>
               <li>• A data de criação será registrada automaticamente</li>
               <li>• Todos os dados são protegidos e criptografados</li>
