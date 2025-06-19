@@ -77,13 +77,13 @@ export const useServiceData = () => {
     }
   };
 
-  // Create services from presets
+  // Create services from presets - Corrigido para usar presetId
   const createServicesFromPresets = async (salonId: string, selectedServices: any[]) => {
     try {
       setLoading(true);
       
-      const servicesToCreate = selectedServices.map(({ presetId, price }) => {
-        const preset = presetServices.find(p => p.id === presetId);
+      const servicesToCreate = selectedServices.map(({ preset_service_id, price }) => {
+        const preset = presetServices.find(p => p.id === preset_service_id);
         if (!preset) return null;
         
         return {

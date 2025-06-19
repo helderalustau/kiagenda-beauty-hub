@@ -14,7 +14,7 @@ const BasicInfoStep = ({ salon }: BasicInfoStepProps) => {
           Bem-vindo, {salon?.owner_name}!
         </h3>
         <p className="text-gray-600 mb-6">
-          Vamos configurar o seu estabelecimento "{salon?.name}" passo a passo.
+          Vamos configurar o seu estabelecimento passo a passo.
           Isso levará apenas alguns minutos.
         </p>
         <div className="bg-blue-50 p-4 rounded-lg">

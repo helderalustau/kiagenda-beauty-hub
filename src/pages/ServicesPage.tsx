@@ -30,10 +30,10 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!salon) {
+    if (!salon?.id) {
       toast({
         title: "Erro",
-        description: "Estabelecimento não encontrado",
+        description: "Estabelecimento não encontrado. Recarregue a página.",
         variant: "destructive"
       });
       return;
@@ -53,8 +53,11 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
       name: formData.name,
       description: formData.description || undefined,
       price: parseFloat(formData.price),
-      duration_minutes: parseInt(formData.duration_minutes)
+      duration_minutes: parseInt(formData.duration_minutes),
+      active: true
     };
+
+    console.log('Criando serviço com dados:', serviceData);
 
     const result = await createService(serviceData);
     
@@ -101,6 +104,11 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
     setEditingService(null);
     setFormData({ name: '', description: '', price: '', duration_minutes: '' });
   };
+
+  // Debug: Mostrar ID do salon no console
+  useEffect(() => {
+    console.log('ServicesPage - Salon atual:', salon);
+  }, [salon]);
 
   return (
     <div className="space-y-4 sm:space-y-6">

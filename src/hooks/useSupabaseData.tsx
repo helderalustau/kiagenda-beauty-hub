@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from './useAuthData';
@@ -161,6 +162,29 @@ export const useSupabaseData = () => {
   const clientData = useClientData();
   const dashboardData = useDashboardData();
 
+  // Fetch admin users for current salon
+  const fetchAdminUsers = async (salonId: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('admin_auth')
+        .select('*')
+        .eq('salon_id', salonId)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching admin users:', error);
+        return;
+      }
+
+      setAdminUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching admin users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Additional functions needed by components
   const refreshData = async () => {
     await salonData.fetchAllSalons();
@@ -227,6 +251,10 @@ export const useSupabaseData = () => {
     fetchDashboardStats: dashboardData.fetchDashboardStats,
     fetchPlanConfigurations: dashboardData.fetchPlanConfigurations,
     updatePlanConfiguration: dashboardData.updatePlanConfiguration,
+
+    // Admin users methods
+    fetchAdminUsers,
+    setAdminUsers,
     
     // Utility methods
     refreshData

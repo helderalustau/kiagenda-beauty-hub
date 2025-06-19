@@ -32,6 +32,9 @@ const HoursStep = ({ formData, updateFormData }: HoursStepProps) => {
     return names[day] || day;
   };
 
+  // Ordem correta dos dias da semana
+  const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
   return (
     <div className="space-y-4">
       <div className="text-center py-4 mb-6">
@@ -43,58 +46,61 @@ const HoursStep = ({ formData, updateFormData }: HoursStepProps) => {
         </p>
       </div>
 
-      {Object.entries(formData.opening_hours).map(([day, hours]: [string, any]) => (
-        <div key={day} className="flex items-center space-x-4 p-3 border rounded-lg">
-          <div className="w-20">
-            <span className="font-medium capitalize">
-              {getDayName(day)}
-            </span>
+      {dayOrder.map((day) => {
+        const hours = formData.opening_hours[day];
+        return (
+          <div key={day} className="flex items-center space-x-4 p-3 border rounded-lg">
+            <div className="w-20">
+              <span className="font-medium">
+                {getDayName(day)}
+              </span>
+            </div>
+            <Checkbox
+              checked={!hours.closed}
+              onCheckedChange={(checked) => {
+                updateFormData({
+                  opening_hours: {
+                    ...formData.opening_hours,
+                    [day]: { ...hours, closed: !checked }
+                  }
+                });
+              }}
+            />
+            <span className="text-sm">Aberto</span>
+            {!hours.closed && (
+              <>
+                <Input
+                  type="time"
+                  value={hours.open}
+                  onChange={(e) => {
+                    updateFormData({
+                      opening_hours: {
+                        ...formData.opening_hours,
+                        [day]: { ...hours, open: e.target.value }
+                      }
+                    });
+                  }}
+                  className="w-32"
+                />
+                <span>às</span>
+                <Input
+                  type="time"
+                  value={hours.close}
+                  onChange={(e) => {
+                    updateFormData({
+                      opening_hours: {
+                        ...formData.opening_hours,
+                        [day]: { ...hours, close: e.target.value }
+                      }
+                    });
+                  }}
+                  className="w-32"
+                />
+              </>
+            )}
           </div>
-          <Checkbox
-            checked={!hours.closed}
-            onCheckedChange={(checked) => {
-              updateFormData({
-                opening_hours: {
-                  ...formData.opening_hours,
-                  [day]: { ...hours, closed: !checked }
-                }
-              });
-            }}
-          />
-          <span className="text-sm">Aberto</span>
-          {!hours.closed && (
-            <>
-              <Input
-                type="time"
-                value={hours.open}
-                onChange={(e) => {
-                  updateFormData({
-                    opening_hours: {
-                      ...formData.opening_hours,
-                      [day]: { ...hours, open: e.target.value }
-                    }
-                  });
-                }}
-                className="w-32"
-              />
-              <span>às</span>
-              <Input
-                type="time"
-                value={hours.close}
-                onChange={(e) => {
-                  updateFormData({
-                    opening_hours: {
-                      ...formData.opening_hours,
-                      [day]: { ...hours, close: e.target.value }
-                    }
-                  });
-                }}
-                className="w-32"
-              />
-            </>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
