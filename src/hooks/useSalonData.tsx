@@ -71,10 +71,18 @@ export const useSalonData = () => {
     }
   };
 
-  // Fetch salon data
+  // Fetch salon data com cache otimizado
   const fetchSalonData = async (salonId: string) => {
     try {
+      // Verificar se já temos os dados em cache
+      if (salon && salon.id === salonId) {
+        console.log('Usando dados do salão em cache');
+        return;
+      }
+
       setLoading(true);
+      console.log('Buscando dados do estabelecimento:', salonId);
+      
       const { data, error } = await supabase
         .from('salons')
         .select('*')
@@ -86,6 +94,7 @@ export const useSalonData = () => {
         return;
       }
 
+      console.log('Dados do estabelecimento carregados:', data);
       setSalon(data as Salon);
     } catch (error) {
       console.error('Error fetching salon data:', error);

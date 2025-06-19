@@ -73,27 +73,40 @@ export const useSetupHandlers = ({
         break;
     }
     
-    // Update salon data for the current step
+    // Update salon data for the current step - apenas se necessário
     if (salon && currentStep > 0) {
       console.log('Atualizando dados do estabelecimento...');
-      const updateResult = await updateSalon({
-        id: salon.id,
-        name: formData.salon_name,
-        category_id: formData.category_id,
-        street_number: formData.street_number,
-        city: formData.city,
-        state: formData.state,
-        contact_phone: formData.contact_phone,
-        opening_hours: formData.opening_hours
-      });
       
-      if (!updateResult.success) {
-        toast({
-          title: "Erro",
-          description: "Erro ao salvar dados: " + updateResult.message,
-          variant: "destructive"
+      // Verificar se há mudanças antes de atualizar
+      const hasChanges = (
+        salon.name !== formData.salon_name ||
+        salon.category_id !== formData.category_id ||
+        salon.street_number !== formData.street_number ||
+        salon.city !== formData.city ||
+        salon.state !== formData.state ||
+        salon.contact_phone !== formData.contact_phone
+      );
+      
+      if (hasChanges) {
+        const updateResult = await updateSalon({
+          id: salon.id,
+          name: formData.salon_name,
+          category_id: formData.category_id,
+          street_number: formData.street_number,
+          city: formData.city,
+          state: formData.state,
+          contact_phone: formData.contact_phone,
+          opening_hours: formData.opening_hours
         });
-        return;
+        
+        if (!updateResult.success) {
+          toast({
+            title: "Erro",
+            description: "Erro ao salvar dados: " + updateResult.message,
+            variant: "destructive"
+          });
+          return;
+        }
       }
     }
     

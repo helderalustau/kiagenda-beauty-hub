@@ -20,6 +20,7 @@ export const useSalonSetup = () => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [formData, setFormData] = useState({
     salon_name: '',
     category_id: '',
@@ -44,8 +45,10 @@ export const useSalonSetup = () => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  // Initialize data on mount
+  // Initialize data on mount - executar apenas uma vez
   useEffect(() => {
+    if (dataLoaded) return; // Evitar múltiplas execuções
+
     console.log('SalonSetup - Carregando dados iniciais...');
     
     const adminData = localStorage.getItem('adminData');
@@ -63,7 +66,23 @@ export const useSalonSetup = () => {
         
         if (salonId) {
           console.log('Buscando dados do estabelecimento...');
-          fetchSalonData(salonId);
+          
+          // Carregar todos os dados em paralelo para acelerar
+          Promise.all([
+            fetchSalonData(salonId),
+            fetchCategories(),
+            fetchPresetServices()
+          ]).then(() => {
+            setDataLoaded(true);
+            console.log('Todos os dados carregados com sucesso');
+          }).catch(error => {
+            console.error('Erro ao carregar dados:', error);
+            toast({
+              title: "Erro",
+              description: "Erro ao carregar dados. Tente novamente.",
+              variant: "destructive"
+            });
+          });
         } else {
           console.error('Salon ID não encontrado!');
           toast({
@@ -97,14 +116,11 @@ export const useSalonSetup = () => {
         window.location.href = '/';
       }, 2000);
     }
-    
-    fetchCategories();
-    fetchPresetServices();
-  }, [fetchSalonData, fetchCategories, fetchPresetServices, toast]);
+  }, [dataLoaded]); // Dependência apenas do dataLoaded
 
-  // Update form data when salon is loaded
+  // Update form data when salon is loaded - executar apenas quando salon mudar
   useEffect(() => {
-    if (salon) {
+    if (salon && dataLoaded) {
       console.log('Estabelecimento carregado:', salon);
       setFormData(prev => ({
         ...prev,
@@ -117,13 +133,13 @@ export const useSalonSetup = () => {
         opening_hours: salon.opening_hours || prev.opening_hours
       }));
     }
-  }, [salon]);
+  }, [salon, dataLoaded]);
 
   return {
     salon,
     categories,
     presetServices,
-    loading,
+    loading: loading || !dataLoaded,
     currentStep,
     setCurrentStep,
     isFinishing,
