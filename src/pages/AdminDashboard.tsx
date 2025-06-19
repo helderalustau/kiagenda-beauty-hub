@@ -167,6 +167,7 @@ const AdminDashboard = () => {
             <DashboardStats 
               appointments={appointments}
               services={services}
+              salon={salon}
               adminUsers={adminUsers}
             />
           </TabsContent>
@@ -194,7 +195,10 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <SettingsPage />
+            <SettingsPage 
+              salon={salon}
+              onRefresh={() => refreshData(salon.id)}
+            />
           </TabsContent>
         </Tabs>
       </div>

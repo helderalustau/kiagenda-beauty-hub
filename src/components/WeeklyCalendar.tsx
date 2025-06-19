@@ -9,11 +9,12 @@ import { Appointment } from '@/hooks/useSupabaseData';
 
 interface WeeklyCalendarProps {
   appointments: Appointment[];
-  onDateSelect: (date: Date) => void;
-  selectedDate: Date;
+  onDateSelect?: (date: Date) => void;
+  selectedDate?: Date;
+  onRefresh?: () => void;
 }
 
-const WeeklyCalendar = ({ appointments, onDateSelect, selectedDate }: WeeklyCalendarProps) => {
+const WeeklyCalendar = ({ appointments, onDateSelect, selectedDate, onRefresh }: WeeklyCalendarProps) => {
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
@@ -59,7 +60,7 @@ const WeeklyCalendar = ({ appointments, onDateSelect, selectedDate }: WeeklyCale
         <div className="grid grid-cols-7 gap-2">
           {weekDays.map((day, index) => {
             const hasApts = hasAppointments(day);
-            const isSelected = isSameDay(day, selectedDate);
+            const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
             const isToday = isSameDay(day, new Date());
             
             return (
@@ -72,7 +73,7 @@ const WeeklyCalendar = ({ appointments, onDateSelect, selectedDate }: WeeklyCale
                       ? 'border-green-300 bg-green-50 hover:border-green-400' 
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 } ${isToday ? 'ring-2 ring-blue-200' : ''}`}
-                onClick={() => onDateSelect(day)}
+                onClick={() => onDateSelect?.(day)}
               >
                 <div className="text-xs text-gray-500 mb-1">
                   {format(day, 'EEE', { locale: ptBR })}

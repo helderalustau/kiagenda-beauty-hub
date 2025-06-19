@@ -24,7 +24,7 @@ function App() {
           <Route path="/salon-selection" element={<SalonSelection />} />
           <Route path="/plan-selection" element={<PlanSelection />} />
           <Route path="/services" element={<ServicesPage services={[]} onRefresh={() => {}} />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<SettingsPage salon={null} onRefresh={() => {}} />} />
           <Route path="/salon-setup" element={<SalonSetup />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

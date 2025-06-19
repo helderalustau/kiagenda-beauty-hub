@@ -9,16 +9,17 @@ import {
   TrendingUp,
   Crown
 } from "lucide-react";
-import { Appointment, Service, Salon } from '@/hooks/useSupabaseData';
+import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData';
 import { isSameDay, isThisWeek } from 'date-fns';
 
 interface DashboardStatsProps {
   appointments: Appointment[];
   services: Service[];
   salon: Salon | null;
+  adminUsers: AdminUser[];
 }
 
-const DashboardStats = ({ appointments, services, salon }: DashboardStatsProps) => {
+const DashboardStats = ({ appointments, services, salon, adminUsers }: DashboardStatsProps) => {
   const today = new Date();
   
   // Calcular estatísticas
