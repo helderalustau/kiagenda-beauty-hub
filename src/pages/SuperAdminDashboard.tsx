@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,6 +76,10 @@ const SuperAdminDashboard = () => {
     fetchDashboardStats();
   };
 
+  const handleBackToHome = () => {
+    window.location.href = '/';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
@@ -97,11 +100,11 @@ const SuperAdminDashboard = () => {
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
-                onClick={() => window.location.href = '/'}
+                onClick={handleBackToHome}
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Voltar</span>
+                <span>Voltar ao Login</span>
               </Button>
               <div className="flex items-center space-x-2">
                 <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-2 rounded-lg">

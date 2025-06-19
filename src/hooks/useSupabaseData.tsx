@@ -258,6 +258,67 @@ export const useSupabaseData = () => {
     }
   };
 
+  const fetchSalonDetails = async (salonId: string) => {
+    try {
+      // Buscar dados do salão
+      const { data: salonData } = await supabase
+        .from('salons')
+        .select('*')
+        .eq('id', salonId)
+        .single();
+
+      if (salonData) {
+        setSalon({
+          ...salonData,
+          plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+        });
+      }
+
+      // Buscar total de clientes únicos que fizeram agendamentos neste salão
+      const { data: clientsData } = await supabase
+        .from('appointments')
+        .select('client_id')
+        .eq('salon_id', salonId);
+
+      const uniqueClients = clientsData ? new Set(clientsData.map(a => a.client_id)).size : 0;
+
+      // Buscar faturamento do mês atual
+      const currentMonth = new Date();
+      const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const lastDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+
+      const { data: monthlyAppointments } = await supabase
+        .from('appointments')
+        .select(`
+          services(price)
+        `)
+        .eq('salon_id', salonId)
+        .eq('status', 'completed')
+        .gte('appointment_date', firstDayOfMonth.toISOString().split('T')[0])
+        .lte('appointment_date', lastDayOfMonth.toISOString().split('T')[0]);
+
+      const monthlyRevenue = monthlyAppointments?.reduce((total, apt) => {
+        return total + (apt.services?.price || 0);
+      }, 0) || 0;
+
+      return {
+        salon: salonData ? {
+          ...salonData,
+          plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+        } : null,
+        totalClients: uniqueClients,
+        monthlyRevenue: Number(monthlyRevenue)
+      };
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do salão:', error);
+      return {
+        salon: null,
+        totalClients: 0,
+        monthlyRevenue: 0
+      };
+    }
+  };
+
   const authenticateClient = async (name: string, password: string) => {
     try {
       const { data, error } = await supabase
@@ -507,6 +568,7 @@ export const useSupabaseData = () => {
     createAppointment,
     fetchAllSalons,
     fetchDashboardStats,
-    refreshData: fetchData
+    refreshData: fetchData,
+    fetchSalonDetails
   };
 };
