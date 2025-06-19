@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
+import ClientBooking from "./pages/ClientBooking";
 import SalonSelection from "./pages/SalonSelection";
 import PlanSelection from "./pages/PlanSelection";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/client-dashboard" element={<ClientDashboard />} />
+            <Route path="/client-booking" element={<ClientBooking />} />
             <Route path="/salon-selection" element={<SalonSelection />} />
             <Route path="/plan-selection" element={<PlanSelection />} />
             <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />

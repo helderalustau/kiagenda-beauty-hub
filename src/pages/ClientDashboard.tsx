@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, Scissors, LogOut, User, Store } from "lucide-react";
-import { useSupabaseData, Client, Salon, Appointment, Service } from '@/hooks/useSupabaseData';
+import { Calendar, Clock, MapPin, User, Store, Plus } from "lucide-react";
+import { useSupabaseData, Client, Appointment } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import ClientProfile from '@/components/ClientProfile';
 import SalonList from '@/components/SalonList';
-import BookingModal from '@/components/BookingModal';
+import ClientHeader from '@/components/ClientHeader';
 
 const ClientDashboard = () => {
   const { 
@@ -17,16 +18,12 @@ const ClientDashboard = () => {
     fetchAllSalons, 
     fetchCategories,
     getClientByPhone,
-    fetchClientAppointments,
-    fetchSalonServices
+    fetchClientAppointments
   } = useSupabaseData();
   const { toast } = useToast();
   
   const [client, setClient] = useState<Client | null>(null);
   const [clientAppointments, setClientAppointments] = useState<Appointment[]>([]);
-  const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
-  const [salonServices, setSalonServices] = useState<Service[]>([]);
-  const [showBookingModal, setShowBookingModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,25 +39,15 @@ const ClientDashboard = () => {
         const parsedClient = JSON.parse(clientData);
         console.log('Dados do cliente do localStorage:', parsedClient);
         
-        // Buscar dados completos do cliente usando o nome (que na verdade é o identificador)
         const clientResult = await getClientByPhone(parsedClient.name);
         if (clientResult.success) {
           setClient(clientResult.client);
           console.log('Cliente encontrado:', clientResult.client);
           
-          // Buscar agendamentos do cliente
           const appointmentsResult = await fetchClientAppointments(clientResult.client.id);
           if (appointmentsResult.success) {
             setClientAppointments(appointmentsResult.data);
             console.log('Agendamentos encontrados:', appointmentsResult.data);
-          } else {
-            console.error('Cliente não encontrado:', clientResult.message);
-            toast({
-              title: "Erro",
-              description: "Dados do cliente não encontrados. Faça login novamente.",
-              variant: "destructive"
-            });
-            handleLogout();
           }
         } else {
           console.error('Cliente não encontrado:', clientResult.message);
@@ -86,29 +73,6 @@ const ClientDashboard = () => {
     window.location.href = '/';
   };
 
-  const handleBookService = async (salon: Salon) => {
-    console.log('Iniciando agendamento para o salão:', salon);
-    setSelectedSalon(salon);
-    
-    // Buscar serviços do salão
-    const services = await fetchSalonServices(salon.id);
-    console.log('Serviços encontrados:', services);
-    setSalonServices(services);
-    
-    setShowBookingModal(true);
-  };
-
-  const handleBookingSuccess = () => {
-    setShowBookingModal(false);
-    setSelectedSalon(null);
-    setSalonServices([]);
-    loadClientData(); // Recarregar appointments
-    toast({
-      title: "Sucesso",
-      description: "Agendamento realizado com sucesso!"
-    });
-  };
-
   const handleClientUpdate = (updatedClient: Client) => {
     setClient(updatedClient);
   };
@@ -130,7 +94,7 @@ const ClientDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando...</p>
@@ -141,7 +105,7 @@ const ClientDashboard = () => {
 
   if (!client) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="text-center py-8">
             <p className="text-gray-600 mb-4">Erro ao carregar dados do cliente</p>
@@ -153,67 +117,53 @@ const ClientDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-2 rounded-lg">
-                <Scissors className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
-                  Área do Cliente
-                </h1>
-                <p className="text-sm text-gray-600">Olá, {client.name}!</p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sair</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <ClientHeader 
+        client={client} 
+        onUpdate={handleClientUpdate} 
+        onLogout={handleLogout} 
+      />
 
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="establishments" className="space-y-6">
+        {/* Quick Action */}
+        <div className="mb-8">
+          <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Pronto para agendar?</h2>
+                  <p className="text-blue-100">
+                    Encontre o estabelecimento perfeito e agende seu próximo serviço
+                  </p>
+                </div>
+                <Button 
+                  size="lg" 
+                  className="bg-white text-blue-600 hover:bg-gray-100"
+                  onClick={() => window.location.href = '/client-booking'}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Novo Agendamento
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="appointments" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="establishments" className="flex items-center space-x-2">
-              <Store className="h-4 w-4" />
-              <span>Estabelecimentos</span>
-            </TabsTrigger>
             <TabsTrigger value="appointments" className="flex items-center space-x-2">
               <Calendar className="h-4 w-4" />
               <span>Meus Agendamentos</span>
+            </TabsTrigger>
+            <TabsTrigger value="establishments" className="flex items-center space-x-2">
+              <Store className="h-4 w-4" />
+              <span>Estabelecimentos</span>
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center space-x-2">
               <User className="h-4 w-4" />
               <span>Meu Perfil</span>
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="establishments" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Estabelecimentos Disponíveis
-              </h2>
-              <p className="text-gray-600">
-                Encontre e agende serviços nos melhores estabelecimentos da sua região
-              </p>
-            </div>
-            
-            <SalonList 
-              salons={salons.filter(salon => salon.is_open)} 
-              categories={categories}
-              onBookService={handleBookService}
-            />
-          </TabsContent>
 
           <TabsContent value="appointments" className="space-y-6">
             <div>
@@ -275,13 +225,34 @@ const ClientDashboard = () => {
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                       Nenhum agendamento encontrado
                     </h3>
-                    <p className="text-gray-600">
-                      Você ainda não possui agendamentos. Navegue pela aba "Estabelecimentos" para fazer seu primeiro agendamento.
+                    <p className="text-gray-600 mb-4">
+                      Você ainda não possui agendamentos.
                     </p>
+                    <Button onClick={() => window.location.href = '/client-booking'}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Fazer Primeiro Agendamento
+                    </Button>
                   </CardContent>
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="establishments" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Estabelecimentos Disponíveis
+              </h2>
+              <p className="text-gray-600">
+                Encontre e conheça os estabelecimentos da sua região
+              </p>
+            </div>
+            
+            <SalonList 
+              salons={salons.filter(salon => salon.is_open)} 
+              categories={categories}
+              onBookService={() => window.location.href = '/client-booking'}
+            />
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-6">
@@ -298,26 +269,6 @@ const ClientDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Modal de Agendamento */}
-      {showBookingModal && selectedSalon && client && (
-        <BookingModal
-          isOpen={showBookingModal}
-          onClose={() => {
-            setShowBookingModal(false);
-            setSelectedSalon(null);
-            setSalonServices([]);
-          }}
-          salon={selectedSalon}
-          services={salonServices}
-          clientData={{
-            id: client.id,
-            name: client.name,
-            email: client.email || '',
-            phone: client.phone
-          }}
-        />
-      )}
     </div>
   );
 };
