@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,24 +79,25 @@ const PlanSelection = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
-      {/* Header */}
+      {/* Header - Responsivo */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-2 rounded-lg">
-                <Crown className="h-6 w-6 text-white" />
+              <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-1.5 sm:p-2 rounded-lg">
+                <Crown className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
+                <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
                   Escolha seu Plano
                 </h1>
-                <p className="text-sm text-gray-600">Selecione o plano ideal para seu salão</p>
+                <p className="text-xs sm:text-sm text-gray-600">Selecione o plano ideal para seu salão</p>
               </div>
             </div>
             <Button 
               variant="outline" 
               onClick={() => window.location.href = '/'}
+              size="sm"
             >
               Voltar
             </Button>
@@ -103,23 +105,23 @@ const PlanSelection = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
             Planos que crescem com seu negócio
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base px-4">
             Escolha o plano perfeito para as necessidades do seu salão. 
             Você pode fazer upgrade a qualquer momento.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => (
             <Card 
               key={plan.id} 
               className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
-                plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''
+                plan.popular ? 'ring-2 ring-blue-500 md:scale-105' : ''
               }`}
             >
               {plan.popular && (
@@ -128,33 +130,33 @@ const PlanSelection = () => {
                 </div>
               )}
               
-              <CardHeader className={`bg-gradient-to-r ${plan.color} text-white ${plan.popular ? 'pt-12' : ''}`}>
+              <CardHeader className={`bg-gradient-to-r ${plan.color} text-white ${plan.popular ? 'pt-12' : 'pt-6'} p-4 sm:p-8`}>
                 <div className="text-center">
-                  <Crown className="h-12 w-12 mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                  <div className="text-3xl font-bold mt-2">{plan.price}</div>
+                  <Crown className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4" />
+                  <CardTitle className="text-xl sm:text-2xl font-bold">{plan.name}</CardTitle>
+                  <div className="text-2xl sm:text-3xl font-bold mt-2">{plan.price}</div>
                 </div>
               </CardHeader>
 
-              <CardContent className="p-8">
-                <ul className="space-y-4 mb-8">
+              <CardContent className="p-4 sm:p-8">
+                <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-center space-x-3">
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700">{feature}</span>
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm sm:text-base">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                <div className="mb-6">
-                  <p className="text-sm text-gray-500 mb-2">Limitações:</p>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                <div className="mb-4 sm:mb-6">
+                  <p className="text-xs sm:text-sm text-gray-500 mb-2">Limitações:</p>
+                  <p className="text-xs sm:text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                     {plan.limitations}
                   </p>
                 </div>
 
                 <Button 
-                  className="w-full"
+                  className="w-full text-sm sm:text-base"
                   size="lg"
                   onClick={() => handlePlanSelect(plan.id)}
                   variant={plan.popular ? "default" : "outline"}
@@ -166,53 +168,53 @@ const PlanSelection = () => {
           ))}
         </div>
 
-        {/* Comparação de Recursos */}
-        <div className="mt-16">
+        {/* Comparação de Recursos - Responsiva */}
+        <div className="mt-12 sm:mt-16">
           <Card>
             <CardHeader>
-              <CardTitle className="text-center">Comparação Detalhada</CardTitle>
+              <CardTitle className="text-center text-lg sm:text-xl">Comparação Detalhada</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-4">Recursos</th>
-                      <th className="text-center p-4">Bronze</th>
-                      <th className="text-center p-4">Prata</th>
-                      <th className="text-center p-4">Gold</th>
+                      <th className="text-left p-3 sm:p-4 font-medium">Recursos</th>
+                      <th className="text-center p-3 sm:p-4 font-medium">Bronze</th>
+                      <th className="text-center p-3 sm:p-4 font-medium">Prata</th>
+                      <th className="text-center p-3 sm:p-4 font-medium">Gold</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="text-xs sm:text-sm">
                     <tr className="border-b">
-                      <td className="p-4">Serviços cadastrados</td>
-                      <td className="text-center p-4">4</td>
-                      <td className="text-center p-4">10</td>
-                      <td className="text-center p-4">Ilimitado</td>
+                      <td className="p-3 sm:p-4">Serviços cadastrados</td>
+                      <td className="text-center p-3 sm:p-4">4</td>
+                      <td className="text-center p-3 sm:p-4">10</td>
+                      <td className="text-center p-3 sm:p-4">Ilimitado</td>
                     </tr>
                     <tr className="border-b">
-                      <td className="p-4">Atendentes</td>
-                      <td className="text-center p-4">1</td>
-                      <td className="text-center p-4">2</td>
-                      <td className="text-center p-4">50</td>
+                      <td className="p-3 sm:p-4">Atendentes</td>
+                      <td className="text-center p-3 sm:p-4">1</td>
+                      <td className="text-center p-3 sm:p-4">2</td>
+                      <td className="text-center p-3 sm:p-4">50</td>
                     </tr>
                     <tr className="border-b">
-                      <td className="p-4">Atendimentos mensais</td>
-                      <td className="text-center p-4">50</td>
-                      <td className="text-center p-4">300</td>
-                      <td className="text-center p-4">Ilimitado</td>
+                      <td className="p-3 sm:p-4">Atendimentos mensais</td>
+                      <td className="text-center p-3 sm:p-4">50</td>
+                      <td className="text-center p-3 sm:p-4">300</td>
+                      <td className="text-center p-3 sm:p-4">Ilimitado</td>
                     </tr>
                     <tr className="border-b">
-                      <td className="p-4">Relatórios</td>
-                      <td className="text-center p-4">Básico</td>
-                      <td className="text-center p-4">Detalhado</td>
-                      <td className="text-center p-4">Avançado</td>
+                      <td className="p-3 sm:p-4">Relatórios</td>
+                      <td className="text-center p-3 sm:p-4">Básico</td>
+                      <td className="text-center p-3 sm:p-4">Detalhado</td>
+                      <td className="text-center p-3 sm:p-4">Avançado</td>
                     </tr>
                     <tr>
-                      <td className="p-4">Suporte</td>
-                      <td className="text-center p-4">Básico</td>
-                      <td className="text-center p-4">Prioritário</td>
-                      <td className="text-center p-4">Premium 24/7</td>
+                      <td className="p-3 sm:p-4">Suporte</td>
+                      <td className="text-center p-3 sm:p-4">Básico</td>
+                      <td className="text-center p-3 sm:p-4">Prioritário</td>
+                      <td className="text-center p-3 sm:p-4">Premium 24/7</td>
                     </tr>
                   </tbody>
                 </table>
@@ -224,7 +226,7 @@ const PlanSelection = () => {
 
       {/* Dialog de Confirmação */}
       <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-        <DialogContent>
+        <DialogContent className="mx-4 max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmar Plano</DialogTitle>
             <DialogDescription>

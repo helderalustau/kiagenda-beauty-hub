@@ -103,13 +103,13 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gerenciar Serviços</h1>
-          <p className="text-gray-600">Cadastre e gerencie os serviços do seu salão</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Gerenciar Serviços</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Cadastre e gerencie os serviços do seu salão</p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
+        <Button onClick={() => setShowAddDialog(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Novo Serviço
         </Button>
@@ -117,39 +117,39 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
 
       {services.length === 0 ? (
         <Card>
-          <CardContent className="text-center py-8">
-            <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <CardContent className="text-center py-8 sm:py-12">
+            <Scissors className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-700 mb-2">
               Nenhum serviço cadastrado
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-gray-500 mb-4 text-sm sm:text-base">
               Comece adicionando os serviços que você oferece
             </p>
-            <Button onClick={() => setShowAddDialog(true)}>
+            <Button onClick={() => setShowAddDialog(true)} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Primeiro Serviço
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {services.map((service) => (
             <Card key={service.id}>
-              <CardHeader>
+              <CardHeader className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center space-x-2">
-                    <Scissors className="h-5 w-5 text-blue-600" />
-                    <span>{service.name}</span>
+                  <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                    <Scissors className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                    <span className="break-words">{service.name}</span>
                   </CardTitle>
-                  <Badge variant={service.active ? "default" : "secondary"}>
+                  <Badge variant={service.active ? "default" : "secondary"} className="text-xs">
                     {service.active ? 'Ativo' : 'Inativo'}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6 pt-0">
                 <div className="space-y-3">
                   {service.description && (
-                    <p className="text-gray-600 text-sm">{service.description}</p>
+                    <p className="text-gray-600 text-sm break-words">{service.description}</p>
                   )}
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-bold text-green-600">
@@ -159,11 +159,12 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
                       {service.duration_minutes} min
                     </span>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(service)}
+                      className="w-full sm:w-auto"
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Editar
@@ -172,7 +173,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(service.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 w-full sm:w-auto"
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Excluir
@@ -185,9 +186,9 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
         </div>
       )}
 
-      {/* Dialog para Adicionar/Editar Serviço */}
+      {/* Dialog para Adicionar/Editar Serviço - Responsivo */}
       <Dialog open={showAddDialog} onOpenChange={handleCloseDialog}>
-        <DialogContent>
+        <DialogContent className="mx-4 max-w-md sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editingService ? 'Editar Serviço' : 'Novo Serviço'}
@@ -212,7 +213,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
                 rows={3}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Preço (R$) *</label>
                 <Input
@@ -235,7 +236,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
                 />
               </div>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1">
                 Cancelar
               </Button>

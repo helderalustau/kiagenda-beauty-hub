@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
@@ -169,27 +168,27 @@ const SalonSetup = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Configuração do Estabelecimento
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-sm sm:text-base px-4">
               Complete as informações do seu estabelecimento para começar a usar o sistema
             </p>
           </div>
 
           <ProgressIndicator currentStep={currentStep} />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Icon className="h-6 w-6" />
+          <Card className="mt-4 sm:mt-6">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
+                <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>{setupSteps[currentStep].title}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
               {renderCurrentStep()}
 
               <NavigationButtons
