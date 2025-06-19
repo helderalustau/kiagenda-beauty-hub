@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Salon } from './useSupabaseData';
@@ -22,13 +21,13 @@ export const useSalonData = () => {
         return { success: false, message: 'Telefone é obrigatório' };
       }
 
-      // First, check if we have any categories, if not create a default one
-      const { data: categories, error: categoriesError } = await supabase
+      // First, ensure we have a default category
+      let { data: categories, error: categoriesError } = await supabase
         .from('categories')
         .select('id')
         .limit(1);
 
-      let categoryId = salonData.category_id;
+      let defaultCategoryId = null;
 
       if (categoriesError || !categories || categories.length === 0) {
         console.log('No categories found, creating default category...');
@@ -48,20 +47,19 @@ export const useSalonData = () => {
           return { success: false, message: 'Erro ao criar categoria padrão' };
         }
 
-        categoryId = newCategory.id;
+        defaultCategoryId = newCategory.id;
         console.log('Default category created:', newCategory.id);
-      } else if (salonData.category_id === '00000000-0000-0000-0000-000000000000') {
-        // If using the temporary UUID, use the first available category
-        categoryId = categories[0].id;
+      } else {
+        defaultCategoryId = categories[0].id;
       }
 
-      // Clean the data before inserting
+      // Clean the data before inserting - use default category for temporary salon
       const cleanSalonData = {
         name: salonData.name.trim(),
         owner_name: salonData.owner_name.trim(),
         phone: salonData.phone.trim(),
         address: salonData.address,
-        category_id: categoryId,
+        category_id: defaultCategoryId, // Use default category temporarily
         plan: salonData.plan || 'bronze',
         is_open: false,
         setup_completed: false,

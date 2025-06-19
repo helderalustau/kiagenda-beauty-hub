@@ -21,6 +21,12 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
     plan: 'bronze' as 'bronze' | 'prata' | 'gold'
   });
 
+  const generateSequentialSalonName = () => {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `EST-${timestamp}-${random}`;
+  };
+
   const handleSubmit = async () => {
     // Validate required fields
     if (!newSalon.owner_name.trim()) {
@@ -41,9 +47,9 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
       return;
     }
 
-    // Create salon - the category will be handled automatically by the backend
+    // Create salon with sequential name
     const salonData = {
-      name: 'Estabelecimento Temporário',
+      name: generateSequentialSalonName(),
       ...newSalon,
       address: 'Endereço será preenchido na configuração'
     };
@@ -80,7 +86,7 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
         <DialogHeader>
           <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
           <DialogDescription>
-            Preencha os dados básicos do responsável. O nome e categoria do estabelecimento serão definidos na configuração inicial.
+            Preencha os dados básicos do responsável. O estabelecimento receberá um código sequencial temporário e o responsável configurará as informações completas posteriormente.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -115,6 +121,13 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
               <option value="prata">Prata</option>
               <option value="gold">Gold</option>
             </select>
+          </div>
+
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <p className="text-sm text-blue-700">
+              <strong>Nota:</strong> O estabelecimento receberá um código sequencial temporário (ex: EST-123456789-001). 
+              O responsável poderá configurar o nome definitivo e categoria durante a configuração inicial.
+            </p>
           </div>
         </div>
         <div className="flex space-x-2 mt-6">

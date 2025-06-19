@@ -9,6 +9,7 @@ import AdminCreationDateInfo from './admin-signup/AdminCreationDateInfo';
 import AdminFormFields from './admin-signup/AdminFormFields';
 import AdminFormActions from './admin-signup/AdminFormActions';
 import AdminInfoSection from './admin-signup/AdminInfoSection';
+import { useSalonData } from '@/hooks/useSalonData';
 
 interface AdminSignupFormProps {
   onSuccess?: (adminData: any) => void;
@@ -18,6 +19,7 @@ interface AdminSignupFormProps {
 const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
   const { toast } = useToast();
   const { registerAdmin, loading } = useAuthData();
+  const { createSalon } = useSalonData();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -48,6 +50,12 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
     }
   };
 
+  const generateSequentialSalonName = () => {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `EST-${timestamp}-${random}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -67,8 +75,27 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
     try {
       console.log('Criando conta de administrador com dados:', formData);
 
+      // Primeiro, criar um estabelecimento temporário para o administrador
+      const temporarySalonData = {
+        name: generateSequentialSalonName(),
+        owner_name: formData.name.trim(),
+        phone: formData.phone.replace(/\D/g, ''),
+        address: 'Endereço será preenchido na configuração',
+        plan: 'bronze'
+      };
+
+      console.log('Criando estabelecimento temporário:', temporarySalonData);
+      const salonResult = await createSalon(temporarySalonData);
+
+      if (!salonResult.success) {
+        throw new Error('Erro ao criar estabelecimento: ' + salonResult.message);
+      }
+
+      console.log('Estabelecimento criado com sucesso:', salonResult.salon);
+
+      // Agora criar o administrador vinculado ao estabelecimento
       const result = await registerAdmin(
-        null, // salon_id removido
+        salonResult.salon.id, // salon_id do estabelecimento criado
         formData.name.trim(),
         formData.password,
         formData.email.trim(),
@@ -79,8 +106,15 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
       if (result.success) {
         toast({
           title: "Conta Criada com Sucesso!",
-          description: "Sua conta de administrador foi criada. Você pode fazer login agora."
+          description: "Sua conta foi criada. Você será redirecionado para configurar seu estabelecimento."
         });
+        
+        // Armazenar dados do admin e salon para a configuração
+        localStorage.setItem('adminData', JSON.stringify({
+          ...result.admin,
+          salon_id: salonResult.salon.id
+        }));
+        localStorage.setItem('selectedSalonId', salonResult.salon.id);
         
         // Limpar formulário
         setFormData({
@@ -91,6 +125,11 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
           role: 'admin',
           avatar_url: ''
         });
+        
+        // Redirecionar para configuração do estabelecimento após sucesso
+        setTimeout(() => {
+          window.location.href = '/salon-setup';
+        }, 2000);
         
         onSuccess?.(result.admin);
       } else {
