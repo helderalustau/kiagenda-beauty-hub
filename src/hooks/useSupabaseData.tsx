@@ -19,6 +19,9 @@ export interface Salon {
   is_open?: boolean;
   setup_completed?: boolean;
   banner_image_url?: string;
+  max_attendants?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Service {
@@ -49,6 +52,9 @@ export interface Appointment {
   notes?: string;
   client?: Client;
   service?: Service;
+  deleted_at?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AdminUser {
@@ -69,11 +75,32 @@ export interface PresetService {
   default_duration_minutes: number;
 }
 
+export interface PlanConfiguration {
+  id: string;
+  plan_type: string;
+  name: string;
+  price: number;
+  description?: string;
+}
+
 export interface DashboardStats {
   totalAppointments: number;
   pendingAppointments: number;
   completedAppointments: number;
   totalRevenue: number;
+  totalSalons?: number;
+  totalServices?: number;
+  salonsByPlan?: {
+    bronze: number;
+    prata: number;
+    gold: number;
+  };
+  expectedRevenue?: {
+    total: number;
+    bronze: number;
+    prata: number;
+    gold: number;
+  };
 }
 
 export const useSupabaseData = () => {
@@ -98,7 +125,6 @@ export const useSupabaseData = () => {
     try {
       setLoading(true);
       
-      // Set up a temporary session for authentication check
       const { data, error } = await supabase
         .from('admin_auth')
         .select('*')
@@ -112,7 +138,6 @@ export const useSupabaseData = () => {
       }
 
       if (data) {
-        // Store admin session info
         localStorage.setItem('adminAuth', JSON.stringify({
           id: data.id,
           name: data.name,
@@ -167,7 +192,7 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Fetch salon data (public access)
+  // Fetch salon data
   const fetchSalonData = async (salonId: string) => {
     try {
       setLoading(true);
@@ -182,7 +207,7 @@ export const useSupabaseData = () => {
         return;
       }
 
-      setSalon(data);
+      setSalon(data as Salon);
     } catch (error) {
       console.error('Error fetching salon data:', error);
     } finally {
@@ -190,7 +215,7 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Fetch all salons (public access)
+  // Fetch all salons
   const fetchAllSalons = async () => {
     try {
       setLoading(true);
@@ -204,7 +229,7 @@ export const useSupabaseData = () => {
         return;
       }
 
-      setSalons(data || []);
+      setSalons(data as Salon[] || []);
     } catch (error) {
       console.error('Error fetching salons:', error);
     } finally {
@@ -212,7 +237,7 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Fetch salon services (public access for active services)
+  // Fetch salon services
   const fetchSalonServices = async (salonId: string) => {
     try {
       setLoading(true);
@@ -236,7 +261,7 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Fetch preset services (public access)
+  // Fetch preset services
   const fetchPresetServices = async () => {
     try {
       setLoading(true);
@@ -258,12 +283,11 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Create appointment (public access)
+  // Create appointment
   const createAppointment = async (appointmentData: any) => {
     try {
       setLoading(true);
       
-      // First create the client if it doesn't exist
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .upsert({
@@ -282,7 +306,6 @@ export const useSupabaseData = () => {
         return { success: false, message: 'Erro ao registrar cliente' };
       }
 
-      // Then create the appointment
       const { data, error } = await supabase
         .from('appointments')
         .insert({
@@ -311,7 +334,7 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Complete salon setup (requires admin authentication)
+  // Complete salon setup
   const completeSalonSetup = async (salonId: string, setupData: any) => {
     try {
       setLoading(true);
@@ -332,7 +355,7 @@ export const useSupabaseData = () => {
         return { success: false, message: 'Erro ao finalizar configuração' };
       }
 
-      setSalon(data);
+      setSalon(data as Salon);
       return { success: true, salon: data };
     } catch (error) {
       console.error('Error completing salon setup:', error);
@@ -342,7 +365,7 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Create services from presets (requires admin authentication)
+  // Create services from presets
   const createServicesFromPresets = async (salonId: string, selectedServices: any[]) => {
     try {
       setLoading(true);
@@ -380,6 +403,226 @@ export const useSupabaseData = () => {
     }
   };
 
+  // Additional functions needed by components
+  const refreshData = async () => {
+    // Refresh all data
+    await fetchAllSalons();
+    await fetchPresetServices();
+  };
+
+  const updateAppointmentStatus = async (appointmentId: string, status: string, notes?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({ status, notes })
+        .eq('id', appointmentId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating appointment:', error);
+        return { success: false, message: 'Erro ao atualizar agendamento' };
+      }
+
+      return { success: true, appointment: data };
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      return { success: false, message: 'Erro ao atualizar agendamento' };
+    }
+  };
+
+  const createService = async (serviceData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .insert(serviceData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating service:', error);
+        return { success: false, message: 'Erro ao criar serviço' };
+      }
+
+      return { success: true, service: data };
+    } catch (error) {
+      console.error('Error creating service:', error);
+      return { success: false, message: 'Erro ao criar serviço' };
+    }
+  };
+
+  const toggleSalonStatus = async (salonId: string, isOpen: boolean) => {
+    try {
+      const { data, error } = await supabase
+        .from('salons')
+        .update({ is_open: isOpen })
+        .eq('id', salonId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error toggling salon status:', error);
+        return { success: false, message: 'Erro ao alterar status' };
+      }
+
+      return { success: true, salon: data };
+    } catch (error) {
+      console.error('Error toggling salon status:', error);
+      return { success: false, message: 'Erro ao alterar status' };
+    }
+  };
+
+  const uploadSalonBanner = async (file: File, salonId: string) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${salonId}-${Math.random()}.${fileExt}`;
+      const filePath = `salon-banners/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('salon-assets')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        return { success: false, message: 'Erro ao fazer upload da imagem' };
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('salon-assets')
+        .getPublicUrl(filePath);
+
+      const { data, error } = await supabase
+        .from('salons')
+        .update({ banner_image_url: publicUrl })
+        .eq('id', salonId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating salon banner:', error);
+        return { success: false, message: 'Erro ao atualizar banner' };
+      }
+
+      return { success: true, salon: data };
+    } catch (error) {
+      console.error('Error uploading salon banner:', error);
+      return { success: false, message: 'Erro ao fazer upload' };
+    }
+  };
+
+  const updateSalon = async (salonData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('salons')
+        .update(salonData)
+        .eq('id', salonData.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating salon:', error);
+        return { success: false, message: 'Erro ao atualizar estabelecimento' };
+      }
+
+      return { success: true, salon: data };
+    } catch (error) {
+      console.error('Error updating salon:', error);
+      return { success: false, message: 'Erro ao atualizar estabelecimento' };
+    }
+  };
+
+  const deleteSalon = async (salonId: string) => {
+    try {
+      const { error } = await supabase
+        .from('salons')
+        .delete()
+        .eq('id', salonId);
+
+      if (error) {
+        console.error('Error deleting salon:', error);
+        return { success: false, message: 'Erro ao excluir estabelecimento' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting salon:', error);
+      return { success: false, message: 'Erro ao excluir estabelecimento' };
+    }
+  };
+
+  const fetchAllAppointments = async (salonId: string, includeDeleted: boolean = false) => {
+    try {
+      let query = supabase
+        .from('appointments')
+        .select(`
+          *,
+          clients (*),
+          services (*)
+        `)
+        .eq('salon_id', salonId);
+
+      if (includeDeleted) {
+        query = query.not('deleted_at', 'is', null);
+      } else {
+        query = query.is('deleted_at', null);
+      }
+
+      const { data, error } = await query.order('appointment_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        return { success: false, message: 'Erro ao buscar agendamentos' };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      return { success: false, message: 'Erro ao buscar agendamentos' };
+    }
+  };
+
+  const restoreAppointment = async (appointmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({ deleted_at: null })
+        .eq('id', appointmentId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error restoring appointment:', error);
+        return { success: false, message: 'Erro ao restaurar agendamento' };
+      }
+
+      return { success: true, appointment: data };
+    } catch (error) {
+      console.error('Error restoring appointment:', error);
+      return { success: false, message: 'Erro ao restaurar agendamento' };
+    }
+  };
+
+  const updatePlanConfiguration = async (planData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('plan_configurations')
+        .update(planData)
+        .eq('id', planData.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating plan configuration:', error);
+        return { success: false, message: 'Erro ao atualizar configuração do plano' };
+      }
+
+      return { success: true, plan: data };
+    } catch (error) {
+      console.error('Error updating plan configuration:', error);
+      return { success: false, message: 'Erro ao atualizar configuração do plano' };
+    }
+  };
+
   return {
     salon,
     salons,
@@ -397,6 +640,16 @@ export const useSupabaseData = () => {
     authenticateClient,
     createAppointment,
     completeSalonSetup,
-    createServicesFromPresets
+    createServicesFromPresets,
+    refreshData,
+    updateAppointmentStatus,
+    createService,
+    toggleSalonStatus,
+    uploadSalonBanner,
+    updateSalon,
+    deleteSalon,
+    fetchAllAppointments,
+    restoreAppointment,
+    updatePlanConfiguration
   };
 };

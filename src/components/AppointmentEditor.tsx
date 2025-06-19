@@ -100,8 +100,8 @@ const AppointmentEditor = ({
         <div className="space-y-4">
           {mode === 'edit' && appointment ? (
             <div className="bg-gray-50 p-3 rounded-lg">
-              <h4 className="font-medium">{appointment.clients?.name}</h4>
-              <p className="text-sm text-gray-600">{appointment.services?.name}</p>
+              <h4 className="font-medium">{appointment.client?.name}</h4>
+              <p className="text-sm text-gray-600">{appointment.service?.name}</p>
               <p className="text-sm text-gray-600">
                 {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')} às {appointment.appointment_time}
               </p>
