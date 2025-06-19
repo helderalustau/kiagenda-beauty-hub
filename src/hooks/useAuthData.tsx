@@ -109,30 +109,27 @@ export const useAuthData = () => {
     }
   };
 
-  // Register admin - CORRIGIDO
+  // Register admin - Atualizado com setDateadm
   const registerAdmin = async (salonId: string, name: string, password: string, email: string, phone?: string, role: string = 'admin') => {
     try {
       setLoading(true);
       
-      console.log('Registering admin with data:', {
+      const adminData = {
         salon_id: salonId,
-        name,
+        name: name.trim(),
         password,
-        email,
-        phone,
-        role
-      });
+        email: email.trim(),
+        phone: phone?.replace(/\D/g, '') || null,
+        role,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('Registering admin with data:', adminData);
       
       const { data, error } = await supabase
         .from('admin_auth')
-        .insert({
-          salon_id: salonId,
-          name,
-          password,
-          email,
-          phone,
-          role
-        })
+        .insert(adminData)
         .select()
         .single();
 
@@ -153,9 +150,14 @@ export const useAuthData = () => {
 
   const updateAdminUser = async (adminData: any) => {
     try {
+      const updatedData = {
+        ...adminData,
+        updated_at: new Date().toISOString()
+      };
+      
       const { data, error } = await supabase
         .from('admin_auth')
-        .update(adminData)
+        .update(updatedData)
         .eq('id', adminData.id)
         .select()
         .single();

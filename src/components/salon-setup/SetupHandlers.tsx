@@ -1,16 +1,16 @@
 
-import { setupSteps } from './SetupSteps';
+import { useToast } from "@/components/ui/use-toast";
 
 interface SetupHandlersProps {
   currentStep: number;
   setCurrentStep: (step: number) => void;
   formData: any;
   salon: any;
-  updateSalon: any;
+  updateSalon: (data: any) => Promise<any>;
   toast: any;
-  completeSalonSetup: any;
-  createServicesFromPresets: any;
-  selectedServices: any;
+  completeSalonSetup: (salonId: string, data: any) => Promise<any>;
+  createServicesFromPresets: (salonId: string, services: any) => Promise<any>;
+  selectedServices: { [key: string]: { selected: boolean; price: number } };
   setIsFinishing: (finishing: boolean) => void;
 }
 
@@ -27,46 +27,77 @@ export const useSetupHandlers = ({
   setIsFinishing
 }: SetupHandlersProps) => {
   const handleNext = async () => {
-    if (currentStep === 1) {
-      if (!formData.salon_name?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Nome do estabelecimento é obrigatório",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (!formData.category_id) {
-        toast({
-          title: "Erro",
-          description: "Categoria é obrigatória",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (salon) {
-        const updateResult = await updateSalon({
-          id: salon.id,
-          name: formData.salon_name,
-          category_id: formData.category_id
-        });
-
-        if (!updateResult.success) {
+    console.log('Navegando para próximo passo...');
+    
+    // Validate current step
+    switch (currentStep) {
+      case 1: // Basic Salon Info
+        if (!formData.salon_name.trim()) {
           toast({
             title: "Erro",
-            description: "Erro ao atualizar informações do estabelecimento",
+            description: "Nome do estabelecimento é obrigatório",
             variant: "destructive"
           });
           return;
         }
+        if (!formData.category_id) {
+          toast({
+            title: "Erro",
+            description: "Categoria é obrigatória",
+            variant: "destructive"
+          });
+          return;
+        }
+        break;
+        
+      case 2: // Address
+        if (!formData.street_number.trim() || !formData.city.trim() || !formData.state.trim()) {
+          toast({
+            title: "Erro",
+            description: "Todos os campos de endereço são obrigatórios",
+            variant: "destructive"
+          });
+          return;
+        }
+        break;
+        
+      case 3: // Contact
+        if (!formData.contact_phone.trim()) {
+          toast({
+            title: "Erro",
+            description: "Telefone de contato é obrigatório",
+            variant: "destructive"
+          });
+          return;
+        }
+        break;
+    }
+    
+    // Update salon data for the current step
+    if (salon && currentStep > 0) {
+      console.log('Atualizando dados do estabelecimento...');
+      const updateResult = await updateSalon({
+        id: salon.id,
+        name: formData.salon_name,
+        category_id: formData.category_id,
+        street_number: formData.street_number,
+        city: formData.city,
+        state: formData.state,
+        contact_phone: formData.contact_phone,
+        opening_hours: formData.opening_hours
+      });
+      
+      if (!updateResult.success) {
+        toast({
+          title: "Erro",
+          description: "Erro ao salvar dados: " + updateResult.message,
+          variant: "destructive"
+        });
+        return;
       }
     }
-
-    if (currentStep < setupSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
+    
+    setCurrentStep(currentStep + 1);
   };
 
   const handlePrevious = () => {
@@ -77,105 +108,74 @@ export const useSetupHandlers = ({
 
   const handleFinishSetup = async () => {
     if (!salon) {
-      console.error('Salon não encontrado no state!');
       toast({
         title: "Erro",
-        description: "Dados do estabelecimento não encontrados. Por favor, tente novamente.",
+        description: "Dados do estabelecimento não encontrados",
         variant: "destructive"
       });
       return;
     }
 
+    setIsFinishing(true);
+
     try {
-      setIsFinishing(true);
-      console.log('Iniciando finalização da configuração...');
-
-      if (!formData.street_number?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Nome da Rua e Número é obrigatório",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!formData.city?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Cidade é obrigatória",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!formData.state?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Estado é obrigatório",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!formData.contact_phone?.trim()) {
-        toast({
-          title: "Erro",
-          description: "Telefone para contato é obrigatório",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const setupData = {
+      console.log('Finalizando configuração...');
+      
+      // First, complete the salon setup
+      const setupResult = await completeSalonSetup(salon.id, {
+        name: formData.salon_name,
+        category_id: formData.category_id,
         street_number: formData.street_number,
         city: formData.city,
         state: formData.state,
         contact_phone: formData.contact_phone,
-        opening_hours: formData.opening_hours,
-        address: `${formData.street_number}, ${formData.city}, ${formData.state}`
-      };
+        address: `${formData.street_number}, ${formData.city}, ${formData.state}`,
+        opening_hours: formData.opening_hours
+      });
 
-      const setupResult = await completeSalonSetup(salon.id, setupData);
-      
       if (!setupResult.success) {
-        toast({
-          title: "Erro",
-          description: setupResult.message || "Erro ao finalizar configuração",
-          variant: "destructive"
-        });
-        return;
+        throw new Error(setupResult.message || 'Erro ao finalizar configuração');
       }
 
-      const servicesToCreate = Object.entries(selectedServices)
-        .filter(([_, data]) => data.selected && data.price > 0)
-        .map(([presetId, data]) => ({ presetId, price: data.price }));
+      // Then create services from selected presets
+      const selectedServicesList = Object.entries(selectedServices)
+        .filter(([_, serviceData]) => {
+          const service = serviceData as { selected: boolean; price: number };
+          return service.selected;
+        })
+        .map(([serviceId, serviceData]) => {
+          const service = serviceData as { selected: boolean; price: number };
+          return {
+            preset_service_id: serviceId,
+            price: service.price
+          };
+        });
 
-      if (servicesToCreate.length > 0) {
-        const servicesResult = await createServicesFromPresets(salon.id, servicesToCreate);
+      if (selectedServicesList.length > 0) {
+        console.log('Criando serviços...', selectedServicesList);
+        const servicesResult = await createServicesFromPresets(salon.id, selectedServicesList);
         
         if (!servicesResult.success) {
-          toast({
-            title: "Aviso",
-            description: "Configuração salva, mas houve erro ao criar alguns serviços",
-            variant: "destructive"
-          });
+          console.warn('Erro ao criar serviços:', servicesResult.message);
+          // Don't fail the entire process if services creation fails
         }
       }
 
       toast({
-        title: "Sucesso",
+        title: "Sucesso!",
         description: "Configuração do estabelecimento finalizada com sucesso!"
       });
 
+      // Redirect to admin dashboard after a short delay
       setTimeout(() => {
         window.location.href = '/admin-dashboard';
-      }, 1000);
+      }, 2000);
 
     } catch (error) {
       console.error('Erro ao finalizar configuração:', error);
       toast({
         title: "Erro",
-        description: "Erro inesperado ao finalizar configuração",
+        description: error instanceof Error ? error.message : "Erro ao finalizar configuração",
         variant: "destructive"
       });
     } finally {
