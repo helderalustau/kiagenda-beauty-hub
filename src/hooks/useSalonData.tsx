@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Salon } from './useSupabaseData';
@@ -8,26 +7,74 @@ export const useSalonData = () => {
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Create salon
+  // Create salon with improved error handling
   const createSalon = async (salonData: any) => {
     try {
       setLoading(true);
+      console.log('Creating salon with data:', salonData);
+      
+      // Validate required fields
+      if (!salonData.name?.trim()) {
+        return { success: false, message: 'Nome do estabelecimento é obrigatório' };
+      }
+      if (!salonData.owner_name?.trim()) {
+        return { success: false, message: 'Nome do responsável é obrigatório' };
+      }
+      if (!salonData.phone?.trim()) {
+        return { success: false, message: 'Telefone é obrigatório' };
+      }
+      if (!salonData.address?.trim()) {
+        return { success: false, message: 'Endereço é obrigatório' };
+      }
+      if (!salonData.category_id?.trim()) {
+        return { success: false, message: 'Categoria é obrigatória' };
+      }
+
+      // Clean the data before inserting
+      const cleanSalonData = {
+        name: salonData.name.trim(),
+        owner_name: salonData.owner_name.trim(),
+        phone: salonData.phone.trim(),
+        address: salonData.address.trim(),
+        category_id: salonData.category_id,
+        plan: salonData.plan || 'bronze',
+        is_open: false,
+        setup_completed: false,
+        max_attendants: 1
+      };
+
+      console.log('Clean salon data:', cleanSalonData);
       
       const { data, error } = await supabase
         .from('salons')
-        .insert(salonData)
+        .insert(cleanSalonData)
         .select()
         .single();
 
       if (error) {
-        console.error('Error creating salon:', error);
-        return { success: false, message: 'Erro ao criar estabelecimento' };
+        console.error('Detailed Supabase error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+        
+        // Return more specific error messages
+        if (error.code === '23505') {
+          return { success: false, message: 'Já existe um estabelecimento com estes dados' };
+        } else if (error.code === '23502') {
+          return { success: false, message: 'Campos obrigatórios não preenchidos' };
+        } else if (error.code === '42501') {
+          return { success: false, message: 'Erro de permissão. Verifique as configurações do banco' };
+        } else {
+          return { success: false, message: `Erro ao criar estabelecimento: ${error.message}` };
+        }
       }
 
+      console.log('Salon created successfully:', data);
       return { success: true, salon: data };
     } catch (error) {
-      console.error('Error creating salon:', error);
-      return { success: false, message: 'Erro ao criar estabelecimento' };
+      console.error('Unexpected error creating salon:', error);
+      return { success: false, message: 'Erro inesperado ao criar estabelecimento' };
     } finally {
       setLoading(false);
     }
@@ -108,22 +155,40 @@ export const useSalonData = () => {
 
   const uploadSalonBanner = async (file: File, salonId: string) => {
     try {
+      console.log('Starting banner upload for salon:', salonId);
+      
+      // Ensure the bucket exists first
+      const { data: buckets, error: bucketListError } = await supabase.storage.listBuckets();
+      if (bucketListError) {
+        console.error('Error listing buckets:', bucketListError);
+      } else {
+        console.log('Available buckets:', buckets);
+        const salonAssetsBucket = buckets?.find(bucket => bucket.name === 'salon-assets');
+        if (!salonAssetsBucket) {
+          console.warn('salon-assets bucket not found, upload may fail');
+        }
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${salonId}-${Math.random()}.${fileExt}`;
       const filePath = `salon-banners/${fileName}`;
+
+      console.log('Uploading file to path:', filePath);
 
       const { error: uploadError } = await supabase.storage
         .from('salon-assets')
         .upload(filePath, file);
 
       if (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        return { success: false, message: 'Erro ao fazer upload da imagem' };
+        console.error('Upload error details:', uploadError);
+        return { success: false, message: `Erro ao fazer upload da imagem: ${uploadError.message}` };
       }
 
       const { data: { publicUrl } } = supabase.storage
         .from('salon-assets')
         .getPublicUrl(filePath);
+
+      console.log('Generated public URL:', publicUrl);
 
       const { data, error } = await supabase
         .from('salons')
@@ -137,10 +202,11 @@ export const useSalonData = () => {
         return { success: false, message: 'Erro ao atualizar banner' };
       }
 
+      console.log('Banner updated successfully');
       return { success: true, salon: data };
     } catch (error) {
-      console.error('Error uploading salon banner:', error);
-      return { success: false, message: 'Erro ao fazer upload' };
+      console.error('Unexpected error uploading salon banner:', error);
+      return { success: false, message: 'Erro inesperado ao fazer upload' };
     }
   };
 

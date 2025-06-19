@@ -41,6 +41,7 @@ const SuperAdminDashboard = () => {
   });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchAllSalons();
@@ -79,56 +80,104 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  const validateForm = () => {
+    const errors = [];
+    
+    if (!newSalon.name.trim()) {
+      errors.push('Nome do estabelecimento é obrigatório');
+    }
+    if (!newSalon.owner_name.trim()) {
+      errors.push('Nome do responsável é obrigatório');
+    }
+    if (!newSalon.phone.trim()) {
+      errors.push('Telefone é obrigatório');
+    }
+    if (!newSalon.address.trim()) {
+      errors.push('Endereço é obrigatório');
+    }
+    if (!newSalon.category_id) {
+      errors.push('Categoria é obrigatória');
+    }
+
+    return errors;
+  };
+
   const handleCreateSalon = async () => {
-    if (!newSalon.name || !newSalon.owner_name || !newSalon.phone || !newSalon.address || !newSalon.category_id) {
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
       toast({
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
+        title: "Erro de Validação",
+        description: validationErrors.join(', '),
         variant: "destructive"
       });
       return;
     }
 
-    const result = await createSalon(newSalon);
-    
-    if (result.success && result.salon) {
-      // Upload do banner se foi selecionado
-      if (bannerFile) {
-        const uploadResult = await uploadSalonBanner(bannerFile, result.salon.id);
-        if (!uploadResult.success) {
-          toast({
-            title: "Aviso",
-            description: "Estabelecimento criado, mas houve erro no upload do banner",
-            variant: "destructive"
-          });
-        }
-      }
+    setIsSubmitting(true);
+    console.log('Starting salon creation process...');
 
-      toast({
-        title: "Sucesso",
-        description: "Estabelecimento criado com sucesso!"
-      });
+    try {
+      const result = await createSalon(newSalon);
+      console.log('Create salon result:', result);
       
-      setShowCreateDialog(false);
-      setNewSalon({
-        name: '',
-        owner_name: '',
-        phone: '',
-        address: '',
-        plan: 'bronze',
-        category_id: ''
-      });
-      setBannerFile(null);
-      setBannerPreview(null);
-      
-      fetchAllSalons();
-      fetchDashboardStats();
-    } else {
+      if (result.success && result.salon) {
+        console.log('Salon created successfully, ID:', result.salon.id);
+        
+        // Upload do banner se foi selecionado
+        if (bannerFile) {
+          console.log('Uploading banner file...');
+          const uploadResult = await uploadSalonBanner(bannerFile, result.salon.id);
+          console.log('Banner upload result:', uploadResult);
+          
+          if (!uploadResult.success) {
+            toast({
+              title: "Aviso",
+              description: `Estabelecimento criado, mas houve erro no upload do banner: ${uploadResult.message}`,
+              variant: "destructive"
+            });
+          } else {
+            console.log('Banner uploaded successfully');
+          }
+        }
+
+        toast({
+          title: "Sucesso",
+          description: "Estabelecimento criado com sucesso!"
+        });
+        
+        // Reset form and close dialog
+        setShowCreateDialog(false);
+        setNewSalon({
+          name: '',
+          owner_name: '',
+          phone: '',
+          address: '',
+          plan: 'bronze',
+          category_id: ''
+        });
+        setBannerFile(null);
+        setBannerPreview(null);
+        
+        // Refresh data
+        fetchAllSalons();
+        fetchDashboardStats();
+      } else {
+        console.error('Failed to create salon:', result.message);
+        toast({
+          title: "Erro",
+          description: result.message || "Erro desconhecido ao criar estabelecimento",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected error in handleCreateSalon:', error);
       toast({
         title: "Erro",
-        description: result.message,
+        description: "Erro inesperado ao criar estabelecimento",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -167,7 +216,7 @@ const SuperAdminDashboard = () => {
     window.location.href = '/';
   };
 
-  if (loading) {
+  if (loading && !salons.length) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
@@ -284,7 +333,7 @@ const SuperAdminDashboard = () => {
                   <DialogHeader>
                     <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
                     <DialogDescription>
-                      Preencha os dados do novo estabelecimento
+                      Preencha os dados do novo estabelecimento. Todos os campos marcados com * são obrigatórios.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
@@ -295,12 +344,16 @@ const SuperAdminDashboard = () => {
                         value={newSalon.name}
                         onChange={(e) => setNewSalon({...newSalon, name: e.target.value})}
                         placeholder="Nome do salão"
+                        className={!newSalon.name.trim() ? "border-red-300" : ""}
                       />
                     </div>
                     <div>
                       <Label htmlFor="category">Categoria *</Label>
-                      <Select value={newSalon.category_id} onValueChange={(value) => setNewSalon({...newSalon, category_id: value})}>
-                        <SelectTrigger>
+                      <Select 
+                        value={newSalon.category_id} 
+                        onValueChange={(value) => setNewSalon({...newSalon, category_id: value})}
+                      >
+                        <SelectTrigger className={!newSalon.category_id ? "border-red-300" : ""}>
                           <SelectValue placeholder="Selecione a categoria" />
                         </SelectTrigger>
                         <SelectContent>
@@ -311,6 +364,11 @@ const SuperAdminDashboard = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {categories.length === 0 && (
+                        <p className="text-sm text-orange-600 mt-1">
+                          Nenhuma categoria encontrada. Verifique o banco de dados.
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="owner-name">Nome do Responsável *</Label>
@@ -319,6 +377,7 @@ const SuperAdminDashboard = () => {
                         value={newSalon.owner_name}
                         onChange={(e) => setNewSalon({...newSalon, owner_name: e.target.value})}
                         placeholder="Nome do proprietário"
+                        className={!newSalon.owner_name.trim() ? "border-red-300" : ""}
                       />
                     </div>
                     <div>
@@ -328,6 +387,7 @@ const SuperAdminDashboard = () => {
                         value={newSalon.phone}
                         onChange={(e) => setNewSalon({...newSalon, phone: e.target.value})}
                         placeholder="(11) 99999-9999"
+                        className={!newSalon.phone.trim() ? "border-red-300" : ""}
                       />
                     </div>
                     <div>
@@ -337,6 +397,7 @@ const SuperAdminDashboard = () => {
                         value={newSalon.address}
                         onChange={(e) => setNewSalon({...newSalon, address: e.target.value})}
                         placeholder="Endereço completo"
+                        className={!newSalon.address.trim() ? "border-red-300" : ""}
                       />
                     </div>
                     
@@ -351,7 +412,7 @@ const SuperAdminDashboard = () => {
                         className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Opcional. Se não fornecido, será usado um banner genérico.
+                        Opcional. Máximo 5MB. Se não fornecido, será usado um banner genérico.
                       </p>
                       
                       {bannerPreview && (
@@ -366,11 +427,19 @@ const SuperAdminDashboard = () => {
                     </div>
                   </div>
                   <div className="flex space-x-2 mt-6">
-                    <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowCreateDialog(false)}
+                      disabled={isSubmitting}
+                    >
                       Cancelar
                     </Button>
-                    <Button onClick={handleCreateSalon}>
-                      Criar Estabelecimento
+                    <Button 
+                      onClick={handleCreateSalon}
+                      disabled={isSubmitting}
+                      className="min-w-[120px]"
+                    >
+                      {isSubmitting ? "Criando..." : "Criar Estabelecimento"}
                     </Button>
                   </div>
                 </DialogContent>
