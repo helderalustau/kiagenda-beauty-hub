@@ -6,10 +6,9 @@ import { Client } from './useSupabaseData';
 export const useClientData = () => {
   const [loading, setLoading] = useState(false);
 
-  const updateClientProfile = async (clientId: string, profileData: any) => {
+  const updateClientProfile = async (clientId: string, profileData: { name: string; email?: string; phone: string }) => {
     try {
       setLoading(true);
-      
       const { data, error } = await supabase
         .from('clients')
         .update(profileData)
@@ -31,65 +30,84 @@ export const useClientData = () => {
     }
   };
 
-  // Corrigido para buscar por telefone ou nome
-  const getClientByPhone = async (phoneOrName: string) => {
+  const getClientByPhone = async (phone: string) => {
     try {
       setLoading(true);
       
-      // Primeiro tenta buscar por telefone
-      let { data, error } = await supabase
-        .from('clients')
+      // Primeiro, tentar buscar na tabela client_auth
+      const { data: authData, error: authError } = await supabase
+        .from('client_auth')
         .select('*')
-        .eq('phone', phoneOrName)
+        .eq('name', phone)
         .single();
 
-      // Se não encontrou por telefone, tenta buscar por nome
-      if (error && error.code === 'PGRST116') {
-        const { data: nameData, error: nameError } = await supabase
+      if (authError && authError.code !== 'PGRST116') {
+        console.error('Error finding client auth:', authError);
+        return { success: false, message: 'Erro ao buscar dados do cliente' };
+      }
+
+      if (authData) {
+        // Buscar dados completos na tabela clients usando o phone
+        const { data: clientData, error: clientError } = await supabase
           .from('clients')
           .select('*')
-          .eq('name', phoneOrName)
+          .eq('phone', authData.phone || authData.name)
           .single();
-        
-        data = nameData;
-        error = nameError;
+
+        if (clientError && clientError.code !== 'PGRST116') {
+          console.error('Error finding client data:', clientError);
+        }
+
+        // Se não encontrou na tabela clients, criar um registro baseado nos dados de auth
+        if (!clientData) {
+          const newClientData = {
+            name: authData.name,
+            phone: authData.phone || authData.name,
+            email: authData.email || null
+          };
+
+          const { data: createdClient, error: createError } = await supabase
+            .from('clients')
+            .insert(newClientData)
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating client:', createError);
+            return { success: false, message: 'Erro ao criar dados do cliente' };
+          }
+
+          return { success: true, client: createdClient };
+        }
+
+        return { success: true, client: clientData };
       }
 
-      if (error && error.code === 'PGRST116') {
-        return { success: false, message: 'Cliente não encontrado' };
-      }
-      
-      if (error) {
-        console.error('Error fetching client:', error);
-        return { success: false, message: 'Erro ao buscar cliente' };
-      }
-
-      return { success: true, client: data };
+      return { success: false, message: 'Cliente não encontrado' };
     } catch (error) {
-      console.error('Error fetching client:', error);
+      console.error('Error getting client by phone:', error);
       return { success: false, message: 'Erro ao buscar cliente' };
     } finally {
       setLoading(false);
     }
   };
 
-  // Nova função para buscar ou criar cliente
   const getOrCreateClient = async (clientData: { name: string; phone: string; email?: string }) => {
     try {
       setLoading(true);
       
-      // Primeiro tenta buscar cliente existente
-      const { data: existingClient, error: searchError } = await supabase
+      // Primeiro, tentar encontrar cliente existente
+      const { data: existingClient, error: findError } = await supabase
         .from('clients')
         .select('*')
         .eq('phone', clientData.phone)
         .single();
 
-      if (!searchError && existingClient) {
+      if (!findError && existingClient) {
         return { success: true, client: existingClient };
       }
 
-      // Se não encontrou, cria novo cliente
+      // Se não encontrou, criar novo cliente
       const { data: newClient, error: createError } = await supabase
         .from('clients')
         .insert({
@@ -107,8 +125,8 @@ export const useClientData = () => {
 
       return { success: true, client: newClient };
     } catch (error) {
-      console.error('Error getting or creating client:', error);
-      return { success: false, message: 'Erro ao processar cliente' };
+      console.error('Error in getOrCreateClient:', error);
+      return { success: false, message: 'Erro ao processar dados do cliente' };
     } finally {
       setLoading(false);
     }

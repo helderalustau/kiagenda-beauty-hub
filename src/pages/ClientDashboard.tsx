@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, User, Store, Plus } from "lucide-react";
-import { useSupabaseData, Client, Appointment } from '@/hooks/useSupabaseData';
+import { useSupabaseData, Client, Appointment, Salon } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import ClientProfile from '@/components/ClientProfile';
 import SalonList from '@/components/SalonList';
 import ClientHeader from '@/components/ClientHeader';
+import BookingModal from '@/components/BookingModal';
 
 const ClientDashboard = () => {
   const { 
@@ -18,13 +19,17 @@ const ClientDashboard = () => {
     fetchAllSalons, 
     fetchCategories,
     getClientByPhone,
-    fetchClientAppointments
+    fetchClientAppointments,
+    fetchSalonServices
   } = useSupabaseData();
   const { toast } = useToast();
   
   const [client, setClient] = useState<Client | null>(null);
   const [clientAppointments, setClientAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
+  const [salonServices, setSalonServices] = useState<any[]>([]);
 
   useEffect(() => {
     loadClientData();
@@ -75,6 +80,30 @@ const ClientDashboard = () => {
 
   const handleClientUpdate = (updatedClient: Client) => {
     setClient(updatedClient);
+  };
+
+  const handleBookService = async (salon: Salon) => {
+    console.log('Iniciando agendamento para o salão:', salon.name);
+    setSelectedSalon(salon);
+    
+    // Buscar serviços do salão
+    const services = await fetchSalonServices(salon.id);
+    setSalonServices(services);
+    setShowBookingModal(true);
+  };
+
+  const handleBookingComplete = () => {
+    setShowBookingModal(false);
+    setSelectedSalon(null);
+    setSalonServices([]);
+    // Recarregar agendamentos do cliente
+    if (client) {
+      fetchClientAppointments(client.id).then(result => {
+        if (result.success) {
+          setClientAppointments(result.data);
+        }
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -139,7 +168,13 @@ const ClientDashboard = () => {
                 <Button 
                   size="lg" 
                   className="bg-white text-blue-600 hover:bg-gray-100"
-                  onClick={() => window.location.href = '/client-booking'}
+                  onClick={() => {
+                    // Scroll para a aba de estabelecimentos
+                    const establishmentsTab = document.querySelector('[data-value="establishments"]');
+                    if (establishmentsTab) {
+                      (establishmentsTab as HTMLElement).click();
+                    }
+                  }}
                 >
                   <Plus className="h-5 w-5 mr-2" />
                   Novo Agendamento
@@ -155,7 +190,7 @@ const ClientDashboard = () => {
               <Calendar className="h-4 w-4" />
               <span>Meus Agendamentos</span>
             </TabsTrigger>
-            <TabsTrigger value="establishments" className="flex items-center space-x-2">
+            <TabsTrigger value="establishments" className="flex items-center space-x-2" data-value="establishments">
               <Store className="h-4 w-4" />
               <span>Estabelecimentos</span>
             </TabsTrigger>
@@ -244,14 +279,14 @@ const ClientDashboard = () => {
                 Estabelecimentos Disponíveis
               </h2>
               <p className="text-gray-600">
-                Encontre e conheça os estabelecimentos da sua região
+                Encontre e agende serviços nos melhores estabelecimentos da sua região
               </p>
             </div>
             
             <SalonList 
               salons={salons.filter(salon => salon.is_open)} 
               categories={categories}
-              onBookService={() => window.location.href = '/client-booking'}
+              onBookService={handleBookService}
             />
           </TabsContent>
 
@@ -269,6 +304,27 @@ const ClientDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de Agendamento */}
+      {showBookingModal && selectedSalon && client && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={() => {
+            setShowBookingModal(false);
+            setSelectedSalon(null);
+            setSalonServices([]);
+          }}
+          salon={selectedSalon}
+          services={salonServices}
+          clientData={{
+            id: client.id,
+            name: client.name,
+            email: client.email || '',
+            phone: client.phone
+          }}
+          onBookingComplete={handleBookingComplete}
+        />
+      )}
     </div>
   );
 };
