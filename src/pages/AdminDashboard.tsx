@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -217,11 +216,14 @@ const AdminDashboard = () => {
   const handleCreateAppointment = async () => {
     if (!salon) return;
 
+    // Convert the date to the proper format for the appointment
+    const appointmentDate = date ? format(date, 'yyyy-MM-dd') : '';
+
     const result = await createAppointment({
       salon_id: salon.id,
       client_id: newAppointment.client_id,
       service_id: newAppointment.service_id,
-      appointment_date: newAppointment.appointment_date,
+      appointment_date: appointmentDate,
       appointment_time: newAppointment.appointment_time,
       notes: newAppointment.notes
     });
@@ -378,14 +380,15 @@ const AdminDashboard = () => {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="center" side="bottom">
-                          <Calendar
+                          <CalendarComponent
                             mode="single"
                             selected={date}
-                            onSelect={setDate}
+                            onSelect={(selectedDate) => setDate(selectedDate)}
                             disabled={(date) =>
                               date < new Date()
                             }
                             initialFocus
+                            className="p-3 pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
