@@ -416,7 +416,7 @@ export const useSupabaseData = () => {
   };
 
   // Fetch salon services
-  const fetchSalonServices = async (salonId: string) => {
+  const fetchSalonServices = async (salonId: string): Promise<Service[]> => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -428,12 +428,15 @@ export const useSupabaseData = () => {
 
       if (error) {
         console.error('Error fetching services:', error);
-        return;
+        return [];
       }
 
-      setServices(data || []);
+      const services = data || [];
+      setServices(services);
+      return services;
     } catch (error) {
       console.error('Error fetching services:', error);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -837,7 +840,16 @@ export const useSupabaseData = () => {
         return { success: false, message: 'Erro ao buscar agendamentos' };
       }
 
-      return { success: true, data };
+      // Transform the data to match our interface
+      const transformedData = data?.map(appointment => ({
+        ...appointment,
+        status: appointment.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
+        client: appointment.clients,
+        service: appointment.services,
+        salon: undefined // Will be populated if needed
+      })) || [];
+
+      return { success: true, data: transformedData };
     } catch (error) {
       console.error('Error fetching appointments:', error);
       return { success: false, message: 'Erro ao buscar agendamentos' };
@@ -991,7 +1003,15 @@ export const useSupabaseData = () => {
         return { success: false, message: 'Erro ao buscar agendamentos' };
       }
 
-      return { success: true, data };
+      // Transform the data to match our interface
+      const transformedData = data?.map(appointment => ({
+        ...appointment,
+        status: appointment.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
+        service: appointment.services,
+        salon: appointment.salons
+      })) || [];
+
+      return { success: true, data: transformedData };
     } catch (error) {
       console.error('Error fetching client appointments:', error);
       return { success: false, message: 'Erro ao buscar agendamentos' };
