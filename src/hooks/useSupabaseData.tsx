@@ -110,6 +110,7 @@ export const useSupabaseData = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [presetServices, setPresetServices] = useState<PresetService[]>([]);
+  const [planConfigurations, setPlanConfigurations] = useState<PlanConfiguration[]>([]);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalAppointments: 0,
     pendingAppointments: 0,
@@ -187,6 +188,93 @@ export const useSupabaseData = () => {
     } catch (error) {
       console.error('Error during client authentication:', error);
       return { success: false, message: 'Erro durante a autenticação' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Register client
+  const registerClient = async (name: string, password: string, phone: string, email?: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('client_auth')
+        .insert({
+          name,
+          password,
+          phone,
+          email
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error registering client:', error);
+        return { success: false, message: 'Erro ao registrar cliente' };
+      }
+
+      return { success: true, client: data };
+    } catch (error) {
+      console.error('Error registering client:', error);
+      return { success: false, message: 'Erro ao registrar cliente' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Register admin
+  const registerAdmin = async (salonId: string, name: string, password: string, email: string, phone?: string, role: string = 'admin') => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('admin_auth')
+        .insert({
+          salon_id: salonId,
+          name,
+          password,
+          email,
+          phone,
+          role
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error registering admin:', error);
+        return { success: false, message: 'Erro ao registrar administrador' };
+      }
+
+      return { success: true, admin: data };
+    } catch (error) {
+      console.error('Error registering admin:', error);
+      return { success: false, message: 'Erro ao registrar administrador' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create salon
+  const createSalon = async (salonData: any) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('salons')
+        .insert(salonData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating salon:', error);
+        return { success: false, message: 'Erro ao criar estabelecimento' };
+      }
+
+      return { success: true, salon: data };
+    } catch (error) {
+      console.error('Error creating salon:', error);
+      return { success: false, message: 'Erro ao criar estabelecimento' };
     } finally {
       setLoading(false);
     }
@@ -283,6 +371,90 @@ export const useSupabaseData = () => {
     }
   };
 
+  // Fetch plan configurations
+  const fetchPlanConfigurations = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('plan_configurations')
+        .select('*')
+        .order('plan_type');
+
+      if (error) {
+        console.error('Error fetching plan configurations:', error);
+        return;
+      }
+
+      setPlanConfigurations(data || []);
+    } catch (error) {
+      console.error('Error fetching plan configurations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch dashboard stats
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch basic stats
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('*, services(price)');
+
+      if (appointmentsError) {
+        console.error('Error fetching appointments for stats:', appointmentsError);
+        return;
+      }
+
+      const totalAppointments = appointmentsData?.length || 0;
+      const pendingAppointments = appointmentsData?.filter(a => a.status === 'pending').length || 0;
+      const completedAppointments = appointmentsData?.filter(a => a.status === 'completed').length || 0;
+      const totalRevenue = appointmentsData?.filter(a => a.status === 'completed')
+        .reduce((sum, a) => sum + (a.services?.price || 0), 0) || 0;
+
+      // Fetch salon stats
+      const { data: salonsData, error: salonsError } = await supabase
+        .from('salons')
+        .select('plan');
+
+      if (!salonsError && salonsData) {
+        const salonsByPlan = {
+          bronze: salonsData.filter(s => s.plan === 'bronze').length,
+          prata: salonsData.filter(s => s.plan === 'prata').length,
+          gold: salonsData.filter(s => s.plan === 'gold').length
+        };
+
+        setDashboardStats({
+          totalAppointments,
+          pendingAppointments,
+          completedAppointments,
+          totalRevenue,
+          totalSalons: salonsData.length,
+          salonsByPlan,
+          expectedRevenue: {
+            total: totalRevenue,
+            bronze: 0,
+            prata: 0,
+            gold: 0
+          }
+        });
+      } else {
+        setDashboardStats({
+          totalAppointments,
+          pendingAppointments,
+          completedAppointments,
+          totalRevenue
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Create appointment
   const createAppointment = async (appointmentData: any) => {
     try {
@@ -309,11 +481,11 @@ export const useSupabaseData = () => {
       const { data, error } = await supabase
         .from('appointments')
         .insert({
-          salon_id: appointmentData.salonId,
+          salon_id: appointmentData.salon_id || appointmentData.salonId,
           client_id: clientData.id,
-          service_id: appointmentData.serviceId,
-          appointment_date: appointmentData.date,
-          appointment_time: appointmentData.time,
+          service_id: appointmentData.service_id || appointmentData.serviceId,
+          appointment_date: appointmentData.appointment_date || appointmentData.date,
+          appointment_time: appointmentData.appointment_time || appointmentData.time,
           status: 'pending',
           notes: appointmentData.notes || null
         })
@@ -405,9 +577,10 @@ export const useSupabaseData = () => {
 
   // Additional functions needed by components
   const refreshData = async () => {
-    // Refresh all data
     await fetchAllSalons();
     await fetchPresetServices();
+    await fetchDashboardStats();
+    await fetchPlanConfigurations();
   };
 
   const updateAppointmentStatus = async (appointmentId: string, status: string, notes?: string) => {
@@ -623,6 +796,62 @@ export const useSupabaseData = () => {
     }
   };
 
+  const cleanupSalonsWithoutAdmins = async () => {
+    try {
+      const { data, error } = await supabase.rpc('cleanup_salons_without_admins');
+
+      if (error) {
+        console.error('Error cleaning up salons:', error);
+        return { success: false, message: 'Erro ao limpar estabelecimentos' };
+      }
+
+      return { success: true, deletedCount: data };
+    } catch (error) {
+      console.error('Error cleaning up salons:', error);
+      return { success: false, message: 'Erro ao limpar estabelecimentos' };
+    }
+  };
+
+  const updateAdminUser = async (adminData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_auth')
+        .update(adminData)
+        .eq('id', adminData.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating admin user:', error);
+        return { success: false, message: 'Erro ao atualizar usuário' };
+      }
+
+      return { success: true, admin: data };
+    } catch (error) {
+      console.error('Error updating admin user:', error);
+      return { success: false, message: 'Erro ao atualizar usuário' };
+    }
+  };
+
+  const deleteAdminUser = async (adminId: string) => {
+    try {
+      const { error } = await supabase
+        .from('admin_auth')
+        .delete()
+        .eq('id', adminId);
+
+      if (error) {
+        console.error('Error deleting admin user:', error);
+        return { success: false, message: 'Erro ao excluir usuário' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting admin user:', error);
+      return { success: false, message: 'Erro ao excluir usuário' };
+    }
+  };
+
   return {
     salon,
     salons,
@@ -630,14 +859,20 @@ export const useSupabaseData = () => {
     services,
     adminUsers,
     presetServices,
+    planConfigurations,
     dashboardStats,
     loading,
     fetchSalonData,
     fetchAllSalons,
     fetchSalonServices,
     fetchPresetServices,
+    fetchPlanConfigurations,
+    fetchDashboardStats,
     authenticateAdmin,
     authenticateClient,
+    registerClient,
+    registerAdmin,
+    createSalon,
     createAppointment,
     completeSalonSetup,
     createServicesFromPresets,
@@ -650,6 +885,9 @@ export const useSupabaseData = () => {
     deleteSalon,
     fetchAllAppointments,
     restoreAppointment,
-    updatePlanConfiguration
+    updatePlanConfiguration,
+    cleanupSalonsWithoutAdmins,
+    updateAdminUser,
+    deleteAdminUser
   };
 };

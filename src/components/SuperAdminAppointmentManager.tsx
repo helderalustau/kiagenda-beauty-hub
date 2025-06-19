@@ -68,7 +68,7 @@ const SuperAdminAppointmentManager = ({ salonId, salonName }: SuperAdminAppointm
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'pending': return 'Pendente';
+      case 'pending': return '`Pendente';
       case 'confirmed': return 'Confirmado';
       case 'completed': return 'Concluído';
       case 'cancelled': return 'Cancelado';
@@ -94,8 +94,8 @@ const SuperAdminAppointmentManager = ({ salonId, salonName }: SuperAdminAppointm
   const filteredAppointments = appointments.filter(appointment => {
     const matchesStatus = statusFilter === 'all' || appointment.status === statusFilter;
     const matchesSearch = searchTerm === '' || 
-      appointment.clients?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      appointment.services?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      appointment.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.service?.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesStatus && matchesSearch;
   });
@@ -188,13 +188,13 @@ const SuperAdminAppointmentManager = ({ salonId, salonName }: SuperAdminAppointm
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <User className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium">{appointment.clients?.name}</span>
+                          <span className="font-medium">{appointment.client?.name}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <Scissors className="h-4 w-4 text-gray-400" />
-                          <span>{appointment.services?.name}</span>
+                          <span>{appointment.service?.name}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -216,7 +216,7 @@ const SuperAdminAppointmentManager = ({ salonId, salonName }: SuperAdminAppointm
                       </TableCell>
                       <TableCell>
                         <span className="font-semibold text-green-600">
-                          {formatCurrency(appointment.services?.price || 0)}
+                          {formatCurrency(appointment.service?.price || 0)}
                         </span>
                       </TableCell>
                       <TableCell>
