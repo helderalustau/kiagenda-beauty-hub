@@ -40,17 +40,36 @@ const ClientDashboard = () => {
     if (clientData) {
       try {
         const parsedClient = JSON.parse(clientData);
+        console.log('Dados do cliente do localStorage:', parsedClient);
         
-        // Buscar dados completos do cliente
-        const clientResult = await getClientByPhone(parsedClient.name); // Assumindo que 'name' é o telefone
+        // Buscar dados completos do cliente usando o nome (que na verdade é o identificador)
+        const clientResult = await getClientByPhone(parsedClient.name);
         if (clientResult.success) {
           setClient(clientResult.client);
+          console.log('Cliente encontrado:', clientResult.client);
           
           // Buscar agendamentos do cliente
           const appointmentsResult = await fetchClientAppointments(clientResult.client.id);
           if (appointmentsResult.success) {
             setClientAppointments(appointmentsResult.data);
+            console.log('Agendamentos encontrados:', appointmentsResult.data);
+          } else {
+            console.error('Cliente não encontrado:', clientResult.message);
+            toast({
+              title: "Erro",
+              description: "Dados do cliente não encontrados. Faça login novamente.",
+              variant: "destructive"
+            });
+            handleLogout();
           }
+        } else {
+          console.error('Cliente não encontrado:', clientResult.message);
+          toast({
+            title: "Erro",
+            description: "Dados do cliente não encontrados. Faça login novamente.",
+            variant: "destructive"
+          });
+          handleLogout();
         }
       } catch (error) {
         console.error('Erro ao carregar dados do cliente:', error);
@@ -68,10 +87,12 @@ const ClientDashboard = () => {
   };
 
   const handleBookService = async (salon: Salon) => {
+    console.log('Iniciando agendamento para o salão:', salon);
     setSelectedSalon(salon);
     
     // Buscar serviços do salão
     const services = await fetchSalonServices(salon.id);
+    console.log('Serviços encontrados:', services);
     setSalonServices(services);
     
     setShowBookingModal(true);

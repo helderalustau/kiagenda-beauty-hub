@@ -7,37 +7,49 @@ export const useAppointmentData = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Create appointment
+  // Create appointment - Corrigido para funcionar corretamente com client_id
   const createAppointment = async (appointmentData: any) => {
     try {
       setLoading(true);
       
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .upsert({
-          name: appointmentData.clientName,
-          phone: appointmentData.clientPhone,
-          email: appointmentData.clientEmail || null
-        }, {
-          onConflict: 'phone',
-          ignoreDuplicates: false
-        })
-        .select()
-        .single();
+      // Se já temos client_id, usar diretamente
+      let clientId = appointmentData.client_id;
+      
+      // Se não temos client_id mas temos dados do cliente, criar/buscar cliente
+      if (!clientId && (appointmentData.clientName || appointmentData.clientPhone)) {
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .upsert({
+            name: appointmentData.clientName,
+            phone: appointmentData.clientPhone,
+            email: appointmentData.clientEmail || null
+          }, {
+            onConflict: 'phone',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single();
 
-      if (clientError) {
-        console.error('Error creating/updating client:', clientError);
-        return { success: false, message: 'Erro ao registrar cliente' };
+        if (clientError) {
+          console.error('Error creating/updating client:', clientError);
+          return { success: false, message: 'Erro ao registrar cliente' };
+        }
+        
+        clientId = clientData.id;
+      }
+
+      if (!clientId) {
+        return { success: false, message: 'ID do cliente é obrigatório' };
       }
 
       const { data, error } = await supabase
         .from('appointments')
         .insert({
-          salon_id: appointmentData.salon_id || appointmentData.salonId,
-          client_id: clientData.id,
-          service_id: appointmentData.service_id || appointmentData.serviceId,
-          appointment_date: appointmentData.appointment_date || appointmentData.date,
-          appointment_time: appointmentData.appointment_time || appointmentData.time,
+          salon_id: appointmentData.salon_id,
+          client_id: clientId,
+          service_id: appointmentData.service_id,
+          appointment_date: appointmentData.appointment_date,
+          appointment_time: appointmentData.appointment_time,
           status: 'pending',
           notes: appointmentData.notes || null
         })

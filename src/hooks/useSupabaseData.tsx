@@ -247,6 +247,7 @@ export const useSupabaseData = () => {
     // Client methods
     updateClientProfile: clientData.updateClientProfile,
     getClientByPhone: clientData.getClientByPhone,
+    getOrCreateClient: clientData.getOrCreateClient,
     
     // Dashboard methods
     fetchDashboardStats: dashboardData.fetchDashboardStats,
