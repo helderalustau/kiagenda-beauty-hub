@@ -12,6 +12,7 @@ import WeeklyCalendar from '@/components/WeeklyCalendar';
 import ServicesPage from '@/pages/ServicesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import SalonStatusToggle from '@/components/SalonStatusToggle';
+import AppointmentNotification from '@/components/AppointmentNotification';
 
 const AdminDashboard = () => {
   const { 
@@ -20,9 +21,12 @@ const AdminDashboard = () => {
     services, 
     adminUsers, 
     refreshData, 
-    loading 
+    loading,
+    updateAppointmentStatus
   } = useSupabaseData();
   const { toast } = useToast();
+  const [newAppointment, setNewAppointment] = useState<any>(null);
+  const [showNotification, setShowNotification] = useState(false);
 
   useEffect(() => {
     // Buscar dados ao carregar
@@ -42,6 +46,51 @@ const AdminDashboard = () => {
       window.location.href = '/salon-setup';
     }
   }, [salon]);
+
+  // Monitorar novos agendamentos pendentes
+  useEffect(() => {
+    if (appointments && appointments.length > 0) {
+      const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
+      if (pendingAppointments.length > 0 && !showNotification) {
+        // Mostrar notificação para o primeiro agendamento pendente
+        const latestPending = pendingAppointments[0];
+        setNewAppointment(latestPending);
+        setShowNotification(true);
+      }
+    }
+  }, [appointments, showNotification]);
+
+  const handleAcceptAppointment = async () => {
+    if (newAppointment) {
+      await updateAppointmentStatus(newAppointment.id, 'confirmed');
+      setShowNotification(false);
+      setNewAppointment(null);
+      toast({
+        title: "Agendamento Confirmado",
+        description: "O cliente foi notificado sobre a confirmação."
+      });
+      // Recarregar dados
+      if (salon) {
+        refreshData(salon.id);
+      }
+    }
+  };
+
+  const handleRejectAppointment = async () => {
+    if (newAppointment) {
+      await updateAppointmentStatus(newAppointment.id, 'cancelled', 'Agendamento recusado pelo estabelecimento');
+      setShowNotification(false);
+      setNewAppointment(null);
+      toast({
+        title: "Agendamento Recusado",
+        description: "O cliente foi notificado sobre a recusa."
+      });
+      // Recarregar dados
+      if (salon) {
+        refreshData(salon.id);
+      }
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('userType');
@@ -202,6 +251,15 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Notification for new appointments */}
+      <AppointmentNotification
+        isOpen={showNotification}
+        appointment={newAppointment}
+        soundType={salon.notification_sound as 'default' | 'bell' | 'chime' | 'alert' || 'default'}
+        onAccept={handleAcceptAppointment}
+        onReject={handleRejectAppointment}
+      />
     </div>
   );
 };

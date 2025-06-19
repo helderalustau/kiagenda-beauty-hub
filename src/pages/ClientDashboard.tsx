@@ -1,17 +1,27 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Star, Clock, Calendar, User, Scissors } from "lucide-react";
+import ClientProfileModal from '@/components/ClientProfileModal';
+import BookingModal from '@/components/BookingModal';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useToast } from "@/components/ui/use-toast";
 
 const ClientDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'salons' | 'appointments'>('salons');
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [selectedSalon, setSelectedSalon] = useState<any>(null);
+  const [clientData, setClientData] = useState<any>(null);
+  const { salons, services, appointments, fetchAllSalons, updateClientProfile } = useSupabaseData();
+  const { toast } = useToast();
 
-  // Mock data - em produção viria do backend
-  const salons = [
+  // Mock data - em produção viria do backend e seria gerenciado pelo estado global
+  const mockSalons = [
     {
       id: 1,
       name: 'Bella Vista Salon',
@@ -41,7 +51,7 @@ const ClientDashboard = () => {
     }
   ];
 
-  const appointments = [
+  const mockAppointments = [
     {
       id: 1,
       salon: 'Bella Vista Salon',
@@ -57,7 +67,7 @@ const ClientDashboard = () => {
       service: 'Manicure',
       date: '2024-01-22',
       time: '10:30',
-      status: 'upcoming',
+      status: 'confirmed',
       price: 'R$ 45,00'
     },
     {
@@ -66,19 +76,85 @@ const ClientDashboard = () => {
       service: 'Coloração',
       date: '2024-01-25',
       time: '15:00',
-      status: 'upcoming',
+      status: 'pending',
       price: 'R$ 120,00'
     }
   ];
 
-  const filteredSalons = salons.filter(salon => 
+  useEffect(() => {
+    // Carregar dados do cliente do localStorage
+    const clientAuthData = localStorage.getItem('clientData');
+    if (clientAuthData) {
+      setClientData(JSON.parse(clientAuthData));
+    }
+  }, []);
+
+  const filteredSalons = mockSalons.filter(salon => 
     salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     salon.owner.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleBooking = (salonId: number) => {
-    // Em produção, abriria modal de agendamento
-    alert(`Agendamento para o salão ${salons.find(s => s.id === salonId)?.name} será implementado!`);
+  const handleBooking = (salon: any) => {
+    if (!clientData) {
+      toast({
+        title: "Erro",
+        description: "Dados do cliente não encontrados. Faça login novamente.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setSelectedSalon(salon);
+    setIsBookingModalOpen(true);
+  };
+
+  const handleProfileSave = async (profileData: { name: string; email: string; phone: string }) => {
+    try {
+      // Atualizar dados localmente
+      const updatedClientData = { ...clientData, ...profileData };
+      setClientData(updatedClientData);
+      localStorage.setItem('clientData', JSON.stringify(updatedClientData));
+      
+      // Em produção, aqui você faria a chamada para o backend
+      // await updateClientProfile(clientData.id, profileData);
+      
+      toast({
+        title: "Sucesso",
+        description: "Perfil atualizado com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar perfil",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge variant="secondary">Concluído</Badge>;
+      case 'confirmed':
+        return <Badge className="bg-green-500">Confirmado</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-500">Pendente</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-gray-50 opacity-75';
+      case 'confirmed':
+        return 'bg-green-50';
+      case 'pending':
+        return 'bg-yellow-50';
+      default:
+        return 'bg-white';
+    }
   };
 
   return (
@@ -112,7 +188,11 @@ const ClientDashboard = () => {
                 <Calendar className="h-4 w-4" />
                 <span>Meus Agendamentos</span>
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsProfileModalOpen(true)}
+              >
                 <User className="h-4 w-4 mr-2" />
                 Perfil
               </Button>
@@ -180,7 +260,7 @@ const ClientDashboard = () => {
                     </div>
                     
                     <Button 
-                      onClick={() => handleBooking(salon.id)}
+                      onClick={() => handleBooking(salon)}
                       className="w-full bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600"
                     >
                       <Calendar className="h-4 w-4 mr-2" />
@@ -211,14 +291,10 @@ const ClientDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              {appointments.map((appointment) => (
+              {mockAppointments.map((appointment) => (
                 <Card 
                   key={appointment.id} 
-                  className={`${
-                    appointment.status === 'completed' 
-                      ? 'bg-gray-50 opacity-75' 
-                      : 'bg-white hover:shadow-md'
-                  } transition-shadow duration-300`}
+                  className={`${getStatusColor(appointment.status)} transition-shadow duration-300 hover:shadow-md`}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -226,12 +302,16 @@ const ClientDashboard = () => {
                         <div className={`p-3 rounded-full ${
                           appointment.status === 'completed' 
                             ? 'bg-gray-200' 
-                            : 'bg-blue-100'
+                            : appointment.status === 'confirmed'
+                            ? 'bg-green-100'
+                            : 'bg-yellow-100'
                         }`}>
                           <Scissors className={`h-6 w-6 ${
                             appointment.status === 'completed' 
                               ? 'text-gray-500' 
-                              : 'text-blue-600'
+                              : appointment.status === 'confirmed'
+                              ? 'text-green-600'
+                              : 'text-yellow-600'
                           }`} />
                         </div>
                         <div>
@@ -255,11 +335,7 @@ const ClientDashboard = () => {
                         <div className="text-lg font-semibold text-gray-900 mb-2">
                           {appointment.price}
                         </div>
-                        <Badge 
-                          variant={appointment.status === 'completed' ? 'secondary' : 'default'}
-                        >
-                          {appointment.status === 'completed' ? 'Concluído' : 'Agendado'}
-                        </Badge>
+                        {getStatusBadge(appointment.status)}
                       </div>
                     </div>
                   </CardContent>
@@ -267,7 +343,7 @@ const ClientDashboard = () => {
               ))}
             </div>
 
-            {appointments.length === 0 && (
+            {mockAppointments.length === 0 && (
               <div className="text-center py-12">
                 <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-xl font-medium text-gray-900 mb-2">
@@ -287,6 +363,22 @@ const ClientDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <ClientProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        clientData={clientData}
+        onSave={handleProfileSave}
+      />
+
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        salon={selectedSalon}
+        services={services || []}
+        clientData={clientData}
+      />
     </div>
   );
 };
