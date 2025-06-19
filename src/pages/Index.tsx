@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ const Index = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const { authenticateClient, authenticateAdmin, registerClient } = useSupabaseData();
+  const { authenticateClient, authenticateAdmin, registerClient, createSalon, registerAdmin } = useSupabaseData();
   const { toast } = useToast();
 
   const handleClientLogin = async () => {
@@ -123,7 +124,7 @@ const Index = () => {
     }
   };
 
-  const handleAdminRegister = () => {
+  const handleAdminRegister = async () => {
     if (!adminForm.nome || !adminForm.senha || !adminForm.email || !adminForm.salao) {
       toast({
         title: "Erro",
@@ -133,8 +134,57 @@ const Index = () => {
       return;
     }
 
-    localStorage.setItem('tempAdminData', JSON.stringify(adminForm));
-    window.location.href = '/plan-selection';
+    setLoading(true);
+    
+    try {
+      // Primeiro, criar o estabelecimento
+      const salonResult = await createSalon({
+        name: adminForm.salao,
+        owner_name: adminForm.nome,
+        phone: adminForm.telefone || adminForm.email, // fallback para email se não tiver telefone
+        address: adminForm.endereco,
+        plan: 'bronze'
+      });
+
+      if (!salonResult.success || !salonResult.salon) {
+        throw new Error(salonResult.message || 'Erro ao criar estabelecimento');
+      }
+
+      // Em seguida, criar o usuário administrador
+      const adminResult = await registerAdmin(
+        salonResult.salon.id,
+        adminForm.nome,
+        adminForm.senha,
+        adminForm.email,
+        adminForm.telefone,
+        'admin'
+      );
+
+      if (!adminResult.success) {
+        throw new Error(adminResult.message || 'Erro ao criar usuário administrador');
+      }
+
+      // Salvar dados do admin no localStorage
+      localStorage.setItem('userType', 'admin');
+      localStorage.setItem('adminData', JSON.stringify(adminResult.user));
+      
+      toast({
+        title: "Sucesso",
+        description: "Estabelecimento criado com sucesso!"
+      });
+
+      // Redirecionar para a configuração do estabelecimento
+      window.location.href = '/salon-setup';
+      
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : 'Erro ao criar estabelecimento',
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -376,9 +426,10 @@ const Index = () => {
                       </div>
                       <Button 
                         onClick={handleAdminRegister}
+                        disabled={loading}
                         className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
                       >
-                        Continuar para Seleção de Plano
+                        {loading ? 'Criando Estabelecimento...' : 'Criar Estabelecimento'}
                       </Button>
                     </div>
                   )}
