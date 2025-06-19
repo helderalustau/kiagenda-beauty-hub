@@ -24,6 +24,7 @@ const SalonSetup = () => {
   
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
   const [formData, setFormData] = useState({
     street_number: '',
     city: '',
@@ -92,42 +93,114 @@ const SalonSetup = () => {
   };
 
   const handleFinishSetup = async () => {
-    if (!salon) return;
-
-    const setupResult = await completeSalonSetup(salon.id, formData);
-    
-    if (!setupResult.success) {
+    if (!salon) {
       toast({
         title: "Erro",
-        description: setupResult.message,
+        description: "Dados do estabelecimento não encontrados",
         variant: "destructive"
       });
       return;
     }
 
-    const servicesToCreate = Object.entries(selectedServices)
-      .filter(([_, data]) => data.selected && data.price > 0)
-      .map(([presetId, data]) => ({ presetId, price: data.price }));
+    try {
+      setIsFinishing(true);
+      console.log('Starting salon setup completion...');
+      console.log('Salon ID:', salon.id);
+      console.log('Form data:', formData);
 
-    if (servicesToCreate.length > 0) {
-      const servicesResult = await createServicesFromPresets(salon.id, servicesToCreate);
-      
-      if (!servicesResult.success) {
+      // Validar campos obrigatórios
+      if (!formData.street_number?.trim()) {
         toast({
-          title: "Aviso",
-          description: "Configuração salva, mas houve erro ao criar alguns serviços",
+          title: "Erro",
+          description: "Nome da Rua e Número é obrigatório",
           variant: "destructive"
         });
+        return;
       }
+
+      if (!formData.city?.trim()) {
+        toast({
+          title: "Erro",
+          description: "Cidade é obrigatória",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!formData.state?.trim()) {
+        toast({
+          title: "Erro",
+          description: "Estado é obrigatório",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!formData.contact_phone?.trim()) {
+        toast({
+          title: "Erro",
+          description: "Telefone para contato é obrigatório",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Calling completeSalonSetup...');
+      const setupResult = await completeSalonSetup(salon.id, formData);
+      console.log('Setup result:', setupResult);
+      
+      if (!setupResult.success) {
+        toast({
+          title: "Erro",
+          description: setupResult.message || "Erro ao finalizar configuração",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Criar serviços selecionados
+      const servicesToCreate = Object.entries(selectedServices)
+        .filter(([_, data]) => data.selected && data.price > 0)
+        .map(([presetId, data]) => ({ presetId, price: data.price }));
+
+      console.log('Services to create:', servicesToCreate);
+
+      if (servicesToCreate.length > 0) {
+        console.log('Creating services from presets...');
+        const servicesResult = await createServicesFromPresets(salon.id, servicesToCreate);
+        console.log('Services result:', servicesResult);
+        
+        if (!servicesResult.success) {
+          toast({
+            title: "Aviso",
+            description: "Configuração salva, mas houve erro ao criar alguns serviços",
+            variant: "destructive"
+          });
+        }
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Configuração do estabelecimento finalizada com sucesso!"
+      });
+
+      console.log('Redirecting to admin dashboard...');
+      
+      // Aguardar um pouco para garantir que o toast seja exibido
+      setTimeout(() => {
+        window.location.href = '/admin-dashboard';
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error finishing setup:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao finalizar configuração",
+        variant: "destructive"
+      });
+    } finally {
+      setIsFinishing(false);
     }
-
-    toast({
-      title: "Sucesso",
-      description: "Configuração do estabelecimento finalizada!"
-    });
-
-    // Redirecionar para o Dashboard do Administrador
-    window.location.href = '/admin-dashboard';
   };
 
   if (loading) {
@@ -198,6 +271,7 @@ const SalonSetup = () => {
                 onPrevious={handlePrevious}
                 onNext={handleNext}
                 onFinish={handleFinishSetup}
+                isFinishing={isFinishing}
               />
             </CardContent>
           </Card>
