@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,17 +8,18 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Settings, Save, Plus, Trash2 } from "lucide-react";
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useSupabaseData, PlanConfiguration } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 
-const PlanConfigurationManager = () => {
-  const { planConfigurations, fetchPlanConfigurations, updatePlanConfiguration } = useSupabaseData();
+type Props = {
+  configurations: PlanConfiguration[];
+  onRefresh: () => Promise<void>;
+};
+
+const PlanConfigurationManager: React.FC<Props> = ({ configurations, onRefresh }) => {
+  const { updatePlanConfiguration } = useSupabaseData();
   const { toast } = useToast();
   const [editingPlan, setEditingPlan] = useState<any>(null);
-
-  useEffect(() => {
-    fetchPlanConfigurations();
-  }, []);
 
   const handleSavePlan = async () => {
     if (!editingPlan) return;
@@ -32,7 +34,7 @@ const PlanConfigurationManager = () => {
         description: "Configuração do plano atualizada com sucesso!"
       });
       setEditingPlan(null);
-      fetchPlanConfigurations();
+      onRefresh();
     } else {
       toast({
         title: "Erro",
@@ -49,7 +51,7 @@ const PlanConfigurationManager = () => {
         <p className="text-gray-600">Configure os diferentes planos de assinatura</p>
       </div>
 
-      {planConfigurations?.map(plan => (
+      {configurations?.map(plan => (
         <Card key={plan.id}>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -65,7 +67,7 @@ const PlanConfigurationManager = () => {
                 <Label>Máximo de Atendentes</Label>
                 <Input
                   type="number"
-                  value={editingPlan?.id === plan.id ? editingPlan.max_attendants : plan.max_attendants}
+                  value={editingPlan?.id === plan.id ? editingPlan.max_attendants : plan.max_attendants || 1}
                   onChange={(e) => setEditingPlan({ ...plan, max_attendants: parseInt(e.target.value) })}
                   disabled={editingPlan?.id !== plan.id}
                 />
@@ -74,7 +76,7 @@ const PlanConfigurationManager = () => {
                 <Label>Máximo de Agendamentos</Label>
                 <Input
                   type="number"
-                  value={editingPlan?.id === plan.id ? editingPlan.max_appointments : plan.max_appointments}
+                  value={editingPlan?.id === plan.id ? editingPlan.max_appointments : plan.max_appointments || 50}
                   onChange={(e) => setEditingPlan({ ...plan, max_appointments: parseInt(e.target.value) })}
                   disabled={editingPlan?.id !== plan.id}
                 />

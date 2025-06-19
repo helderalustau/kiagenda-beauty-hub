@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
@@ -81,6 +80,8 @@ export interface PlanConfiguration {
   name: string;
   price: number;
   description?: string;
+  max_attendants?: number;
+  max_appointments?: number;
 }
 
 export interface DashboardStats {

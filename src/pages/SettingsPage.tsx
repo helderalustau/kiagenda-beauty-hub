@@ -87,14 +87,14 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
       return;
     }
 
-    const result = await registerAdmin({
-      salonId: salon?.id || '',
-      name: newUserData.name,
-      password: newUserData.password,
-      email: newUserData.email,
-      phone: newUserData.phone,
-      role: newUserData.role
-    });
+    const result = await registerAdmin(
+      salon?.id || '',
+      newUserData.name,
+      newUserData.password,
+      newUserData.email,
+      newUserData.phone,
+      newUserData.role
+    );
 
     if (result.success) {
       toast({
