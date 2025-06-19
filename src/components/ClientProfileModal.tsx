@@ -13,7 +13,7 @@ interface ClientProfileModalProps {
   clientData: {
     id: string;
     name: string;
-    email: string;
+    email?: string;
     phone: string;
   } | null;
   onSave: (data: { name: string; email: string; phone: string }) => void;
