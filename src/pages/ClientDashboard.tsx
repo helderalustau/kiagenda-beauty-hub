@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ const ClientDashboard = () => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [selectedSalon, setSelectedSalon] = useState<any>(null);
   const [clientData, setClientData] = useState<any>(null);
-  const { salons, services, appointments, fetchAllSalons, updateClientProfile } = useSupabaseData();
+  const { salons, services, appointments, fetchAllSalons } = useSupabaseData();
   const { toast } = useToast();
 
   // Mock data - em produção viria do backend e seria gerenciado pelo estado global
@@ -116,7 +115,7 @@ const ClientDashboard = () => {
       localStorage.setItem('clientData', JSON.stringify(updatedClientData));
       
       // Em produção, aqui você faria a chamada para o backend
-      // await updateClientProfile(clientData.id, profileData);
+      // Para agora, apenas atualizamos o localStorage
       
       toast({
         title: "Sucesso",
