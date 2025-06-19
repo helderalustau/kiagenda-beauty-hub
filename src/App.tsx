@@ -12,6 +12,7 @@ import SalonSelection from "./pages/SalonSelection";
 import PlanSelection from "./pages/PlanSelection";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SalonSetup from "./pages/SalonSetup";
+import AdminRegistration from "./pages/AdminRegistration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/plan-selection" element={<PlanSelection />} />
             <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
             <Route path="/salon-setup" element={<SalonSetup />} />
+            <Route path="/admin-registration" element={<AdminRegistration />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

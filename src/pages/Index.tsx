@@ -5,51 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Scissors, Users, Eye, EyeOff } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
+import AdminSignupForm from '@/components/AdminSignupForm';
 
 const Index = () => {
   const [userType, setUserType] = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [clientForm, setClientForm] = useState({ nome: '', senha: '', telefone: '', email: '' });
-  const [adminForm, setAdminForm] = useState({ 
-    nome: '', 
-    senha: '', 
-    email: '', 
-    telefone: '', 
-    salao: '',
-    categoryId: ''
-  });
+  const [adminForm, setAdminForm] = useState({ nome: '', senha: '' });
   const [loading, setLoading] = useState(false);
+  const [showAdminSignup, setShowAdminSignup] = useState(false);
 
-  const { authenticateClient, authenticateAdmin, registerClient, createSalon, registerAdmin, categories, fetchCategories } = useSupabaseData();
+  const { authenticateClient, authenticateAdmin, registerClient } = useSupabaseData();
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  // Função para preencher dados de exemplo
-  const fillExampleData = () => {
-    if (userType === 'register') {
-      setAdminForm({
-        nome: 'João Silva',
-        senha: '123456',
-        email: 'joao@salaobela.com',
-        telefone: '(11) 99999-8888',
-        salao: 'Salão Bela Vista',
-        categoryId: categories.length > 0 ? categories[0].id : ''
-      });
-      
-      toast({
-        title: "Dados preenchidos",
-        description: "Dados de exemplo foram preenchidos. Você pode modificá-los antes de criar a conta."
-      });
-    }
-  };
 
   const handleClientLogin = async () => {
     if (!clientForm.nome || !clientForm.senha) {
@@ -144,98 +115,31 @@ const Index = () => {
     } else {
       toast({
         title: "Erro de Login",
-        description: "Nome ou senha incorretos. Se você ainda não possui uma conta de administrador, clique em 'Não tem conta? Cadastre-se' para criar seu estabelecimento.",
+        description: "Nome ou senha incorretos. Se você ainda não possui uma conta de administrador, clique em 'Não tem conta? Cadastre-se' para criar sua conta.",
         variant: "destructive"
       });
     }
   };
 
-  const handleAdminRegister = async () => {
-    if (!adminForm.nome || !adminForm.senha || !adminForm.email || !adminForm.salao || !adminForm.categoryId) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      console.log('Iniciando processo de registro do administrador...');
-      
-      // Primeiro, criar o estabelecimento
-      console.log('Criando estabelecimento...');
-      const salonResult = await createSalon({
-        name: adminForm.salao,
-        owner_name: adminForm.nome,
-        phone: adminForm.telefone || adminForm.email,
-        address: 'Endereço a ser configurado',
-        category_id: adminForm.categoryId,
-        plan: 'bronze'
-      });
-
-      if (!salonResult.success || !salonResult.salon) {
-        console.error('Erro ao criar estabelecimento:', salonResult.message);
-        throw new Error(salonResult.message || 'Erro ao criar estabelecimento');
-      }
-
-      console.log('Estabelecimento criado com sucesso:', salonResult.salon);
-
-      // Em seguida, criar o usuário administrador vinculado ao estabelecimento
-      console.log('Criando administrador...');
-      const adminResult = await registerAdmin(
-        salonResult.salon.id,
-        adminForm.nome,
-        adminForm.senha,
-        adminForm.email,
-        adminForm.telefone,
-        'admin'
-      );
-
-      if (!adminResult.success || !adminResult.admin) {
-        console.error('Erro ao criar administrador:', adminResult.message);
-        throw new Error(adminResult.message || 'Erro ao criar usuário administrador');
-      }
-
-      console.log('Administrador criado com sucesso:', adminResult.admin);
-
-      // Salvar dados completos no localStorage incluindo salon_id
-      const adminDataWithSalon = {
-        ...adminResult.admin,
-        salon_id: salonResult.salon.id
-      };
-      
-      localStorage.setItem('userType', 'admin');
-      localStorage.setItem('adminData', JSON.stringify(adminDataWithSalon));
-      localStorage.setItem('selectedSalonId', salonResult.salon.id);
-      
-      console.log('Dados salvos no localStorage:', adminDataWithSalon);
-      
-      toast({
-        title: "Sucesso",
-        description: "Estabelecimento e administrador criados com sucesso!"
-      });
-
-      console.log('Redirecionando para configuração do estabelecimento...');
-      
-      // Aguardar um pouco para garantir que tudo seja salvo
-      setTimeout(() => {
-        window.location.href = '/salon-setup';
-      }, 500);
-      
-    } catch (error) {
-      console.error('Erro no processo de registro:', error);
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : 'Erro ao criar estabelecimento',
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleAdminSignupSuccess = (adminData: any) => {
+    console.log('Admin cadastrado com sucesso:', adminData);
+    setShowAdminSignup(false);
+    setUserType('login');
+    toast({
+      title: "Conta Criada!",
+      description: "Agora você pode fazer login com suas credenciais."
+    });
   };
+
+  // Se estiver mostrando o formulário de cadastro de admin, renderizar apenas ele
+  if (showAdminSignup) {
+    return (
+      <AdminSignupForm
+        onSuccess={handleAdminSignupSuccess}
+        onCancel={() => setShowAdminSignup(false)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
@@ -427,112 +331,27 @@ const Index = () => {
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">Criar Estabelecimento</h3>
+                    <div className="space-y-4 text-center">
+                      <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-xl border border-pink-100">
+                        <h3 className="text-lg font-semibold text-pink-800 mb-2">
+                          Criar Conta Administrativa
+                        </h3>
+                        <p className="text-pink-700 text-sm mb-4">
+                          Complete seu cadastro com todos os dados necessários para acessar o painel administrativo
+                        </p>
+                        
                         <Button 
-                          type="button"
-                          variant="outline" 
-                          size="sm"
-                          onClick={fillExampleData}
-                          className="text-xs"
+                          onClick={() => setShowAdminSignup(true)}
+                          className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium"
                         >
-                          Dados de Exemplo
+                          Começar Cadastro Completo
                         </Button>
                       </div>
                       
-                      <Separator />
-                      
-                      <div>
-                        <Label htmlFor="admin-name-reg">Nome do Responsável *</Label>
-                        <Input
-                          id="admin-name-reg"
-                          placeholder="João Silva"
-                          value={adminForm.nome}
-                          onChange={(e) => setAdminForm({...adminForm, nome: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="admin-password-reg">Senha *</Label>
-                        <div className="relative">
-                          <Input
-                            id="admin-password-reg"
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Escolha uma senha segura"
-                            value={adminForm.senha}
-                            onChange={(e) => setAdminForm({...adminForm, senha: e.target.value})}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
-                      </div>
-                      <div>
-                        <Label htmlFor="admin-email-reg">Email *</Label>
-                        <Input
-                          id="admin-email-reg"
-                          type="email"
-                          placeholder="joao@salaobela.com"
-                          value={adminForm.email}
-                          onChange={(e) => setAdminForm({...adminForm, email: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="admin-phone-reg">Telefone</Label>
-                        <Input
-                          id="admin-phone-reg"
-                          type="tel"
-                          placeholder="(11) 99999-8888"
-                          value={adminForm.telefone}
-                          onChange={(e) => setAdminForm({...adminForm, telefone: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="salon-name-reg">Nome do Salão *</Label>
-                        <Input
-                          id="salon-name-reg"
-                          placeholder="Salão Bela Vista"
-                          value={adminForm.salao}
-                          onChange={(e) => setAdminForm({...adminForm, salao: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="category-select">Categoria *</Label>
-                        <Select
-                          value={adminForm.categoryId}
-                          onValueChange={(value) => setAdminForm({...adminForm, categoryId: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a categoria do estabelecimento" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button 
-                        onClick={handleAdminRegister}
-                        disabled={loading}
-                        className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
-                      >
-                        {loading ? 'Criando Estabelecimento...' : 'Criar Estabelecimento'}
-                      </Button>
-                      
                       <div className="text-xs text-gray-500 space-y-1">
-                        <p>• O estabelecimento será criado no plano Bronze</p>
-                        <p>• Você poderá configurar todos os detalhes após a criação</p>
-                        <p>• Um link único será gerado automaticamente</p>
+                        <p>• Cadastro completo com todos os dados necessários</p>
+                        <p>• Vinculação automática ao estabelecimento</p>
+                        <p>• Controle total do painel administrativo</p>
                       </div>
                     </div>
                   )}
