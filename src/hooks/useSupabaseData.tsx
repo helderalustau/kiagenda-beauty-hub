@@ -61,7 +61,12 @@ export const useSupabaseData = () => {
         .limit(1)
         .single();
       
-      if (salonData) setSalon(salonData);
+      if (salonData) {
+        setSalon({
+          ...salonData,
+          plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+        });
+      }
 
       // Buscar agendamentos com dados dos clientes e serviços
       const { data: appointmentsData } = await supabase
@@ -73,7 +78,13 @@ export const useSupabaseData = () => {
         `)
         .eq('salon_id', salonData?.id || '');
       
-      if (appointmentsData) setAppointments(appointmentsData);
+      if (appointmentsData) {
+        const typedAppointments = appointmentsData.map(apt => ({
+          ...apt,
+          status: apt.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'
+        }));
+        setAppointments(typedAppointments);
+      }
 
       // Buscar serviços
       const { data: servicesData } = await supabase

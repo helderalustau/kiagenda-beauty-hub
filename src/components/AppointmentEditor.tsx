@@ -14,7 +14,9 @@ interface AppointmentEditorProps {
 }
 
 const AppointmentEditor = ({ appointment, isOpen, onClose, onUpdate }: AppointmentEditorProps) => {
-  const [status, setStatus] = useState(appointment?.status || 'pending');
+  const [status, setStatus] = useState<'pending' | 'confirmed' | 'completed' | 'cancelled'>(
+    (appointment?.status as 'pending' | 'confirmed' | 'completed' | 'cancelled') || 'pending'
+  );
   const [notes, setNotes] = useState(appointment?.notes || '');
 
   const handleSave = () => {
@@ -22,6 +24,10 @@ const AppointmentEditor = ({ appointment, isOpen, onClose, onUpdate }: Appointme
       onUpdate(appointment.id, status, notes);
       onClose();
     }
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatus(value as 'pending' | 'confirmed' | 'completed' | 'cancelled');
   };
 
   const statusOptions = [
@@ -50,7 +56,7 @@ const AppointmentEditor = ({ appointment, isOpen, onClose, onUpdate }: Appointme
           
           <div>
             <label className="block text-sm font-medium mb-2">Status</label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={handleStatusChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
