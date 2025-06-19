@@ -9,12 +9,19 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Category } from '@/hooks/useSupabaseData';
 
+interface FormData {
+  salon_name: string;
+  category_id: string;
+  street_number: string;
+  city: string;
+  state: string;
+  contact_phone: string;
+  opening_hours: any;
+}
+
 interface BasicSalonInfoStepProps {
-  formData: {
-    salon_name: string;
-    category_id: string;
-  };
-  setFormData: (data: any) => void;
+  formData: FormData;
+  setFormData: (updates: Partial<FormData>) => void;
   categories: Category[];
 }
 
@@ -38,7 +45,7 @@ const BasicSalonInfoStep = ({ formData, setFormData, categories }: BasicSalonInf
         <Input
           id="salon_name"
           value={formData.salon_name}
-          onChange={(e) => setFormData({...formData, salon_name: e.target.value})}
+          onChange={(e) => setFormData({ salon_name: e.target.value })}
           placeholder="Digite o nome do seu estabelecimento"
           className={!formData.salon_name?.trim() ? "border-red-300" : ""}
         />
@@ -75,7 +82,7 @@ const BasicSalonInfoStep = ({ formData, setFormData, categories }: BasicSalonInf
                       value={category.name}
                       onSelect={() => {
                         console.log('Categoria selecionada:', category.id, category.name);
-                        setFormData({...formData, category_id: category.id});
+                        setFormData({ category_id: category.id });
                         setCategoryComboboxOpen(false);
                       }}
                     >

@@ -49,6 +49,11 @@ const SalonSetup = () => {
   
   const [selectedServices, setSelectedServices] = useState<{ [key: string]: { selected: boolean; price: number } }>({});
 
+  // Create a helper function to update form data
+  const updateFormData = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
   useEffect(() => {
     console.log('SalonSetup - Carregando dados iniciais...');
     
@@ -372,16 +377,16 @@ const SalonSetup = () => {
         return (
           <BasicSalonInfoStep 
             formData={formData} 
-            setFormData={setFormData} 
+            setFormData={updateFormData} 
             categories={categories}
           />
         );
       case 2:
-        return <AddressStep formData={formData} setFormData={setFormData} />;
+        return <AddressStep formData={formData} updateFormData={updateFormData} />;
       case 3:
-        return <ContactStep formData={formData} setFormData={setFormData} />;
+        return <ContactStep formData={formData} updateFormData={updateFormData} />;
       case 4:
-        return <HoursStep formData={formData} setFormData={setFormData} />;
+        return <HoursStep formData={formData} updateFormData={updateFormData} />;
       case 5:
         return (
           <ServicesStep

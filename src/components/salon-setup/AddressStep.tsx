@@ -15,10 +15,10 @@ interface FormData {
 
 interface AddressStepProps {
   formData: FormData;
-  setFormData: (data: FormData) => void;
+  updateFormData: (updates: Partial<FormData>) => void;
 }
 
-const AddressStep = ({ formData, setFormData }: AddressStepProps) => {
+const AddressStep = ({ formData, updateFormData }: AddressStepProps) => {
   return (
     <div className="space-y-4">
       <div className="text-center py-4 mb-6">
@@ -35,7 +35,7 @@ const AddressStep = ({ formData, setFormData }: AddressStepProps) => {
         <Input
           id="street_number"
           value={formData.street_number}
-          onChange={(e) => setFormData({...formData, street_number: e.target.value})}
+          onChange={(e) => updateFormData({ street_number: e.target.value })}
           placeholder="Ex: Rua das Flores, 123"
         />
       </div>
@@ -44,7 +44,7 @@ const AddressStep = ({ formData, setFormData }: AddressStepProps) => {
         <Input
           id="city"
           value={formData.city}
-          onChange={(e) => setFormData({...formData, city: e.target.value})}
+          onChange={(e) => updateFormData({ city: e.target.value })}
           placeholder="Ex: São Paulo"
         />
       </div>
@@ -53,7 +53,7 @@ const AddressStep = ({ formData, setFormData }: AddressStepProps) => {
         <Input
           id="state"
           value={formData.state}
-          onChange={(e) => setFormData({...formData, state: e.target.value})}
+          onChange={(e) => updateFormData({ state: e.target.value })}
           placeholder="Ex: SP"
         />
       </div>
