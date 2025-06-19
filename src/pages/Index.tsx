@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [showAdminSignup, setShowAdminSignup] = useState(false);
 
-  const { authenticateClient, authenticateAdmin, registerClient } = useSupabaseData();
+  const { authenticateClient, authenticateAdmin, registerClient, createSalon } = useSupabaseData();
   const { toast } = useToast();
 
   const handleClientLogin = async () => {
@@ -84,6 +83,47 @@ const Index = () => {
     }
   };
 
+  const createTemporarySalon = async (adminData: any) => {
+    const temporarySalonData = {
+      name: 'Estabelecimento Temporário',
+      owner_name: adminData.name,
+      phone: adminData.phone || '(00) 00000-0000',
+      address: 'Endereço a ser configurado',
+      category_id: '00000000-0000-0000-0000-000000000000',
+      plan: 'bronze',
+      is_open: false,
+      setup_completed: false
+    };
+
+    console.log('Criando estabelecimento temporário para admin:', adminData.id);
+    const salonResult = await createSalon(temporarySalonData);
+    
+    if (salonResult.success && salonResult.salon) {
+      console.log('Estabelecimento temporário criado:', salonResult.salon.id);
+      
+      // Atualizar o admin com o salon_id
+      const { updateAdminUser } = useSupabaseData();
+      const updateResult = await updateAdminUser({
+        id: adminData.id,
+        salon_id: salonResult.salon.id
+      });
+      
+      if (updateResult.success) {
+        console.log('Admin atualizado com salon_id');
+        // Atualizar localStorage com os dados atualizados
+        const updatedAdminData = {
+          ...adminData,
+          salon_id: salonResult.salon.id
+        };
+        localStorage.setItem('adminData', JSON.stringify(updatedAdminData));
+        localStorage.setItem('selectedSalonId', salonResult.salon.id);
+        return salonResult.salon.id;
+      }
+    }
+    
+    return null;
+  };
+
   const handleAdminLogin = async () => {
     if (!adminForm.nome || !adminForm.senha) {
       toast({
@@ -101,6 +141,7 @@ const Index = () => {
     if (result.success && result.admin) {
       localStorage.setItem('userType', 'admin');
       localStorage.setItem('adminData', JSON.stringify(result.admin));
+      
       toast({
         title: "Sucesso",
         description: "Login realizado com sucesso!"
@@ -109,7 +150,32 @@ const Index = () => {
       // Verificar se é super admin
       if (result.admin.role === 'super_admin') {
         window.location.href = '/super-admin-dashboard';
+        return;
+      }
+
+      // Verificar se o admin possui estabelecimento
+      if (!result.admin.salon_id) {
+        console.log('Admin sem estabelecimento, criando estabelecimento temporário...');
+        
+        // Criar estabelecimento temporário
+        const temporarySalonId = await createTemporarySalon(result.admin);
+        
+        if (temporarySalonId) {
+          toast({
+            title: "Configuração Necessária",
+            description: "Complete a configuração do seu estabelecimento para continuar."
+          });
+          window.location.href = '/salon-setup';
+        } else {
+          toast({
+            title: "Erro",
+            description: "Erro ao criar estabelecimento. Tente novamente.",
+            variant: "destructive"
+          });
+        }
       } else {
+        // Admin já possui estabelecimento, ir para dashboard
+        localStorage.setItem('selectedSalonId', result.admin.salon_id);
         window.location.href = '/admin-dashboard';
       }
     } else {
