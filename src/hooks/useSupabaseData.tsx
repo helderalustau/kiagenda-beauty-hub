@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,7 +11,24 @@ export interface Salon {
   notification_sound: string;
   max_attendants: number;
   banner_image_url: string | null;
+  street_number: string | null;
+  city: string | null;
+  state: string | null;
+  contact_phone: string | null;
+  opening_hours: any;
+  is_open: boolean | null;
+  setup_completed: boolean | null;
   created_at: string;
+}
+
+export interface PresetService {
+  id: string;
+  category: string;
+  name: string;
+  description: string | null;
+  default_duration_minutes: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Service {
@@ -110,6 +126,7 @@ export const useSupabaseData = () => {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [planConfigurations, setPlanConfigurations] = useState<PlanConfiguration[]>([]);
+  const [presetServices, setPresetServices] = useState<PresetService[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -220,6 +237,98 @@ export const useSupabaseData = () => {
       }
     } catch (error) {
       console.error('Erro ao buscar salões:', error);
+    }
+  };
+
+  const fetchPresetServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('preset_services')
+        .select('*')
+        .order('category, name');
+      
+      if (error) throw error;
+      setPresetServices(data || []);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Erro ao buscar serviços pré-estabelecidos:', error);
+      return { success: false, message: 'Erro ao buscar serviços pré-estabelecidos' };
+    }
+  };
+
+  const toggleSalonStatus = async (salonId: string, isOpen: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('salons')
+        .update({ is_open: isOpen })
+        .eq('id', salonId);
+      
+      if (error) throw error;
+      
+      // Atualizar estado local
+      if (salon && salon.id === salonId) {
+        setSalon({ ...salon, is_open: isOpen });
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao alterar status do salão:', error);
+      return { success: false, message: 'Erro ao alterar status do salão' };
+    }
+  };
+
+  const completeSalonSetup = async (salonId: string, setupData: {
+    street_number?: string;
+    city?: string;
+    state?: string;
+    contact_phone?: string;
+    opening_hours?: any;
+  }) => {
+    try {
+      const { error } = await supabase
+        .from('salons')
+        .update({ 
+          ...setupData,
+          setup_completed: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', salonId);
+      
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao finalizar configuração:', error);
+      return { success: false, message: 'Erro ao finalizar configuração' };
+    }
+  };
+
+  const createServicesFromPresets = async (salonId: string, selectedPresets: { presetId: string; price: number }[]) => {
+    try {
+      const servicesToCreate = [];
+      
+      for (const preset of selectedPresets) {
+        const presetService = presetServices.find(p => p.id === preset.presetId);
+        if (presetService) {
+          servicesToCreate.push({
+            salon_id: salonId,
+            name: presetService.name,
+            description: presetService.description,
+            price: preset.price,
+            duration_minutes: presetService.default_duration_minutes,
+            active: true
+          });
+        }
+      }
+
+      const { error } = await supabase
+        .from('services')
+        .insert(servicesToCreate);
+      
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao criar serviços:', error);
+      return { success: false, message: 'Erro ao criar serviços' };
     }
   };
 
@@ -726,6 +835,7 @@ export const useSupabaseData = () => {
     adminUsers,
     dashboardStats,
     planConfigurations,
+    presetServices,
     loading,
     authenticateClient,
     authenticateAdmin,
@@ -747,6 +857,10 @@ export const useSupabaseData = () => {
     restoreAppointment,
     createService,
     cleanupSalonsWithoutAdmins,
+    fetchPresetServices,
+    toggleSalonStatus,
+    completeSalonSetup,
+    createServicesFromPresets,
     refreshData: fetchData,
     fetchSalonDetails
   };

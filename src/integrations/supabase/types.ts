@@ -217,44 +217,95 @@ export type Database = {
         }
         Relationships: []
       }
+      preset_services: {
+        Row: {
+          category: string
+          created_at: string
+          default_duration_minutes: number
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          default_duration_minutes?: number
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          default_duration_minutes?: number
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       salons: {
         Row: {
           address: string
           banner_image_url: string | null
+          city: string | null
+          contact_phone: string | null
           created_at: string
           id: string
+          is_open: boolean | null
           max_attendants: number | null
           name: string
           notification_sound: string | null
+          opening_hours: Json | null
           owner_name: string
           phone: string
           plan: string
+          setup_completed: boolean | null
+          state: string | null
+          street_number: string | null
           updated_at: string
         }
         Insert: {
           address: string
           banner_image_url?: string | null
+          city?: string | null
+          contact_phone?: string | null
           created_at?: string
           id?: string
+          is_open?: boolean | null
           max_attendants?: number | null
           name: string
           notification_sound?: string | null
+          opening_hours?: Json | null
           owner_name: string
           phone: string
           plan?: string
+          setup_completed?: boolean | null
+          state?: string | null
+          street_number?: string | null
           updated_at?: string
         }
         Update: {
           address?: string
           banner_image_url?: string | null
+          city?: string | null
+          contact_phone?: string | null
           created_at?: string
           id?: string
+          is_open?: boolean | null
           max_attendants?: number | null
           name?: string
           notification_sound?: string | null
+          opening_hours?: Json | null
           owner_name?: string
           phone?: string
           plan?: string
+          setup_completed?: boolean | null
+          state?: string | null
+          street_number?: string | null
           updated_at?: string
         }
         Relationships: []
