@@ -21,45 +21,13 @@ export const useSalonData = () => {
         return { success: false, message: 'Telefone é obrigatório' };
       }
 
-      // First, ensure we have a default category
-      let { data: categories, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id')
-        .limit(1);
-
-      let defaultCategoryId = null;
-
-      if (categoriesError || !categories || categories.length === 0) {
-        console.log('No categories found, creating default category...');
-        
-        // Create a default category
-        const { data: newCategory, error: createCategoryError } = await supabase
-          .from('categories')
-          .insert({
-            name: 'Geral',
-            description: 'Categoria padrão para estabelecimentos'
-          })
-          .select()
-          .single();
-
-        if (createCategoryError) {
-          console.error('Error creating default category:', createCategoryError);
-          return { success: false, message: 'Erro ao criar categoria padrão' };
-        }
-
-        defaultCategoryId = newCategory.id;
-        console.log('Default category created:', newCategory.id);
-      } else {
-        defaultCategoryId = categories[0].id;
-      }
-
-      // Clean the data before inserting - use default category for temporary salon
+      // Clean the data before inserting - NO CATEGORY REQUIRED for temporary salon
       const cleanSalonData = {
         name: salonData.name.trim(),
         owner_name: salonData.owner_name.trim(),
         phone: salonData.phone.trim(),
         address: salonData.address,
-        category_id: defaultCategoryId, // Use default category temporarily
+        category_id: null, // Allow null for temporary salons
         plan: salonData.plan || 'bronze',
         is_open: false,
         setup_completed: false,
