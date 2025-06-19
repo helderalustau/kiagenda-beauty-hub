@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,7 @@ const Index = () => {
         title: "Sucesso",
         description: "Login realizado com sucesso!"
       });
-      window.location.href = '/client-dashboard';
+      window.location.href = '/salon-selection';
     } else {
       toast({
         title: "Erro",
@@ -77,7 +76,7 @@ const Index = () => {
         title: "Sucesso",
         description: "Cadastro realizado com sucesso!"
       });
-      window.location.href = '/client-dashboard';
+      window.location.href = '/salon-selection';
     } else {
       toast({
         title: "Erro",
@@ -108,7 +107,13 @@ const Index = () => {
         title: "Sucesso",
         description: "Login realizado com sucesso!"
       });
-      window.location.href = '/admin-dashboard';
+
+      // Verificar se é super admin
+      if (result.user.role === 'super_admin') {
+        window.location.href = '/super-admin-dashboard';
+      } else {
+        window.location.href = '/admin-dashboard';
+      }
     } else {
       toast({
         title: "Erro",

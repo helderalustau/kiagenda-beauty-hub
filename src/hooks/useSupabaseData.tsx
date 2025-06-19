@@ -55,7 +55,7 @@ export interface AdminAuth {
   password: string;
   email: string;
   phone: string;
-  role: 'admin' | 'manager' | 'collaborator';
+  role: 'admin' | 'manager' | 'collaborator' | 'super_admin';
   avatar_url: string;
 }
 
@@ -74,6 +74,7 @@ export interface Appointment {
 
 export const useSupabaseData = () => {
   const [salon, setSalon] = useState<Salon | null>(null);
+  const [salons, setSalons] = useState<Salon[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -83,67 +84,107 @@ export const useSupabaseData = () => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (salonId?: string) => {
     try {
-      // Buscar dados do salão
-      const { data: salonData } = await supabase
-        .from('salons')
-        .select('*')
-        .limit(1)
-        .single();
-      
-      if (salonData) {
-        setSalon({
-          ...salonData,
-          plan: salonData.plan as 'bronze' | 'prata' | 'gold'
-        });
+      let targetSalonId = salonId;
+
+      if (!targetSalonId) {
+        // Se não especificou salão, pega o primeiro
+        const { data: salonData } = await supabase
+          .from('salons')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (salonData) {
+          targetSalonId = salonData.id;
+          setSalon({
+            ...salonData,
+            plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+          });
+        }
+      } else {
+        // Buscar salão específico
+        const { data: salonData } = await supabase
+          .from('salons')
+          .select('*')
+          .eq('id', targetSalonId)
+          .single();
+        
+        if (salonData) {
+          setSalon({
+            ...salonData,
+            plan: salonData.plan as 'bronze' | 'prata' | 'gold'
+          });
+        }
       }
 
-      // Buscar agendamentos com dados dos clientes e serviços
-      const { data: appointmentsData } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          clients(*),
-          services(*)
-        `)
-        .eq('salon_id', salonData?.id || '');
-      
-      if (appointmentsData) {
-        const typedAppointments = appointmentsData.map(apt => ({
-          ...apt,
-          status: apt.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'
-        }));
-        setAppointments(typedAppointments);
-      }
+      if (targetSalonId) {
+        // Buscar agendamentos com dados dos clientes e serviços
+        const { data: appointmentsData } = await supabase
+          .from('appointments')
+          .select(`
+            *,
+            clients(*),
+            services(*)
+          `)
+          .eq('salon_id', targetSalonId);
+        
+        if (appointmentsData) {
+          const typedAppointments = appointmentsData.map(apt => ({
+            ...apt,
+            status: apt.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'
+          }));
+          setAppointments(typedAppointments);
+        }
 
-      // Buscar serviços
-      const { data: servicesData } = await supabase
-        .from('services')
-        .select('*')
-        .eq('salon_id', salonData?.id || '')
-        .eq('active', true);
-      
-      if (servicesData) setServices(servicesData);
+        // Buscar serviços
+        const { data: servicesData } = await supabase
+          .from('services')
+          .select('*')
+          .eq('salon_id', targetSalonId)
+          .eq('active', true);
+        
+        if (servicesData) setServices(servicesData);
 
-      // Buscar usuários admin
-      const { data: usersData } = await supabase
-        .from('admin_auth')
-        .select('*')
-        .eq('salon_id', salonData?.id || '');
-      
-      if (usersData) {
-        const typedUsers = usersData.map(user => ({
-          ...user,
-          role: user.role as 'admin' | 'manager' | 'collaborator'
-        }));
-        setAdminUsers(typedUsers);
+        // Buscar usuários admin
+        const { data: usersData } = await supabase
+          .from('admin_auth')
+          .select('*')
+          .eq('salon_id', targetSalonId);
+        
+        if (usersData) {
+          const typedUsers = usersData.map(user => ({
+            ...user,
+            role: user.role as 'admin' | 'manager' | 'collaborator' | 'super_admin'
+          }));
+          setAdminUsers(typedUsers);
+        }
       }
 
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllSalons = async () => {
+    try {
+      const { data: salonsData } = await supabase
+        .from('salons')
+        .select('*')
+        .order('name');
+      
+      if (salonsData) {
+        const typedSalons = salonsData.map(salon => ({
+          ...salon,
+          plan: salon.plan as 'bronze' | 'prata' | 'gold'
+        }));
+        setSalons(typedSalons);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar salões:', error);
     }
   };
 
@@ -240,6 +281,50 @@ export const useSupabaseData = () => {
     }
   };
 
+  const createSalon = async (salonData: {
+    name: string;
+    owner_name: string;
+    phone: string;
+    address: string;
+    plan?: 'bronze' | 'prata' | 'gold';
+  }) => {
+    try {
+      const { data, error } = await supabase
+        .from('salons')
+        .insert({
+          ...salonData,
+          plan: salonData.plan || 'bronze'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        return { success: false, message: 'Erro ao criar estabelecimento' };
+      }
+      
+      return { success: true, salon: data };
+    } catch (error) {
+      return { success: false, message: 'Erro ao criar estabelecimento' };
+    }
+  };
+
+  const deleteSalon = async (salonId: string) => {
+    try {
+      const { error } = await supabase
+        .from('salons')
+        .delete()
+        .eq('id', salonId);
+      
+      if (!error) {
+        await fetchAllSalons();
+        return { success: true };
+      }
+      return { success: false, message: 'Erro ao excluir estabelecimento' };
+    } catch (error) {
+      return { success: false, message: 'Erro ao excluir estabelecimento' };
+    }
+  };
+
   const updateAppointmentStatus = async (id: string, status: string, notes?: string) => {
     try {
       const { error } = await supabase
@@ -333,6 +418,7 @@ export const useSupabaseData = () => {
 
   return {
     salon,
+    salons,
     appointments,
     services,
     adminUsers,
@@ -341,11 +427,14 @@ export const useSupabaseData = () => {
     authenticateAdmin,
     registerClient,
     registerAdmin,
+    createSalon,
+    deleteSalon,
     updateAppointmentStatus,
     updateSalon,
     updateAdminUser,
     deleteAdminUser,
     createAppointment,
+    fetchAllSalons,
     refreshData: fetchData
   };
 };
