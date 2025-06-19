@@ -41,10 +41,9 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
       return;
     }
 
-    // Create salon with temporary name and category - these will be updated in setup
+    // Create salon - the category will be handled automatically by the backend
     const salonData = {
       name: 'Estabelecimento Temporário',
-      category_id: '00000000-0000-0000-0000-000000000000', // Temporary UUID
       ...newSalon,
       address: 'Endereço será preenchido na configuração'
     };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +23,14 @@ interface BasicSalonInfoStepProps {
 
 const BasicSalonInfoStep = ({ formData, updateFormData, categories }: BasicSalonInfoStepProps) => {
   const selectedCategory = categories.find(cat => cat.id === formData.category_id);
+
+  // Auto-select first category if none is selected and categories are available
+  useEffect(() => {
+    if (!formData.category_id && categories.length > 0) {
+      console.log('Auto-selecting first available category:', categories[0].id);
+      updateFormData({ category_id: categories[0].id });
+    }
+  }, [categories, formData.category_id, updateFormData]);
 
   return (
     <div className="space-y-4">
