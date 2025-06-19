@@ -163,9 +163,10 @@ const Index = () => {
     setLoading(true);
     
     try {
-      console.log('Starting admin registration process...');
+      console.log('Iniciando processo de registro do administrador...');
       
       // Primeiro, criar o estabelecimento
+      console.log('Criando estabelecimento...');
       const salonResult = await createSalon({
         name: adminForm.salao,
         owner_name: adminForm.nome,
@@ -176,12 +177,14 @@ const Index = () => {
       });
 
       if (!salonResult.success || !salonResult.salon) {
+        console.error('Erro ao criar estabelecimento:', salonResult.message);
         throw new Error(salonResult.message || 'Erro ao criar estabelecimento');
       }
 
-      console.log('Salon created successfully, now creating admin...');
+      console.log('Estabelecimento criado com sucesso:', salonResult.salon);
 
-      // Em seguida, criar o usuário administrador
+      // Em seguida, criar o usuário administrador vinculado ao estabelecimento
+      console.log('Criando administrador...');
       const adminResult = await registerAdmin(
         salonResult.salon.id,
         adminForm.nome,
@@ -192,25 +195,38 @@ const Index = () => {
       );
 
       if (!adminResult.success || !adminResult.admin) {
+        console.error('Erro ao criar administrador:', adminResult.message);
         throw new Error(adminResult.message || 'Erro ao criar usuário administrador');
       }
 
-      console.log('Admin created successfully:', adminResult.admin);
+      console.log('Administrador criado com sucesso:', adminResult.admin);
 
-      // Salvar dados do admin no localStorage
+      // Salvar dados completos no localStorage incluindo salon_id
+      const adminDataWithSalon = {
+        ...adminResult.admin,
+        salon_id: salonResult.salon.id
+      };
+      
       localStorage.setItem('userType', 'admin');
-      localStorage.setItem('adminData', JSON.stringify(adminResult.admin));
+      localStorage.setItem('adminData', JSON.stringify(adminDataWithSalon));
+      localStorage.setItem('selectedSalonId', salonResult.salon.id);
+      
+      console.log('Dados salvos no localStorage:', adminDataWithSalon);
       
       toast({
         title: "Sucesso",
-        description: "Estabelecimento criado com sucesso!"
+        description: "Estabelecimento e administrador criados com sucesso!"
       });
 
-      // Redirecionar para a configuração do estabelecimento
-      window.location.href = '/salon-setup';
+      console.log('Redirecionando para configuração do estabelecimento...');
+      
+      // Aguardar um pouco para garantir que tudo seja salvo
+      setTimeout(() => {
+        window.location.href = '/salon-setup';
+      }, 500);
       
     } catch (error) {
-      console.error('Error in admin registration:', error);
+      console.error('Erro no processo de registro:', error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : 'Erro ao criar estabelecimento',
@@ -258,7 +274,7 @@ const Index = () => {
             </span>
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Conectamos você com os melhores salões de beleza da cidade. 
+            Conectamos você, com os melhores salões de beleza da cidade. 
             Agende quando quiser, de onde estiver.
           </p>
         </div>

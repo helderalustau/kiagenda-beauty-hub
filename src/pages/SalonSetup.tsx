@@ -19,6 +19,7 @@ const SalonSetup = () => {
     fetchPresetServices,
     completeSalonSetup, 
     createServicesFromPresets,
+    fetchSalonData,
     loading 
   } = useSupabaseData();
   
@@ -44,11 +45,65 @@ const SalonSetup = () => {
   const [selectedServices, setSelectedServices] = useState<{ [key: string]: { selected: boolean; price: number } }>({});
 
   useEffect(() => {
+    console.log('SalonSetup - Carregando dados iniciais...');
+    
+    // Buscar o salon_id do localStorage
+    const adminData = localStorage.getItem('adminData');
+    const selectedSalonId = localStorage.getItem('selectedSalonId');
+    
+    console.log('Admin data:', adminData);
+    console.log('Selected salon ID:', selectedSalonId);
+    
+    if (adminData) {
+      try {
+        const admin = JSON.parse(adminData);
+        const salonId = selectedSalonId || admin.salon_id;
+        
+        console.log('Salon ID encontrado:', salonId);
+        
+        if (salonId) {
+          console.log('Buscando dados do estabelecimento...');
+          fetchSalonData(salonId);
+        } else {
+          console.error('Salon ID não encontrado!');
+          toast({
+            title: "Erro",
+            description: "ID do estabelecimento não encontrado. Redirecionando...",
+            variant: "destructive"
+          });
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Erro ao processar dados do admin:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar dados. Redirecionando...",
+          variant: "destructive"
+        });
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      }
+    } else {
+      console.error('Dados do admin não encontrados!');
+      toast({
+        title: "Erro",
+        description: "Dados do administrador não encontrados. Redirecionando...",
+        variant: "destructive"
+      });
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    }
+    
     fetchPresetServices();
-  }, []);
+  }, [fetchSalonData, fetchPresetServices, toast]);
 
   useEffect(() => {
     if (salon) {
+      console.log('Estabelecimento carregado:', salon);
       setFormData(prev => ({
         ...prev,
         street_number: salon.street_number || '',
@@ -94,9 +149,35 @@ const SalonSetup = () => {
 
   const handleFinishSetup = async () => {
     if (!salon) {
+      console.error('Salon não encontrado no state!');
+      
+      // Tentar buscar o salon_id novamente
+      const adminData = localStorage.getItem('adminData');
+      const selectedSalonId = localStorage.getItem('selectedSalonId');
+      
+      if (adminData || selectedSalonId) {
+        try {
+          const admin = adminData ? JSON.parse(adminData) : null;
+          const salonId = selectedSalonId || admin?.salon_id;
+          
+          if (salonId) {
+            console.log('Tentando buscar dados do salon novamente...');
+            await fetchSalonData(salonId);
+            
+            // Aguardar um pouco para o estado ser atualizado
+            setTimeout(() => {
+              handleFinishSetup();
+            }, 1000);
+            return;
+          }
+        } catch (error) {
+          console.error('Erro ao tentar recuperar dados do salon:', error);
+        }
+      }
+      
       toast({
         title: "Erro",
-        description: "Dados do estabelecimento não encontrados",
+        description: "Dados do estabelecimento não encontrados. Por favor, tente novamente.",
         variant: "destructive"
       });
       return;
@@ -104,9 +185,9 @@ const SalonSetup = () => {
 
     try {
       setIsFinishing(true);
-      console.log('Starting salon setup completion...');
+      console.log('Iniciando finalização da configuração...');
       console.log('Salon ID:', salon.id);
-      console.log('Form data:', formData);
+      console.log('Dados do formulário:', formData);
 
       // Validar campos obrigatórios
       if (!formData.street_number?.trim()) {
@@ -145,9 +226,9 @@ const SalonSetup = () => {
         return;
       }
 
-      console.log('Calling completeSalonSetup...');
+      console.log('Chamando completeSalonSetup...');
       const setupResult = await completeSalonSetup(salon.id, formData);
-      console.log('Setup result:', setupResult);
+      console.log('Resultado da configuração:', setupResult);
       
       if (!setupResult.success) {
         toast({
@@ -163,12 +244,12 @@ const SalonSetup = () => {
         .filter(([_, data]) => data.selected && data.price > 0)
         .map(([presetId, data]) => ({ presetId, price: data.price }));
 
-      console.log('Services to create:', servicesToCreate);
+      console.log('Serviços para criar:', servicesToCreate);
 
       if (servicesToCreate.length > 0) {
-        console.log('Creating services from presets...');
+        console.log('Criando serviços...');
         const servicesResult = await createServicesFromPresets(salon.id, servicesToCreate);
-        console.log('Services result:', servicesResult);
+        console.log('Resultado dos serviços:', servicesResult);
         
         if (!servicesResult.success) {
           toast({
@@ -184,7 +265,7 @@ const SalonSetup = () => {
         description: "Configuração do estabelecimento finalizada com sucesso!"
       });
 
-      console.log('Redirecting to admin dashboard...');
+      console.log('Redirecionando para o dashboard do administrador...');
       
       // Aguardar um pouco para garantir que o toast seja exibido
       setTimeout(() => {
@@ -192,7 +273,7 @@ const SalonSetup = () => {
       }, 1000);
 
     } catch (error) {
-      console.error('Error finishing setup:', error);
+      console.error('Erro ao finalizar configuração:', error);
       toast({
         title: "Erro",
         description: "Erro inesperado ao finalizar configuração",
@@ -208,7 +289,18 @@ const SalonSetup = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+          <p className="text-gray-600">Carregando configuração do estabelecimento...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!salon) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando dados do estabelecimento...</p>
         </div>
       </div>
     );
