@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,14 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Scissors, Plus, LogOut, BarChart3, Users, Settings } from "lucide-react";
+import { ArrowLeft, Scissors, Plus, LogOut, BarChart3, Users, Settings, Upload, Trash } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import SuperAdminStats from '@/components/SuperAdminStats';
 import SuperAdminSalonManager from '@/components/SuperAdminSalonManager';
+import PlanConfigurationManager from '@/components/PlanConfigurationManager';
 
 const SuperAdminDashboard = () => {
-  const { salons, dashboardStats, fetchAllSalons, fetchDashboardStats, createSalon, loading } = useSupabaseData();
+  const { 
+    salons, 
+    dashboardStats, 
+    planConfigurations,
+    fetchAllSalons, 
+    fetchDashboardStats, 
+    fetchPlanConfigurations,
+    createSalon, 
+    uploadSalonBanner,
+    cleanupSalonsWithoutAdmins,
+    loading 
+  } = useSupabaseData();
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newSalon, setNewSalon] = useState({
@@ -23,11 +36,44 @@ const SuperAdminDashboard = () => {
     address: '',
     plan: 'bronze' as 'bronze' | 'prata' | 'gold'
   });
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAllSalons();
     fetchDashboardStats();
+    fetchPlanConfigurations();
   }, []);
+
+  const handleBannerSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Erro",
+          description: "Por favor, selecione apenas arquivos de imagem",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setBannerFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBannerPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCreateSalon = async () => {
     if (!newSalon.name || !newSalon.owner_name || !newSalon.phone || !newSalon.address) {
@@ -41,11 +87,24 @@ const SuperAdminDashboard = () => {
 
     const result = await createSalon(newSalon);
     
-    if (result.success) {
+    if (result.success && result.salon) {
+      // Upload do banner se foi selecionado
+      if (bannerFile) {
+        const uploadResult = await uploadSalonBanner(bannerFile, result.salon.id);
+        if (!uploadResult.success) {
+          toast({
+            title: "Aviso",
+            description: "Estabelecimento criado, mas houve erro no upload do banner",
+            variant: "destructive"
+          });
+        }
+      }
+
       toast({
         title: "Sucesso",
         description: "Estabelecimento criado com sucesso!"
       });
+      
       setShowCreateDialog(false);
       setNewSalon({
         name: '',
@@ -53,6 +112,28 @@ const SuperAdminDashboard = () => {
         phone: '',
         address: '',
         plan: 'bronze'
+      });
+      setBannerFile(null);
+      setBannerPreview(null);
+      
+      fetchAllSalons();
+      fetchDashboardStats();
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCleanupSalons = async () => {
+    const result = await cleanupSalonsWithoutAdmins();
+    
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: `${result.deletedCount} estabelecimento(s) sem administradores foram removidos`
       });
       fetchAllSalons();
       fetchDashboardStats();
@@ -74,6 +155,7 @@ const SuperAdminDashboard = () => {
   const handleRefresh = () => {
     fetchAllSalons();
     fetchDashboardStats();
+    fetchPlanConfigurations();
   };
 
   const handleBackToHome = () => {
@@ -115,14 +197,24 @@ const SuperAdminDashboard = () => {
                 </h1>
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sair</span>
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleCleanupSalons}
+                className="flex items-center space-x-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+              >
+                <Trash className="h-4 w-4" />
+                <span>Limpar Estabelecimentos</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sair</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -183,7 +275,7 @@ const SuperAdminDashboard = () => {
                     Novo Estabelecimento
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-lg">
                   <DialogHeader>
                     <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
                     <DialogDescription>
@@ -227,6 +319,31 @@ const SuperAdminDashboard = () => {
                         placeholder="Endereço completo"
                       />
                     </div>
+                    
+                    {/* Upload de Banner */}
+                    <div>
+                      <Label htmlFor="banner-upload">Banner do Estabelecimento</Label>
+                      <Input
+                        id="banner-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerSelect}
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Opcional. Se não fornecido, será usado um banner genérico.
+                      </p>
+                      
+                      {bannerPreview && (
+                        <div className="mt-2 relative rounded-lg overflow-hidden bg-gray-100 aspect-[2/1] max-w-xs">
+                          <img
+                            src={bannerPreview}
+                            alt="Preview do banner"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex space-x-2 mt-6">
                     <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
@@ -261,27 +378,14 @@ const SuperAdminDashboard = () => {
               <CardHeader>
                 <CardTitle>Configurações de Planos</CardTitle>
                 <CardDescription>
-                  Valores e configurações dos planos de assinatura
+                  Edite os valores, nomes e descrições dos planos de assinatura
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold text-amber-800">Plano Bronze</h4>
-                    <p className="text-sm text-gray-600">Básico</p>
-                    <p className="text-lg font-bold text-amber-800">R$ 29,90/mês</p>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold text-gray-800">Plano Prata</h4>
-                    <p className="text-sm text-gray-600">Intermediário</p>
-                    <p className="text-lg font-bold text-gray-800">R$ 59,90/mês</p>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold text-yellow-800">Plano Gold</h4>
-                    <p className="text-sm text-gray-600">Premium</p>
-                    <p className="text-lg font-bold text-yellow-800">R$ 99,90/mês</p>
-                  </div>
-                </div>
+              <CardContent>
+                <PlanConfigurationManager 
+                  configurations={planConfigurations}
+                  onRefresh={fetchPlanConfigurations}
+                />
               </CardContent>
             </Card>
           </TabsContent>

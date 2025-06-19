@@ -62,6 +62,7 @@ export type Database = {
           appointment_time: string
           client_id: string
           created_at: string
+          deleted_at: string | null
           id: string
           notes: string | null
           salon_id: string
@@ -75,6 +76,7 @@ export type Database = {
           appointment_time: string
           client_id: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           notes?: string | null
           salon_id: string
@@ -88,6 +90,7 @@ export type Database = {
           appointment_time?: string
           client_id?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           notes?: string | null
           salon_id?: string
@@ -180,6 +183,36 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      plan_configurations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          plan_type: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          plan_type: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          plan_type?: string
+          price?: number
           updated_at?: string
         }
         Relationships: []
@@ -316,7 +349,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_salons_without_admins: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

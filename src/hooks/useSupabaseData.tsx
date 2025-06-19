@@ -10,6 +10,7 @@ export interface Salon {
   plan: 'bronze' | 'prata' | 'gold';
   notification_sound: string;
   max_attendants: number;
+  banner_image_url: string | null;
   created_at: string;
 }
 
@@ -68,8 +69,19 @@ export interface Appointment {
   appointment_time: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   notes: string;
+  deleted_at: string | null;
   clients?: Client;
   services?: Service;
+}
+
+export interface PlanConfiguration {
+  id: string;
+  plan_type: 'bronze' | 'prata' | 'gold';
+  name: string;
+  price: number;
+  description: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DashboardStats {
@@ -96,6 +108,7 @@ export const useSupabaseData = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [planConfigurations, setPlanConfigurations] = useState<PlanConfiguration[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -548,6 +561,151 @@ export const useSupabaseData = () => {
     }
   };
 
+  const fetchPlanConfigurations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('plan_configurations')
+        .select('*')
+        .order('price');
+      
+      if (error) throw error;
+      setPlanConfigurations(data || []);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Erro ao buscar configurações de planos:', error);
+      return { success: false, message: 'Erro ao buscar configurações de planos' };
+    }
+  };
+
+  const updatePlanConfiguration = async (planId: string, planData: Partial<PlanConfiguration>) => {
+    try {
+      const { error } = await supabase
+        .from('plan_configurations')
+        .update({ 
+          ...planData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', planId);
+      
+      if (error) throw error;
+      await fetchPlanConfigurations();
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao atualizar configuração do plano:', error);
+      return { success: false, message: 'Erro ao atualizar configuração do plano' };
+    }
+  };
+
+  const uploadSalonBanner = async (file: File, salonId: string) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${salonId}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('salon-banners')
+        .upload(fileName, file);
+      
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('salon-banners')
+        .getPublicUrl(fileName);
+
+      // Atualizar URL da imagem no salão
+      const { error: updateError } = await supabase
+        .from('salons')
+        .update({ banner_image_url: publicUrl })
+        .eq('id', salonId);
+
+      if (updateError) throw updateError;
+
+      return { success: true, url: publicUrl };
+    } catch (error) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      return { success: false, message: 'Erro ao fazer upload da imagem' };
+    }
+  };
+
+  const fetchAllAppointments = async (salonId: string, includeDeleted = false) => {
+    try {
+      let query = supabase
+        .from('appointments')
+        .select(`
+          *,
+          clients(*),
+          services(*)
+        `)
+        .eq('salon_id', salonId);
+
+      if (!includeDeleted) {
+        query = query.is('deleted_at', null);
+      }
+
+      const { data, error } = await query.order('appointment_date', { ascending: false });
+      
+      if (error) throw error;
+      
+      const typedAppointments = (data || []).map(apt => ({
+        ...apt,
+        status: apt.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'
+      }));
+      
+      return { success: true, data: typedAppointments };
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos:', error);
+      return { success: false, message: 'Erro ao buscar agendamentos' };
+    }
+  };
+
+  const restoreAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ deleted_at: null })
+        .eq('id', appointmentId);
+      
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao restaurar agendamento:', error);
+      return { success: false, message: 'Erro ao restaurar agendamento' };
+    }
+  };
+
+  const createService = async (serviceData: {
+    salon_id: string;
+    name: string;
+    description?: string;
+    price: number;
+    duration_minutes: number;
+  }) => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .insert(serviceData)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, service: data };
+    } catch (error) {
+      console.error('Erro ao criar serviço:', error);
+      return { success: false, message: 'Erro ao criar serviço' };
+    }
+  };
+
+  const cleanupSalonsWithoutAdmins = async () => {
+    try {
+      const { data, error } = await supabase.rpc('cleanup_salons_without_admins');
+      
+      if (error) throw error;
+      return { success: true, deletedCount: data || 0 };
+    } catch (error) {
+      console.error('Erro ao limpar estabelecimentos sem administradores:', error);
+      return { success: false, message: 'Erro ao limpar estabelecimentos' };
+    }
+  };
+
   return {
     salon,
     salons,
@@ -555,6 +713,7 @@ export const useSupabaseData = () => {
     services,
     adminUsers,
     dashboardStats,
+    planConfigurations,
     loading,
     authenticateClient,
     authenticateAdmin,
@@ -569,6 +728,13 @@ export const useSupabaseData = () => {
     createAppointment,
     fetchAllSalons,
     fetchDashboardStats,
+    fetchPlanConfigurations,
+    updatePlanConfiguration,
+    uploadSalonBanner,
+    fetchAllAppointments,
+    restoreAppointment,
+    createService,
+    cleanupSalonsWithoutAdmins,
     refreshData: fetchData,
     fetchSalonDetails
   };
