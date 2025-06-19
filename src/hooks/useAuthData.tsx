@@ -109,10 +109,19 @@ export const useAuthData = () => {
     }
   };
 
-  // Register admin
+  // Register admin - CORRIGIDO
   const registerAdmin = async (salonId: string, name: string, password: string, email: string, phone?: string, role: string = 'admin') => {
     try {
       setLoading(true);
+      
+      console.log('Registering admin with data:', {
+        salon_id: salonId,
+        name,
+        password,
+        email,
+        phone,
+        role
+      });
       
       const { data, error } = await supabase
         .from('admin_auth')
@@ -129,9 +138,10 @@ export const useAuthData = () => {
 
       if (error) {
         console.error('Error registering admin:', error);
-        return { success: false, message: 'Erro ao registrar administrador' };
+        return { success: false, message: 'Erro ao registrar administrador: ' + error.message };
       }
 
+      console.log('Admin registered successfully:', data);
       return { success: true, admin: data };
     } catch (error) {
       console.error('Error registering admin:', error);

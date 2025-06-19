@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Scissors, Users } from "lucide-react";
+import { Calendar, Scissors, Users, Eye, EyeOff } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
 
 const Index = () => {
   const [userType, setUserType] = useState<'login' | 'register'>('login');
+  const [showPassword, setShowPassword] = useState(false);
   const [clientForm, setClientForm] = useState({ nome: '', senha: '', telefone: '', email: '' });
   const [adminForm, setAdminForm] = useState({ 
     nome: '', 
@@ -28,6 +31,25 @@ const Index = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Função para preencher dados de exemplo
+  const fillExampleData = () => {
+    if (userType === 'register') {
+      setAdminForm({
+        nome: 'João Silva',
+        senha: '123456',
+        email: 'joao@salaobela.com',
+        telefone: '(11) 99999-8888',
+        salao: 'Salão Bela Vista',
+        categoryId: categories.length > 0 ? categories[0].id : ''
+      });
+      
+      toast({
+        title: "Dados preenchidos",
+        description: "Dados de exemplo foram preenchidos. Você pode modificá-los antes de criar a conta."
+      });
+    }
+  };
 
   const handleClientLogin = async () => {
     if (!clientForm.nome || !clientForm.senha) {
@@ -141,6 +163,8 @@ const Index = () => {
     setLoading(true);
     
     try {
+      console.log('Starting admin registration process...');
+      
       // Primeiro, criar o estabelecimento
       const salonResult = await createSalon({
         name: adminForm.salao,
@@ -154,6 +178,8 @@ const Index = () => {
       if (!salonResult.success || !salonResult.salon) {
         throw new Error(salonResult.message || 'Erro ao criar estabelecimento');
       }
+
+      console.log('Salon created successfully, now creating admin...');
 
       // Em seguida, criar o usuário administrador
       const adminResult = await registerAdmin(
@@ -169,6 +195,8 @@ const Index = () => {
         throw new Error(adminResult.message || 'Erro ao criar usuário administrador');
       }
 
+      console.log('Admin created successfully:', adminResult.admin);
+
       // Salvar dados do admin no localStorage
       localStorage.setItem('userType', 'admin');
       localStorage.setItem('adminData', JSON.stringify(adminResult.admin));
@@ -182,6 +210,7 @@ const Index = () => {
       window.location.href = '/salon-setup';
       
     } catch (error) {
+      console.error('Error in admin registration:', error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : 'Erro ao criar estabelecimento',
@@ -354,13 +383,24 @@ const Index = () => {
                       </div>
                       <div>
                         <Label htmlFor="admin-password">Senha</Label>
-                        <Input
-                          id="admin-password"
-                          type="password"
-                          placeholder="Sua senha"
-                          value={adminForm.senha}
-                          onChange={(e) => setAdminForm({...adminForm, senha: e.target.value})}
-                        />
+                        <div className="relative">
+                          <Input
+                            id="admin-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Sua senha"
+                            value={adminForm.senha}
+                            onChange={(e) => setAdminForm({...adminForm, senha: e.target.value})}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
                       </div>
                       <Button 
                         onClick={handleAdminLogin}
@@ -372,31 +412,58 @@ const Index = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">Criar Estabelecimento</h3>
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          size="sm"
+                          onClick={fillExampleData}
+                          className="text-xs"
+                        >
+                          Dados de Exemplo
+                        </Button>
+                      </div>
+                      
+                      <Separator />
+                      
                       <div>
-                        <Label htmlFor="admin-name-reg">Nome *</Label>
+                        <Label htmlFor="admin-name-reg">Nome do Responsável *</Label>
                         <Input
                           id="admin-name-reg"
-                          placeholder="Nome do responsável"
+                          placeholder="João Silva"
                           value={adminForm.nome}
                           onChange={(e) => setAdminForm({...adminForm, nome: e.target.value})}
                         />
                       </div>
                       <div>
                         <Label htmlFor="admin-password-reg">Senha *</Label>
-                        <Input
-                          id="admin-password-reg"
-                          type="password"
-                          placeholder="Escolha uma senha segura"
-                          value={adminForm.senha}
-                          onChange={(e) => setAdminForm({...adminForm, senha: e.target.value})}
-                        />
+                        <div className="relative">
+                          <Input
+                            id="admin-password-reg"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Escolha uma senha segura"
+                            value={adminForm.senha}
+                            onChange={(e) => setAdminForm({...adminForm, senha: e.target.value})}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
                       </div>
                       <div>
                         <Label htmlFor="admin-email-reg">Email *</Label>
                         <Input
                           id="admin-email-reg"
                           type="email"
-                          placeholder="seu@email.com"
+                          placeholder="joao@salaobela.com"
                           value={adminForm.email}
                           onChange={(e) => setAdminForm({...adminForm, email: e.target.value})}
                         />
@@ -406,7 +473,7 @@ const Index = () => {
                         <Input
                           id="admin-phone-reg"
                           type="tel"
-                          placeholder="(11) 99999-9999"
+                          placeholder="(11) 99999-8888"
                           value={adminForm.telefone}
                           onChange={(e) => setAdminForm({...adminForm, telefone: e.target.value})}
                         />
@@ -415,7 +482,7 @@ const Index = () => {
                         <Label htmlFor="salon-name-reg">Nome do Salão *</Label>
                         <Input
                           id="salon-name-reg"
-                          placeholder="Nome do seu salão"
+                          placeholder="Salão Bela Vista"
                           value={adminForm.salao}
                           onChange={(e) => setAdminForm({...adminForm, salao: e.target.value})}
                         />
@@ -445,6 +512,12 @@ const Index = () => {
                       >
                         {loading ? 'Criando Estabelecimento...' : 'Criar Estabelecimento'}
                       </Button>
+                      
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <p>• O estabelecimento será criado no plano Bronze</p>
+                        <p>• Você poderá configurar todos os detalhes após a criação</p>
+                        <p>• Um link único será gerado automaticamente</p>
+                      </div>
                     </div>
                   )}
                 </TabsContent>
