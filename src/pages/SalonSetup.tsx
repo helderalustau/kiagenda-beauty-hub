@@ -377,7 +377,7 @@ const SalonSetup = () => {
         return (
           <BasicSalonInfoStep 
             formData={formData} 
-            setFormData={updateFormData} 
+            updateFormData={updateFormData} 
             categories={categories}
           />
         );
