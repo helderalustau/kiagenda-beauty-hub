@@ -185,7 +185,6 @@ const SalonSetup = () => {
             </p>
           </div>
 
-          {/* Progress Bar */}
           <div className="mb-8">
             <Progress value={progress} className="mb-4" />
             <div className="flex justify-between">
@@ -208,7 +207,6 @@ const SalonSetup = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Step 0: Informações Básicas */}
               {currentStep === 0 && (
                 <div className="space-y-4">
                   <div className="text-center py-8">
@@ -229,7 +227,6 @@ const SalonSetup = () => {
                 </div>
               )}
 
-              {/* Step 1: Endereço */}
               {currentStep === 1 && (
                 <div className="space-y-4">
                   <div>
@@ -262,7 +259,6 @@ const SalonSetup = () => {
                 </div>
               )}
 
-              {/* Step 2: Contato */}
               {currentStep === 2 && (
                 <div className="space-y-4">
                   <div>
@@ -280,7 +276,6 @@ const SalonSetup = () => {
                 </div>
               )}
 
-              {/* Step 3: Horários */}
               {currentStep === 3 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Horários de Funcionamento</h3>
@@ -347,7 +342,6 @@ const SalonSetup = () => {
                 </div>
               )}
 
-              {/* Step 4: Serviços */}
               {currentStep === 4 && (
                 <div className="space-y-6">
                   <div>
@@ -395,7 +389,6 @@ const SalonSetup = () => {
                 </div>
               )}
 
-              {/* Navigation Buttons */}
               <div className="flex justify-between pt-6">
                 <Button
                   variant="outline"
