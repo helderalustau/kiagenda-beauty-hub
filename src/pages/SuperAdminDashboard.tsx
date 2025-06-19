@@ -1,18 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Scissors, Plus, LogOut, BarChart3, Users, Settings, Upload, Trash } from "lucide-react";
+import { BarChart3, Users, Settings } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import SuperAdminStats from '@/components/SuperAdminStats';
 import SuperAdminSalonManager from '@/components/SuperAdminSalonManager';
 import PlanConfigurationManager from '@/components/PlanConfigurationManager';
+import SuperAdminCreateSalonDialog from '@/components/SuperAdminCreateSalonDialog';
+import SuperAdminDashboardHeader from '@/components/SuperAdminDashboardHeader';
 
 const SuperAdminDashboard = () => {
   const { 
@@ -30,17 +28,6 @@ const SuperAdminDashboard = () => {
     loading 
   } = useSupabaseData();
   const { toast } = useToast();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newSalon, setNewSalon] = useState({
-    name: '',
-    owner_name: '',
-    phone: '',
-    address: '',
-    plan: 'bronze' as 'bronze' | 'prata' | 'gold',
-    category_id: ''
-  });
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -55,60 +42,30 @@ const SuperAdminDashboard = () => {
     console.log('Categorias carregadas:', categories);
   }, [categories]);
 
-  const handleBannerSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Erro",
-          description: "Por favor, selecione apenas arquivos de imagem",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "Erro",
-          description: "A imagem deve ter no máximo 5MB",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setBannerFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setBannerPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const validateForm = () => {
+  const validateForm = (salonData: any) => {
     const errors = [];
     
-    if (!newSalon.name.trim()) {
+    if (!salonData.name.trim()) {
       errors.push('Nome do estabelecimento é obrigatório');
     }
-    if (!newSalon.owner_name.trim()) {
+    if (!salonData.owner_name.trim()) {
       errors.push('Nome do responsável é obrigatório');
     }
-    if (!newSalon.phone.trim()) {
+    if (!salonData.phone.trim()) {
       errors.push('Telefone é obrigatório');
     }
-    if (!newSalon.address.trim()) {
+    if (!salonData.address.trim()) {
       errors.push('Endereço é obrigatório');
     }
-    if (!newSalon.category_id) {
+    if (!salonData.category_id) {
       errors.push('Categoria é obrigatória');
     }
 
     return errors;
   };
 
-  const handleCreateSalon = async () => {
-    const validationErrors = validateForm();
+  const handleCreateSalon = async (salonData: any, bannerFile: File | null) => {
+    const validationErrors = validateForm(salonData);
     if (validationErrors.length > 0) {
       toast({
         title: "Erro de Validação",
@@ -122,7 +79,7 @@ const SuperAdminDashboard = () => {
     console.log('Starting salon creation process...');
 
     try {
-      const result = await createSalon(newSalon);
+      const result = await createSalon(salonData);
       console.log('Create salon result:', result);
       
       if (result.success && result.salon) {
@@ -149,19 +106,6 @@ const SuperAdminDashboard = () => {
           title: "Sucesso",
           description: "Estabelecimento criado com sucesso!"
         });
-        
-        // Reset form and close dialog
-        setShowCreateDialog(false);
-        setNewSalon({
-          name: '',
-          owner_name: '',
-          phone: '',
-          address: '',
-          plan: 'bronze',
-          category_id: ''
-        });
-        setBannerFile(null);
-        setBannerPreview(null);
         
         // Refresh data
         fetchAllSalons();
@@ -234,49 +178,11 @@ const SuperAdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={handleBackToHome}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Voltar ao Login</span>
-              </Button>
-              <div className="flex items-center space-x-2">
-                <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-2 rounded-lg">
-                  <Scissors className="h-6 w-6 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
-                  Super Admin Dashboard
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                onClick={handleCleanupSalons}
-                className="flex items-center space-x-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-              >
-                <Trash className="h-4 w-4" />
-                <span>Limpar Estabelecimentos</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Sair</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <SuperAdminDashboardHeader 
+        onBackToHome={handleBackToHome}
+        onCleanupSalons={handleCleanupSalons}
+        onLogout={handleLogout}
+      />
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="overview" className="space-y-6">
@@ -327,151 +233,11 @@ const SuperAdminDashboard = () => {
                 </p>
               </div>
 
-              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Estabelecimento
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Estabelecimento</DialogTitle>
-                    <DialogDescription>
-                      Preencha os dados do novo estabelecimento. Todos os campos marcados com * são obrigatórios.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="salon-name">Nome do Estabelecimento *</Label>
-                      <Input
-                        id="salon-name"
-                        value={newSalon.name}
-                        onChange={(e) => setNewSalon({...newSalon, name: e.target.value})}
-                        placeholder="Nome do salão"
-                        className={!newSalon.name.trim() ? "border-red-300" : ""}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="category">Categoria *</Label>
-                      <Select 
-                        value={newSalon.category_id} 
-                        onValueChange={(value) => {
-                          console.log('Categoria selecionada:', value);
-                          setNewSalon({...newSalon, category_id: value});
-                        }}
-                      >
-                        <SelectTrigger className={!newSalon.category_id ? "border-red-300" : ""}>
-                          <SelectValue placeholder="Selecione a categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.length > 0 ? (
-                            categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="" disabled>
-                              Carregando categorias...
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {categories.length === 0 && (
-                        <p className="text-sm text-orange-600 mt-1">
-                          Carregando categorias... Se o problema persistir, verifique o banco de dados.
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="owner-name">Nome do Responsável *</Label>
-                      <Input
-                        id="owner-name"
-                        value={newSalon.owner_name}
-                        onChange={(e) => setNewSalon({...newSalon, owner_name: e.target.value})}
-                        placeholder="Nome do proprietário"
-                        className={!newSalon.owner_name.trim() ? "border-red-300" : ""}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Telefone *</Label>
-                      <Input
-                        id="phone"
-                        value={newSalon.phone}
-                        onChange={(e) => setNewSalon({...newSalon, phone: e.target.value})}
-                        placeholder="(11) 99999-9999"
-                        className={!newSalon.phone.trim() ? "border-red-300" : ""}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="address">Endereço *</Label>
-                      <Input
-                        id="address"
-                        value={newSalon.address}
-                        onChange={(e) => setNewSalon({...newSalon, address: e.target.value})}
-                        placeholder="Endereço completo"
-                        className={!newSalon.address.trim() ? "border-red-300" : ""}
-                      />
-                    </div>
-                    
-                    {/* Upload de Banner */}
-                    <div>
-                      <Label htmlFor="banner-upload">Banner do Estabelecimento</Label>
-                      <Input
-                        id="banner-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleBannerSelect}
-                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Opcional. Máximo 5MB. Se não fornecido, será usado um banner genérico.
-                      </p>
-                      
-                      {bannerPreview && (
-                        <div className="mt-2 relative rounded-lg overflow-hidden bg-gray-100 aspect-[2/1] max-w-xs">
-                          <img
-                            src={bannerPreview}
-                            alt="Preview do banner"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex space-x-2 mt-6">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setShowCreateDialog(false);
-                        setNewSalon({
-                          name: '',
-                          owner_name: '',
-                          phone: '',
-                          address: '',
-                          plan: 'bronze',
-                          category_id: ''
-                        });
-                        setBannerFile(null);
-                        setBannerPreview(null);
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={handleCreateSalon}
-                      disabled={isSubmitting || categories.length === 0}
-                      className="min-w-[120px]"
-                    >
-                      {isSubmitting ? "Criando..." : "Criar Estabelecimento"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <SuperAdminCreateSalonDialog
+                categories={categories}
+                onCreateSalon={handleCreateSalon}
+                isSubmitting={isSubmitting}
+              />
             </div>
 
             <SuperAdminSalonManager 
