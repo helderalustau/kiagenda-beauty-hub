@@ -12,7 +12,10 @@ export const useAdminAuth = () => {
       
       const { data, error } = await supabase
         .from('admin_auth')
-        .select('*')
+        .select(`
+          *,
+          salons:salon_id(*)
+        `)
         .eq('name', username)
         .eq('password', password)
         .single();
@@ -23,11 +26,16 @@ export const useAdminAuth = () => {
       }
 
       if (data) {
+        // Include hierarchy codes in auth data
         localStorage.setItem('adminAuth', JSON.stringify({
           id: data.id,
           name: data.name,
           role: data.role,
-          salon_id: data.salon_id
+          salon_id: data.salon_id,
+          unique_admin_code: data.unique_admin_code,
+          salon_code: data.salon_code,
+          super_admin_link_code: data.super_admin_link_code,
+          hierarchy_level: data.hierarchy_level
         }));
         
         return { success: true, admin: data };
@@ -42,7 +50,7 @@ export const useAdminAuth = () => {
     }
   };
 
-  // Register admin
+  // Register admin with hierarchy codes
   const registerAdmin = async (salonId: string, name: string, password: string, email: string, phone?: string, role: string = 'admin') => {
     try {
       setLoading(true);
@@ -54,6 +62,7 @@ export const useAdminAuth = () => {
         email: email.trim(),
         phone: phone?.replace(/\D/g, '') || null,
         role,
+        hierarchy_level: 'admin',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

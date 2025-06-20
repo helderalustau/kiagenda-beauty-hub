@@ -14,41 +14,101 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           email: string | null
+          hierarchy_level: string | null
           id: string
           name: string
           password: string
           phone: string | null
           role: string
+          salon_code: string | null
           salon_id: string | null
+          super_admin_link_code: string | null
+          unique_admin_code: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          hierarchy_level?: string | null
           id?: string
           name: string
           password: string
           phone?: string | null
           role?: string
+          salon_code?: string | null
           salon_id?: string | null
+          super_admin_link_code?: string | null
+          unique_admin_code?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          hierarchy_level?: string | null
           id?: string
           name?: string
           password?: string
           phone?: string | null
           role?: string
+          salon_code?: string | null
           salon_id?: string | null
+          super_admin_link_code?: string | null
+          unique_admin_code?: string | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "admin_auth_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_hierarchy: {
+        Row: {
+          admin_code: string
+          admin_id: string | null
+          created_at: string | null
+          id: string
+          salon_code: string
+          salon_id: string | null
+          super_admin_code: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_code: string
+          admin_id?: string | null
+          created_at?: string | null
+          id?: string
+          salon_code: string
+          salon_id?: string | null
+          super_admin_code: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_code?: string
+          admin_id?: string | null
+          created_at?: string | null
+          id?: string
+          salon_code?: string
+          salon_id?: string | null
+          super_admin_code?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_hierarchy_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "admin_auth"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_hierarchy_salon_id_fkey"
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
@@ -272,6 +332,7 @@ export type Database = {
           city: string | null
           contact_phone: string | null
           created_at: string
+          created_by_super_admin: boolean | null
           id: string
           is_open: boolean | null
           max_attendants: number | null
@@ -284,6 +345,8 @@ export type Database = {
           setup_completed: boolean | null
           state: string | null
           street_number: string | null
+          super_admin_code: string | null
+          unique_code: string | null
           unique_slug: string | null
           updated_at: string
         }
@@ -293,6 +356,7 @@ export type Database = {
           city?: string | null
           contact_phone?: string | null
           created_at?: string
+          created_by_super_admin?: boolean | null
           id?: string
           is_open?: boolean | null
           max_attendants?: number | null
@@ -305,6 +369,8 @@ export type Database = {
           setup_completed?: boolean | null
           state?: string | null
           street_number?: string | null
+          super_admin_code?: string | null
+          unique_code?: string | null
           unique_slug?: string | null
           updated_at?: string
         }
@@ -314,6 +380,7 @@ export type Database = {
           city?: string | null
           contact_phone?: string | null
           created_at?: string
+          created_by_super_admin?: boolean | null
           id?: string
           is_open?: boolean | null
           max_attendants?: number | null
@@ -326,6 +393,8 @@ export type Database = {
           setup_completed?: boolean | null
           state?: string | null
           street_number?: string | null
+          super_admin_code?: string | null
+          unique_code?: string | null
           unique_slug?: string | null
           updated_at?: string
         }
@@ -427,6 +496,19 @@ export type Database = {
       cleanup_salons_without_admins: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      create_admin_hierarchy_link: {
+        Args: {
+          p_salon_id: string
+          p_admin_id: string
+          p_salon_name: string
+          p_admin_name: string
+        }
+        Returns: Json
+      }
+      generate_unique_code: {
+        Args: { prefix: string; length?: number }
+        Returns: string
       }
       generate_unique_slug: {
         Args: { salon_name: string }

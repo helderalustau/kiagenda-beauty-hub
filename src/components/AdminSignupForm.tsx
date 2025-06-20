@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from '@/hooks/useAuthData';
+import { useHierarchyData } from '@/hooks/useHierarchyData';
 import { AdminSignupData, validateAdminForm, formatPhone } from '@/utils/adminFormValidation';
 import AdminSignupHeader from './admin-signup/AdminSignupHeader';
 import AdminCreationDateInfo from './admin-signup/AdminCreationDateInfo';
@@ -21,6 +22,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
   const { toast } = useToast();
   const { registerAdmin, loading } = useAuthData();
   const { createSalon } = useSalonData();
+  const { createHierarchyLink } = useHierarchyData();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -121,6 +123,27 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
       );
 
       if (result.success) {
+        console.log('Administrador criado com sucesso, criando vínculos hierárquicos...');
+        
+        // Criar vínculos hierárquicos usando a nova função
+        const hierarchyResult = await createHierarchyLink(
+          salonResult.salon.id,
+          result.admin.id,
+          salonResult.salon.name,
+          formData.name.trim()
+        );
+
+        if (!hierarchyResult.success) {
+          console.error('Erro ao criar vínculos hierárquicos:', hierarchyResult.message);
+          toast({
+            title: "Aviso",
+            description: "Conta criada mas houve problema na configuração dos vínculos hierárquicos. Entre em contato com o suporte.",
+            variant: "destructive"
+          });
+        } else {
+          console.log('Vínculos hierárquicos criados:', hierarchyResult.data);
+        }
+
         toast({
           title: "Conta Criada com Sucesso!",
           description: "Sua conta foi criada. Você será redirecionado para configurar seu estabelecimento."
@@ -129,7 +152,8 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
         // Armazenar dados do admin e salon para a configuração
         localStorage.setItem('adminData', JSON.stringify({
           ...result.admin,
-          salon_id: salonResult.salon.id
+          salon_id: salonResult.salon.id,
+          hierarchy_codes: hierarchyResult.data
         }));
         localStorage.setItem('selectedSalonId', salonResult.salon.id);
         
@@ -179,8 +203,8 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
                 <h3 className="font-semibold text-blue-900 mb-2">Plano Selecionado:</h3>
                 <p className="text-blue-800 capitalize">
                   {selectedPlan === 'bronze' && 'Bronze - GRÁTIS/limitado'}
-                  {selectedPlan === 'prata' && 'Prata - R$ 50/mês'}
-                  {selectedPlan === 'gold' && 'Gold - R$ 199/mês'}
+                  {selectedPlan === 'prata' && 'Prata - R$ 99/mês'}
+                  {selectedPlan === 'gold' && 'Ouro - R$ 199/mês'}
                 </p>
               </div>
             )}
