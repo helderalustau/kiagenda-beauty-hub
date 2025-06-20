@@ -188,6 +188,11 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
     }
   };
 
+  const handleCancel = () => {
+    // Redirecionar para tela inicial
+    window.location.href = '/';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
@@ -219,7 +224,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
             />
 
             <AdminFormActions
-              onCancel={onCancel}
+              onCancel={handleCancel}
               submitting={submitting}
               loading={loading}
             />

@@ -56,9 +56,9 @@ const AdminRegistrationForm = ({
 
     // Validar nome
     if (!formData.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
+      newErrors.name = 'Usuário é obrigatório';
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Nome deve ter pelo menos 2 caracteres';
+      newErrors.name = 'Usuário deve ter pelo menos 2 caracteres';
     }
 
     // Validar senha
@@ -183,6 +183,11 @@ const AdminRegistrationForm = ({
     }
   };
 
+  const handleCancel = () => {
+    // Redirecionar para dashboard inicial
+    window.location.href = '/';
+  };
+
   const getCurrentDateTime = () => {
     return new Intl.DateTimeFormat('pt-BR', {
       dateStyle: 'short',
@@ -216,16 +221,16 @@ const AdminRegistrationForm = ({
             </p>
           </div>
 
-          {/* Nome */}
+          {/* Usuário */}
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              Nome Completo *
+              Usuário *
             </Label>
             <Input
               id="name"
               type="text"
-              placeholder="Digite o nome completo"
+              placeholder="Digite o nome de usuário"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               className={errors.name ? 'border-red-500' : ''}
@@ -233,26 +238,6 @@ const AdminRegistrationForm = ({
             />
             {errors.name && (
               <p className="text-sm text-red-500">{errors.name}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Email *
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="email@exemplo.com"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              className={errors.email ? 'border-red-500' : ''}
-              disabled={submitting}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email}</p>
             )}
           </div>
 
@@ -285,6 +270,26 @@ const AdminRegistrationForm = ({
             </div>
             {errors.password && (
               <p className="text-sm text-red-500">{errors.password}</p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Email *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="email@exemplo.com"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              className={errors.email ? 'border-red-500' : ''}
+              disabled={submitting}
+            />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email}</p>
             )}
           </div>
 
@@ -333,17 +338,15 @@ const AdminRegistrationForm = ({
 
           {/* Botões de Ação */}
           <div className="flex gap-3 pt-4">
-            {onCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-                disabled={submitting}
-                className="flex-1"
-              >
-                Cancelar
-              </Button>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={submitting}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
             <Button
               type="submit"
               disabled={submitting || loading}

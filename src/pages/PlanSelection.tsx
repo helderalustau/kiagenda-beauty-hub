@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ const PlanSelection = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingAdmin, setPendingAdmin] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { createSalon } = useSalonData();
   const { linkAdminToSalon } = useAdminAuth();
@@ -204,6 +204,92 @@ const PlanSelection = () => {
       });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handlePlanSelection = async (planType: string) => {
+    setSelectedPlan(planType);
+    setLoading(true);
+
+    try {
+      // Verificar se existe admin pendente
+      const pendingAdminData = localStorage.getItem('pendingAdminData');
+      
+      if (pendingAdminData) {
+        const adminData = JSON.parse(pendingAdminData);
+        
+        // Criar estabelecimento para o admin
+        const temporarySalonData = {
+          name: `Estabelecimento-${Date.now()}`,
+          owner_name: adminData.name,
+          phone: adminData.phone || '0000000000',
+          address: 'Endereço será preenchido na configuração',
+          plan: planType
+        };
+
+        const salonResult = await createSalon(temporarySalonData);
+        
+        if (!salonResult.success) {
+          throw new Error('Erro ao criar estabelecimento');
+        }
+
+        if (!('salon' in salonResult) || !salonResult.salon) {
+          throw new Error('Dados do estabelecimento não retornados');
+        }
+
+        // Vincular admin ao estabelecimento
+        const linkResult = await linkAdminToSalon(adminData.id, salonResult.salon.id);
+        
+        if (!linkResult.success) {
+          throw new Error('Erro ao vincular administrador ao estabelecimento');
+        }
+
+        // Criar vínculos hierárquicos
+        const hierarchyResult = await createHierarchyLink(
+          salonResult.salon.id,
+          adminData.id,
+          salonResult.salon.name,
+          adminData.name
+        );
+
+        if (!hierarchyResult.success) {
+          console.error('Erro ao criar vínculos hierárquicos:', hierarchyResult.message);
+        }
+
+        // Armazenar dados para a configuração
+        localStorage.setItem('selectedSalonId', salonResult.salon.id);
+        localStorage.setItem('adminData', JSON.stringify({
+          ...linkResult.admin,
+          salon_id: salonResult.salon.id,
+          hierarchy_codes: hierarchyResult.data
+        }));
+
+        toast({
+          title: "Plano Selecionado!",
+          description: `Plano ${planType} selecionado com sucesso. Redirecionando para configuração...`
+        });
+
+        // Redirecionar para BusinessSetup
+        setTimeout(() => {
+          window.location.href = '/business-setup';
+        }, 2000);
+
+      } else {
+        // Se não há admin pendente, redirecionar para criação de conta
+        setTimeout(() => {
+          window.location.href = `/admin-signup?plan=${planType}`;
+        }, 1000);
+      }
+
+    } catch (error) {
+      console.error('Erro ao processar seleção de plano:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao processar seleção de plano",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

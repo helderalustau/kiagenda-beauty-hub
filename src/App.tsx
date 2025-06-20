@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -13,6 +14,7 @@ import SalonSelection from "./pages/SalonSelection";
 import PlanSelection from "./pages/PlanSelection";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SalonSetup from "./pages/SalonSetup";
+import BusinessSetup from "./pages/BusinessSetup";
 import AdminRegistration from "./pages/AdminRegistration";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
@@ -39,6 +41,7 @@ const App: React.FC = () => {
               <Route path="/plan-selection" element={<PlanSelection />} />
               <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
               <Route path="/salon-setup" element={<SalonSetup />} />
+              <Route path="/business-setup" element={<BusinessSetup />} />
               <Route path="/admin-registration" element={<AdminRegistration />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
