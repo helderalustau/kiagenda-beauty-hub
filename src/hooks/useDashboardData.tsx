@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardStats, PlanConfiguration } from './useSupabaseData';
@@ -39,11 +38,26 @@ export const useDashboardData = () => {
         .from('salons')
         .select('plan');
 
+      // Fetch services count
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select('id');
+
+      const totalServices = servicesData?.length || 0;
+
       if (!salonsError && salonsData) {
         const salonsByPlan = {
           bronze: salonsData.filter(s => s.plan === 'bronze').length,
           prata: salonsData.filter(s => s.plan === 'prata').length,
           gold: salonsData.filter(s => s.plan === 'gold').length
+        };
+
+        // Calculate expected revenue based on plan pricing
+        const expectedRevenue = {
+          bronze: salonsByPlan.bronze * 29.90,
+          prata: salonsByPlan.prata * 59.90,
+          gold: salonsByPlan.gold * 99.90,
+          total: (salonsByPlan.bronze * 29.90) + (salonsByPlan.prata * 59.90) + (salonsByPlan.gold * 99.90)
         };
 
         setDashboardStats({
@@ -52,20 +66,20 @@ export const useDashboardData = () => {
           completedAppointments,
           totalRevenue,
           totalSalons: salonsData.length,
+          totalServices,
           salonsByPlan,
-          expectedRevenue: {
-            total: totalRevenue,
-            bronze: 0,
-            prata: 0,
-            gold: 0
-          }
+          expectedRevenue
         });
       } else {
         setDashboardStats({
           totalAppointments,
           pendingAppointments,
           completedAppointments,
-          totalRevenue
+          totalRevenue,
+          totalSalons: 0,
+          totalServices,
+          salonsByPlan: { bronze: 0, prata: 0, gold: 0 },
+          expectedRevenue: { total: 0, bronze: 0, prata: 0, gold: 0 }
         });
       }
     } catch (error) {

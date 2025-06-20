@@ -44,6 +44,12 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
     }
   };
 
+  // Provide default values for optional properties
+  const totalSalons = stats.totalSalons || 0;
+  const totalServices = stats.totalServices || 0;
+  const salonsByPlan = stats.salonsByPlan || { bronze: 0, prata: 0, gold: 0 };
+  const expectedRevenue = stats.expectedRevenue || { total: 0, bronze: 0, prata: 0, gold: 0 };
+
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -57,7 +63,7 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
               <Users className="h-5 w-5 text-blue-600" />
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
-              {stats.totalSalons}
+              {totalSalons}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -72,7 +78,7 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
               <DollarSign className="h-5 w-5 text-green-600" />
             </div>
             <CardTitle className="text-2xl font-bold text-green-600">
-              {formatCurrency(stats.expectedRevenue.total)}
+              {formatCurrency(expectedRevenue.total)}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -102,7 +108,7 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
               <Scissors className="h-5 w-5 text-pink-600" />
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
-              {stats.totalServices}
+              {totalServices}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -119,15 +125,15 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Badge className={getPlanColor('bronze')}>Bronze</Badge>
-                <span className="text-sm font-semibold">{stats.salonsByPlan.bronze}</span>
+                <span className="text-sm font-semibold">{salonsByPlan.bronze}</span>
               </div>
               <div className="flex justify-between items-center">
                 <Badge className={getPlanColor('prata')}>Prata</Badge>
-                <span className="text-sm font-semibold">{stats.salonsByPlan.prata}</span>
+                <span className="text-sm font-semibold">{salonsByPlan.prata}</span>
               </div>
               <div className="flex justify-between items-center">
                 <Badge className={getPlanColor('gold')}>Gold</Badge>
-                <span className="text-sm font-semibold">{stats.salonsByPlan.gold}</span>
+                <span className="text-sm font-semibold">{salonsByPlan.gold}</span>
               </div>
             </div>
           </CardHeader>
@@ -143,12 +149,12 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
               <span>R$ 29,90/mês</span>
             </CardTitle>
             <CardDescription className="text-amber-700">
-              {stats.salonsByPlan.bronze} estabelecimentos
+              {salonsByPlan.bronze} estabelecimentos
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-800">
-              {formatCurrency(stats.expectedRevenue.bronze)}
+              {formatCurrency(expectedRevenue.bronze)}
             </div>
             <p className="text-sm text-amber-600 mt-1">
               Receita mensal do plano Bronze
@@ -163,12 +169,12 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
               <span>R$ 59,90/mês</span>
             </CardTitle>
             <CardDescription className="text-gray-700">
-              {stats.salonsByPlan.prata} estabelecimentos
+              {salonsByPlan.prata} estabelecimentos
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-800">
-              {formatCurrency(stats.expectedRevenue.prata)}
+              {formatCurrency(expectedRevenue.prata)}
             </div>
             <p className="text-sm text-gray-600 mt-1">
               Receita mensal do plano Prata
@@ -183,12 +189,12 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
               <span>R$ 99,90/mês</span>
             </CardTitle>
             <CardDescription className="text-yellow-700">
-              {stats.salonsByPlan.gold} estabelecimentos
+              {salonsByPlan.gold} estabelecimentos
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-800">
-              {formatCurrency(stats.expectedRevenue.gold)}
+              {formatCurrency(expectedRevenue.gold)}
             </div>
             <p className="text-sm text-yellow-600 mt-1">
               Receita mensal do plano Gold
