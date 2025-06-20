@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,7 +65,7 @@ const SuperAdminDashboard = () => {
       const result = await createSalon(salonData);
       console.log('Create salon result:', result);
       
-      if (result.success && result.salon) {
+      if (result.success && 'salon' in result && result.salon) {
         console.log('Salon created successfully, ID:', result.salon.id);
 
         toast({
@@ -78,10 +77,11 @@ const SuperAdminDashboard = () => {
         fetchAllSalons();
         fetchDashboardStats();
       } else {
-        console.error('Failed to create salon:', result.message || 'Erro desconhecido');
+        const errorMessage = 'message' in result ? result.message : 'Erro desconhecido';
+        console.error('Failed to create salon:', errorMessage);
         toast({
           title: "Erro",
-          description: result.message || "Erro desconhecido ao criar estabelecimento",
+          description: errorMessage,
           variant: "destructive"
         });
       }

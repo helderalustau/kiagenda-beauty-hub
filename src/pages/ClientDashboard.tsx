@@ -1,7 +1,8 @@
+
 import React, { useEffect } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { SalonList } from '@/components/SalonList';
-import { useRouter } from 'next/router';
+import SalonList from '@/components/SalonList';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 const ClientDashboard = () => {
@@ -10,20 +11,20 @@ const ClientDashboard = () => {
     loading, 
     fetchAllSalons 
   } = useSupabaseData();
-  const router = useRouter();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      navigate('/login');
       return;
     }
 
     fetchAllSalons();
-  }, [user, fetchAllSalons, router]);
+  }, [user, fetchAllSalons, navigate]);
 
-  const handleBookService = (salonSlug: string) => {
-    router.push(`/booking/${salonSlug}`);
+  const handleBookService = async (salon: any) => {
+    navigate(`/booking/${salon.unique_slug || salon.id}`);
   };
 
   if (loading) {
