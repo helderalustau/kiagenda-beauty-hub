@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 
 interface FormData {
   salon_name: string;
-  category_id: string;
   street_number: string;
   city: string;
   state: string;

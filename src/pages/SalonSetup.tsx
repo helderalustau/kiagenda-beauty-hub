@@ -11,7 +11,6 @@ import { useSetupHandlers } from '@/components/salon-setup/SetupHandlers';
 const SalonSetup = () => {
   const {
     salon,
-    categories,
     presetServices,
     loading,
     currentStep,
@@ -113,7 +112,6 @@ const SalonSetup = () => {
                 salon={salon}
                 formData={formData}
                 updateFormData={updateFormData}
-                categories={categories}
                 presetServices={presetServices}
                 selectedServices={selectedServices}
                 onServiceToggle={handleServiceToggle}
