@@ -104,8 +104,12 @@ const AdminRegistrationForm = ({
         });
         
         // Armazenar dados do administrador para uso posterior
-        localStorage.setItem('pendingAdminData', JSON.stringify({
-          ...result.admin,
+        localStorage.setItem('adminData', JSON.stringify({
+          id: result.admin.id,
+          name: result.admin.name,
+          email: result.admin.email,
+          phone: result.admin.phone,
+          role: result.admin.role,
           createdAt: new Date().toISOString()
         }));
         
@@ -141,7 +145,7 @@ const AdminRegistrationForm = ({
   };
 
   const handleCancel = () => {
-    //Redirecionar para homepage
+    // Redirecionar para homepage
     window.location.href = '/';
   };
 
