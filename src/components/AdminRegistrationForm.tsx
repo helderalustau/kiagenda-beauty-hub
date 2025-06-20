@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -137,7 +136,7 @@ const AdminRegistrationForm = ({
         });
         
         // Armazenar dados do administrador e estabelecimento para uso na configuração
-        localStorage.setItem('adminData', JSON.stringify({
+        localStorage.setItem('adminAuth', JSON.stringify({
           ...result.admin,
           salon_id: salonResult.salon.id
         }));

@@ -61,11 +61,19 @@ const AdminLogin = () => {
       const result = await authenticateAdmin(formData.username, formData.password);
       
       if (result.success) {
+        // Armazenar dados do administrador para uso na configuração
+        localStorage.setItem('adminAuth', JSON.stringify(result.admin));
+        localStorage.setItem('selectedSalonId', result.admin.salon_id);
+        
         toast({
           title: "Sucesso",
-          description: "Login realizado com sucesso!"
+          description: "Login realizado com sucesso! Redirecionando para configuração do estabelecimento..."
         });
-        navigate('/admin-dashboard');
+        
+        // Redirecionar administradores normais para configuração do estabelecimento
+        setTimeout(() => {
+          navigate('/salon-setup');
+        }, 1500);
       } else {
         toast({
           title: "Erro",
