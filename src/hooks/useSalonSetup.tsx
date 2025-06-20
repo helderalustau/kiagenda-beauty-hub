@@ -48,18 +48,19 @@ export const useSalonSetup = () => {
 
     console.log('SalonSetup - Carregando dados iniciais...');
     
-    const adminData = localStorage.getItem('adminData');
+    const adminAuth = localStorage.getItem('adminAuth');
     const selectedSalonId = localStorage.getItem('selectedSalonId');
     
-    console.log('Admin data:', adminData);
+    console.log('Admin auth:', adminAuth);
     console.log('Selected salon ID:', selectedSalonId);
     
-    if (adminData) {
+    if (adminAuth) {
       try {
-        const admin = JSON.parse(adminData);
+        const admin = JSON.parse(adminAuth);
         const salonId = selectedSalonId || admin.salon_id;
         
         console.log('Salon ID encontrado:', salonId);
+        console.log('Is first access:', admin.isFirstAccess);
         
         if (salonId) {
           console.log('Buscando dados do estabelecimento...');
@@ -120,7 +121,7 @@ export const useSalonSetup = () => {
       console.log('Estabelecimento carregado:', salon);
       setFormData(prev => ({
         ...prev,
-        salon_name: salon.name === 'Estabelecimento Temporário' ? '' : salon.name,
+        salon_name: salon.name && !salon.name.startsWith('EST-') ? salon.name : '',
         street_number: salon.street_number || '',
         city: salon.city || '',
         state: salon.state || '',

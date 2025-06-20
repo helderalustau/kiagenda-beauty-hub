@@ -32,7 +32,6 @@ const AdminRegistrationForm = ({
   const { toast } = useToast();
   const { registerAdmin, loading } = useAuthData();
   const { createSalon } = useSalonData();
-  const { fetchSalonServices } = useServiceData();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -76,27 +75,6 @@ const AdminRegistrationForm = ({
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
     return `EST-${timestamp}-${random}`;
-  };
-
-  const checkSalonConfiguration = async (salonId: string) => {
-    try {
-      // Verificar se há serviços cadastrados
-      const services = await fetchSalonServices(salonId);
-      const hasServices = services.length > 0;
-
-      // Se não há serviços, vai para salon-setup
-      if (!hasServices) {
-        return '/salon-setup';
-      }
-
-      // Se há serviços, vai para admin-dashboard
-      return '/admin-dashboard';
-
-    } catch (error) {
-      console.error('Erro ao verificar configuração do estabelecimento:', error);
-      // Em caso de erro, redirecionar para salon-setup por segurança
-      return '/salon-setup';
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,18 +132,16 @@ const AdminRegistrationForm = ({
       );
 
       if (result.success) {
-        // Verificar configuração do estabelecimento para decidir redirecionamento
-        const redirectPath = await checkSalonConfiguration(salonResult.salon.id);
-        
         toast({
           title: "Sucesso!",
-          description: "Administrador criado com sucesso! Redirecionando..."
+          description: "Administrador criado com sucesso! Redirecionando para configuração do estabelecimento..."
         });
         
         // Armazenar dados do administrador e estabelecimento para uso na configuração
         localStorage.setItem('adminAuth', JSON.stringify({
           ...result.admin,
-          salon_id: salonResult.salon.id
+          salon_id: salonResult.salon.id,
+          isFirstAccess: true // Marcar como primeiro acesso
         }));
         localStorage.setItem('selectedSalonId', salonResult.salon.id);
         
@@ -179,9 +155,9 @@ const AdminRegistrationForm = ({
           setDateadm: new Date().toISOString()
         });
         
-        // Redirecionar baseado na configuração do estabelecimento
+        // Sempre redirecionar para salon-setup após criação do administrador
         setTimeout(() => {
-          window.location.href = redirectPath;
+          window.location.href = '/salon-setup';
         }, 2000);
         
         onSuccess?.();

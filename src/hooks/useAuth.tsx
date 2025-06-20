@@ -6,6 +6,7 @@ interface AuthUser {
   name: string;
   role?: string;
   salon_id?: string;
+  isFirstAccess?: boolean;
 }
 
 interface AuthContextType {
@@ -16,6 +17,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isClient: boolean;
   isSuperAdmin: boolean;
+  markAsReturningUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,6 +63,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('selectedSalonId');
   };
 
+  const markAsReturningUser = () => {
+    if (user) {
+      const updatedUser = { ...user, isFirstAccess: false };
+      setUser(updatedUser);
+      localStorage.setItem('adminAuth', JSON.stringify(updatedUser));
+    }
+  };
+
   const isAuthenticated = !!user;
   const isAdmin = user?.role && ['admin', 'manager', 'collaborator'].includes(user.role);
   const isClient = !user?.role; // Clients don't have roles
@@ -74,7 +84,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logout,
       isAdmin,
       isClient,
-      isSuperAdmin
+      isSuperAdmin,
+      markAsReturningUser
     }}>
       {children}
     </AuthContext.Provider>

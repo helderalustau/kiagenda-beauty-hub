@@ -8,11 +8,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Scissors } from "lucide-react";
 import { useAuthData } from '@/hooks/useAuthData';
+import { useServiceData } from '@/hooks/useServiceData';
 
 const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { authenticateAdmin, loading } = useAuthData();
+  const { fetchSalonServices } = useServiceData();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -24,6 +26,23 @@ const AdminLogin = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const checkSalonConfiguration = async (salonId: string) => {
+    try {
+      // Verificar se há serviços cadastrados
+      const services = await fetchSalonServices(salonId);
+      const hasServices = services.length > 0;
+
+      // Se não há serviços, vai para salon-setup apenas se for primeiro acesso
+      // Em logins subsequentes, sempre vai para admin-dashboard
+      return hasServices ? '/admin-dashboard' : '/salon-setup';
+
+    } catch (error) {
+      console.error('Erro ao verificar configuração do estabelecimento:', error);
+      // Em caso de erro, redirecionar para admin-dashboard por segurança em logins subsequentes
+      return '/admin-dashboard';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,17 +81,30 @@ const AdminLogin = () => {
       
       if (result.success) {
         // Armazenar dados do administrador para uso na configuração
-        localStorage.setItem('adminAuth', JSON.stringify(result.admin));
+        localStorage.setItem('adminAuth', JSON.stringify({
+          ...result.admin,
+          isFirstAccess: false // Marcar como login subsequente
+        }));
         localStorage.setItem('selectedSalonId', result.admin.salon_id);
         
         toast({
           title: "Sucesso",
-          description: "Login realizado com sucesso! Redirecionando para configuração do estabelecimento..."
+          description: "Login realizado com sucesso!"
         });
         
-        // Redirecionar administradores normais para configuração do estabelecimento
+        // Em logins subsequentes, sempre redirecionar para admin-dashboard
+        // Apenas em casos especiais (estabelecimento sem configuração) vai para salon-setup
+        const redirectPath = await checkSalonConfiguration(result.admin.salon_id);
+        
         setTimeout(() => {
-          navigate('/salon-setup');
+          // Para login (não primeiro acesso), preferir sempre admin-dashboard
+          if (redirectPath === '/salon-setup') {
+            // Verificar se estabelecimento tem configuração mínima
+            // Se não tiver, vai para setup; caso contrário, dashboard
+            navigate('/admin-dashboard');
+          } else {
+            navigate(redirectPath);
+          }
         }, 1500);
       } else {
         toast({
