@@ -88,10 +88,14 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
       const salonResult = await createSalon(temporarySalonData);
 
       if (!salonResult.success) {
-        const errorMessage = 'message' in salonResult ? salonResult.message : 'Erro desconhecido';
+        // Handle error case - check if message exists
+        const errorMessage = 'message' in salonResult && salonResult.message 
+          ? salonResult.message 
+          : 'Erro desconhecido';
         throw new Error('Erro ao criar estabelecimento: ' + errorMessage);
       }
 
+      // Type narrowing: now we know it's a success case with salon
       if (!('salon' in salonResult) || !salonResult.salon) {
         throw new Error('Erro ao criar estabelecimento: dados do estabelecimento não retornados');
       }

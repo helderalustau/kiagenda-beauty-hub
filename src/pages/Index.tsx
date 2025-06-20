@@ -88,7 +88,10 @@ const Index = () => {
           navigate('/plan-selection');
         }, 2000);
       } else {
-        const errorMessage = 'message' in result ? result.message : 'Erro desconhecido';
+        // Handle error case - check if message exists
+        const errorMessage = 'message' in result && result.message 
+          ? result.message 
+          : 'Erro desconhecido';
         toast({
           title: "Erro",
           description: errorMessage,
@@ -156,7 +159,10 @@ const Index = () => {
           navigate('/admin-registration');
         }, 1500);
       } else {
-        const errorMessage = 'message' in result ? result.message : 'Erro desconhecido';
+        // Handle error case - check if message exists
+        const errorMessage = 'message' in result && result.message 
+          ? result.message 
+          : 'Erro desconhecido';
         throw new Error(errorMessage);
       }
     } catch (error) {
@@ -476,7 +482,7 @@ const Index = () => {
                   <Label htmlFor="plan">Plano Desejado</Label>
                   <Select value={formData.plan} onValueChange={(value) => handleInputChange('plan', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um plano" />
+                      <SelectValue placeholder="Selecione um plano"  />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="bronze">Bronze - R$ 49/mês</SelectItem>

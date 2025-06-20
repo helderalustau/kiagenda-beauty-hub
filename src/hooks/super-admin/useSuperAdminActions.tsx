@@ -57,7 +57,10 @@ export const useSuperAdminActions = () => {
         fetchAllSalons();
         fetchDashboardStats();
       } else {
-        const errorMessage = 'message' in result ? result.message : 'Erro desconhecido';
+        // Handle error case - check if message exists
+        const errorMessage = 'message' in result && result.message 
+          ? result.message 
+          : 'Erro desconhecido';
         console.error('Failed to create salon:', errorMessage);
         toast({
           title: "Erro",
