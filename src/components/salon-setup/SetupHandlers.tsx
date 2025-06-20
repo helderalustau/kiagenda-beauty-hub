@@ -26,77 +26,92 @@ export const useSetupHandlers = ({
   selectedServices,
   setIsFinishing
 }: SetupHandlersProps) => {
-  const handleNext = async () => {
-    console.log('Navegando para próximo passo...');
-    
-    // Validate current step
+  
+  const validateCurrentStep = () => {
     switch (currentStep) {
       case 1: // Basic Salon Info
-        if (!formData.salon_name.trim()) {
+        if (!formData.salon_name?.trim()) {
           toast({
             title: "Erro",
             description: "Nome do estabelecimento é obrigatório",
             variant: "destructive"
           });
-          return;
+          return false;
         }
         break;
         
       case 2: // Address
-        if (!formData.street_number.trim() || !formData.city.trim() || !formData.state.trim()) {
+        if (!formData.street_number?.trim() || !formData.city?.trim() || !formData.state?.trim()) {
           toast({
             title: "Erro",
             description: "Todos os campos de endereço são obrigatórios",
             variant: "destructive"
           });
-          return;
+          return false;
         }
         break;
         
       case 3: // Contact
-        if (!formData.contact_phone.trim()) {
+        if (!formData.contact_phone?.trim()) {
           toast({
             title: "Erro",
             description: "Telefone de contato é obrigatório",
             variant: "destructive"
           });
-          return;
+          return false;
         }
         break;
     }
+    return true;
+  };
+
+  const handleNext = async () => {
+    console.log('Navegando para próximo passo...');
     
-    // Update salon data for the current step - apenas se necessário
+    // Validate current step
+    if (!validateCurrentStep()) {
+      return;
+    }
+    
+    // Update salon data only if there are changes and we have a salon
     if (salon && currentStep > 0) {
-      console.log('Atualizando dados do estabelecimento...');
+      console.log('Verificando se há mudanças para salvar...');
       
-      // Verificar se há mudanças antes de atualizar
       const hasChanges = (
         salon.name !== formData.salon_name ||
         salon.street_number !== formData.street_number ||
         salon.city !== formData.city ||
         salon.state !== formData.state ||
-        salon.contact_phone !== formData.contact_phone
+        salon.contact_phone !== formData.contact_phone ||
+        JSON.stringify(salon.opening_hours) !== JSON.stringify(formData.opening_hours)
       );
       
       if (hasChanges) {
-        const updateResult = await updateSalon({
+        console.log('Salvando alterações...');
+        
+        const updateData = {
           id: salon.id,
           name: formData.salon_name,
           street_number: formData.street_number,
           city: formData.city,
           state: formData.state,
           contact_phone: formData.contact_phone,
-          opening_hours: formData.opening_hours
-        });
+          opening_hours: formData.opening_hours,
+          address: `${formData.street_number}, ${formData.city}, ${formData.state}`
+        };
+        
+        const updateResult = await updateSalon(updateData);
         
         if (!updateResult.success) {
           toast({
             title: "Erro",
-            description: "Erro ao salvar dados: " + updateResult.message,
+            description: "Erro ao salvar dados: " + (updateResult.message || 'Erro desconhecido'),
             variant: "destructive"
           });
           return;
         }
+        
+        console.log('Dados salvos com sucesso');
       }
     }
     
@@ -122,10 +137,10 @@ export const useSetupHandlers = ({
     setIsFinishing(true);
 
     try {
-      console.log('Finalizando configuração...');
+      console.log('Finalizando configuração do estabelecimento...');
       
-      // First, complete the salon setup
-      const setupResult = await completeSalonSetup(salon.id, {
+      // Prepare setup data
+      const setupData = {
         name: formData.salon_name,
         street_number: formData.street_number,
         city: formData.city,
@@ -133,33 +148,41 @@ export const useSetupHandlers = ({
         contact_phone: formData.contact_phone,
         address: `${formData.street_number}, ${formData.city}, ${formData.state}`,
         opening_hours: formData.opening_hours
-      });
+      };
+      
+      // Complete salon setup
+      const setupResult = await completeSalonSetup(salon.id, setupData);
 
       if (!setupResult.success) {
         throw new Error(setupResult.message || 'Erro ao finalizar configuração');
       }
 
-      // Then create services from selected presets
+      console.log('Configuração do estabelecimento finalizada');
+
+      // Create services from selected presets
       const selectedServicesList = Object.entries(selectedServices)
         .filter(([_, serviceData]) => {
           const service = serviceData as { selected: boolean; price: number };
-          return service.selected;
+          return service.selected && service.price > 0;
         })
         .map(([serviceId, serviceData]) => {
           const service = serviceData as { selected: boolean; price: number };
           return {
-            preset_service_id: serviceId,
+            id: serviceId, // Use 'id' instead of 'preset_service_id'
             price: service.price
           };
         });
 
       if (selectedServicesList.length > 0) {
-        console.log('Criando serviços...', selectedServicesList);
+        console.log('Criando serviços selecionados...', selectedServicesList);
+        
         const servicesResult = await createServicesFromPresets(salon.id, selectedServicesList);
         
         if (!servicesResult.success) {
-          console.warn('Erro ao criar serviços:', servicesResult.message);
-          // Don't fail the entire process if services creation fails
+          console.warn('Aviso: Alguns serviços podem não ter sido criados:', servicesResult.message);
+          // Don't block the setup completion for service creation issues
+        } else {
+          console.log('Serviços criados com sucesso');
         }
       }
 
@@ -168,7 +191,7 @@ export const useSetupHandlers = ({
         description: "Configuração do estabelecimento finalizada com sucesso!"
       });
 
-      // Redirect to admin dashboard after a short delay
+      // Redirect to admin dashboard
       setTimeout(() => {
         window.location.href = '/admin-dashboard';
       }, 2000);

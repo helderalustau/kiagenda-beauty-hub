@@ -18,7 +18,7 @@ export const useSalonSetup = () => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isFinishing, setIsFinishing] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const [formData, setFormData] = useState({
     salon_name: '',
     street_number: '',
@@ -42,83 +42,66 @@ export const useSalonSetup = () => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  // Initialize data on mount - executar apenas uma vez
+  // Initialize data only once
   useEffect(() => {
-    if (dataLoaded) return; // Evitar múltiplas execuções
+    if (initialized) return;
 
-    console.log('SalonSetup - Carregando dados iniciais...');
-    
-    const adminAuth = localStorage.getItem('adminAuth');
-    const selectedSalonId = localStorage.getItem('selectedSalonId');
-    
-    console.log('Admin auth:', adminAuth);
-    console.log('Selected salon ID:', selectedSalonId);
-    
-    if (adminAuth) {
+    const initializeData = async () => {
       try {
+        console.log('SalonSetup - Inicializando dados...');
+        
+        const adminAuth = localStorage.getItem('adminAuth');
+        const selectedSalonId = localStorage.getItem('selectedSalonId');
+        
+        if (!adminAuth) {
+          toast({
+            title: "Erro",
+            description: "Dados do administrador não encontrados. Redirecionando...",
+            variant: "destructive"
+          });
+          setTimeout(() => window.location.href = '/admin-login', 2000);
+          return;
+        }
+
         const admin = JSON.parse(adminAuth);
         const salonId = selectedSalonId || admin.salon_id;
         
-        console.log('Salon ID encontrado:', salonId);
-        console.log('Is first access:', admin.isFirstAccess);
-        
-        if (salonId) {
-          console.log('Buscando dados do estabelecimento...');
-          
-          // Carregar todos os dados em paralelo para acelerar
-          Promise.all([
-            fetchSalonData(salonId),
-            fetchPresetServices()
-          ]).then(() => {
-            setDataLoaded(true);
-            console.log('Todos os dados carregados com sucesso');
-          }).catch(error => {
-            console.error('Erro ao carregar dados:', error);
-            toast({
-              title: "Erro",
-              description: "Erro ao carregar dados. Tente novamente.",
-              variant: "destructive"
-            });
-          });
-        } else {
-          console.error('Salon ID não encontrado!');
+        if (!salonId) {
           toast({
             title: "Erro",
             description: "ID do estabelecimento não encontrado. Redirecionando...",
             variant: "destructive"
           });
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 2000);
+          setTimeout(() => window.location.href = '/admin-login', 2000);
+          return;
         }
+
+        // Load data in parallel but only once
+        await Promise.all([
+          fetchSalonData(salonId),
+          fetchPresetServices()
+        ]);
+
+        setInitialized(true);
+        console.log('SalonSetup - Dados inicializados com sucesso');
+        
       } catch (error) {
-        console.error('Erro ao processar dados do admin:', error);
+        console.error('Erro ao inicializar dados:', error);
         toast({
           title: "Erro",
-          description: "Erro ao carregar dados. Redirecionando...",
+          description: "Erro ao carregar dados. Tente novamente.",
           variant: "destructive"
         });
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 2000);
       }
-    } else {
-      console.error('Dados do admin não encontrados!');
-      toast({
-        title: "Erro",
-        description: "Dados do administrador não encontrados. Redirecionando...",
-        variant: "destructive"
-      });
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
-    }
-  }, [dataLoaded]); // Dependência apenas do dataLoaded
+    };
 
-  // Update form data when salon is loaded - executar apenas quando salon mudar
+    initializeData();
+  }, [initialized, fetchSalonData, fetchPresetServices, toast]);
+
+  // Update form data when salon is loaded
   useEffect(() => {
-    if (salon && dataLoaded) {
-      console.log('Estabelecimento carregado:', salon);
+    if (salon && initialized) {
+      console.log('SalonSetup - Atualizando dados do formulário');
       setFormData(prev => ({
         ...prev,
         salon_name: salon.name && !salon.name.startsWith('EST-') ? salon.name : '',
@@ -129,12 +112,12 @@ export const useSalonSetup = () => {
         opening_hours: salon.opening_hours || prev.opening_hours
       }));
     }
-  }, [salon, dataLoaded]);
+  }, [salon, initialized]);
 
   return {
     salon,
     presetServices,
-    loading: loading || !dataLoaded,
+    loading: loading || !initialized,
     currentStep,
     setCurrentStep,
     isFinishing,

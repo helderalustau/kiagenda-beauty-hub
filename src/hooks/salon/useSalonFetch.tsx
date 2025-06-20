@@ -7,12 +7,13 @@ export const useSalonFetch = () => {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchedSalonIds, setFetchedSalonIds] = useState<Set<string>>(new Set());
 
   const fetchSalonData = async (salonId: string) => {
     try {
-      // Check if we already have the data in cache
-      if (salon && salon.id === salonId) {
-        console.log('Using cached salon data');
+      // Prevent duplicate fetches for the same salon
+      if (fetchedSalonIds.has(salonId) && salon?.id === salonId) {
+        console.log('Using cached salon data for:', salonId);
         return;
       }
 
@@ -27,11 +28,15 @@ export const useSalonFetch = () => {
 
       if (error) {
         console.error('Error fetching salon:', error);
+        if (error.code === 'PGRST116') {
+          console.error('Salon not found:', salonId);
+        }
         return;
       }
 
       console.log('Salon data loaded:', data);
       setSalon(data as Salon);
+      setFetchedSalonIds(prev => new Set(prev).add(salonId));
     } catch (error) {
       console.error('Error fetching salon data:', error);
     } finally {
@@ -83,6 +88,11 @@ export const useSalonFetch = () => {
     }
   };
 
+  const clearCache = () => {
+    setFetchedSalonIds(new Set());
+    setSalon(null);
+  };
+
   return {
     salon,
     salons,
@@ -91,6 +101,7 @@ export const useSalonFetch = () => {
     fetchSalonBySlug,
     fetchAllSalons,
     setSalon,
-    setSalons
+    setSalons,
+    clearCache
   };
 };

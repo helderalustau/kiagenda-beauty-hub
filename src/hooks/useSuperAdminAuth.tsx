@@ -22,19 +22,28 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
     try {
       setIsLoading(true);
       
-      // Verificar se existe dados de admin no localStorage
+      // First check: localStorage admin auth
       const adminAuth = localStorage.getItem('adminAuth');
       if (!adminAuth) {
-        console.log('SuperAdmin Auth: No admin auth found in localStorage');
+        console.log('SuperAdmin Auth: No admin auth found');
         setIsAuthorized(false);
         setUser(null);
         return false;
       }
 
-      const adminData = JSON.parse(adminAuth);
+      let adminData;
+      try {
+        adminData = JSON.parse(adminAuth);
+      } catch (parseError) {
+        console.error('SuperAdmin Auth: Invalid admin data format');
+        setIsAuthorized(false);
+        setUser(null);
+        return false;
+      }
+
       console.log('SuperAdmin Auth: Checking admin data:', adminData);
 
-      // Primeira verificação: nome deve ser exatamente "Helder"
+      // Second check: name must be exactly "Helder"
       if (adminData.name !== AUTHORIZED_SUPER_ADMIN) {
         console.log(`SuperAdmin Auth: Access denied for user: ${adminData.name}`);
         setIsAuthorized(false);
@@ -42,41 +51,60 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
         return false;
       }
 
-      // Segunda verificação: consultar banco de dados para validar
-      const { data: adminRecord, error } = await supabase
-        .from('admin_auth')
-        .select('*')
-        .eq('name', AUTHORIZED_SUPER_ADMIN)
-        .eq('id', adminData.id)
-        .single();
-
-      if (error || !adminRecord) {
-        console.error('SuperAdmin Auth: Database validation failed:', error);
-        setIsAuthorized(false);
-        setUser(null);
-        return false;
-      }
-
-      // Terceira verificação: validar role no banco
-      if (adminRecord.role !== 'super_admin') {
+      // Third check: role must be super_admin
+      if (adminData.role !== 'super_admin') {
         console.log('SuperAdmin Auth: User does not have super_admin role');
         setIsAuthorized(false);
         setUser(null);
         return false;
       }
 
-      // Quarta verificação: validar senha (dupla verificação de segurança)
-      if (adminRecord.password !== 'Hd@123@@') {
-        console.log('SuperAdmin Auth: Password validation failed');
+      // Fourth check: database validation
+      try {
+        const { data: adminRecord, error } = await supabase
+          .from('admin_auth')
+          .select('*')
+          .eq('name', AUTHORIZED_SUPER_ADMIN)
+          .eq('role', 'super_admin')
+          .single();
+
+        if (error) {
+          if (error.code === 'PGRST116') {
+            console.log('SuperAdmin Auth: No super admin record found in database');
+          } else {
+            console.error('SuperAdmin Auth: Database query error:', error);
+          }
+          setIsAuthorized(false);
+          setUser(null);
+          return false;
+        }
+
+        if (!adminRecord) {
+          console.log('SuperAdmin Auth: No matching admin record found');
+          setIsAuthorized(false);
+          setUser(null);
+          return false;
+        }
+
+        // Fifth check: password validation
+        if (adminRecord.password !== 'Hd@123@@') {
+          console.log('SuperAdmin Auth: Password validation failed');
+          setIsAuthorized(false);
+          setUser(null);
+          return false;
+        }
+
+        console.log('SuperAdmin Auth: All validations passed for Helder');
+        setIsAuthorized(true);
+        setUser(adminRecord);
+        return true;
+
+      } catch (dbError) {
+        console.error('SuperAdmin Auth: Database connection error:', dbError);
         setIsAuthorized(false);
         setUser(null);
         return false;
       }
-
-      console.log('SuperAdmin Auth: All validations passed for Helder');
-      setIsAuthorized(true);
-      setUser(adminRecord);
-      return true;
 
     } catch (error) {
       console.error('SuperAdmin Auth: Unexpected error during validation:', error);
@@ -107,7 +135,7 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
 
     validateAccess();
 
-    // Verificar novamente a cada 30 segundos para manter a segurança
+    // Re-validate every 30 seconds for security
     const interval = setInterval(validateAccess, 30000);
 
     return () => clearInterval(interval);

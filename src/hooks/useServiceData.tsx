@@ -77,24 +77,42 @@ export const useServiceData = () => {
     }
   };
 
-  // Create services from presets - Corrigido para usar presetId
+  // Create services from presets - Fixed to use correct ID mapping
   const createServicesFromPresets = async (salonId: string, selectedServices: any[]) => {
     try {
       setLoading(true);
       
-      const servicesToCreate = selectedServices.map(({ preset_service_id, price }) => {
-        const preset = presetServices.find(p => p.id === preset_service_id);
-        if (!preset) return null;
+      if (!selectedServices || selectedServices.length === 0) {
+        return { success: true, services: [] };
+      }
+      
+      const servicesToCreate = selectedServices.map(({ id, price }) => {
+        const preset = presetServices.find(p => p.id === id);
+        if (!preset) {
+          console.warn(`Preset service not found for ID: ${id}`);
+          return null;
+        }
+        
+        if (!price || price <= 0) {
+          console.warn(`Invalid price for service ${preset.name}: ${price}`);
+          return null;
+        }
         
         return {
           salon_id: salonId,
           name: preset.name,
-          description: preset.description,
-          price: price,
-          duration_minutes: preset.default_duration_minutes,
+          description: preset.description || null,
+          price: parseFloat(price.toString()),
+          duration_minutes: preset.default_duration_minutes || 60,
           active: true
         };
       }).filter(Boolean);
+
+      if (servicesToCreate.length === 0) {
+        return { success: true, services: [] };
+      }
+
+      console.log('Creating services:', servicesToCreate);
 
       const { data, error } = await supabase
         .from('services')
@@ -103,9 +121,10 @@ export const useServiceData = () => {
 
       if (error) {
         console.error('Error creating services:', error);
-        return { success: false, message: 'Erro ao criar serviços' };
+        return { success: false, message: 'Erro ao criar serviços: ' + error.message };
       }
 
+      console.log('Services created successfully:', data);
       return { success: true, services: data };
     } catch (error) {
       console.error('Error creating services from presets:', error);
