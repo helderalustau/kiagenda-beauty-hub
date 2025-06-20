@@ -4,21 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, Scissors, Star } from "lucide-react";
-import { Salon, Category } from '@/hooks/useSupabaseData';
+import { Salon } from '@/hooks/useSupabaseData';
 
 interface SalonListProps {
   salons: Salon[];
-  categories: Category[];
   onBookService: (salon: Salon) => void;
 }
 
-const SalonList = ({ salons, categories, onBookService }: SalonListProps) => {
-  const getCategoryName = (categoryId?: string) => {
-    if (!categoryId) return 'Categoria não definida';
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.name || 'Categoria não definida';
-  };
-
+const SalonList = ({ salons, onBookService }: SalonListProps) => {
   const getPlanBadgeColor = (plan: string) => {
     switch (plan) {
       case 'bronze':
@@ -68,7 +61,7 @@ const SalonList = ({ salons, categories, onBookService }: SalonListProps) => {
                 </div>
                 <div>
                   <CardTitle className="text-lg">{salon.name}</CardTitle>
-                  <p className="text-sm text-gray-600">{getCategoryName(salon.category_id)}</p>
+                  <p className="text-sm text-gray-600">Estabelecimento</p>
                 </div>
               </div>
               <Badge className={getPlanBadgeColor(salon.plan)}>

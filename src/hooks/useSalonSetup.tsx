@@ -6,9 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 export const useSalonSetup = () => {
   const { 
     salon, 
-    categories,
     presetServices, 
-    fetchCategories,
     fetchPresetServices,
     completeSalonSetup, 
     createServicesFromPresets,
@@ -23,7 +21,6 @@ export const useSalonSetup = () => {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [formData, setFormData] = useState({
     salon_name: '',
-    category_id: '',
     street_number: '',
     city: '',
     state: '',
@@ -70,7 +67,6 @@ export const useSalonSetup = () => {
           // Carregar todos os dados em paralelo para acelerar
           Promise.all([
             fetchSalonData(salonId),
-            fetchCategories(),
             fetchPresetServices()
           ]).then(() => {
             setDataLoaded(true);
@@ -125,7 +121,6 @@ export const useSalonSetup = () => {
       setFormData(prev => ({
         ...prev,
         salon_name: salon.name === 'Estabelecimento Temporário' ? '' : salon.name,
-        category_id: salon.category_id === '00000000-0000-0000-0000-000000000000' ? '' : salon.category_id || '',
         street_number: salon.street_number || '',
         city: salon.city || '',
         state: salon.state || '',
@@ -137,7 +132,6 @@ export const useSalonSetup = () => {
 
   return {
     salon,
-    categories,
     presetServices,
     loading: loading || !dataLoaded,
     currentStep,

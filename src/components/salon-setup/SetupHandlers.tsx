@@ -40,14 +40,6 @@ export const useSetupHandlers = ({
           });
           return;
         }
-        if (!formData.category_id) {
-          toast({
-            title: "Erro",
-            description: "Categoria é obrigatória",
-            variant: "destructive"
-          });
-          return;
-        }
         break;
         
       case 2: // Address
@@ -80,7 +72,6 @@ export const useSetupHandlers = ({
       // Verificar se há mudanças antes de atualizar
       const hasChanges = (
         salon.name !== formData.salon_name ||
-        salon.category_id !== formData.category_id ||
         salon.street_number !== formData.street_number ||
         salon.city !== formData.city ||
         salon.state !== formData.state ||
@@ -91,7 +82,6 @@ export const useSetupHandlers = ({
         const updateResult = await updateSalon({
           id: salon.id,
           name: formData.salon_name,
-          category_id: formData.category_id,
           street_number: formData.street_number,
           city: formData.city,
           state: formData.state,
@@ -137,7 +127,6 @@ export const useSetupHandlers = ({
       // First, complete the salon setup
       const setupResult = await completeSalonSetup(salon.id, {
         name: formData.salon_name,
-        category_id: formData.category_id,
         street_number: formData.street_number,
         city: formData.city,
         state: formData.state,

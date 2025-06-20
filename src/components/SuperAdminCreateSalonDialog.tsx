@@ -54,7 +54,6 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
       phone: newSalon.phone,
       plan: newSalon.plan,
       address: 'Endereço será preenchido na configuração',
-      category_id: null, // Permitir null para estabelecimentos temporários
       is_open: false,
       setup_completed: false
     };
@@ -133,7 +132,7 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
           <div className="bg-blue-50 p-3 rounded-lg">
             <p className="text-sm text-blue-700">
               <strong>Nota:</strong> O estabelecimento receberá um código sequencial temporário (ex: EST-123456789-001). 
-              O responsável poderá configurar o nome definitivo e categoria durante a configuração inicial.
+              O responsável poderá configurar o nome definitivo durante a configuração inicial.
             </p>
           </div>
         </div>

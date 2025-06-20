@@ -6,11 +6,10 @@ import AddressStep from './AddressStep';
 import ContactStep from './ContactStep';
 import HoursStep from './HoursStep';
 import ServicesStep from './ServicesStep';
-import { Salon, Category, PresetService } from '@/hooks/useSupabaseData';
+import { Salon, PresetService } from '@/hooks/useSupabaseData';
 
 interface FormData {
   salon_name: string;
-  category_id: string;
   street_number: string;
   city: string;
   state: string;
@@ -23,7 +22,6 @@ interface StepRendererProps {
   salon: Salon | null;
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
-  categories: Category[];
   presetServices: PresetService[];
   selectedServices: { [key: string]: { selected: boolean; price: number } };
   onServiceToggle: (serviceId: string) => void;
@@ -35,7 +33,6 @@ export const StepRenderer = ({
   salon,
   formData,
   updateFormData,
-  categories,
   presetServices,
   selectedServices,
   onServiceToggle,
@@ -49,7 +46,6 @@ export const StepRenderer = ({
         <BasicSalonInfoStep 
           formData={formData} 
           updateFormData={updateFormData} 
-          categories={categories}
         />
       );
     case 2:

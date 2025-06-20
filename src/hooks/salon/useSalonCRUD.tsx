@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Salon } from '../useSupabaseData';
@@ -29,13 +30,12 @@ export const useSalonCRUD = () => {
         return { success: false, message: 'Endereço é obrigatório' };
       }
 
-      // Clean the data before inserting - Allow null category for temporary salon
+      // Clean the data before inserting - Remove category_id completely
       const cleanSalonData = {
         name: salonData.name.trim(),
         owner_name: salonData.owner_name.trim(),
         phone: salonData.phone.trim(),
         address: salonData.address.trim(),
-        category_id: salonData.category_id || null, // Allow null for temporary salons
         plan: salonData.plan || 'bronze',
         is_open: false,
         setup_completed: false,
@@ -66,7 +66,6 @@ export const useSalonCRUD = () => {
                               error.message.includes('owner_name') ? 'nome do responsável' :
                               error.message.includes('phone') ? 'telefone' :
                               error.message.includes('address') ? 'endereço' :
-                              error.message.includes('category_id') ? 'categoria (pode ser nulo para estabelecimentos temporários)' :
                               'campo obrigatório';
           return { success: false, message: `Campo obrigatório não preenchido: ${missingField}` };
         } else if (error.code === '42501') {
@@ -124,14 +123,7 @@ export const useSalonCRUD = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('salons')
-        .select(`
-          *,
-          categories (
-            id,
-            name,
-            description
-          )
-        `)
+        .select('*')
         .eq('unique_slug', slug)
         .single();
 
@@ -155,14 +147,7 @@ export const useSalonCRUD = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('salons')
-        .select(`
-          *,
-          categories (
-            id,
-            name,
-            description
-          )
-        `)
+        .select('*')
         .order('name');
 
       if (error) {

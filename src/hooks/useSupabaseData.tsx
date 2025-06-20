@@ -6,7 +6,6 @@ import { useAuthData } from './useAuthData';
 import { useSalonData } from './useSalonData';
 import { useAppointmentData } from './useAppointmentData';
 import { useServiceData } from './useServiceData';
-import { useCategoryData } from './useCategoryData';
 import { useClientData } from './useClientData';
 import { useDashboardData } from './useDashboardData';
 
@@ -28,8 +27,6 @@ export interface Salon {
   setup_completed?: boolean;
   banner_image_url?: string;
   max_attendants?: number;
-  category_id?: string;
-  category?: Category;
   unique_slug?: string;
   created_at?: string;
   updated_at?: string;
@@ -140,14 +137,6 @@ export interface DashboardStats {
   };
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export const useSupabaseData = () => {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -159,7 +148,6 @@ export const useSupabaseData = () => {
   const salonData = useSalonData();
   const appointmentData = useAppointmentData();
   const serviceData = useServiceData();
-  const categoryData = useCategoryData();
   const clientData = useClientData();
   const dashboardData = useDashboardData();
 
@@ -198,14 +186,13 @@ export const useSupabaseData = () => {
     // State from individual hooks
     salon: salonData.salon,
     salons: salonData.salons,
-    categories: categoryData.categories,
     appointments: appointmentData.appointments,
     services: serviceData.services,
     adminUsers,
     presetServices: serviceData.presetServices,
     planConfigurations: dashboardData.planConfigurations,
     dashboardStats: dashboardData.dashboardStats,
-    loading: loading || authData.loading || salonData.loading || appointmentData.loading || serviceData.loading || categoryData.loading || clientData.loading || dashboardData.loading,
+    loading: loading || authData.loading || salonData.loading || appointmentData.loading || serviceData.loading || clientData.loading || dashboardData.loading,
     
     // Auth methods
     authenticateAdmin: authData.authenticateAdmin,
@@ -226,10 +213,6 @@ export const useSupabaseData = () => {
     updateSalon: salonData.updateSalon,
     deleteSalon: salonData.deleteSalon,
     cleanupSalonsWithoutAdmins: salonData.cleanupSalonsWithoutAdmins,
-    
-    // Category methods
-    fetchCategories: categoryData.fetchCategories,
-    createCategory: categoryData.createCategory,
     
     // Service methods
     fetchSalonServices: serviceData.fetchSalonServices,

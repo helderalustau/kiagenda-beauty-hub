@@ -1,9 +1,9 @@
 
-import { Store, MapPin, Phone, Clock, CheckCircle, Building } from "lucide-react";
+import { Store, MapPin, Phone, Clock, CheckCircle } from "lucide-react";
 
 export const setupSteps = [
   { title: 'Informações Básicas', icon: Store },
-  { title: 'Dados do Estabelecimento', icon: Building },
+  { title: 'Nome do Estabelecimento', icon: Store },
   { title: 'Endereço', icon: MapPin },
   { title: 'Contato', icon: Phone },
   { title: 'Horários', icon: Clock },
