@@ -36,8 +36,21 @@ export const useHierarchyData = () => {
         return { success: false, message: 'Erro ao criar vínculos hierárquicos: ' + error.message };
       }
 
-      console.log('Vínculos hierárquicos criados com sucesso:', data);
-      return { success: true, data };
+      // Converter o retorno do Supabase para o tipo correto
+      if (data && typeof data === 'object' && data !== null) {
+        const hierarchyData = data as Record<string, any>;
+        const hierarchyLink: HierarchyLink = {
+          super_admin_code: hierarchyData.super_admin_code || '',
+          salon_code: hierarchyData.salon_code || '',
+          admin_code: hierarchyData.admin_code || '',
+          success: hierarchyData.success || false
+        };
+        
+        console.log('Vínculos hierárquicos criados com sucesso:', hierarchyLink);
+        return { success: true, data: hierarchyLink };
+      }
+
+      return { success: false, message: 'Dados de retorno inválidos' };
     } catch (error) {
       console.error('Erro inesperado ao criar vínculos hierárquicos:', error);
       return { success: false, message: 'Erro inesperado ao criar vínculos hierárquicos' };
