@@ -1,15 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from '@/hooks/useAuthData';
-import { AdminSignupData, validateAdminForm, formatPhone } from '@/utils/adminFormValidation';
+import { AdminSignupData, validateAdminForm, format} from '@/utils/adminFormValidation';
 import AdminSignupHeader from './admin-signup/AdminSignupHeader';
 import AdminCreationDateInfo from './admin-signup/AdminCreationDateInfo';
 import AdminFormFields from './admin-signup/AdminFormFields';
 import AdminFormActions from './admin-signup/AdminFormActions';
 import AdminInfoSection from './admin-signup/AdminInfoSection';
 import { useSalonData } from '@/hooks/useSalonData';
+import { useLocation } from 'react-router-dom';
 
 interface AdminSignupFormProps {
   onSuccess?: (adminData: any) => void;
@@ -20,6 +21,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
   const { toast } = useToast();
   const { registerAdmin, loading } = useAuthData();
   const { createSalon } = useSalonData();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -32,7 +34,15 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
     avatar_url: ''
   });
 
+  const [selectedPlan, setSelectedPlan] = useState('bronze');
   const [errors, setErrors] = useState<Partial<AdminSignupData>>({});
+
+  // Check if a plan was pre-selected from the homepage
+  useEffect(() => {
+    if (location.state?.selectedPlan) {
+      setSelectedPlan(location.state.selectedPlan);
+    }
+  }, [location.state]);
 
   const handleInputChange = (field: keyof AdminSignupData, value: string) => {
     if (field === 'phone') {
@@ -81,21 +91,19 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
         owner_name: formData.name.trim(),
         phone: formData.phone.replace(/\D/g, ''),
         address: 'Endereço será preenchido na configuração',
-        plan: 'bronze'
+        plan: selectedPlan // Use the selected plan
       };
 
       console.log('Criando estabelecimento temporário:', temporarySalonData);
       const salonResult = await createSalon(temporarySalonData);
 
       if (!salonResult.success) {
-        // Handle error case - check if message exists
         const errorMessage = 'message' in salonResult && salonResult.message 
           ? salonResult.message 
           : 'Erro desconhecido';
         throw new Error('Erro ao criar estabelecimento: ' + errorMessage);
       }
 
-      // Type narrowing: now we know it's a success case with salon
       if (!('salon' in salonResult) || !salonResult.salon) {
         throw new Error('Erro ao criar estabelecimento: dados do estabelecimento não retornados');
       }
@@ -104,7 +112,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
 
       // Agora criar o administrador vinculado ao estabelecimento
       const result = await registerAdmin(
-        salonResult.salon.id, // salon_id do estabelecimento criado
+        salonResult.salon.id,
         formData.name.trim(),
         formData.password,
         formData.email.trim(),
@@ -164,6 +172,18 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
         <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <AdminCreationDateInfo />
+            
+            {/* Show selected plan */}
+            {selectedPlan && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 className="font-semibold text-blue-900 mb-2">Plano Selecionado:</h3>
+                <p className="text-blue-800 capitalize">
+                  {selectedPlan === 'bronze' && 'Bronze - GRÁTIS/limitado'}
+                  {selectedPlan === 'prata' && 'Prata - R$ 50/mês'}
+                  {selectedPlan === 'gold' && 'Gold - R$ 199/mês'}
+                </p>
+              </div>
+            )}
             
             <AdminFormFields
               formData={formData}

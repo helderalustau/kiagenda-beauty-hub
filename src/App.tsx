@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -16,6 +15,8 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SalonSetup from "./pages/SalonSetup";
 import AdminRegistration from "./pages/AdminRegistration";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
+import ClientLogin from "./pages/ClientLogin";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,8 @@ const App: React.FC = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/client-dashboard" element={<ClientDashboard />} />
               <Route path="/client-booking" element={<ClientBooking />} />
