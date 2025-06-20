@@ -45,6 +45,47 @@ const AdminDashboard = () => {
 
   const loading = salonLoading || appointmentLoading || serviceLoading;
 
+  // Get correct salon ID from localStorage
+  const getSalonId = () => {
+    // Try to get from adminAuth first
+    const adminAuth = localStorage.getItem('adminAuth');
+    if (adminAuth) {
+      try {
+        const admin = JSON.parse(adminAuth);
+        if (admin.salon_id) {
+          console.log('Salon ID encontrado em adminAuth:', admin.salon_id);
+          return admin.salon_id;
+        }
+      } catch (error) {
+        console.error('Erro ao parsear adminAuth:', error);
+      }
+    }
+
+    // Fallback to selectedSalonId
+    const selectedSalonId = localStorage.getItem('selectedSalonId');
+    if (selectedSalonId) {
+      console.log('Salon ID encontrado em selectedSalonId:', selectedSalonId);
+      return selectedSalonId;
+    }
+
+    // Last fallback to adminData (legacy)
+    const adminData = localStorage.getItem('adminData');
+    if (adminData) {
+      try {
+        const admin = JSON.parse(adminData);
+        if (admin.salon_id) {
+          console.log('Salon ID encontrado em adminData (legacy):', admin.salon_id);
+          return admin.salon_id;
+        }
+      } catch (error) {
+        console.error('Erro ao parsear adminData:', error);
+      }
+    }
+
+    console.error('Nenhum salon ID encontrado no localStorage');
+    return null;
+  };
+
   // Sincronizar o status local com o salon
   useEffect(() => {
     if (salon) {
@@ -53,21 +94,40 @@ const AdminDashboard = () => {
   }, [salon]);
 
   const refreshData = async () => {
-    const adminData = localStorage.getItem('adminData');
-    if (adminData) {
-      const admin = JSON.parse(adminData);
-      if (admin.salon_id) {
-        await fetchSalonData(admin.salon_id);
-        await fetchSalonServices(admin.salon_id);
-        const appointmentResult = await fetchAllAppointments(admin.salon_id);
-        if (appointmentResult.success) {
-          // Appointments são definidos automaticamente pelo hook
-        }
+    const salonId = getSalonId();
+    if (salonId) {
+      console.log('Refreshing data for salon:', salonId);
+      await fetchSalonData(salonId);
+      await fetchSalonServices(salonId);
+      const appointmentResult = await fetchAllAppointments(salonId);
+      if (appointmentResult.success) {
+        console.log('Appointments refreshed successfully');
       }
+    } else {
+      console.error('Não foi possível obter salon ID para refresh dos dados');
+      toast({
+        title: "Erro",
+        description: "Dados do estabelecimento não encontrados. Redirecionando para login...",
+        variant: "destructive"
+      });
+      setTimeout(() => window.location.href = '/admin-login', 2000);
     }
   };
 
   useEffect(() => {
+    // Verificar se temos os dados necessários no localStorage
+    const salonId = getSalonId();
+    if (!salonId) {
+      console.error('Salon ID não encontrado, redirecionando para login');
+      toast({
+        title: "Erro",
+        description: "Dados do estabelecimento não encontrados. Redirecionando para login...",
+        variant: "destructive"
+      });
+      setTimeout(() => window.location.href = '/admin-login', 1500);
+      return;
+    }
+
     // Buscar dados ao carregar
     refreshData();
   }, []);
@@ -75,7 +135,7 @@ const AdminDashboard = () => {
   // Verificar se a configuração foi concluída
   useEffect(() => {
     if (salon && !salon.setup_completed) {
-      // Redirecionar para tela de configuração
+      console.log('Setup não concluído, redirecionando para salon-setup');
       window.location.href = '/salon-setup';
     }
   }, [salon]);
@@ -164,6 +224,8 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('userType');
     localStorage.removeItem('adminData');
+    localStorage.removeItem('adminAuth');
+    localStorage.removeItem('selectedSalonId');
     window.location.href = '/';
   };
 
@@ -172,16 +234,10 @@ const AdminDashboard = () => {
   };
 
   const handleStatusChange = async (isOpen: boolean) => {
-    // Atualizar o estado local imediatamente para feedback visual
     setSalonStatus(isOpen);
-    
-    // Atualizar dados após mudança de status (sem fazer refresh da página)
-    const adminData = localStorage.getItem('adminData');
-    if (adminData) {
-      const admin = JSON.parse(adminData);
-      if (admin.salon_id) {
-        await fetchSalonData(admin.salon_id);
-      }
+    const salonId = getSalonId();
+    if (salonId) {
+      await fetchSalonData(salonId);
     }
   };
 
@@ -190,7 +246,7 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+          <p className="text-gray-600">Carregando dados do estabelecimento...</p>
         </div>
       </div>
     );
@@ -208,11 +264,16 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              Não foi possível encontrar os dados do seu estabelecimento.
+              Não foi possível encontrar os dados do seu estabelecimento. Verifique se você completou a configuração inicial.
             </p>
-            <Button onClick={handleBackToHome} className="w-full">
-              Voltar ao Login
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={() => window.location.href = '/salon-setup'} className="w-full">
+                Configurar Estabelecimento
+              </Button>
+              <Button onClick={handleBackToHome} variant="outline" className="w-full">
+                Voltar ao Login
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -269,7 +330,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div className="sm:hidden mt-4 pt-4 border-t border-gray-200">
               <div className="mb-4">
@@ -286,7 +346,6 @@ const AdminDashboard = () => {
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          {/* Mobile Tabs */}
           <div className="sm:hidden">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="overview" className="text-xs">
@@ -312,7 +371,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Desktop Tabs */}
           <div className="hidden sm:block">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview" className="flex items-center space-x-2">
@@ -382,7 +440,6 @@ const AdminDashboard = () => {
         </Tabs>
       </div>
 
-      {/* Notification for new appointments */}
       <AppointmentNotification
         isOpen={showNotification}
         appointment={newAppointment}

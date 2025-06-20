@@ -168,7 +168,7 @@ export const useSetupHandlers = ({
         .map(([serviceId, serviceData]) => {
           const service = serviceData as { selected: boolean; price: number };
           return {
-            id: serviceId, // Use 'id' instead of 'preset_service_id'
+            id: serviceId,
             price: service.price
           };
         });
@@ -180,9 +180,22 @@ export const useSetupHandlers = ({
         
         if (!servicesResult.success) {
           console.warn('Aviso: Alguns serviços podem não ter sido criados:', servicesResult.message);
-          // Don't block the setup completion for service creation issues
         } else {
           console.log('Serviços criados com sucesso');
+        }
+      }
+
+      // Update localStorage with correct salon data
+      const adminAuth = localStorage.getItem('adminAuth');
+      if (adminAuth) {
+        try {
+          const admin = JSON.parse(adminAuth);
+          admin.salon_id = salon.id;
+          localStorage.setItem('adminAuth', JSON.stringify(admin));
+          localStorage.setItem('selectedSalonId', salon.id);
+          console.log('Dados do admin atualizados no localStorage:', admin);
+        } catch (error) {
+          console.error('Erro ao atualizar localStorage:', error);
         }
       }
 
@@ -191,8 +204,9 @@ export const useSetupHandlers = ({
         description: "Configuração do estabelecimento finalizada com sucesso!"
       });
 
-      // Redirect to admin dashboard
+      // Redirect to admin dashboard with correct salon ID
       setTimeout(() => {
+        console.log('Redirecionando para dashboard do estabelecimento:', salon.id);
         window.location.href = '/admin-dashboard';
       }, 2000);
 

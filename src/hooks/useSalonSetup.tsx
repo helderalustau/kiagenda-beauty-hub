@@ -42,6 +42,33 @@ export const useSalonSetup = () => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
+  // Get correct salon ID from localStorage
+  const getSalonId = () => {
+    // Try adminAuth first
+    const adminAuth = localStorage.getItem('adminAuth');
+    if (adminAuth) {
+      try {
+        const admin = JSON.parse(adminAuth);
+        if (admin.salon_id) {
+          console.log('SalonSetup - Salon ID encontrado em adminAuth:', admin.salon_id);
+          return admin.salon_id;
+        }
+      } catch (error) {
+        console.error('SalonSetup - Erro ao parsear adminAuth:', error);
+      }
+    }
+
+    // Fallback to selectedSalonId
+    const selectedSalonId = localStorage.getItem('selectedSalonId');
+    if (selectedSalonId) {
+      console.log('SalonSetup - Salon ID encontrado em selectedSalonId:', selectedSalonId);
+      return selectedSalonId;
+    }
+
+    console.error('SalonSetup - Nenhum salon ID encontrado');
+    return null;
+  };
+
   // Initialize data only once
   useEffect(() => {
     if (initialized) return;
@@ -50,21 +77,7 @@ export const useSalonSetup = () => {
       try {
         console.log('SalonSetup - Inicializando dados...');
         
-        const adminAuth = localStorage.getItem('adminAuth');
-        const selectedSalonId = localStorage.getItem('selectedSalonId');
-        
-        if (!adminAuth) {
-          toast({
-            title: "Erro",
-            description: "Dados do administrador não encontrados. Redirecionando...",
-            variant: "destructive"
-          });
-          setTimeout(() => window.location.href = '/admin-login', 2000);
-          return;
-        }
-
-        const admin = JSON.parse(adminAuth);
-        const salonId = selectedSalonId || admin.salon_id;
+        const salonId = getSalonId();
         
         if (!salonId) {
           toast({
