@@ -6,15 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { Eye, EyeOff, User, Mail, Phone, Building, Shield, Calendar } from "lucide-react";
+import { useAuthData } from '@/hooks/useAuthData';
+import { Eye, EyeOff, User, Mail, Phone, Shield, Calendar } from "lucide-react";
 
 interface AdminFormData {
   name: string;
   password: string;
   email: string;
   phone: string;
-  salon_id: string;
   role: 'admin' | 'manager' | 'collaborator';
   setDateadm: string;
 }
@@ -22,16 +21,14 @@ interface AdminFormData {
 interface AdminRegistrationFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
-  preSelectedSalonId?: string;
 }
 
 const AdminRegistrationForm = ({ 
   onSuccess, 
-  onCancel, 
-  preSelectedSalonId 
+  onCancel
 }: AdminRegistrationFormProps) => {
   const { toast } = useToast();
-  const { salons, fetchAllSalons, registerAdmin, loading } = useSupabaseData();
+  const { registerAdmin, loading } = useAuthData();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -40,16 +37,11 @@ const AdminRegistrationForm = ({
     password: '',
     email: '',
     phone: '',
-    salon_id: preSelectedSalonId || '',
     role: 'admin',
     setDateadm: new Date().toISOString()
   });
 
   const [errors, setErrors] = useState<Partial<AdminFormData>>({});
-
-  useEffect(() => {
-    fetchAllSalons();
-  }, [fetchAllSalons]);
 
   useEffect(() => {
     // Atualizar data sempre que o componente renderizar
@@ -89,11 +81,6 @@ const AdminRegistrationForm = ({
       newErrors.phone = 'Telefone é obrigatório';
     } else if (formData.phone.replace(/\D/g, '').length < 10) {
       newErrors.phone = 'Telefone deve ter pelo menos 10 dígitos';
-    }
-
-    // Validar estabelecimento
-    if (!formData.salon_id) {
-      newErrors.salon_id = 'Estabelecimento é obrigatório';
     }
 
     setErrors(newErrors);
@@ -141,13 +128,11 @@ const AdminRegistrationForm = ({
     setSubmitting(true);
 
     try {
-      console.log('Criando administrador com dados:', {
-        ...formData,
-        setDateadm: new Date().toISOString()
-      });
+      console.log('Criando administrador sem estabelecimento inicial...');
 
+      // Criar administrador sem estabelecimento - será vinculado após seleção de plano
       const result = await registerAdmin(
-        formData.salon_id,
+        null, // Sem salon_id inicial
         formData.name.trim(),
         formData.password,
         formData.email.trim(),
@@ -158,8 +143,14 @@ const AdminRegistrationForm = ({
       if (result.success) {
         toast({
           title: "Sucesso!",
-          description: "Administrador criado com sucesso!"
+          description: "Administrador criado com sucesso! Redirecionando para seleção de plano..."
         });
+        
+        // Armazenar dados do administrador para uso posterior
+        localStorage.setItem('pendingAdminData', JSON.stringify({
+          ...result.admin,
+          createdAt: new Date().toISOString()
+        }));
         
         // Reset form
         setFormData({
@@ -167,10 +158,14 @@ const AdminRegistrationForm = ({
           password: '',
           email: '',
           phone: '',
-          salon_id: preSelectedSalonId || '',
           role: 'admin',
           setDateadm: new Date().toISOString()
         });
+        
+        // Redirecionar para seleção de plano
+        setTimeout(() => {
+          window.location.href = '/plan-selection';
+        }, 2000);
         
         onSuccess?.();
       } else {
@@ -203,7 +198,7 @@ const AdminRegistrationForm = ({
           Criar Novo Administrador
         </CardTitle>
         <CardDescription>
-          Preencha os dados do novo administrador. A data de criação será registrada automaticamente.
+          Preencha os dados do novo administrador. Após a criação, você será direcionado para seleção de plano e configuração do estabelecimento.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -311,33 +306,6 @@ const AdminRegistrationForm = ({
             />
             {errors.phone && (
               <p className="text-sm text-red-500">{errors.phone}</p>
-            )}
-          </div>
-
-          {/* Estabelecimento */}
-          <div className="space-y-2">
-            <Label htmlFor="salon" className="flex items-center gap-2">
-              <Building className="h-4 w-4" />
-              Estabelecimento *
-            </Label>
-            <Select
-              value={formData.salon_id}
-              onValueChange={(value) => handleInputChange('salon_id', value)}
-              disabled={submitting || !!preSelectedSalonId}
-            >
-              <SelectTrigger className={errors.salon_id ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Selecione o estabelecimento" />
-              </SelectTrigger>
-              <SelectContent>
-                {salons.map((salon) => (
-                  <SelectItem key={salon.id} value={salon.id}>
-                    {salon.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.salon_id && (
-              <p className="text-sm text-red-500">{errors.salon_id}</p>
             )}
           </div>
 

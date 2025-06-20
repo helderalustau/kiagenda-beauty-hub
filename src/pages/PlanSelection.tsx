@@ -1,9 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Crown, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
+import { useSalonData } from '@/hooks/useSalonData';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useHierarchyData } from '@/hooks/useHierarchyData';
 
 interface Plan {
   id: string;
@@ -18,6 +22,12 @@ interface Plan {
 const PlanSelection = () => {
   const [selectedPlan, setSelectedPlan] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingAdmin, setPendingAdmin] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  const { createSalon } = useSalonData();
+  const { linkAdminToSalon } = useAdminAuth();
+  const { createHierarchyLink } = useHierarchyData();
 
   const plans = [
     {
@@ -65,17 +75,148 @@ const PlanSelection = () => {
     }
   ];
 
+  // Carregar dados do administrador pendente
+  useEffect(() => {
+    const adminData = localStorage.getItem('pendingAdminData');
+    if (adminData) {
+      try {
+        setPendingAdmin(JSON.parse(adminData));
+      } catch (error) {
+        console.error('Erro ao carregar dados do administrador:', error);
+        toast({
+          title: "Erro",
+          description: "Dados do administrador não encontrados. Redirecionando...",
+          variant: "destructive"
+        });
+        setTimeout(() => {
+          window.location.href = '/admin-registration';
+        }, 2000);
+      }
+    } else {
+      toast({
+        title: "Erro",
+        description: "Nenhum administrador pendente encontrado. Redirecionando...",
+        variant: "destructive"
+      });
+      setTimeout(() => {
+        window.location.href = '/admin-registration';
+      }, 2000);
+    }
+  }, []);
+
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);
     setShowConfirmation(true);
   };
 
-  const handleConfirmPlan = () => {
-    console.log(`Plano ${selectedPlan} selecionado`);
-    // Aqui seria implementada a lógica de atualização do plano no Supabase
-    setShowConfirmation(false);
-    window.location.href = '/admin-dashboard';
+  const generateSequentialSalonName = () => {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `EST-${timestamp}-${random}`;
   };
+
+  const handleConfirmPlan = async () => {
+    if (!pendingAdmin) {
+      toast({
+        title: "Erro",
+        description: "Dados do administrador não encontrados",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      console.log('Criando estabelecimento com plano:', selectedPlan);
+      
+      // Criar estabelecimento temporário
+      const temporarySalonData = {
+        name: generateSequentialSalonName(),
+        owner_name: pendingAdmin.name,
+        phone: pendingAdmin.phone || '(00) 00000-0000',
+        address: 'Endereço será preenchido na configuração',
+        plan: selectedPlan
+      };
+
+      const salonResult = await createSalon(temporarySalonData);
+      
+      if (!salonResult.success) {
+        throw new Error('Erro ao criar estabelecimento: ' + ('message' in salonResult ? salonResult.message : 'Erro desconhecido'));
+      }
+
+      if (!('salon' in salonResult) || !salonResult.salon) {
+        throw new Error('Erro ao criar estabelecimento: dados não retornados');
+      }
+
+      console.log('Estabelecimento criado, vinculando administrador...');
+      
+      // Vincular administrador ao estabelecimento
+      const linkResult = await linkAdminToSalon(pendingAdmin.id, salonResult.salon.id);
+      
+      if (!linkResult.success) {
+        throw new Error('Erro ao vincular administrador: ' + linkResult.message);
+      }
+
+      console.log('Administrador vinculado, criando vínculos hierárquicos...');
+      
+      // Criar vínculos hierárquicos
+      const hierarchyResult = await createHierarchyLink(
+        salonResult.salon.id,
+        pendingAdmin.id,
+        salonResult.salon.name,
+        pendingAdmin.name
+      );
+
+      if (!hierarchyResult.success) {
+        console.warn('Erro ao criar vínculos hierárquicos:', hierarchyResult.message);
+      }
+
+      // Armazenar dados para configuração
+      localStorage.setItem('adminData', JSON.stringify({
+        ...linkResult.admin,
+        salon_id: salonResult.salon.id,
+        hierarchy_codes: hierarchyResult.data
+      }));
+      localStorage.setItem('selectedSalonId', salonResult.salon.id);
+      
+      // Limpar dados pendentes
+      localStorage.removeItem('pendingAdminData');
+      
+      toast({
+        title: "Sucesso!",
+        description: "Plano selecionado! Redirecionando para configuração do estabelecimento..."
+      });
+      
+      setShowConfirmation(false);
+      
+      // Redirecionar para configuração do estabelecimento
+      setTimeout(() => {
+        window.location.href = '/salon-setup';
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Erro no processo de seleção de plano:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro inesperado",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (!pendingAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando dados do administrador...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
@@ -91,12 +232,14 @@ const PlanSelection = () => {
                 <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
                   Escolha seu Plano
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-600">Selecione o plano ideal para seu salão</p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Olá, {pendingAdmin.name}! Selecione o plano ideal para seu estabelecimento
+                </p>
               </div>
             </div>
             <Button 
               variant="outline" 
-              onClick={() => window.location.href = '/'}
+              onClick={() => window.location.href = '/admin-registration'}
               size="sm"
             >
               Voltar
@@ -111,7 +254,7 @@ const PlanSelection = () => {
             Planos que crescem com seu negócio
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base px-4">
-            Escolha o plano perfeito para as necessidades do seu salão. 
+            Escolha o plano perfeito para as necessidades do seu estabelecimento. 
             Você pode fazer upgrade a qualquer momento.
           </p>
         </div>
@@ -230,7 +373,8 @@ const PlanSelection = () => {
           <DialogHeader>
             <DialogTitle>Confirmar Plano</DialogTitle>
             <DialogDescription>
-              Você selecionou o plano {plans.find(p => p.id === selectedPlan)?.name}. Deseja confirmar?
+              Você selecionou o plano {plans.find(p => p.id === selectedPlan)?.name}. 
+              Após confirmar, você será direcionado para configurar seu estabelecimento.
             </DialogDescription>
           </DialogHeader>
           <div className="flex space-x-3">
@@ -238,14 +382,16 @@ const PlanSelection = () => {
               variant="outline" 
               onClick={() => setShowConfirmation(false)}
               className="flex-1"
+              disabled={isProcessing}
             >
               Cancelar
             </Button>
             <Button 
               onClick={handleConfirmPlan}
               className="flex-1"
+              disabled={isProcessing}
             >
-              Confirmar
+              {isProcessing ? "Processando..." : "Confirmar"}
             </Button>
           </div>
         </DialogContent>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -50,13 +49,13 @@ export const useAdminAuth = () => {
     }
   };
 
-  // Register admin with hierarchy codes
-  const registerAdmin = async (salonId: string, name: string, password: string, email: string, phone?: string, role: string = 'admin') => {
+  // Register admin with or without salon (updated to support new flow)
+  const registerAdmin = async (salonId: string | null, name: string, password: string, email: string, phone?: string, role: string = 'admin') => {
     try {
       setLoading(true);
       
       const adminData = {
-        salon_id: salonId,
+        salon_id: salonId, // Pode ser null no novo fluxo
         name: name.trim(),
         password,
         email: email.trim(),
@@ -85,6 +84,35 @@ export const useAdminAuth = () => {
     } catch (error) {
       console.error('Error registering admin:', error);
       return { success: false, message: 'Erro ao registrar administrador' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Link admin to salon after plan selection
+  const linkAdminToSalon = async (adminId: string, salonId: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('admin_auth')
+        .update({ 
+          salon_id: salonId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', adminId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error linking admin to salon:', error);
+        return { success: false, message: 'Erro ao vincular administrador ao estabelecimento' };
+      }
+
+      return { success: true, admin: data };
+    } catch (error) {
+      console.error('Error linking admin to salon:', error);
+      return { success: false, message: 'Erro ao vincular administrador ao estabelecimento' };
     } finally {
       setLoading(false);
     }
@@ -139,6 +167,7 @@ export const useAdminAuth = () => {
     loading,
     authenticateAdmin,
     registerAdmin,
+    linkAdminToSalon,
     updateAdminUser,
     deleteAdminUser
   };

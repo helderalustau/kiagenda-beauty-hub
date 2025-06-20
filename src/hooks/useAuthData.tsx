@@ -20,6 +20,7 @@ export const useAuthData = () => {
     // Admin auth methods
     authenticateAdmin: adminAuth.authenticateAdmin,
     registerAdmin: adminAuth.registerAdmin,
+    linkAdminToSalon: adminAuth.linkAdminToSalon,
     updateAdminUser: adminAuth.updateAdminUser,
     deleteAdminUser: adminAuth.deleteAdminUser,
     // Client auth methods
