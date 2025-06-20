@@ -13,7 +13,7 @@ const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { authenticateAdmin, loading } = useAuthData();
-  const { fetchSalonData } = useSalonData();
+  const { fetchSalonData, salon } = useSalonData();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -30,19 +30,15 @@ const AdminLogin = () => {
   const checkSalonConfiguration = async (salonId: string) => {
     try {
       // Buscar dados completos do estabelecimento
-      const salonResult = await fetchSalonData(salonId);
+      await fetchSalonData(salonId);
       
-      if (salonResult.success && salonResult.salon) {
-        const salon = salonResult.salon;
-        
-        // Verificar se opening_hours está configurado (não é null)
-        if (salon.opening_hours && salon.opening_hours !== null) {
-          return '/admin-dashboard';
-        } else {
-          return '/salon-setup';
-        }
+      // Aguardar um pequeno delay para garantir que os dados foram carregados
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verificar se opening_hours está configurado (não é null)
+      if (salon && salon.opening_hours && salon.opening_hours !== null) {
+        return '/admin-dashboard';
       } else {
-        // Em caso de erro ao buscar dados, redirecionar para setup por segurança
         return '/salon-setup';
       }
 
