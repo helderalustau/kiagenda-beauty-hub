@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from '@/hooks/useAuthData';
-import { AdminSignupData, validateAdminForm, format} from '@/utils/adminFormValidation';
+import { AdminSignupData, validateAdminForm, formatPhone } from '@/utils/adminFormValidation';
 import AdminSignupHeader from './admin-signup/AdminSignupHeader';
 import AdminCreationDateInfo from './admin-signup/AdminCreationDateInfo';
 import AdminFormFields from './admin-signup/AdminFormFields';
