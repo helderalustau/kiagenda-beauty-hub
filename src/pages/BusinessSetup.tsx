@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,7 +97,10 @@ const BusinessSetup = () => {
         throw new Error('ID do estabelecimento não encontrado');
       }
 
-      const result = await updateSalon(salonId, businessData);
+      const result = await updateSalon({
+        id: salonId,
+        ...businessData
+      });
       
       if (result.success) {
         toast({
