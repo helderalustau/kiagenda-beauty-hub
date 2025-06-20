@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,13 +7,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Scissors } from "lucide-react";
 import { useAuthData } from '@/hooks/useAuthData';
-import { useServiceData } from '@/hooks/useServiceData';
+import { useSalonData } from '@/hooks/useSalonData';
 
 const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { authenticateAdmin, loading } = useAuthData();
-  const { fetchSalonServices } = useServiceData();
+  const { fetchSalonData } = useSalonData();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -30,18 +29,27 @@ const AdminLogin = () => {
 
   const checkSalonConfiguration = async (salonId: string) => {
     try {
-      // Verificar se há serviços cadastrados
-      const services = await fetchSalonServices(salonId);
-      const hasServices = services.length > 0;
-
-      // Se não há serviços, vai para salon-setup apenas se for primeiro acesso
-      // Em logins subsequentes, sempre vai para admin-dashboard
-      return hasServices ? '/admin-dashboard' : '/salon-setup';
+      // Buscar dados completos do estabelecimento
+      const salonResult = await fetchSalonData(salonId);
+      
+      if (salonResult.success && salonResult.salon) {
+        const salon = salonResult.salon;
+        
+        // Verificar se opening_hours está configurado (não é null)
+        if (salon.opening_hours && salon.opening_hours !== null) {
+          return '/admin-dashboard';
+        } else {
+          return '/salon-setup';
+        }
+      } else {
+        // Em caso de erro ao buscar dados, redirecionar para setup por segurança
+        return '/salon-setup';
+      }
 
     } catch (error) {
       console.error('Erro ao verificar configuração do estabelecimento:', error);
-      // Em caso de erro, redirecionar para admin-dashboard por segurança em logins subsequentes
-      return '/admin-dashboard';
+      // Em caso de erro, redirecionar para setup por segurança
+      return '/salon-setup';
     }
   };
 
@@ -92,19 +100,11 @@ const AdminLogin = () => {
           description: "Login realizado com sucesso!"
         });
         
-        // Em logins subsequentes, sempre redirecionar para admin-dashboard
-        // Apenas em casos especiais (estabelecimento sem configuração) vai para salon-setup
+        // Verificar configuração do estabelecimento baseado em opening_hours
         const redirectPath = await checkSalonConfiguration(result.admin.salon_id);
         
         setTimeout(() => {
-          // Para login (não primeiro acesso), preferir sempre admin-dashboard
-          if (redirectPath === '/salon-setup') {
-            // Verificar se estabelecimento tem configuração mínima
-            // Se não tiver, vai para setup; caso contrário, dashboard
-            navigate('/admin-dashboard');
-          } else {
-            navigate(redirectPath);
-          }
+          navigate(redirectPath);
         }, 1500);
       } else {
         toast({
