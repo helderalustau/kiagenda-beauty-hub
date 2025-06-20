@@ -199,6 +199,7 @@ export const useSupabaseData = () => {
     authenticateClient: authData.authenticateClient,
     registerClient: authData.registerClient,
     registerAdmin: authData.registerAdmin,
+    linkAdminToSalon: authData.linkAdminToSalon,
     updateAdminUser: authData.updateAdminUser,
     deleteAdminUser: authData.deleteAdminUser,
     
