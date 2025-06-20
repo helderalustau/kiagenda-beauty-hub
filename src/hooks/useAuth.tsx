@@ -7,6 +7,8 @@ interface AuthUser {
   role?: string;
   salon_id?: string;
   isFirstAccess?: boolean;
+  accessLevel?: string;
+  loginTime?: string;
 }
 
 interface AuthContextType {
@@ -17,6 +19,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isClient: boolean;
   isSuperAdmin: boolean;
+  isAuthorizedSuperAdmin: boolean;
   markAsReturningUser: () => void;
 }
 
@@ -25,12 +28,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
 
+  const AUTHORIZED_SUPER_ADMIN = 'Helder';
+
   useEffect(() => {
     // Check for stored admin auth
     const adminAuth = localStorage.getItem('adminAuth');
     if (adminAuth) {
       try {
         const userData = JSON.parse(adminAuth);
+        
+        // Verificação adicional de segurança para super admin
+        if (userData.role === 'super_admin' && userData.name !== AUTHORIZED_SUPER_ADMIN) {
+          console.error('Security violation: Unauthorized super admin detected, clearing auth');
+          localStorage.removeItem('adminAuth');
+          localStorage.removeItem('selectedSalonId');
+          return;
+        }
+        
         setUser(userData);
       } catch (error) {
         console.error('Error parsing admin auth:', error);
@@ -53,6 +67,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = (userData: AuthUser) => {
+    // Verificação de segurança no login
+    if (userData.role === 'super_admin' && userData.name !== AUTHORIZED_SUPER_ADMIN) {
+      console.error('Security violation: Attempt to login as unauthorized super admin');
+      return;
+    }
     setUser(userData);
   };
 
@@ -75,6 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAdmin = user?.role && ['admin', 'manager', 'collaborator'].includes(user.role);
   const isClient = !user?.role; // Clients don't have roles
   const isSuperAdmin = user?.role === 'super_admin';
+  const isAuthorizedSuperAdmin = user?.role === 'super_admin' && user?.name === AUTHORIZED_SUPER_ADMIN;
 
   return (
     <AuthContext.Provider value={{
@@ -85,6 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isAdmin,
       isClient,
       isSuperAdmin,
+      isAuthorizedSuperAdmin,
       markAsReturningUser
     }}>
       {children}

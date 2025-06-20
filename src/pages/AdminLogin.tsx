@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,41 @@ const AdminLogin = () => {
     }
   };
 
+  const handleSuperAdminAccess = (username: string, password: string) => {
+    // Verificações rígidas para Super Admin
+    const AUTHORIZED_SUPER_ADMIN = 'Helder';
+    const AUTHORIZED_PASSWORD = 'Hd@123@@';
+    
+    if (username === AUTHORIZED_SUPER_ADMIN && password === AUTHORIZED_PASSWORD) {
+      // Log de acesso para auditoria
+      console.log(`Super Admin access granted to: ${username} at ${new Date().toISOString()}`);
+      
+      // Armazenar dados específicos do super admin
+      localStorage.setItem('adminAuth', JSON.stringify({
+        id: 'super-admin-helder',
+        name: username,
+        role: 'super_admin',
+        isFirstAccess: false,
+        accessLevel: 'MAXIMUM',
+        loginTime: new Date().toISOString()
+      }));
+      
+      toast({
+        title: "Sucesso",
+        description: "Login de Super Admin realizado com sucesso!"
+      });
+      
+      // Redirecionamento direto para super admin dashboard
+      setTimeout(() => {
+        navigate('/super-admin-dashboard');
+      }, 1500);
+      
+      return true;
+    }
+    
+    return false;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -70,20 +106,38 @@ const AdminLogin = () => {
       return;
     }
 
-    // Check for super admin credentials
-    if (formData.username === 'Helder' && formData.password === 'Hd@123@@') {
-      toast({
-        title: "Sucesso",
-        description: "Login de Super Admin realizado com sucesso!"
-      });
-      navigate('/super-admin-dashboard');
+    // Primeira verificação: Super Admin
+    if (handleSuperAdminAccess(formData.username, formData.password)) {
       return;
     }
 
+    // Segunda verificação: Bloquear tentativas não autorizadas de super admin
+    if (formData.username === 'Helder' && formData.password !== 'Hd@123@@') {
+      toast({
+        title: "Acesso Negado",
+        description: "Credenciais de Super Admin inválidas. Tentativa registrada.",
+        variant: "destructive"
+      });
+      console.warn(`Unauthorized super admin access attempt from: ${formData.username} at ${new Date().toISOString()}`);
+      return;
+    }
+
+    // Terceira verificação: Admin regular
     try {
       const result = await authenticateAdmin(formData.username, formData.password);
       
       if (result.success) {
+        // Verificar se não é uma tentativa de escalação de privilégios
+        if (result.admin.role === 'super_admin' && result.admin.name !== 'Helder') {
+          toast({
+            title: "Erro de Segurança",
+            description: "Conta inconsistente detectada. Contate o administrador.",
+            variant: "destructive"
+          });
+          console.error(`Security violation: Non-Helder user with super_admin role: ${result.admin.name}`);
+          return;
+        }
+
         // Armazenar dados do administrador para uso na configuração
         localStorage.setItem('adminAuth', JSON.stringify({
           ...result.admin,
