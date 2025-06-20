@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { Calendar, Clock, User, CheckCircle } from "lucide-react";
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { Calendar, Clock, User, CheckCircle, AlertCircle, LockOpen, Lock } from "lucide-react";
+import { useAppointmentData } from '@/hooks/useAppointmentData';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface BookingModalProps {
   salon: {
     id: string;
     name: string;
+    is_open?: boolean;
   };
   services: Array<{
     id: string;
@@ -40,7 +42,7 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { createAppointment } = useSupabaseData();
+  const { createAppointment } = useAppointmentData();
   const { toast } = useToast();
 
   const generateTimeSlots = () => {
@@ -55,6 +57,16 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
   };
 
   const handleSubmit = async () => {
+    // Verificar se o salão está aberto
+    if (!salon.is_open) {
+      toast({
+        title: "Estabelecimento Fechado",
+        description: "Este estabelecimento está fechado no momento. Não é possível fazer agendamentos.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!selectedService || !selectedDate || !selectedTime) {
       toast({
         title: "Erro",
@@ -120,6 +132,9 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
 
   const selectedServiceData = services.find(s => s.id === selectedService);
 
+  // Definir data mínima (hoje)
+  const minDate = new Date().toISOString().split('T')[0];
+
   // Tela de sucesso
   if (isSuccess) {
     return (
@@ -153,6 +168,30 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Status do Estabelecimento */}
+          <div className={`${salon.is_open ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} p-4 rounded-lg border`}>
+            <div className="flex items-center space-x-2">
+              {salon.is_open ? (
+                <>
+                  <LockOpen className="h-5 w-5 text-green-600" />
+                  <span className="text-green-800 font-medium">Estabelecimento Aberto</span>
+                  <Badge variant="default" className="bg-green-600">Disponível para agendamentos</Badge>
+                </>
+              ) : (
+                <>
+                  <Lock className="h-5 w-5 text-red-600" />
+                  <span className="text-red-800 font-medium">Estabelecimento Fechado</span>
+                  <Badge variant="destructive">Indisponível para agendamentos</Badge>
+                </>
+              )}
+            </div>
+            {!salon.is_open && (
+              <p className="text-red-700 text-sm mt-2">
+                Este estabelecimento está temporariamente fechado. Tente novamente mais tarde.
+              </p>
+            )}
+          </div>
+
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center space-x-2 text-sm text-blue-800">
               <User className="h-4 w-4" />
@@ -162,7 +201,11 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
 
           <div>
             <Label htmlFor="service">Serviço *</Label>
-            <Select value={selectedService} onValueChange={setSelectedService}>
+            <Select 
+              value={selectedService} 
+              onValueChange={setSelectedService}
+              disabled={!salon.is_open}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um serviço" />
               </SelectTrigger>
@@ -203,13 +246,18 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+                min={minDate}
+                disabled={!salon.is_open}
               />
             </div>
 
             <div>
               <Label htmlFor="time">Horário *</Label>
-              <Select value={selectedTime} onValueChange={setSelectedTime}>
+              <Select 
+                value={selectedTime} 
+                onValueChange={setSelectedTime}
+                disabled={!salon.is_open}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um horário" />
                 </SelectTrigger>
@@ -235,6 +283,7 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Alguma observação especial para o estabelecimento..."
               rows={3}
+              disabled={!salon.is_open}
             />
           </div>
           
@@ -244,7 +293,7 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isSubmitting || !selectedService || !selectedDate || !selectedTime}
+              disabled={!salon.is_open || isSubmitting || !selectedService || !selectedDate || !selectedTime}
               className="flex items-center space-x-2"
             >
               <Calendar className="h-4 w-4" />

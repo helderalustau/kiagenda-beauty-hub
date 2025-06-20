@@ -2,8 +2,8 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Store, Clock } from "lucide-react";
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { Store, Clock, LockOpen, Lock } from "lucide-react";
+import { useSalonData } from '@/hooks/useSalonData';
 import { useToast } from "@/components/ui/use-toast";
 
 interface SalonStatusToggleProps {
@@ -13,7 +13,7 @@ interface SalonStatusToggleProps {
 }
 
 const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggleProps) => {
-  const { toggleSalonStatus } = useSupabaseData();
+  const { toggleSalonStatus } = useSalonData();
   const { toast } = useToast();
 
   const handleToggleStatus = async () => {
@@ -23,9 +23,10 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
     if (result.success) {
       toast({
         title: "Status Atualizado",
-        description: `Estabelecimento marcado como ${newStatus ? 'aberto' : 'fechado'}`,
+        description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
       });
       onStatusChange?.(newStatus);
+      // Não fazer refresh da página - remover qualquer window.location.reload()
     } else {
       toast({
         title: "Erro",
@@ -41,8 +42,8 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
         <Store className="h-5 w-5 text-gray-500" />
         <span className="text-sm text-gray-600">Status:</span>
         <Badge variant={isOpen ? "default" : "secondary"} className="flex items-center space-x-1">
-          <Clock className="h-3 w-3" />
-          <span>{isOpen ? 'Aberto' : 'Fechado'}</span>
+          {isOpen ? <LockOpen className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+          <span>{isOpen ? 'Aberta' : 'Fechada'}</span>
         </Badge>
       </div>
       
@@ -54,13 +55,13 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
       >
         {isOpen ? (
           <>
-            <Clock className="h-4 w-4" />
-            <span>Fechar Estabelecimento</span>
+            <Lock className="h-4 w-4" />
+            <span>Fechar Loja</span>
           </>
         ) : (
           <>
-            <Store className="h-4 w-4" />
-            <span>Abrir Estabelecimento</span>
+            <LockOpen className="h-4 w-4" />
+            <span>Abrir Loja</span>
           </>
         )}
       </Button>

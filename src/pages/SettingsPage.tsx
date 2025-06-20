@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Settings, Bell, Users, Plus, Edit, Trash2, Play, AlertCircle } from "lucide-react";
-import { Salon, AdminUser, useSupabaseData } from '@/hooks/useSupabaseData';
+import { Salon, AdminUser } from '@/hooks/useSupabaseData';
+import { useSalonData } from '@/hooks/useSalonData';
+import { useAuthData } from '@/hooks/useAuthData';
 import { useToast } from "@/components/ui/use-toast";
 
 interface SettingsPageProps {
@@ -34,9 +36,12 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
     password: '',
     role: 'collaborator' as 'admin' | 'manager' | 'collaborator'
   });
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { updateSalon, registerAdmin, updateAdminUser, deleteAdminUser, adminUsers } = useSupabaseData();
+  const { updateSalon } = useSalonData();
+  const { registerAdmin, updateAdminUser, deleteAdminUser } = useAuthData();
   const { toast } = useToast();
 
   const notificationSounds = [
@@ -47,12 +52,23 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
   ];
 
   const handleSaveSalon = async () => {
-    const result = await updateSalon(salonData);
+    if (!salon?.id) return;
+    
+    setIsSaving(true);
+    
+    const dataToUpdate = {
+      ...salonData,
+      id: salon.id
+    };
+    
+    const result = await updateSalon(dataToUpdate);
+    
     if (result.success) {
       toast({
         title: "Sucesso",
         description: "Alterações salvas com sucesso!"
       });
+      // Aplicar alterações imediatamente
       onRefresh();
     } else {
       toast({
@@ -61,6 +77,8 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
         variant: "destructive"
       });
     }
+    
+    setIsSaving(false);
   };
 
   const handlePlayNotification = (soundFile: string) => {
@@ -84,6 +102,14 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
         description: "Preencha todos os campos obrigatórios",
         variant: "destructive"
       });
+      return;
+    }
+
+    // Verificar limite baseado no plano
+    const maxUsers = salon?.max_attendants || 1;
+    if (adminUsers.length >= maxUsers) {
+      setShowUserDialog(false);
+      setShowUpgradeDialog(true);
       return;
     }
 
@@ -185,6 +211,13 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
     window.location.href = '/plan-selection';
   };
 
+  // Atualizar salonData quando salon prop mudar
+  useEffect(() => {
+    if (salon) {
+      setSalonData(salon);
+    }
+  }, [salon]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -235,8 +268,8 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
               />
             </div>
           </div>
-          <Button onClick={handleSaveSalon}>
-            Salvar Alterações
+          <Button onClick={handleSaveSalon} disabled={isSaving}>
+            {isSaving ? 'Salvando...' : 'Salvar Alterações'}
           </Button>
         </CardContent>
       </Card>
@@ -283,8 +316,8 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
                 </Button>
               </div>
             </div>
-            <Button onClick={handleSaveSalon}>
-              Salvar Configurações
+            <Button onClick={handleSaveSalon} disabled={isSaving}>
+              {isSaving ? 'Salvando...' : 'Salvar Configurações'}
             </Button>
           </div>
         </CardContent>

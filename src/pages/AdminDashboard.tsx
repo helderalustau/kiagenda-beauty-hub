@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BarChart3, Calendar, Users, Settings, LogOut, AlertTriangle, Menu } from "lucide-react";
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useSalonData } from '@/hooks/useSalonData';
+import { useAppointmentData } from '@/hooks/useAppointmentData';
+import { useServiceData } from '@/hooks/useServiceData';
 import { useToast } from "@/components/ui/use-toast";
 import DashboardStats from '@/components/DashboardStats';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
@@ -17,19 +19,30 @@ import AppointmentNotification from '@/components/AppointmentNotification';
 const AdminDashboard = () => {
   const { 
     salon, 
-    appointments, 
-    services, 
-    adminUsers, 
     fetchSalonData,
-    fetchSalonServices,
+    loading: salonLoading
+  } = useSalonData();
+  
+  const {
+    appointments,
     fetchAllAppointments,
-    loading,
-    updateAppointmentStatus
-  } = useSupabaseData();
+    updateAppointmentStatus,
+    loading: appointmentLoading
+  } = useAppointmentData();
+  
+  const {
+    services,
+    fetchSalonServices,
+    loading: serviceLoading
+  } = useServiceData();
+  
   const { toast } = useToast();
   const [newAppointment, setNewAppointment] = useState<any>(null);
   const [showNotification, setShowNotification] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+
+  const loading = salonLoading || appointmentLoading || serviceLoading;
 
   const refreshData = async () => {
     const adminData = localStorage.getItem('adminData');
@@ -38,7 +51,10 @@ const AdminDashboard = () => {
       if (admin.salon_id) {
         await fetchSalonData(admin.salon_id);
         await fetchSalonServices(admin.salon_id);
-        await fetchAllAppointments(admin.salon_id);
+        const appointmentResult = await fetchAllAppointments(admin.salon_id);
+        if (appointmentResult.success) {
+          // Appointments são definidos automaticamente pelo hook
+        }
       }
     }
   };
@@ -56,44 +72,84 @@ const AdminDashboard = () => {
     }
   }, [salon]);
 
-  // Monitorar novos agendamentos pendentes
+  // Monitorar novos agendamentos pendentes - melhorado
   useEffect(() => {
     if (appointments && appointments.length > 0) {
       const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
-      if (pendingAppointments.length > 0 && !showNotification) {
-        // Mostrar notificação para o primeiro agendamento pendente
-        const latestPending = pendingAppointments[0];
-        setNewAppointment(latestPending);
-        setShowNotification(true);
+      
+      // Verificar se há um novo agendamento pendente que ainda não foi mostrado
+      if (pendingAppointments.length > 0) {
+        const latestPending = pendingAppointments.sort((a, b) => 
+          new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        )[0];
+        
+        // Só mostrar se for diferente do atual ou se não há notificação sendo mostrada
+        if (!showNotification || (newAppointment && newAppointment.id !== latestPending.id)) {
+          setNewAppointment(latestPending);
+          setShowNotification(true);
+        }
       }
     }
-  }, [appointments, showNotification]);
+  }, [appointments]);
+
+  // Verificar agendamentos pendentes periodicamente (a cada 30 segundos)
+  useEffect(() => {
+    const checkPendingAppointments = async () => {
+      const adminData = localStorage.getItem('adminData');
+      if (adminData) {
+        const admin = JSON.parse(adminData);
+        if (admin.salon_id) {
+          const result = await fetchAllAppointments(admin.salon_id);
+          if (result.success) {
+            console.log('Verificação automática de agendamentos concluída');
+          }
+        }
+      }
+    };
+
+    const interval = setInterval(checkPendingAppointments, 30000); // 30 segundos
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAcceptAppointment = async () => {
     if (newAppointment) {
-      await updateAppointmentStatus(newAppointment.id, 'confirmed');
-      setShowNotification(false);
-      setNewAppointment(null);
-      toast({
-        title: "Agendamento Confirmado",
-        description: "O cliente foi notificado sobre a confirmação."
-      });
-      // Recarregar dados
-      await refreshData();
+      const result = await updateAppointmentStatus(newAppointment.id, 'confirmed');
+      if (result.success) {
+        setShowNotification(false);
+        setNewAppointment(null);
+        toast({
+          title: "Agendamento Confirmado",
+          description: "O cliente foi notificado sobre a confirmação."
+        });
+        await refreshData();
+      } else {
+        toast({
+          title: "Erro",
+          description: "Erro ao confirmar agendamento",
+          variant: "destructive"
+        });
+      }
     }
   };
 
   const handleRejectAppointment = async () => {
     if (newAppointment) {
-      await updateAppointmentStatus(newAppointment.id, 'cancelled', 'Agendamento recusado pelo estabelecimento');
-      setShowNotification(false);
-      setNewAppointment(null);
-      toast({
-        title: "Agendamento Recusado",
-        description: "O cliente foi notificado sobre a recusa."
-      });
-      // Recarregar dados
-      await refreshData();
+      const result = await updateAppointmentStatus(newAppointment.id, 'cancelled', 'Agendamento recusado pelo establishment');
+      if (result.success) {
+        setShowNotification(false);
+        setNewAppointment(null);
+        toast({
+          title: "Agendamento Recusado",
+          description: "O cliente foi notificado sobre a recusa."
+        });
+        await refreshData();
+      } else {
+        toast({
+          title: "Erro",
+          description: "Erro ao recusar agendamento",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -107,11 +163,9 @@ const AdminDashboard = () => {
     window.location.href = '/';
   };
 
-  const handleStatusChange = (isOpen: boolean) => {
-    // Atualizar status localmente para feedback imediato
-    if (salon) {
-      // Função já é chamada no componente SalonStatusToggle
-    }
+  const handleStatusChange = async (isOpen: boolean) => {
+    // Atualizar dados após mudança de status
+    await refreshData();
   };
 
   if (loading) {

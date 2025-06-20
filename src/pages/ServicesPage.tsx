@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Scissors } from "lucide-react";
-import { Service, useSupabaseData } from '@/hooks/useSupabaseData';
+import { Service } from '@/hooks/useSupabaseData';
+import { useSalonData } from '@/hooks/useSalonData';
+import { useServiceData } from '@/hooks/useServiceData';
 import { useToast } from "@/components/ui/use-toast";
 
 interface ServicesPageProps {
@@ -16,7 +18,8 @@ interface ServicesPageProps {
 }
 
 const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
-  const { salon, createService } = useSupabaseData();
+  const { salon } = useSalonData();
+  const { createService } = useServiceData();
   const { toast } = useToast();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -26,6 +29,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
     price: '',
     duration_minutes: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,10 +52,12 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
       return;
     }
 
+    setIsSubmitting(true);
+
     const serviceData = {
       salon_id: salon.id,
-      name: formData.name,
-      description: formData.description || undefined,
+      name: formData.name.trim(),
+      description: formData.description?.trim() || null,
       price: parseFloat(formData.price),
       duration_minutes: parseInt(formData.duration_minutes),
       active: true
@@ -66,17 +72,17 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
         title: "Sucesso",
         description: "Serviço criado com sucesso!"
       });
-      setShowAddDialog(false);
-      setEditingService(null);
-      setFormData({ name: '', description: '', price: '', duration_minutes: '' });
+      handleCloseDialog();
       onRefresh();
     } else {
       toast({
         title: "Erro",
-        description: result.message,
+        description: result.message || "Erro ao criar serviço",
         variant: "destructive"
       });
     }
+    
+    setIsSubmitting(false);
   };
 
   const handleEdit = (service: Service) => {
@@ -103,6 +109,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
     setShowAddDialog(false);
     setEditingService(null);
     setFormData({ name: '', description: '', price: '', duration_minutes: '' });
+    setIsSubmitting(false);
   };
 
   // Debug: Mostrar ID do salon no console
@@ -142,7 +149,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {services.map((service) => (
-            <Card key={service.id}>
+            <Card key={service.id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
@@ -210,6 +217,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
                 placeholder="Ex: Corte Feminino"
                 required
+                disabled={isSubmitting}
               />
             </div>
             <div>
@@ -219,6 +227,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                 placeholder="Descreva o serviço..."
                 rows={3}
+                disabled={isSubmitting}
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -227,29 +236,44 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
                 <Input
                   type="number"
                   step="0.01"
+                  min="0"
                   value={formData.price}
                   onChange={(e) => setFormData({...formData, price: e.target.value})}
                   placeholder="45.00"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Duração (min) *</label>
                 <Input
                   type="number"
+                  min="15"
+                  step="15"
                   value={formData.duration_minutes}
                   onChange={(e) => setFormData({...formData, duration_minutes: e.target.value})}
                   placeholder="60"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCloseDialog} 
+                className="flex-1"
+                disabled={isSubmitting}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" className="flex-1">
-                {editingService ? 'Salvar' : 'Criar'}
+              <Button 
+                type="submit" 
+                className="flex-1"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Salvando...' : (editingService ? 'Salvar' : 'Criar')}
               </Button>
             </div>
           </form>
