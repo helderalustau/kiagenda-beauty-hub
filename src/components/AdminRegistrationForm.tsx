@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from '@/hooks/useAuthData';
+import { useSalonData } from '@/hooks/useSalonData';
 import AdminRegistrationHeader from './admin-registration/AdminRegistrationHeader';
 import AdminCreationInfo from './admin-registration/AdminCreationInfo';
 import AdminFormFields from './admin-registration/AdminFormFields';
@@ -29,6 +30,7 @@ const AdminRegistrationForm = ({
 }: AdminRegistrationFormProps) => {
   const { toast } = useToast();
   const { registerAdmin, loading } = useAuthData();
+  const { createSalon } = useSalonData();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -68,6 +70,12 @@ const AdminRegistrationForm = ({
     }
   };
 
+  const generateSequentialSalonName = () => {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `EST-${timestamp}-${random}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -85,11 +93,36 @@ const AdminRegistrationForm = ({
     setSubmitting(true);
 
     try {
-      console.log('Criando administrador sem estabelecimento inicial...');
+      console.log('Criando estabelecimento temporário para o administrador...');
 
-      // Criar administrador sem estabelecimento - será vinculado após seleção de plano
+      // Primeiro, criar um estabelecimento temporário para o administrador
+      const temporarySalonData = {
+        name: generateSequentialSalonName(),
+        owner_name: formData.name.trim(),
+        phone: formData.phone.replace(/\D/g, ''),
+        address: 'Endereço será preenchido na configuração',
+        plan: 'bronze' // Plano padrão inicial
+      };
+
+      console.log('Criando estabelecimento temporário:', temporarySalonData);
+      const salonResult = await createSalon(temporarySalonData);
+
+      if (!salonResult.success) {
+        const errorMessage = 'message' in salonResult && salonResult.message 
+          ? salonResult.message 
+          : 'Erro desconhecido';
+        throw new Error('Erro ao criar estabelecimento: ' + errorMessage);
+      }
+
+      if (!('salon' in salonResult) || !salonResult.salon) {
+        throw new Error('Erro ao criar estabelecimento: dados do estabelecimento não retornados');
+      }
+
+      console.log('Estabelecimento criado com sucesso:', salonResult.salon);
+
+      // Agora criar o administrador vinculado ao estabelecimento
       const result = await registerAdmin(
-        null, // Sem salon_id inicial
+        salonResult.salon.id,
         formData.name.trim(),
         formData.password,
         formData.email.trim(),
@@ -100,18 +133,15 @@ const AdminRegistrationForm = ({
       if (result.success) {
         toast({
           title: "Sucesso!",
-          description: "Administrador criado com sucesso! Redirecionando para seleção de plano..."
+          description: "Administrador criado com sucesso! Redirecionando para configuração do estabelecimento..."
         });
         
-        // Armazenar dados do administrador para uso posterior
+        // Armazenar dados do administrador e estabelecimento para uso na configuração
         localStorage.setItem('adminData', JSON.stringify({
-          id: result.admin.id,
-          name: result.admin.name,
-          email: result.admin.email,
-          phone: result.admin.phone,
-          role: result.admin.role,
-          createdAt: new Date().toISOString()
+          ...result.admin,
+          salon_id: salonResult.salon.id
         }));
+        localStorage.setItem('selectedSalonId', salonResult.salon.id);
         
         // Reset form
         setFormData({
@@ -123,9 +153,9 @@ const AdminRegistrationForm = ({
           setDateadm: new Date().toISOString()
         });
         
-        // Redirecionar para seleção de plano
+        // Redirecionar para configuração do estabelecimento
         setTimeout(() => {
-          window.location.href = '/plan-selection';
+          window.location.href = '/salon-setup';
         }, 2000);
         
         onSuccess?.();
