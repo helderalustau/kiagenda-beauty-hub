@@ -196,6 +196,59 @@ const Index = () => {
     });
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const result = await createSalon(formData);
+      
+      if (result.success && result.salon) {
+        toast({
+          title: "Sucesso",
+          description: "Estabelecimento criado com sucesso!"
+        });
+        
+        // Armazenar dados do salão
+        localStorage.setItem('selectedSalonId', result.salon.id);
+        
+        // Resetar formulário
+        setFormData({
+          name: '',
+          owner_name: '',
+          phone: '',
+          address: '',
+          plan: 'bronze'
+        });
+        
+        // Redirecionar para dashboard
+        setTimeout(() => {
+          window.location.href = '/admin-dashboard';
+        }, 2000);
+      } else {
+        throw new Error(result.message || 'Erro desconhecido ao criar estabelecimento');
+      }
+    } catch (error) {
+      console.error('Erro ao criar estabelecimento:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao criar estabelecimento",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const [formData, setFormData] = useState({
+    name: '',
+    owner_name: '',
+    phone: '',
+    address: '',
+    plan: 'bronze'
+  });
+  const [submitting, setSubmitting] = useState(false);
+
   // Se estiver mostrando o formulário de cadastro de admin, renderizar apenas ele
   if (showAdminSignup) {
     return (

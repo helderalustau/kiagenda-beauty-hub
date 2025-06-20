@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,11 +15,9 @@ import SuperAdminDashboardHeader from '@/components/SuperAdminDashboardHeader';
 const SuperAdminDashboard = () => {
   const { 
     salons, 
-    categories,
     dashboardStats, 
     planConfigurations,
     fetchAllSalons, 
-    fetchCategories,
     fetchDashboardStats, 
     fetchPlanConfigurations,
     createSalon, 
@@ -32,7 +31,6 @@ const SuperAdminDashboard = () => {
   useEffect(() => {
     console.log('SuperAdminDashboard - Carregando dados iniciais...');
     fetchAllSalons();
-    fetchCategories();
     fetchDashboardStats();
     fetchPlanConfigurations();
   }, []);
@@ -80,7 +78,7 @@ const SuperAdminDashboard = () => {
         fetchAllSalons();
         fetchDashboardStats();
       } else {
-        console.error('Failed to create salon:', result.message);
+        console.error('Failed to create salon:', result.message || 'Erro desconhecido');
         toast({
           title: "Erro",
           description: result.message || "Erro desconhecido ao criar estabelecimento",
