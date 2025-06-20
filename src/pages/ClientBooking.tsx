@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, User, MapPin, Phone, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import BookingModal from '@/components/BookingModal';
+import ModernBookingModal from '@/components/client/ModernBookingModal';
 import { Salon } from '@/hooks/useSupabaseData';
 
 const ClientBooking = () => {
@@ -228,8 +228,8 @@ const ClientBooking = () => {
         </div>
       </div>
 
-      {/* Modal de Agendamento */}
-      <BookingModal
+      {/* Modal de Agendamento Moderno */}
+      <ModernBookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
         salon={selectedSalon}

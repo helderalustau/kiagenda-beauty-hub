@@ -1,15 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Scissors, Clock, DollarSign } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, Scissors, TrendingUp, Users, DollarSign } from "lucide-react";
 import { Service, useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
+import ServiceCreationModal from './service-management/ServiceCreationModal';
+import ServiceCard from './service-management/ServiceCard';
 
 interface ServiceManagerProps {
   salonId: string;
@@ -18,51 +18,56 @@ interface ServiceManagerProps {
 }
 
 const ServiceManager = ({ salonId, services, onRefresh }: ServiceManagerProps) => {
-  const { createService } = useSupabaseData();
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newService, setNewService] = useState({
-    name: '',
-    description: '',
-    price: 0,
-    duration_minutes: 60
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+
+  const filteredServices = services.filter(service => {
+    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (service.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+    
+    if (activeTab === 'all') return matchesSearch;
+    if (activeTab === 'active') return matchesSearch && service.active;
+    if (activeTab === 'inactive') return matchesSearch && !service.active;
+    
+    return matchesSearch;
   });
 
-  const handleCreateService = async () => {
-    if (!newService.name || newService.price <= 0) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
-        variant: "destructive"
-      });
-      return;
-    }
+  const serviceStats = {
+    total: services.length,
+    active: services.filter(s => s.active).length,
+    inactive: services.filter(s => !s.active).length,
+    averagePrice: services.length > 0 
+      ? services.reduce((sum, s) => sum + s.price, 0) / services.length 
+      : 0,
+    totalRevenuePotential: services
+      .filter(s => s.active)
+      .reduce((sum, s) => sum + s.price, 0)
+  };
 
-    const result = await createService({
-      salon_id: salonId,
-      ...newService
+  const handleEdit = (service: Service) => {
+    // TODO: Implement edit functionality
+    toast({
+      title: "Em desenvolvimento",
+      description: "Funcionalidade de edição será implementada em breve.",
     });
-    
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Serviço criado com sucesso!"
-      });
-      setShowCreateDialog(false);
-      setNewService({
-        name: '',
-        description: '',
-        price: 0,
-        duration_minutes: 60
-      });
-      onRefresh();
-    } else {
-      toast({
-        title: "Erro",
-        description: result.message,
-        variant: "destructive"
-      });
-    }
+  };
+
+  const handleDelete = (service: Service) => {
+    // TODO: Implement delete functionality
+    toast({
+      title: "Em desenvolvimento",
+      description: "Funcionalidade de exclusão será implementada em breve.",
+    });
+  };
+
+  const handleToggleStatus = (service: Service) => {
+    // TODO: Implement toggle status functionality
+    toast({
+      title: "Em desenvolvimento",
+      description: "Funcionalidade de ativar/desativar será implementada em breve.",
+    });
   };
 
   const formatCurrency = (value: number) => {
@@ -72,166 +77,162 @@ const ServiceManager = ({ salonId, services, onRefresh }: ServiceManagerProps) =
     }).format(value);
   };
 
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h${mins > 0 ? ` ${mins}min` : ''}`;
-    }
-    return `${mins}min`;
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Serviços do Estabelecimento</h3>
-          <p className="text-sm text-gray-600">Gerencie os serviços oferecidos</p>
-        </div>
+      {/* Header with Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm">Total de Serviços</p>
+                <p className="text-2xl font-bold">{serviceStats.total}</p>
+              </div>
+              <Scissors className="h-8 w-8 text-blue-200" />
+            </div>
+          </CardContent>
+        </Card>
 
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600">
+        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Serviços Ativos</p>
+                <p className="text-2xl font-bold">{serviceStats.active}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-200" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-100 text-sm">Preço Médio</p>
+                <p className="text-2xl font-bold">{formatCurrency(serviceStats.averagePrice)}</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-purple-200" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-100 text-sm">Potencial de Receita</p>
+                <p className="text-2xl font-bold">{formatCurrency(serviceStats.totalRevenuePotential)}</p>
+              </div>
+              <Users className="h-8 w-8 text-orange-200" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Card className="bg-white/90 backdrop-blur-sm">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-bold text-gray-900 flex items-center">
+                <Scissors className="h-6 w-6 mr-2 text-blue-600" />
+                Gerenciar Serviços
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                Gerencie todos os serviços do seu estabelecimento
+              </CardDescription>
+            </div>
+
+            <Button 
+              onClick={() => setShowCreateDialog(true)}
+              className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Novo Serviço
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Criar Novo Serviço</DialogTitle>
-              <DialogDescription>
-                Adicione um novo serviço para este estabelecimento
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="service-name">Nome do Serviço *</Label>
-                <Input
-                  id="service-name"
-                  value={newService.name}
-                  onChange={(e) => setNewService({...newService, name: e.target.value})}
-                  placeholder="Ex: Corte de Cabelo"
-                />
-              </div>
-              <div>
-                <Label htmlFor="service-description">Descrição</Label>
-                <Textarea
-                  id="service-description"
-                  value={newService.description}
-                  onChange={(e) => setNewService({...newService, description: e.target.value})}
-                  placeholder="Descrição do serviço"
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="service-price">Preço (R$) *</Label>
-                  <Input
-                    id="service-price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newService.price}
-                    onChange={(e) => setNewService({...newService, price: parseFloat(e.target.value) || 0})}
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="service-duration">Duração (min) *</Label>
-                  <Input
-                    id="service-duration"
-                    type="number"
-                    min="15"
-                    step="15"
-                    value={newService.duration_minutes}
-                    onChange={(e) => setNewService({...newService, duration_minutes: parseInt(e.target.value) || 60})}
-                    placeholder="60"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex space-x-2 mt-6">
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateService}>
-                Criar Serviço
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {services.map((service) => (
-          <Card key={service.id} className="bg-white/80 backdrop-blur-sm border-0 hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Scissors className="h-4 w-4 mr-2 text-blue-600" />
-                    {service.name}
-                  </CardTitle>
-                  {service.description && (
-                    <CardDescription className="mt-1 text-gray-600">
-                      {service.description}
-                    </CardDescription>
-                  )}
-                </div>
-                <Badge variant={service.active ? "default" : "secondary"}>
-                  {service.active ? 'Ativo' : 'Inativo'}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <DollarSign className="h-4 w-4 mr-1 text-green-600" />
-                    <span>Preço:</span>
-                  </div>
-                  <span className="font-semibold text-green-600">
-                    {formatCurrency(service.price)}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Clock className="h-4 w-4 mr-1 text-blue-600" />
-                    <span>Duração:</span>
-                  </div>
-                  <span className="font-semibold text-blue-600">
-                    {formatDuration(service.duration_minutes)}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {services.length === 0 && (
-          <div className="col-span-full">
-            <Card className="bg-white/60 backdrop-blur-sm border-dashed border-2 border-gray-300">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Scissors className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Nenhum serviço cadastrado
-                </h3>
-                <p className="text-gray-600 text-center mb-4">
-                  Adicione serviços para que os clientes possam fazer agendamentos
-                </p>
-                <Button 
-                  onClick={() => setShowCreateDialog(true)}
-                  className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Primeiro Serviço
-                </Button>
-              </CardContent>
-            </Card>
           </div>
-        )}
-      </div>
+
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar serviços..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsTrigger value="all" className="flex items-center">
+                Todos ({serviceStats.total})
+              </TabsTrigger>
+              <TabsTrigger value="active" className="flex items-center">
+                Ativos ({serviceStats.active})
+              </TabsTrigger>
+              <TabsTrigger value="inactive" className="flex items-center">
+                Inativos ({serviceStats.inactive})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={activeTab}>
+              {filteredServices.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredServices.map((service) => (
+                    <ServiceCard
+                      key={service.id}
+                      service={service}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onToggleStatus={handleToggleStatus}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Card className="bg-gray-50 border-dashed border-2 border-gray-300">
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <Scissors className="h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {searchTerm ? 'Nenhum serviço encontrado' : 'Nenhum serviço cadastrado'}
+                      </h3>
+                      <p className="text-gray-600 text-center mb-4 max-w-md">
+                        {searchTerm 
+                          ? `Não encontramos serviços com o termo "${searchTerm}". Tente outro termo de busca.`
+                          : 'Adicione serviços para que os clientes possam fazer agendamentos'
+                        }
+                      </p>
+                      {!searchTerm && (
+                        <Button 
+                          onClick={() => setShowCreateDialog(true)}
+                          className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Criar Primeiro Serviço
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Service Creation Modal */}
+      <ServiceCreationModal
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        salonId={salonId}
+        onSuccess={onRefresh}
+      />
     </div>
   );
 };
