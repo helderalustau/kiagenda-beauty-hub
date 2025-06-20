@@ -56,9 +56,13 @@ const ClientLogin = () => {
       if (result.success) {
         toast({
           title: "Sucesso",
-          description: "Login realizado com sucesso!"
+          description: "Login realizado com sucesso! Redirecionando para estabelecimentos..."
         });
-        navigate('/client-dashboard');
+        
+        // Redirecionar para dashboard do cliente onde verá os estabelecimentos
+        setTimeout(() => {
+          navigate('/client-dashboard');
+        }, 1500);
       } else {
         toast({
           title: "Erro",
@@ -117,15 +121,16 @@ const ClientLogin = () => {
       if (result.success) {
         toast({
           title: "Sucesso",
-          description: "Conta criada com sucesso! Agora você pode fazer login."
+          description: "Conta criada com sucesso! Fazendo login automaticamente..."
         });
-        setIsRegistering(false);
-        setFormData({
-          username: formData.username,
-          password: formData.password,
-          phone: '',
-          email: ''
-        });
+        
+        // Fazer login automático após registro
+        setTimeout(async () => {
+          const loginResult = await authenticateClient(formData.username, formData.password);
+          if (loginResult.success) {
+            navigate('/client-dashboard');
+          }
+        }, 1000);
       } else {
         toast({
           title: "Erro",
@@ -189,7 +194,7 @@ const ClientLogin = () => {
                 {isRegistering ? 'Criar Conta' : 'Login do Cliente'}
               </CardTitle>
               <CardDescription className="text-lg text-gray-600">
-                {isRegistering ? 'Crie sua conta para agendar serviços' : 'Acesse sua conta de cliente'}
+                {isRegistering ? 'Crie sua conta para agendar serviços' : 'Acesse sua conta para ver estabelecimentos disponíveis'}
               </CardDescription>
             </CardHeader>
             <CardContent>

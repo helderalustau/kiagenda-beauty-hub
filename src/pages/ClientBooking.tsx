@@ -1,290 +1,240 @@
+
 import React, { useState, useEffect } from 'react';
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { useToast } from "@/components/ui/use-toast";
-import { Separator } from "@/components/ui/separator"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, User, MapPin, Phone, Star } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import BookingModal from '@/components/BookingModal';
+import { Salon } from '@/hooks/useSupabaseData';
 
 const ClientBooking = () => {
+  const { salonId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { 
-    salons, 
-    services, 
+    salon, 
     loading, 
-    fetchAllSalons, 
-    fetchSalonServices, 
-    createAppointment 
+    fetchSalonData,
+    fetchSalonBySlug 
   } = useSupabaseData();
-  const { toast } = useToast();
-  const [selectedSalon, setSelectedSalon] = useState('');
-  const [selectedService, setSelectedService] = useState('');
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [time, setTime] = useState('');
-  const [notes, setNotes] = useState('');
-  const [clientName, setClientName] = useState('');
-  const [clientPhone, setClientPhone] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
-  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchAllSalons();
-  }, [fetchAllSalons]);
-
-  useEffect(() => {
-    if (selectedSalon) {
-      fetchSalonServices(selectedSalon);
-    }
-  }, [selectedSalon, fetchSalonServices]);
-
-  const handleSalonChange = (salonId: string) => {
-    setSelectedSalon(salonId);
-    setSelectedService('');
-  };
-
-  const handleServiceChange = (serviceId: string) => {
-    setSelectedService(serviceId);
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    setDate(date);
-    setTime('');
-    setAvailableTimes(generateAvailableTimes(date));
-  };
-
-  const generateAvailableTimes = (date: Date | undefined): string[] => {
-    if (!date || !selectedSalon) return [];
-
-    // Get salon opening hours
-    const selectedSalonData = salons.find(salon => salon.id === selectedSalon);
-    if (!selectedSalonData || !selectedSalonData.opening_hours) return [];
-
-    const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
-    const openingHours = selectedSalonData.opening_hours[dayOfWeek.toLowerCase()];
-
-    if (!openingHours || openingHours.closed) return [];
-
-    const { open, close } = openingHours;
-    const startTime = parseInt(open.split(':')[0]);
-    const endTime = parseInt(close.split(':')[0]);
-    const times: string[] = [];
-
-    for (let hour = startTime; hour < endTime; hour++) {
-      times.push(`${hour}:00`);
-      times.push(`${hour}:30`);
-    }
-
-    return times;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    if (!selectedSalon || !selectedService || !date || !time || !clientName || !clientPhone) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
-      setIsSubmitting(false);
+    if (!user) {
+      navigate('/client-login');
       return;
     }
 
-    try {
-      const appointmentDate = format(date, 'yyyy-MM-dd');
-      const appointmentData = {
-        salon_id: selectedSalon,
-        service_id: selectedService,
-        appointment_date: appointmentDate,
-        appointment_time: time,
-        notes: notes,
-        clientName: clientName,
-        clientPhone: clientPhone,
-        clientEmail: clientEmail
-      };
+    if (salonId) {
+      loadSalonData();
+    }
+  }, [user, salonId, navigate]);
 
-      const result = await createAppointment(appointmentData);
+  const loadSalonData = async () => {
+    if (!salonId) return;
 
-      if (result.success) {
-        toast({
-          title: "Sucesso",
-          description: "Agendamento criado com sucesso!"
-        });
+    // Primeiro tentar carregar do localStorage se disponível
+    const storedSalon = localStorage.getItem('selectedSalonForBooking');
+    if (storedSalon) {
+      const parsedSalon = JSON.parse(storedSalon);
+      setSelectedSalon(parsedSalon);
+    }
 
-        setSelectedSalon('');
-        setSelectedService('');
-        setDate(undefined);
-        setTime('');
-        setNotes('');
-        setClientName('');
-        setClientPhone('');
-        setClientEmail('');
-      } else {
-        toast({
-          title: "Erro",
-          description: result.message || "Erro ao criar agendamento",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao criar agendamento:", error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao criar agendamento",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
+    // Tentar buscar por slug primeiro, depois por ID
+    let salonData = null;
+    
+    if (salonId.includes('-')) {
+      // Provavelmente é um slug
+      salonData = await fetchSalonBySlug(salonId);
+    } else {
+      // Provavelmente é um ID
+      await fetchSalonData(salonId);
+      salonData = salon;
+    }
+
+    if (salonData) {
+      setSelectedSalon(salonData);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 py-6">
-      <div className="max-w-4xl mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="px-6 py-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Agendar um Serviço</h2>
-          <p className="text-gray-600 mt-2">Selecione o estabelecimento, serviço e data desejada para agendar seu horário.</p>
+  const handleOpenBookingModal = () => {
+    if (selectedSalon && selectedSalon.is_open) {
+      setIsBookingModalOpen(true);
+    }
+  };
+
+  const handleBookingSuccess = () => {
+    // Redirecionar de volta para o dashboard do cliente
+    navigate('/client-dashboard');
+  };
+
+  const handleBackToDashboard = () => {
+    navigate('/client-dashboard');
+  };
+
+  const getPlanColor = (plan: string) => {
+    switch (plan) {
+      case 'bronze': return 'bg-amber-100 text-amber-800';
+      case 'prata': return 'bg-gray-100 text-gray-800';
+      case 'gold': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPlanName = (plan: string) => {
+    switch (plan) {
+      case 'bronze': return 'Bronze';
+      case 'prata': return 'Prata';
+      case 'gold': return 'Ouro';
+      default: return plan;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
+        <div className="flex justify-center items-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-lg text-gray-600">Carregando estabelecimento...</p>
+          </div>
         </div>
-
-        <Separator />
-
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Informações do Agendamento</CardTitle>
-            <CardDescription>Preencha os dados abaixo para realizar o agendamento.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <form onSubmit={handleSubmit} className="grid gap-4">
-              <div>
-                <Label htmlFor="salon">Estabelecimento</Label>
-                <Select onValueChange={handleSalonChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione um estabelecimento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {salons.map((salon) => (
-                      <SelectItem key={salon.id} value={salon.id}>{salon.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="service">Serviço</Label>
-                <Select onValueChange={handleServiceChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione um serviço" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.map((service) => (
-                      <SelectItem key={service.id} value={service.id}>{service.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Data</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      {date ? format(date, "PPP") : <span>Escolha uma data</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={handleDateChange}
-                      disabled={(date) =>
-                        date < new Date()
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div>
-                <Label htmlFor="time">Horário</Label>
-                <Select onValueChange={setTime}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione um horário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTimes.map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="clientName">Nome</Label>
-                <Input
-                  type="text"
-                  id="clientName"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Seu nome"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="clientPhone">Telefone</Label>
-                <Input
-                  type="tel"
-                  id="clientPhone"
-                  value={clientPhone}
-                  onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="Seu telefone"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="clientEmail">Email (opcional)</Label>
-                <Input
-                  type="email"
-                  id="clientEmail"
-                  value={clientEmail}
-                  onChange={(e) => setClientEmail(e.target.value)}
-                  placeholder="Seu email"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Alguma observação adicional?"
-                />
-              </div>
-
-              <Button disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Agendando..." : "Agendar"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
       </div>
+    );
+  }
+
+  if (!selectedSalon) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Estabelecimento não encontrado
+            </h2>
+            <Button onClick={handleBackToDashboard}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar aos Estabelecimentos
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-to-r from-blue-600 to-pink-600 rounded-lg p-2">
+                <User className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">
+                  BeautyFlow
+                </h1>
+                <p className="text-sm text-gray-600">Agendamento</p>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleBackToDashboard}
+              variant="outline" 
+              size="sm"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-0 bg-white/90 backdrop-blur-sm shadow-2xl">
+            <CardHeader className="text-center pb-6">
+              <div className="flex justify-between items-start mb-4">
+                <CardTitle className="text-3xl font-bold text-gray-900">
+                  {selectedSalon.name}
+                </CardTitle>
+                <Badge className={getPlanColor(selectedSalon.plan)}>
+                  {getPlanName(selectedSalon.plan)}
+                </Badge>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              <div className="grid gap-4">
+                <div className="flex items-center space-x-3 text-gray-600">
+                  <MapPin className="h-5 w-5" />
+                  <span>{selectedSalon.address}</span>
+                </div>
+                
+                <div className="flex items-center space-x-3 text-gray-600">
+                  <Phone className="h-5 w-5" />
+                  <span>{selectedSalon.contact_phone || selectedSalon.phone}</span>
+                </div>
+
+                <div className="flex items-center space-x-3 text-gray-600">
+                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  <span>4.8 (124 avaliações)</span>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <div className="mb-6">
+                  {selectedSalon.is_open ? (
+                    <Badge className="bg-green-100 text-green-800 border-green-200 px-4 py-2 text-lg">
+                      Aceitando Agendamentos
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-red-100 text-red-800 border-red-200 px-4 py-2 text-lg">
+                      Fechado
+                    </Badge>
+                  )}
+                </div>
+
+                <Button
+                  onClick={handleOpenBookingModal}
+                  disabled={!selectedSalon.is_open}
+                  className={`w-full py-4 text-lg font-semibold transition-all duration-300 ${
+                    selectedSalon.is_open 
+                      ? 'bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl' 
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {selectedSalon.is_open ? 'Agendar Serviço' : 'Não Disponível'}
+                </Button>
+              </div>
+
+              {selectedSalon.banner_image_url && (
+                <div className="mt-6">
+                  <img
+                    src={selectedSalon.banner_image_url}
+                    alt={`Banner do ${selectedSalon.name}`}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Modal de Agendamento */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        salon={selectedSalon}
+        onBookingSuccess={handleBookingSuccess}
+      />
     </div>
   );
 };

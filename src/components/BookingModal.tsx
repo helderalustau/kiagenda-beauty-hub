@@ -1,268 +1,216 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Clock, User, Phone, Mail } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
-import { Calendar, Clock, User, CheckCircle, AlertCircle, LockOpen, Lock } from "lucide-react";
-import { useAppointmentData } from '@/hooks/useAppointmentData';
+import { Service, Salon } from '@/hooks/useSupabaseData';
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  salon: {
-    id: string;
-    name: string;
-    is_open?: boolean;
-  };
-  services: Array<{
-    id: string;
-    name: string;
-    price: number;
-    duration_minutes: number;
-    description?: string;
-  }>;
-  clientData: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-  };
-  onBookingComplete?: () => void;
+  salon: Salon;
+  onBookingSuccess: () => void;
 }
 
-const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingComplete }: BookingModalProps) => {
-  const [selectedService, setSelectedService] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const { createAppointment } = useAppointmentData();
+const BookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: BookingModalProps) => {
+  const { services, fetchSalonServices, createAppointment } = useSupabaseData();
   const { toast } = useToast();
+  
+  const [selectedService, setSelectedService] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [notes, setNotes] = useState('');
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 9; hour <= 18; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(timeString);
-      }
+  useEffect(() => {
+    if (isOpen && salon.id) {
+      fetchSalonServices(salon.id);
     }
-    return slots;
-  };
+  }, [isOpen, salon.id, fetchSalonServices]);
 
-  const handleSubmit = async () => {
-    // Verificar se o salão está aberto
-    if (!salon.is_open) {
-      toast({
-        title: "Estabelecimento Fechado",
-        description: "Este estabelecimento está fechado no momento. Não é possível fazer agendamentos.",
-        variant: "destructive"
-      });
+  useEffect(() => {
+    if (selectedDate) {
+      generateAvailableTimes();
+    }
+  }, [selectedDate]);
+
+  const generateAvailableTimes = () => {
+    if (!selectedDate || !salon.opening_hours) {
+      setAvailableTimes([]);
       return;
     }
 
-    if (!selectedService || !selectedDate || !selectedTime) {
+    const dayOfWeek = selectedDate.toLocaleDateString('pt-BR', { weekday: 'long' });
+    const openingHours = salon.opening_hours[dayOfWeek.toLowerCase()];
+
+    if (!openingHours || openingHours.closed) {
+      setAvailableTimes([]);
+      return;
+    }
+
+    const { open, close } = openingHours;
+    const startTime = parseInt(open.split(':')[0]);
+    const endTime = parseInt(close.split(':')[0]);
+    const times: string[] = [];
+
+    for (let hour = startTime; hour < endTime; hour++) {
+      times.push(`${hour.toString().padStart(2, '0')}:00`);
+      times.push(`${hour.toString().padStart(2, '0')}:30`);
+    }
+
+    setAvailableTimes(times);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedService || !selectedDate || !selectedTime || !clientName || !clientPhone) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios.",
         variant: "destructive"
       });
       return;
     }
 
     setIsSubmitting(true);
-    
-    console.log('Enviando agendamento:', {
-      salon_id: salon.id,
-      client_id: clientData.id,
-      service_id: selectedService,
-      appointment_date: selectedDate,
-      appointment_time: selectedTime,
-      notes: notes
-    });
 
-    const result = await createAppointment({
-      salon_id: salon.id,
-      client_id: clientData.id,
-      service_id: selectedService,
-      appointment_date: selectedDate,
-      appointment_time: selectedTime,
-      notes: notes
-    });
+    try {
+      const appointmentData = {
+        salon_id: salon.id,
+        service_id: selectedService,
+        appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+        appointment_time: selectedTime,
+        notes: notes,
+        clientName: clientName,
+        clientPhone: clientPhone,
+        clientEmail: clientEmail
+      };
 
-    if (result.success) {
-      setIsSuccess(true);
-      toast({
-        title: "Sucesso!",
-        description: "Sua solicitação de agendamento foi enviada. Aguarde a confirmação do estabelecimento."
-      });
-      
-      // Após 2 segundos, chamar callback e fechar modal
-      setTimeout(() => {
-        if (onBookingComplete) {
-          onBookingComplete();
-        }
-        handleClose();
-      }, 2000);
-    } else {
+      const result = await createAppointment(appointmentData);
+
+      if (result.success) {
+        toast({
+          title: "Sucesso!",
+          description: "Agendamento realizado com sucesso! Você receberá uma confirmação em breve.",
+        });
+        
+        // Reset form
+        setSelectedService('');
+        setSelectedDate(undefined);
+        setSelectedTime('');
+        setClientName('');
+        setClientPhone('');
+        setClientEmail('');
+        setNotes('');
+        
+        onBookingSuccess();
+        onClose();
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao realizar agendamento. Tente novamente.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao criar agendamento:", error);
       toast({
         title: "Erro",
-        description: result.message || "Erro ao criar agendamento",
+        description: "Erro inesperado ao realizar agendamento. Tente novamente.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
-  const handleClose = () => {
-    setSelectedService('');
-    setSelectedDate('');
-    setSelectedTime('');
-    setNotes('');
-    setIsSuccess(false);
-    onClose();
-  };
-
-  const selectedServiceData = services.find(s => s.id === selectedService);
-
-  // Definir data mínima (hoje)
-  const minDate = new Date().toISOString().split('T')[0];
-
-  // Tela de sucesso
-  if (isSuccess) {
-    return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <div className="text-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-green-800 mb-2">
-              Solicitação Enviada!
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Seu agendamento foi solicitado com sucesso.
-            </p>
-            <p className="text-sm text-gray-500">
-              O estabelecimento receberá sua solicitação e entrará em contato para confirmar.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const selectedServiceData = services.find(service => service.id === selectedService);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
-            <span>Agendar Serviço - {salon.name}</span>
+          <DialogTitle className="text-2xl text-gray-900">
+            Agendar Serviço
           </DialogTitle>
+          <DialogDescription className="text-gray-600">
+            {salon.name} - {salon.address}
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* Status do Estabelecimento */}
-          <div className={`${salon.is_open ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} p-4 rounded-lg border`}>
-            <div className="flex items-center space-x-2">
-              {salon.is_open ? (
-                <>
-                  <LockOpen className="h-5 w-5 text-green-600" />
-                  <span className="text-green-800 font-medium">Estabelecimento Aberto</span>
-                  <Badge variant="default" className="bg-green-600">Disponível para agendamentos</Badge>
-                </>
-              ) : (
-                <>
-                  <Lock className="h-5 w-5 text-red-600" />
-                  <span className="text-red-800 font-medium">Estabelecimento Fechado</span>
-                  <Badge variant="destructive">Indisponível para agendamentos</Badge>
-                </>
-              )}
-            </div>
-            {!salon.is_open && (
-              <p className="text-red-700 text-sm mt-2">
-                Este estabelecimento está temporariamente fechado. Tente novamente mais tarde.
-              </p>
-            )}
-          </div>
-
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center space-x-2 text-sm text-blue-800">
-              <User className="h-4 w-4" />
-              <span><strong>Cliente:</strong> {clientData.name}</span>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="service">Serviço *</Label>
-            <Select 
-              value={selectedService} 
-              onValueChange={setSelectedService}
-              disabled={!salon.is_open}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                {services.map((service) => (
-                  <SelectItem key={service.id} value={service.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{service.name}</span>
-                      <span className="text-sm text-gray-500">
-                        R$ {service.price.toFixed(2)} - {service.duration_minutes} min
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {selectedServiceData && (
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-green-800 mb-2">Detalhes do Serviço</h4>
-              <div className="text-sm text-green-700 space-y-1">
-                <div><strong>Serviço:</strong> {selectedServiceData.name}</div>
-                <div><strong>Preço:</strong> R$ {selectedServiceData.price.toFixed(2)}</div>
-                <div><strong>Duração:</strong> {selectedServiceData.duration_minutes} minutos</div>
-                {selectedServiceData.description && (
-                  <div><strong>Descrição:</strong> {selectedServiceData.description}</div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="grid md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4">
             <div>
-              <Label htmlFor="date">Data *</Label>
-              <Input
-                id="date"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={minDate}
-                disabled={!salon.is_open}
-              />
+              <Label htmlFor="service">Serviço *</Label>
+              <Select value={selectedService} onValueChange={setSelectedService}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um serviço" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      <div className="flex justify-between items-center w-full">
+                        <span>{service.name}</span>
+                        <span className="text-sm text-gray-500 ml-2">
+                          R$ {service.price.toFixed(2)} - {service.duration_minutes}min
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Data *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : "Selecione uma data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
               <Label htmlFor="time">Horário *</Label>
-              <Select 
-                value={selectedTime} 
-                onValueChange={setSelectedTime}
-                disabled={!salon.is_open}
-              >
+              <Select value={selectedTime} onValueChange={setSelectedTime}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um horário" />
                 </SelectTrigger>
                 <SelectContent>
-                  {generateTimeSlots().map((time) => (
+                  {availableTimes.map((time) => (
                     <SelectItem key={time} value={time}>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2" />
@@ -273,34 +221,99 @@ const BookingModal = ({ isOpen, onClose, salon, services, clientData, onBookingC
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="clientName">Nome Completo *</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="clientName"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="clientPhone">Telefone *</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="clientPhone"
+                    type="tel"
+                    placeholder="(11) 99999-9999"
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="clientEmail">Email (opcional)</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="clientEmail"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={clientEmail}
+                  onChange={(e) => setClientEmail(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Observações</Label>
+              <Textarea
+                id="notes"
+                placeholder="Alguma observação adicional?"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            {selectedServiceData && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-900 mb-2">Resumo do Agendamento</h4>
+                <div className="space-y-1 text-sm text-blue-800">
+                  <p><strong>Serviço:</strong> {selectedServiceData.name}</p>
+                  <p><strong>Duração:</strong> {selectedServiceData.duration_minutes} minutos</p>
+                  <p><strong>Valor:</strong> R$ {selectedServiceData.price.toFixed(2)}</p>
+                  {selectedDate && <p><strong>Data:</strong> {format(selectedDate, "dd/MM/yyyy")}</p>}
+                  {selectedTime && <p><strong>Horário:</strong> {selectedTime}</p>}
+                </div>
+              </div>
+            )}
           </div>
 
-          <div>
-            <Label htmlFor="notes">Observações (opcional)</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Alguma observação especial para o estabelecimento..."
-              rows={3}
-              disabled={!salon.is_open}
-            />
-          </div>
-          
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button variant="outline" onClick={handleClose}>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+            >
               Cancelar
             </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={!salon.is_open || isSubmitting || !selectedService || !selectedDate || !selectedTime}
-              className="flex items-center space-x-2"
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700"
             >
-              <Calendar className="h-4 w-4" />
-              <span>{isSubmitting ? 'Enviando...' : 'Solicitar Agendamento'}</span>
+              {isSubmitting ? 'Agendando...' : 'Confirmar Agendamento'}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
