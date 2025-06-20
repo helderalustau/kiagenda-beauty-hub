@@ -5,7 +5,7 @@ import SalonList from '@/components/SalonList';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, LogOut } from "lucide-react";
+import { ArrowLeft, User, LogOut, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const ClientDashboard = () => {
@@ -18,6 +18,7 @@ const ClientDashboard = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [hasError, setHasError] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -25,32 +26,36 @@ const ClientDashboard = () => {
       return;
     }
 
-    const loadSalons = async () => {
-      try {
-        console.log('ClientDashboard - Carregando estabelecimentos...');
-        setHasError(false);
-        await fetchAllSalons();
-        console.log('ClientDashboard - Estabelecimentos carregados com sucesso');
-      } catch (error) {
-        console.error('ClientDashboard - Erro ao carregar estabelecimentos:', error);
-        setHasError(true);
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar estabelecimentos. Tente novamente.",
-          variant: "destructive"
-        });
-      }
-    };
-
     loadSalons();
-  }, [user, navigate, toast]);
+  }, [user, navigate]);
+
+  const loadSalons = async () => {
+    try {
+      console.log('ClientDashboard - Carregando estabelecimentos...');
+      setHasError(false);
+      setIsRefreshing(true);
+      await fetchAllSalons();
+      console.log('ClientDashboard - Estabelecimentos carregados:', salons.length);
+    } catch (error) {
+      console.error('ClientDashboard - Erro ao carregar estabelecimentos:', error);
+      setHasError(true);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar estabelecimentos. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleBookService = async (salon: any) => {
     try {
+      console.log('ClientDashboard - Selecionando estabelecimento para agendamento:', salon.id);
       localStorage.setItem('selectedSalonForBooking', JSON.stringify(salon));
       navigate(`/booking/${salon.unique_slug || salon.id}`);
     } catch (error) {
-      console.error('Erro ao selecionar estabelecimento:', error);
+      console.error('ClientDashboard - Erro ao selecionar estabelecimento:', error);
       toast({
         title: "Erro",
         description: "Erro ao selecionar estabelecimento. Tente novamente.",
@@ -69,11 +74,10 @@ const ClientDashboard = () => {
   };
 
   const handleRetry = () => {
-    setHasError(false);
-    fetchAllSalons();
+    loadSalons();
   };
 
-  if (loading) {
+  if (loading && !isRefreshing) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
         <div className="flex justify-center items-center h-screen">
@@ -138,6 +142,15 @@ const ClientDashboard = () => {
             
             <div className="flex items-center space-x-2">
               <Button 
+                onClick={handleRetry}
+                variant="outline" 
+                size="sm"
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button 
                 onClick={handleBackToHome}
                 variant="outline" 
                 size="sm"
@@ -168,7 +181,12 @@ const ClientDashboard = () => {
           </p>
         </div>
         
-        {salons.length > 0 ? (
+        {isRefreshing ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Atualizando estabelecimentos...</p>
+          </div>
+        ) : salons.length > 0 ? (
           <SalonList 
             salons={salons} 
             onBookService={handleBookService}
@@ -180,9 +198,13 @@ const ClientDashboard = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Nenhum estabelecimento disponível
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 mb-4">
                 Não há estabelecimentos cadastrados no momento. Volte mais tarde para ver as opções disponíveis.
               </p>
+              <Button onClick={handleRetry} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Tentar Novamente
+              </Button>
             </div>
           </div>
         )}

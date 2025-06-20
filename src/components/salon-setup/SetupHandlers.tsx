@@ -66,7 +66,7 @@ export const useSetupHandlers = ({
   };
 
   const handleNext = async () => {
-    console.log('Navegando para próximo passo...');
+    console.log('Setup - Navegando para próximo passo...');
     
     // Validate current step
     if (!validateCurrentStep()) {
@@ -75,7 +75,7 @@ export const useSetupHandlers = ({
     
     // Update salon data only if there are changes and we have a salon
     if (salon && currentStep > 0) {
-      console.log('Verificando se há mudanças para salvar...');
+      console.log('Setup - Verificando se há mudanças para salvar...');
       
       const hasChanges = (
         salon.name !== formData.salon_name ||
@@ -87,7 +87,7 @@ export const useSetupHandlers = ({
       );
       
       if (hasChanges) {
-        console.log('Salvando alterações...');
+        console.log('Setup - Salvando alterações...');
         
         const updateData = {
           id: salon.id,
@@ -111,7 +111,7 @@ export const useSetupHandlers = ({
           return;
         }
         
-        console.log('Dados salvos com sucesso');
+        console.log('Setup - Dados salvos com sucesso');
       }
     }
     
@@ -137,7 +137,7 @@ export const useSetupHandlers = ({
     setIsFinishing(true);
 
     try {
-      console.log('Finalizando configuração do estabelecimento...');
+      console.log('Setup - Finalizando configuração do estabelecimento...');
       
       // Prepare setup data
       const setupData = {
@@ -157,9 +157,9 @@ export const useSetupHandlers = ({
         throw new Error(setupResult.message || 'Erro ao finalizar configuração');
       }
 
-      console.log('Configuração do estabelecimento finalizada');
+      console.log('Setup - Configuração do estabelecimento finalizada com sucesso');
 
-      // Create services from selected presets
+      // Process selected services
       const selectedServicesList = Object.entries(selectedServices)
         .filter(([_, serviceData]) => {
           const service = serviceData as { selected: boolean; price: number };
@@ -169,25 +169,29 @@ export const useSetupHandlers = ({
           const service = serviceData as { selected: boolean; price: number };
           return {
             id: serviceId,
-            price: service.price
+            price: Number(service.price)
           };
         });
 
+      console.log('Setup - Serviços selecionados para criação:', selectedServicesList);
+
       if (selectedServicesList.length > 0) {
-        console.log('Criando serviços selecionados...', selectedServicesList);
+        console.log('Setup - Criando serviços selecionados...');
         
         const servicesResult = await createServicesFromPresets(salon.id, selectedServicesList);
         
         if (!servicesResult.success) {
-          console.warn('Aviso: Alguns serviços podem não ter sido criados:', servicesResult.message);
+          console.warn('Setup - Aviso: Alguns serviços podem não ter sido criados:', servicesResult.message);
           toast({
             title: "Aviso",
-            description: "Estabelecimento configurado, mas alguns serviços podem não ter sido criados. Você pode adicioná-los manualmente.",
+            description: "Estabelecimento configurado, mas alguns serviços podem não ter sido criados. Você pode adicioná-los manualmente na aba Serviços.",
             variant: "default"
           });
         } else {
-          console.log('Serviços criados com sucesso:', servicesResult.services?.length);
+          console.log('Setup - Serviços criados com sucesso:', servicesResult.services?.length || 0, 'serviços');
         }
+      } else {
+        console.log('Setup - Nenhum serviço foi selecionado para criação');
       }
 
       // Update localStorage with correct salon data
@@ -198,9 +202,9 @@ export const useSetupHandlers = ({
           admin.salon_id = salon.id;
           localStorage.setItem('adminAuth', JSON.stringify(admin));
           localStorage.setItem('selectedSalonId', salon.id);
-          console.log('Dados do admin atualizados no localStorage:', admin);
+          console.log('Setup - Dados do admin atualizados no localStorage');
         } catch (error) {
-          console.error('Erro ao atualizar localStorage:', error);
+          console.error('Setup - Erro ao atualizar localStorage:', error);
         }
       }
 
@@ -215,7 +219,7 @@ export const useSetupHandlers = ({
       }, 1500);
 
     } catch (error) {
-      console.error('Erro ao finalizar configuração:', error);
+      console.error('Setup - Erro ao finalizar configuração:', error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Erro ao finalizar configuração",

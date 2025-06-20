@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, User, Phone, Mail, MapPin, Clock, DollarSign } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Clock, User, Phone, Mail, ArrowLeft, ArrowRight, Scissors, MapPin } from "lucide-react";
 import { format } from "date-fns";
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { useSupabaseData, Service, Salon } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
-import { Service, Salon } from '@/hooks/useSupabaseData';
 import ServiceCard from './ServiceCard';
 import TimeSlotGrid from './TimeSlotGrid';
 
@@ -23,47 +25,66 @@ interface ModernBookingModalProps {
 }
 
 const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: ModernBookingModalProps) => {
-  const { services, fetchSalonServices, createAppointment } = useSupabaseData();
+  const { fetchSalonServices, createAppointment } = useSupabaseData();
   const { toast } = useToast();
   
+  // States
   const [currentStep, setCurrentStep] = useState(1);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState('');
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [clientData, setClientData] = useState({
     name: '',
     phone: '',
     email: '',
     notes: ''
   });
-  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingServices, setLoadingServices] = useState(false);
 
+  // Load services when modal opens
   useEffect(() => {
-    if (isOpen && salon.id) {
-      console.log('Carregando serviços para o modal de agendamento...');
-      setLoadingServices(true);
-      fetchSalonServices(salon.id).finally(() => {
-        setLoadingServices(false);
-      });
-      resetForm();
+    if (isOpen && salon?.id) {
+      loadSalonServices();
     }
-  }, [isOpen, salon.id, fetchSalonServices]);
+  }, [isOpen, salon?.id]);
 
+  // Generate available times when date is selected
   useEffect(() => {
-    if (selectedDate && salon.opening_hours) {
+    if (selectedDate && salon?.opening_hours) {
       generateAvailableTimes();
     }
-  }, [selectedDate, salon.opening_hours]);
+  }, [selectedDate, salon?.opening_hours]);
 
-  const resetForm = () => {
-    setCurrentStep(1);
-    setSelectedService(null);
-    setSelectedDate(undefined);
-    setSelectedTime('');
-    setClientData({ name: '', phone: '', email: '', notes: '' });
-    setAvailableTimes([]);
+  const loadSalonServices = async () => {
+    try {
+      setLoadingServices(true);
+      console.log('ModernBookingModal - Loading services for salon:', salon.id);
+      
+      const fetchedServices = await fetchSalonServices(salon.id);
+      console.log('ModernBookingModal - Services loaded:', fetchedServices.length);
+      
+      setServices(fetchedServices);
+      
+      if (fetchedServices.length === 0) {
+        toast({
+          title: "Aviso",
+          description: "Este estabelecimento ainda não possui serviços cadastrados.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('ModernBookingModal - Error loading services:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar serviços. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingServices(false);
+    }
   };
 
   const generateAvailableTimes = () => {
@@ -72,8 +93,8 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
       return;
     }
 
-    const dayOfWeek = format(selectedDate, 'EEEE').toLowerCase();
-    const openingHours = salon.opening_hours[dayOfWeek];
+    const dayOfWeek = selectedDate.toLocaleDateString('pt-BR', { weekday: 'long' });
+    const openingHours = salon.opening_hours[dayOfWeek.toLowerCase()];
 
     if (!openingHours || openingHours.closed) {
       setAvailableTimes([]);
@@ -87,9 +108,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
 
     for (let hour = startTime; hour < endTime; hour++) {
       times.push(`${hour.toString().padStart(2, '0')}:00`);
-      if (hour + 0.5 < endTime) {
-        times.push(`${hour.toString().padStart(2, '0')}:30`);
-      }
+      times.push(`${hour.toString().padStart(2, '0')}:30`);
     }
 
     setAvailableTimes(times);
@@ -97,24 +116,17 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
 
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service);
-    if (currentStep === 1) {
-      setCurrentStep(2);
-    }
+    setCurrentStep(2);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
-    setSelectedTime('');
-    if (date && currentStep === 2) {
-      setCurrentStep(3);
-    }
+    setSelectedTime(''); // Reset selected time when date changes
   };
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
-    if (currentStep === 3) {
-      setCurrentStep(4);
-    }
+    setCurrentStep(3);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,7 +155,8 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
         clientEmail: clientData.email
       };
 
-      console.log('Criando agendamento:', appointmentData);
+      console.log('ModernBookingModal - Creating appointment:', appointmentData);
+
       const result = await createAppointment(appointmentData);
 
       if (result.success) {
@@ -152,7 +165,8 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
           description: "Agendamento realizado com sucesso! Você receberá uma confirmação em breve.",
         });
         
-        resetForm();
+        // Reset form
+        handleReset();
         onBookingSuccess();
         onClose();
       } else {
@@ -163,7 +177,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
         });
       }
     } catch (error) {
-      console.error("Erro ao criar agendamento:", error);
+      console.error("ModernBookingModal - Error creating appointment:", error);
       toast({
         title: "Erro",
         description: "Erro inesperado ao realizar agendamento. Tente novamente.",
@@ -174,6 +188,31 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
     }
   };
 
+  const handleReset = () => {
+    setCurrentStep(1);
+    setSelectedService(null);
+    setSelectedDate(undefined);
+    setSelectedTime('');
+    setClientData({ name: '', phone: '', email: '', notes: '' });
+  };
+
+  const handleClose = () => {
+    handleReset();
+    onClose();
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      if (currentStep === 2) {
+        setSelectedService(null);
+      } else if (currentStep === 3) {
+        setSelectedDate(undefined);
+        setSelectedTime('');
+      }
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -181,52 +220,36 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
     }).format(value);
   };
 
-  const StepIndicator = () => (
-    <div className="flex items-center justify-center mb-6">
-      {[1, 2, 3, 4].map((step) => (
-        <React.Fragment key={step}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            currentStep >= step 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 text-gray-600'
-          }`}>
-            {step}
-          </div>
-          {step < 4 && (
-            <div className={`w-12 h-1 ${
-              currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
-            }`} />
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  );
-
-  const StepContent = () => {
+  const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Escolha o Serviço</h3>
+          <div className="space-y-4">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Escolha um Serviço</h3>
+              <p className="text-gray-600">Selecione o serviço que deseja agendar</p>
+            </div>
+            
             {loadingServices ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Carregando serviços...</p>
               </div>
             ) : services.length > 0 ? (
-              <div className="grid gap-4 max-h-96 overflow-y-auto">
+              <div className="grid gap-3 max-h-96 overflow-y-auto">
                 {services.map((service) => (
                   <ServiceCard
                     key={service.id}
                     service={service}
                     onSelect={handleServiceSelect}
-                    isSelected={selectedService?.id === service.id}
                   />
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-600">Nenhum serviço disponível no momento.</p>
+                <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum serviço disponível</h3>
+                <p className="text-gray-600">Este estabelecimento ainda não possui serviços cadastrados.</p>
               </div>
             )}
           </div>
@@ -234,36 +257,92 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
 
       case 2:
         return (
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Selecione a Data</h3>
-            <div className="flex justify-center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDateSelect}
-                disabled={(date) => date < new Date()}
-                className="rounded-md border"
-              />
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Escolha Data e Horário</h3>
+              <p className="text-gray-600">Selecione quando deseja ser atendido</p>
+            </div>
+
+            {selectedService && (
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-blue-900">{selectedService.name}</h4>
+                      <p className="text-sm text-blue-700">
+                        {selectedService.duration_minutes} min • {formatCurrency(selectedService.price)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <Label className="text-base font-medium mb-3 block">Data</Label>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  disabled={(date) => date < new Date() || date < new Date('1900-01-01')}
+                  locale={ptBR}
+                  className="rounded-md border"
+                />
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Horário</Label>
+                {selectedDate ? (
+                  <TimeSlotGrid
+                    availableTimes={availableTimes}
+                    selectedTime={selectedTime}
+                    onTimeSelect={handleTimeSelect}
+                  />
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                    <p>Selecione uma data primeiro</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
 
       case 3:
         return (
-          <div>
-            <TimeSlotGrid
-              availableTimes={availableTimes}
-              selectedTime={selectedTime}
-              onTimeSelect={handleTimeSelect}
-              selectedDate={selectedDate}
-            />
-          </div>
-        );
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Seus Dados</h3>
+              <p className="text-gray-600">Preencha seus dados para confirmar o agendamento</p>
+            </div>
 
-      case 4:
-        return (
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Seus Dados</h3>
+            {/* Resumo do agendamento */}
+            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+              <CardContent className="p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Resumo do Agendamento</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{salon.name}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Scissors className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{selectedService?.name} - {formatCurrency(selectedService?.price || 0)}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{selectedDate && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{selectedTime}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -275,7 +354,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
                       type="text"
                       placeholder="Seu nome completo"
                       value={clientData.name}
-                      onChange={(e) => setClientData({...clientData, name: e.target.value})}
+                      onChange={(e) => setClientData(prev => ({ ...prev, name: e.target.value }))}
                       className="pl-10"
                       required
                     />
@@ -291,7 +370,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
                       type="tel"
                       placeholder="(11) 99999-9999"
                       value={clientData.phone}
-                      onChange={(e) => setClientData({...clientData, phone: e.target.value})}
+                      onChange={(e) => setClientData(prev => ({ ...prev, phone: e.target.value }))}
                       className="pl-10"
                       required
                     />
@@ -308,7 +387,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
                     type="email"
                     placeholder="seu@email.com"
                     value={clientData.email}
-                    onChange={(e) => setClientData({...clientData, email: e.target.value})}
+                    onChange={(e) => setClientData(prev => ({ ...prev, email: e.target.value }))}
                     className="pl-10"
                   />
                 </div>
@@ -320,7 +399,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
                   id="notes"
                   placeholder="Alguma observação adicional?"
                   value={clientData.notes}
-                  onChange={(e) => setClientData({...clientData, notes: e.target.value})}
+                  onChange={(e) => setClientData(prev => ({ ...prev, notes: e.target.value }))}
                   rows={3}
                 />
               </div>
@@ -333,106 +412,80 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
     }
   };
 
-  const BookingSummary = () => {
-    if (!selectedService || !selectedDate || !selectedTime) return null;
-
-    return (
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
-          <MapPin className="h-4 w-4 mr-2" />
-          Resumo do Agendamento
-        </h4>
-        <div className="space-y-2 text-sm text-blue-800">
-          <div className="flex justify-between">
-            <span>Estabelecimento:</span>
-            <span className="font-medium">{salon.name}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Serviço:</span>
-            <span className="font-medium">{selectedService.name}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Data:</span>
-            <span className="font-medium">{format(selectedDate, "dd/MM/yyyy")}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Horário:</span>
-            <span className="font-medium">{selectedTime}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Duração:</span>
-            <span className="font-medium">{selectedService.duration_minutes} min</span>
-          </div>
-          <Separator className="my-2" />
-          <div className="flex justify-between font-semibold text-base">
-            <span>Valor:</span>
-            <span className="text-green-700">{formatCurrency(selectedService.price)}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl text-gray-900">
-            Agendar Serviço
-          </DialogTitle>
-          <DialogDescription className="text-gray-600 flex items-center">
-            <MapPin className="h-4 w-4 mr-1" />
-            {salon.name} - {salon.address}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <StepIndicator />
-        
-        <div className="space-y-6">
-          <StepContent />
-          
-          {currentStep > 1 && <BookingSummary />}
-          
-          <div className="flex gap-3 pt-4 border-t">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              Agendar Serviço
+            </DialogTitle>
+            <DialogDescription className="text-blue-100">
+              {salon.name} - {salon.address}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="p-6">
+          {/* Progress indicator */}
+          <div className="flex items-center justify-center mb-8">
+            <div className="flex items-center space-x-4">
+              {[1, 2, 3].map((step) => (
+                <div key={step} className="flex items-center">
+                  <div className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                    currentStep >= step 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-gray-200 text-gray-600"
+                  )}>
+                    {step}
+                  </div>
+                  {step < 3 && (
+                    <div className={cn(
+                      "w-12 h-0.5 mx-2",
+                      currentStep > step ? "bg-blue-600" : "bg-gray-200"
+                    )} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step content */}
+          {renderStepContent()}
+
+          {/* Navigation buttons */}
+          <div className="flex justify-between items-center mt-8 pt-6 border-t">
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                if (currentStep > 1) {
-                  setCurrentStep(currentStep - 1);
-                } else {
-                  onClose();
-                }
-              }}
-              className="flex-1"
+              onClick={currentStep === 1 ? handleClose : handleBack}
+              className="flex items-center"
             >
-              {currentStep > 1 ? 'Voltar' : 'Cancelar'}
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {currentStep === 1 ? 'Cancelar' : 'Voltar'}
             </Button>
-            
-            {currentStep === 4 ? (
+
+            {currentStep === 3 ? (
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center"
               >
                 {isSubmitting ? 'Agendando...' : 'Confirmar Agendamento'}
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
               <Button
-                onClick={() => {
-                  if (currentStep === 1 && !selectedService) return;
-                  if (currentStep === 2 && !selectedDate) return;
-                  if (currentStep === 3 && !selectedTime) return;
-                  setCurrentStep(currentStep + 1);
-                }}
                 disabled={
                   (currentStep === 1 && !selectedService) ||
-                  (currentStep === 2 && !selectedDate) ||
-                  (currentStep === 3 && !selectedTime)
+                  (currentStep === 2 && (!selectedDate || !selectedTime))
                 }
-                className="flex-1 bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700"
+                onClick={() => currentStep === 2 && selectedDate && selectedTime ? setCurrentStep(3) : undefined}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center"
               >
                 Próximo
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             )}
           </div>

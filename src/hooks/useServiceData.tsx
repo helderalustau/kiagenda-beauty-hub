@@ -8,12 +8,17 @@ export const useServiceData = () => {
   const [presetServices, setPresetServices] = useState<PresetService[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch salon services
+  // Fetch salon services with better error handling
   const fetchSalonServices = async (salonId: string): Promise<Service[]> => {
     try {
       setLoading(true);
-      console.log('Fetching services for salon:', salonId);
+      console.log('Fetching services for salon ID:', salonId);
       
+      if (!salonId) {
+        console.error('Salon ID is required');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('services')
         .select('*')
@@ -23,15 +28,16 @@ export const useServiceData = () => {
 
       if (error) {
         console.error('Error fetching services:', error);
-        return [];
+        throw error;
       }
 
-      console.log('Services fetched successfully:', data);
-      const services = data || [];
-      setServices(services);
-      return services;
+      console.log('Services fetched successfully:', data?.length || 0, 'services');
+      const fetchedServices = data || [];
+      setServices(fetchedServices);
+      return fetchedServices;
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error('Error in fetchSalonServices:', error);
+      setServices([]);
       return [];
     } finally {
       setLoading(false);
@@ -39,97 +45,128 @@ export const useServiceData = () => {
   };
 
   // Fetch preset services
-  const fetchPresetServices = async () => {
+  const fetchPresetServices = async (): Promise<PresetService[]> => {
     try {
       setLoading(true);
+      console.log('Fetching preset services...');
+      
       const { data, error } = await supabase
         .from('preset_services')
         .select('*')
-        .order('category', { ascending: true });
+        .order('category', { ascending: true })
+        .order('name', { ascending: true });
 
       if (error) {
         console.error('Error fetching preset services:', error);
-        return;
+        throw error;
       }
 
-      console.log('Preset services fetched:', data?.length);
-      setPresetServices(data || []);
+      console.log('Preset services fetched:', data?.length || 0, 'presets');
+      const fetchedPresets = data || [];
+      setPresetServices(fetchedPresets);
+      return fetchedPresets;
     } catch (error) {
-      console.error('Error fetching preset services:', error);
+      console.error('Error in fetchPresetServices:', error);
+      setPresetServices([]);
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
-  const createService = async (serviceData: any) => {
+  // Create a single service
+  const createService = async (serviceData: Omit<Service, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('Creating service:', serviceData);
+      console.log('Creating service with data:', serviceData);
       
+      // Validate required fields
+      if (!serviceData.salon_id || !serviceData.name || !serviceData.price || serviceData.price <= 0) {
+        throw new Error('Dados obrigatórios estão faltando ou inválidos');
+      }
+
       const { data, error } = await supabase
         .from('services')
-        .insert(serviceData)
+        .insert({
+          salon_id: serviceData.salon_id,
+          name: serviceData.name.trim(),
+          description: serviceData.description?.trim() || null,
+          price: Number(serviceData.price),
+          duration_minutes: Number(serviceData.duration_minutes) || 60,
+          active: serviceData.active !== false
+        })
         .select()
         .single();
 
       if (error) {
         console.error('Error creating service:', error);
-        return { success: false, message: 'Erro ao criar serviço: ' + error.message };
+        throw error;
       }
 
       console.log('Service created successfully:', data);
+      
+      // Update local state
+      setServices(prev => [...prev, data]);
+      
       return { success: true, service: data };
     } catch (error) {
-      console.error('Error creating service:', error);
-      return { success: false, message: 'Erro ao criar serviço' };
+      console.error('Error in createService:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Erro ao criar serviço'
+      };
     }
   };
 
-  // Create services from presets - Fixed to handle proper data structure
-  const createServicesFromPresets = async (salonId: string, selectedServices: any[]) => {
+  // Create services from presets - FIXED implementation
+  const createServicesFromPresets = async (salonId: string, selectedServices: { id: string; price: number }[]) => {
     try {
       setLoading(true);
       console.log('Creating services from presets for salon:', salonId);
-      console.log('Selected services data:', selectedServices);
+      console.log('Selected services:', selectedServices);
       
-      if (!selectedServices || selectedServices.length === 0) {
-        console.log('No services selected');
+      if (!salonId || !selectedServices || selectedServices.length === 0) {
+        console.log('No services to create');
         return { success: true, services: [] };
       }
       
-      // Buscar os preset services se ainda não estão carregados
-      if (presetServices.length === 0) {
-        await fetchPresetServices();
+      // Fetch preset services if not loaded
+      let currentPresets = presetServices;
+      if (currentPresets.length === 0) {
+        currentPresets = await fetchPresetServices();
       }
       
-      const servicesToCreate = selectedServices.map(({ id, price }) => {
-        const preset = presetServices.find(p => p.id === id);
+      // Prepare services to create
+      const servicesToCreate = [];
+      
+      for (const { id, price } of selectedServices) {
+        const preset = currentPresets.find(p => p.id === id);
         if (!preset) {
           console.warn(`Preset service not found for ID: ${id}`);
-          return null;
+          continue;
         }
         
-        const numericPrice = parseFloat(price.toString());
+        const numericPrice = Number(price);
         if (!numericPrice || numericPrice <= 0) {
           console.warn(`Invalid price for service ${preset.name}: ${price}`);
-          return null;
+          continue;
         }
         
-        return {
+        servicesToCreate.push({
           salon_id: salonId,
           name: preset.name,
           description: preset.description || null,
           price: numericPrice,
           duration_minutes: preset.default_duration_minutes || 60,
           active: true
-        };
-      }).filter(Boolean);
+        });
+      }
 
       if (servicesToCreate.length === 0) {
         console.log('No valid services to create');
         return { success: true, services: [] };
       }
 
-      console.log('Creating services:', servicesToCreate);
+      console.log('Services to create:', servicesToCreate);
 
       const { data, error } = await supabase
         .from('services')
@@ -137,21 +174,24 @@ export const useServiceData = () => {
         .select();
 
       if (error) {
-        console.error('Error creating services:', error);
-        return { success: false, message: 'Erro ao criar serviços: ' + error.message };
+        console.error('Database error creating services:', error);
+        throw error;
       }
 
-      console.log('Services created successfully:', data);
+      console.log('Services created successfully:', data?.length || 0, 'services created');
       
-      // Atualizar lista local de serviços
+      // Update local state
       if (data && data.length > 0) {
         setServices(prev => [...prev, ...data]);
       }
       
-      return { success: true, services: data };
+      return { success: true, services: data || [] };
     } catch (error) {
-      console.error('Error creating services from presets:', error);
-      return { success: false, message: 'Erro ao criar serviços' };
+      console.error('Error in createServicesFromPresets:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Erro ao criar serviços'
+      };
     } finally {
       setLoading(false);
     }
@@ -171,20 +211,23 @@ export const useServiceData = () => {
 
       if (error) {
         console.error('Error updating service:', error);
-        return { success: false, message: 'Erro ao atualizar serviço: ' + error.message };
+        throw error;
       }
 
       console.log('Service updated successfully:', data);
       
-      // Atualizar lista local
+      // Update local state
       setServices(prev => prev.map(service => 
         service.id === serviceId ? { ...service, ...data } : service
       ));
       
       return { success: true, service: data };
     } catch (error) {
-      console.error('Error updating service:', error);
-      return { success: false, message: 'Erro ao atualizar serviço' };
+      console.error('Error in updateService:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Erro ao atualizar serviço'
+      };
     }
   };
 
@@ -200,18 +243,21 @@ export const useServiceData = () => {
 
       if (error) {
         console.error('Error deleting service:', error);
-        return { success: false, message: 'Erro ao excluir serviço: ' + error.message };
+        throw error;
       }
 
       console.log('Service deleted successfully');
       
-      // Remover da lista local
+      // Update local state
       setServices(prev => prev.filter(service => service.id !== serviceId));
       
       return { success: true };
     } catch (error) {
-      console.error('Error deleting service:', error);
-      return { success: false, message: 'Erro ao excluir serviço' };
+      console.error('Error in deleteService:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Erro ao excluir serviço'
+      };
     }
   };
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Scissors, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Plus, Search, Scissors, TrendingUp, Users, DollarSign, RefreshCw } from "lucide-react";
 import { Service, useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import ServiceCreationModal from './service-management/ServiceCreationModal';
@@ -13,33 +13,60 @@ import ServiceCard from './service-management/ServiceCard';
 
 interface ServiceManagerProps {
   salonId: string;
-  services: Service[];
-  onRefresh: () => void;
+  services?: Service[];
+  onRefresh?: () => void;
 }
 
-const ServiceManager = ({ salonId, services: initialServices, onRefresh }: ServiceManagerProps) => {
+const ServiceManager = ({ salonId, services: propServices = [], onRefresh }: ServiceManagerProps) => {
   const { 
-    services, 
+    services: hookServices, 
     fetchSalonServices, 
     updateService, 
     deleteService, 
-    toggleServiceStatus 
+    toggleServiceStatus,
+    loading
   } = useSupabaseData();
   const { toast } = useToast();
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Usar serviços do hook ou props
-  const currentServices = services.length > 0 ? services : initialServices;
+  // Use hook services if available, otherwise use props
+  const currentServices = hookServices.length > 0 ? hookServices : propServices;
 
+  // Load services on mount and when salonId changes
   useEffect(() => {
     if (salonId) {
-      console.log('Loading services for salon:', salonId);
-      fetchSalonServices(salonId);
+      console.log('ServiceManager - Loading services for salon:', salonId);
+      loadServices();
     }
-  }, [salonId, fetchSalonServices]);
+  }, [salonId]);
+
+  const loadServices = async () => {
+    try {
+      setIsRefreshing(true);
+      await fetchSalonServices(salonId);
+      console.log('ServiceManager - Services loaded successfully');
+    } catch (error) {
+      console.error('ServiceManager - Error loading services:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar serviços. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    await loadServices();
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
 
   const filteredServices = currentServices.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -57,15 +84,14 @@ const ServiceManager = ({ salonId, services: initialServices, onRefresh }: Servi
     active: currentServices.filter(s => s.active).length,
     inactive: currentServices.filter(s => !s.active).length,
     averagePrice: currentServices.length > 0 
-      ? currentServices.reduce((sum, s) => sum + s.price, 0) / currentServices.length 
+      ? currentServices.reduce((sum, s) => sum + Number(s.price), 0) / currentServices.length 
       : 0,
     totalRevenuePotential: currentServices
       .filter(s => s.active)
-      .reduce((sum, s) => sum + s.price, 0)
+      .reduce((sum, s) => sum + Number(s.price), 0)
   };
 
   const handleEdit = (service: Service) => {
-    // TODO: Implement edit functionality
     toast({
       title: "Em desenvolvimento",
       description: "Funcionalidade de edição será implementada em breve.",
@@ -84,11 +110,11 @@ const ServiceManager = ({ salonId, services: initialServices, onRefresh }: Servi
         title: "Sucesso",
         description: "Serviço excluído com sucesso!",
       });
-      onRefresh();
+      await handleRefresh();
     } else {
       toast({
         title: "Erro",
-        description: result.message,
+        description: result.message || "Erro ao excluir serviço",
         variant: "destructive"
       });
     }
@@ -102,11 +128,11 @@ const ServiceManager = ({ salonId, services: initialServices, onRefresh }: Servi
         title: "Sucesso",
         description: `Serviço ${service.active ? 'desativado' : 'ativado'} com sucesso!`,
       });
-      onRefresh();
+      await handleRefresh();
     } else {
       toast({
         title: "Erro",
-        description: result.message,
+        description: result.message || "Erro ao alterar status do serviço",
         variant: "destructive"
       });
     }
@@ -119,9 +145,9 @@ const ServiceManager = ({ salonId, services: initialServices, onRefresh }: Servi
     }).format(value);
   };
 
-  const handleServiceCreated = () => {
-    onRefresh();
-    fetchSalonServices(salonId);
+  const handleServiceCreated = async () => {
+    console.log('ServiceManager - Service created, refreshing...');
+    await handleRefresh();
   };
 
   return (
@@ -191,13 +217,24 @@ const ServiceManager = ({ salonId, services: initialServices, onRefresh }: Servi
               </CardDescription>
             </div>
 
-            <Button 
-              onClick={() => setShowCreateDialog(true)}
-              className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Serviço
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleRefresh}
+                variant="outline"
+                size="sm"
+                disabled={isRefreshing || loading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing || loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button 
+                onClick={() => setShowCreateDialog(true)}
+                className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Serviço
+              </Button>
+            </div>
           </div>
 
           {/* Search and Filters */}
@@ -229,7 +266,12 @@ const ServiceManager = ({ salonId, services: initialServices, onRefresh }: Servi
             </TabsList>
 
             <TabsContent value={activeTab}>
-              {filteredServices.length > 0 ? (
+              {loading || isRefreshing ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Carregando serviços...</p>
+                </div>
+              ) : filteredServices.length > 0 ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredServices.map((service) => (
                     <ServiceCard

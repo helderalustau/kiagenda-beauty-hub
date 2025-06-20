@@ -174,12 +174,20 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Additional functions needed by components
+  // Enhanced refresh data function
   const refreshData = async () => {
-    await salonData.fetchAllSalons();
-    await serviceData.fetchPresetServices();
-    await dashboardData.fetchDashboardStats();
-    await dashboardData.fetchPlanConfigurations();
+    console.log('Refreshing all data...');
+    try {
+      await Promise.all([
+        salonData.fetchAllSalons(),
+        serviceData.fetchPresetServices(),
+        dashboardData.fetchDashboardStats(),
+        dashboardData.fetchPlanConfigurations()
+      ]);
+      console.log('All data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
   };
 
   return {
@@ -215,7 +223,7 @@ export const useSupabaseData = () => {
     deleteSalon: salonData.deleteSalon,
     cleanupSalonsWithoutAdmins: salonData.cleanupSalonsWithoutAdmins,
     
-    // Service methods - Updated with complete functionality
+    // Service methods - Enhanced with proper error handling
     fetchSalonServices: serviceData.fetchSalonServices,
     fetchPresetServices: serviceData.fetchPresetServices,
     createService: serviceData.createService,
