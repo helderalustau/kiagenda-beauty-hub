@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from '@/hooks/useAuthData';
 import { useSalonData } from '@/hooks/useSalonData';
+import { useServiceData } from '@/hooks/useServiceData';
 import AdminRegistrationHeader from './admin-registration/AdminRegistrationHeader';
 import AdminCreationInfo from './admin-registration/AdminCreationInfo';
 import AdminFormFields from './admin-registration/AdminFormFields';
@@ -30,6 +32,7 @@ const AdminRegistrationForm = ({
   const { toast } = useToast();
   const { registerAdmin, loading } = useAuthData();
   const { createSalon } = useSalonData();
+  const { fetchSalonServices } = useServiceData();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -73,6 +76,27 @@ const AdminRegistrationForm = ({
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
     return `EST-${timestamp}-${random}`;
+  };
+
+  const checkSalonConfiguration = async (salonId: string) => {
+    try {
+      // Verificar se há serviços cadastrados
+      const services = await fetchSalonServices(salonId);
+      const hasServices = services.length > 0;
+
+      // Se não há serviços, vai para salon-setup
+      if (!hasServices) {
+        return '/salon-setup';
+      }
+
+      // Se há serviços, vai para admin-dashboard
+      return '/admin-dashboard';
+
+    } catch (error) {
+      console.error('Erro ao verificar configuração do estabelecimento:', error);
+      // Em caso de erro, redirecionar para salon-setup por segurança
+      return '/salon-setup';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,9 +154,12 @@ const AdminRegistrationForm = ({
       );
 
       if (result.success) {
+        // Verificar configuração do estabelecimento para decidir redirecionamento
+        const redirectPath = await checkSalonConfiguration(salonResult.salon.id);
+        
         toast({
           title: "Sucesso!",
-          description: "Administrador criado com sucesso! Redirecionando para configuração do estabelecimento..."
+          description: "Administrador criado com sucesso! Redirecionando..."
         });
         
         // Armazenar dados do administrador e estabelecimento para uso na configuração
@@ -152,9 +179,9 @@ const AdminRegistrationForm = ({
           setDateadm: new Date().toISOString()
         });
         
-        // Redirecionar para configuração do estabelecimento
+        // Redirecionar baseado na configuração do estabelecimento
         setTimeout(() => {
-          window.location.href = '/salon-setup';
+          window.location.href = redirectPath;
         }, 2000);
         
         onSuccess?.();
