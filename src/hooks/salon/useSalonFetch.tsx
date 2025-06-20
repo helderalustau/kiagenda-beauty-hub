@@ -31,7 +31,7 @@ export const useSalonFetch = () => {
         if (error.code === 'PGRST116') {
           console.error('Salon not found:', salonId);
         }
-        return;
+        throw error;
       }
 
       console.log('Salon data loaded:', data);
@@ -39,6 +39,7 @@ export const useSalonFetch = () => {
       setFetchedSalonIds(prev => new Set(prev).add(salonId));
     } catch (error) {
       console.error('Error fetching salon data:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -47,6 +48,8 @@ export const useSalonFetch = () => {
   const fetchSalonBySlug = async (slug: string) => {
     try {
       setLoading(true);
+      console.log('Fetching salon by slug:', slug);
+      
       const { data, error } = await supabase
         .from('salons')
         .select('*')
@@ -55,13 +58,14 @@ export const useSalonFetch = () => {
 
       if (error) {
         console.error('Error fetching salon by slug:', error);
-        return null;
+        throw error;
       }
 
+      console.log('Salon data loaded by slug:', data);
       return data as Salon;
     } catch (error) {
       console.error('Error fetching salon by slug:', error);
-      return null;
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -70,19 +74,25 @@ export const useSalonFetch = () => {
   const fetchAllSalons = async () => {
     try {
       setLoading(true);
+      console.log('Fetching all salons...');
+      
       const { data, error } = await supabase
         .from('salons')
         .select('*')
+        .eq('setup_completed', true)
         .order('name');
 
       if (error) {
         console.error('Error fetching salons:', error);
-        return;
+        throw error;
       }
 
+      console.log('All salons loaded:', data?.length || 0, 'salons');
       setSalons(data as Salon[] || []);
+      return data as Salon[] || [];
     } catch (error) {
       console.error('Error fetching salons:', error);
+      throw error;
     } finally {
       setLoading(false);
     }

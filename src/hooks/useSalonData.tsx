@@ -18,11 +18,43 @@ export const useSalonData = () => {
     salons: crudHook.salons,
     loading: crudHook.loading || setupHook.loading,
     
-    // CRUD operations
-    createSalon: crudHook.createSalon,
-    fetchSalonData: crudHook.fetchSalonData,
-    fetchSalonBySlug: crudHook.fetchSalonBySlug,
-    fetchAllSalons: crudHook.fetchAllSalons,
+    // CRUD operations with error handling
+    createSalon: async (...args: Parameters<typeof crudHook.createSalon>) => {
+      try {
+        return await crudHook.createSalon(...args);
+      } catch (error) {
+        console.error('Error in createSalon:', error);
+        throw error;
+      }
+    },
+    
+    fetchSalonData: async (...args: Parameters<typeof crudHook.fetchSalonData>) => {
+      try {
+        return await crudHook.fetchSalonData(...args);
+      } catch (error) {
+        console.error('Error in fetchSalonData:', error);
+        throw error;
+      }
+    },
+    
+    fetchSalonBySlug: async (...args: Parameters<typeof crudHook.fetchSalonBySlug>) => {
+      try {
+        return await crudHook.fetchSalonBySlug(...args);
+      } catch (error) {
+        console.error('Error in fetchSalonBySlug:', error);
+        throw error;
+      }
+    },
+    
+    fetchAllSalons: async () => {
+      try {
+        return await crudHook.fetchAllSalons();
+      } catch (error) {
+        console.error('Error in fetchAllSalons:', error);
+        throw error;
+      }
+    },
+    
     updateSalon: crudHook.updateSalon,
     deleteSalon: crudHook.deleteSalon,
     setSalon: crudHook.setSalon,
