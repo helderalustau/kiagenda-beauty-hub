@@ -215,11 +215,14 @@ export const useSupabaseData = () => {
     deleteSalon: salonData.deleteSalon,
     cleanupSalonsWithoutAdmins: salonData.cleanupSalonsWithoutAdmins,
     
-    // Service methods
+    // Service methods - Updated with complete functionality
     fetchSalonServices: serviceData.fetchSalonServices,
     fetchPresetServices: serviceData.fetchPresetServices,
     createService: serviceData.createService,
     createServicesFromPresets: serviceData.createServicesFromPresets,
+    updateService: serviceData.updateService,
+    deleteService: serviceData.deleteService,
+    toggleServiceStatus: serviceData.toggleServiceStatus,
     
     // Appointment methods
     createAppointment: appointmentData.createAppointment,

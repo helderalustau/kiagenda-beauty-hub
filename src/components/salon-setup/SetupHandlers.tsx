@@ -180,8 +180,13 @@ export const useSetupHandlers = ({
         
         if (!servicesResult.success) {
           console.warn('Aviso: Alguns serviços podem não ter sido criados:', servicesResult.message);
+          toast({
+            title: "Aviso",
+            description: "Estabelecimento configurado, mas alguns serviços podem não ter sido criados. Você pode adicioná-los manualmente.",
+            variant: "default"
+          });
         } else {
-          console.log('Serviços criados com sucesso');
+          console.log('Serviços criados com sucesso:', servicesResult.services?.length);
         }
       }
 
@@ -201,14 +206,13 @@ export const useSetupHandlers = ({
 
       toast({
         title: "Sucesso!",
-        description: "Configuração do estabelecimento finalizada com sucesso!"
+        description: "Estabelecimento configurado com sucesso! Redirecionando para o painel...",
       });
 
-      // Redirect to admin dashboard with correct salon ID
+      // Redirect to dashboard
       setTimeout(() => {
-        console.log('Redirecionando para dashboard do estabelecimento:', salon.id);
         window.location.href = '/admin-dashboard';
-      }, 2000);
+      }, 1500);
 
     } catch (error) {
       console.error('Erro ao finalizar configuração:', error);

@@ -38,10 +38,15 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
   });
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(false);
 
   useEffect(() => {
     if (isOpen && salon.id) {
-      fetchSalonServices(salon.id);
+      console.log('Carregando serviços para o modal de agendamento...');
+      setLoadingServices(true);
+      fetchSalonServices(salon.id).finally(() => {
+        setLoadingServices(false);
+      });
       resetForm();
     }
   }, [isOpen, salon.id, fetchSalonServices]);
@@ -138,6 +143,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
         clientEmail: clientData.email
       };
 
+      console.log('Criando agendamento:', appointmentData);
       const result = await createAppointment(appointmentData);
 
       if (result.success) {
@@ -202,16 +208,27 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
         return (
           <div>
             <h3 className="text-xl font-semibold mb-4">Escolha o Serviço</h3>
-            <div className="grid gap-4 max-h-96 overflow-y-auto">
-              {services.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  onSelect={handleServiceSelect}
-                  isSelected={selectedService?.id === service.id}
-                />
-              ))}
-            </div>
+            {loadingServices ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Carregando serviços...</p>
+              </div>
+            ) : services.length > 0 ? (
+              <div className="grid gap-4 max-h-96 overflow-y-auto">
+                {services.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    onSelect={handleServiceSelect}
+                    isSelected={selectedService?.id === service.id}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-600">Nenhum serviço disponível no momento.</p>
+              </div>
+            )}
           </div>
         );
 

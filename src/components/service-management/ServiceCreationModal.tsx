@@ -33,10 +33,10 @@ const ServiceCreationModal = ({ isOpen, onClose, salonId, onSuccess }: ServiceCr
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && presetServices.length === 0) {
       fetchPresetServices();
     }
-  }, [isOpen, fetchPresetServices]);
+  }, [isOpen, fetchPresetServices, presetServices.length]);
 
   const handlePresetChange = (presetId: string) => {
     setSelectedPreset(presetId);
@@ -52,10 +52,22 @@ const ServiceCreationModal = ({ isOpen, onClose, salonId, onSuccess }: ServiceCr
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      duration_minutes: '60',
+      category: ''
+    });
+    setUsePreset(false);
+    setSelectedPreset('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.price || parseFloat(formData.price) <= 0) {
+    if (!formData.name?.trim() || !formData.price || parseFloat(formData.price) <= 0) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos obrigatórios com valores válidos",
@@ -69,13 +81,14 @@ const ServiceCreationModal = ({ isOpen, onClose, salonId, onSuccess }: ServiceCr
     try {
       const serviceData = {
         salon_id: salonId,
-        name: formData.name,
-        description: formData.description || null,
+        name: formData.name.trim(),
+        description: formData.description?.trim() || null,
         price: parseFloat(formData.price),
         duration_minutes: parseInt(formData.duration_minutes),
         active: true
       };
 
+      console.log('Creating service with data:', serviceData);
       const result = await createService(serviceData);
       
       if (result.success) {
@@ -84,23 +97,13 @@ const ServiceCreationModal = ({ isOpen, onClose, salonId, onSuccess }: ServiceCr
           description: "Serviço criado com sucesso!"
         });
         
-        // Reset form
-        setFormData({
-          name: '',
-          description: '',
-          price: '',
-          duration_minutes: '60',
-          category: ''
-        });
-        setUsePreset(false);
-        setSelectedPreset('');
-        
+        resetForm();
         onSuccess();
         onClose();
       } else {
         toast({
           title: "Erro",
-          description: result.message,
+          description: result.message || "Erro ao criar serviço",
           variant: "destructive"
         });
       }
@@ -155,7 +158,12 @@ const ServiceCreationModal = ({ isOpen, onClose, salonId, onSuccess }: ServiceCr
               type="checkbox"
               id="usePreset"
               checked={usePreset}
-              onChange={(e) => setUsePreset(e.target.checked)}
+              onChange={(e) => {
+                setUsePreset(e.target.checked);
+                if (!e.target.checked) {
+                  resetForm();
+                }
+              }}
               className="rounded"
             />
             <Label htmlFor="usePreset" className="text-sm">

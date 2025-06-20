@@ -12,6 +12,8 @@ export const useServiceData = () => {
   const fetchSalonServices = async (salonId: string): Promise<Service[]> => {
     try {
       setLoading(true);
+      console.log('Fetching services for salon:', salonId);
+      
       const { data, error } = await supabase
         .from('services')
         .select('*')
@@ -24,6 +26,7 @@ export const useServiceData = () => {
         return [];
       }
 
+      console.log('Services fetched successfully:', data);
       const services = data || [];
       setServices(services);
       return services;
@@ -49,6 +52,7 @@ export const useServiceData = () => {
         return;
       }
 
+      console.log('Preset services fetched:', data?.length);
       setPresetServices(data || []);
     } catch (error) {
       console.error('Error fetching preset services:', error);
@@ -59,6 +63,8 @@ export const useServiceData = () => {
 
   const createService = async (serviceData: any) => {
     try {
+      console.log('Creating service:', serviceData);
+      
       const { data, error } = await supabase
         .from('services')
         .insert(serviceData)
@@ -67,9 +73,10 @@ export const useServiceData = () => {
 
       if (error) {
         console.error('Error creating service:', error);
-        return { success: false, message: 'Erro ao criar serviço' };
+        return { success: false, message: 'Erro ao criar serviço: ' + error.message };
       }
 
+      console.log('Service created successfully:', data);
       return { success: true, service: data };
     } catch (error) {
       console.error('Error creating service:', error);
@@ -77,13 +84,21 @@ export const useServiceData = () => {
     }
   };
 
-  // Create services from presets - Fixed to use correct ID mapping
+  // Create services from presets - Fixed to handle proper data structure
   const createServicesFromPresets = async (salonId: string, selectedServices: any[]) => {
     try {
       setLoading(true);
+      console.log('Creating services from presets for salon:', salonId);
+      console.log('Selected services data:', selectedServices);
       
       if (!selectedServices || selectedServices.length === 0) {
+        console.log('No services selected');
         return { success: true, services: [] };
+      }
+      
+      // Buscar os preset services se ainda não estão carregados
+      if (presetServices.length === 0) {
+        await fetchPresetServices();
       }
       
       const servicesToCreate = selectedServices.map(({ id, price }) => {
@@ -93,7 +108,8 @@ export const useServiceData = () => {
           return null;
         }
         
-        if (!price || price <= 0) {
+        const numericPrice = parseFloat(price.toString());
+        if (!numericPrice || numericPrice <= 0) {
           console.warn(`Invalid price for service ${preset.name}: ${price}`);
           return null;
         }
@@ -102,13 +118,14 @@ export const useServiceData = () => {
           salon_id: salonId,
           name: preset.name,
           description: preset.description || null,
-          price: parseFloat(price.toString()),
+          price: numericPrice,
           duration_minutes: preset.default_duration_minutes || 60,
           active: true
         };
       }).filter(Boolean);
 
       if (servicesToCreate.length === 0) {
+        console.log('No valid services to create');
         return { success: true, services: [] };
       }
 
@@ -125,6 +142,12 @@ export const useServiceData = () => {
       }
 
       console.log('Services created successfully:', data);
+      
+      // Atualizar lista local de serviços
+      if (data && data.length > 0) {
+        setServices(prev => [...prev, ...data]);
+      }
+      
       return { success: true, services: data };
     } catch (error) {
       console.error('Error creating services from presets:', error);
@@ -132,6 +155,69 @@ export const useServiceData = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Update service
+  const updateService = async (serviceId: string, updateData: Partial<Service>) => {
+    try {
+      console.log('Updating service:', serviceId, updateData);
+      
+      const { data, error } = await supabase
+        .from('services')
+        .update(updateData)
+        .eq('id', serviceId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating service:', error);
+        return { success: false, message: 'Erro ao atualizar serviço: ' + error.message };
+      }
+
+      console.log('Service updated successfully:', data);
+      
+      // Atualizar lista local
+      setServices(prev => prev.map(service => 
+        service.id === serviceId ? { ...service, ...data } : service
+      ));
+      
+      return { success: true, service: data };
+    } catch (error) {
+      console.error('Error updating service:', error);
+      return { success: false, message: 'Erro ao atualizar serviço' };
+    }
+  };
+
+  // Delete service
+  const deleteService = async (serviceId: string) => {
+    try {
+      console.log('Deleting service:', serviceId);
+      
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', serviceId);
+
+      if (error) {
+        console.error('Error deleting service:', error);
+        return { success: false, message: 'Erro ao excluir serviço: ' + error.message };
+      }
+
+      console.log('Service deleted successfully');
+      
+      // Remover da lista local
+      setServices(prev => prev.filter(service => service.id !== serviceId));
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      return { success: false, message: 'Erro ao excluir serviço' };
+    }
+  };
+
+  // Toggle service status
+  const toggleServiceStatus = async (serviceId: string, currentStatus: boolean) => {
+    return await updateService(serviceId, { active: !currentStatus });
   };
 
   return {
@@ -142,6 +228,9 @@ export const useServiceData = () => {
     fetchPresetServices,
     createService,
     createServicesFromPresets,
+    updateService,
+    deleteService,
+    toggleServiceStatus,
     setServices,
     setPresetServices
   };

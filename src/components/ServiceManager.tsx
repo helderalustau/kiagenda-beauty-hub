@@ -17,13 +17,31 @@ interface ServiceManagerProps {
   onRefresh: () => void;
 }
 
-const ServiceManager = ({ salonId, services, onRefresh }: ServiceManagerProps) => {
+const ServiceManager = ({ salonId, services: initialServices, onRefresh }: ServiceManagerProps) => {
+  const { 
+    services, 
+    fetchSalonServices, 
+    updateService, 
+    deleteService, 
+    toggleServiceStatus 
+  } = useSupabaseData();
   const { toast } = useToast();
+  
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
-  const filteredServices = services.filter(service => {
+  // Usar serviços do hook ou props
+  const currentServices = services.length > 0 ? services : initialServices;
+
+  useEffect(() => {
+    if (salonId) {
+      console.log('Loading services for salon:', salonId);
+      fetchSalonServices(salonId);
+    }
+  }, [salonId, fetchSalonServices]);
+
+  const filteredServices = currentServices.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (service.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     
@@ -35,13 +53,13 @@ const ServiceManager = ({ salonId, services, onRefresh }: ServiceManagerProps) =
   });
 
   const serviceStats = {
-    total: services.length,
-    active: services.filter(s => s.active).length,
-    inactive: services.filter(s => !s.active).length,
-    averagePrice: services.length > 0 
-      ? services.reduce((sum, s) => sum + s.price, 0) / services.length 
+    total: currentServices.length,
+    active: currentServices.filter(s => s.active).length,
+    inactive: currentServices.filter(s => !s.active).length,
+    averagePrice: currentServices.length > 0 
+      ? currentServices.reduce((sum, s) => sum + s.price, 0) / currentServices.length 
       : 0,
-    totalRevenuePotential: services
+    totalRevenuePotential: currentServices
       .filter(s => s.active)
       .reduce((sum, s) => sum + s.price, 0)
   };
@@ -54,20 +72,44 @@ const ServiceManager = ({ salonId, services, onRefresh }: ServiceManagerProps) =
     });
   };
 
-  const handleDelete = (service: Service) => {
-    // TODO: Implement delete functionality
-    toast({
-      title: "Em desenvolvimento",
-      description: "Funcionalidade de exclusão será implementada em breve.",
-    });
+  const handleDelete = async (service: Service) => {
+    if (!confirm(`Tem certeza que deseja excluir o serviço "${service.name}"?`)) {
+      return;
+    }
+
+    const result = await deleteService(service.id);
+    
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: "Serviço excluído com sucesso!",
+      });
+      onRefresh();
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleToggleStatus = (service: Service) => {
-    // TODO: Implement toggle status functionality
-    toast({
-      title: "Em desenvolvimento",
-      description: "Funcionalidade de ativar/desativar será implementada em breve.",
-    });
+  const handleToggleStatus = async (service: Service) => {
+    const result = await toggleServiceStatus(service.id, service.active);
+    
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: `Serviço ${service.active ? 'desativado' : 'ativado'} com sucesso!`,
+      });
+      onRefresh();
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -75,6 +117,11 @@ const ServiceManager = ({ salonId, services, onRefresh }: ServiceManagerProps) =
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const handleServiceCreated = () => {
+    onRefresh();
+    fetchSalonServices(salonId);
   };
 
   return (
@@ -231,7 +278,7 @@ const ServiceManager = ({ salonId, services, onRefresh }: ServiceManagerProps) =
         isOpen={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
         salonId={salonId}
-        onSuccess={onRefresh}
+        onSuccess={handleServiceCreated}
       />
     </div>
   );
