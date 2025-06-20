@@ -89,7 +89,6 @@ const Index = () => {
       owner_name: adminData.name,
       phone: adminData.phone || '(00) 00000-0000',
       address: 'Endereço a ser configurado',
-      category_id: '00000000-0000-0000-0000-000000000000',
       plan: 'bronze',
       is_open: false,
       setup_completed: false
