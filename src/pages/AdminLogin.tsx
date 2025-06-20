@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,8 +35,8 @@ const AdminLogin = () => {
       // Aguardar um pequeno delay para garantir que os dados foram carregados
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Verificar se opening_hours está configurado (não é null)
-      if (salon && salon.opening_hours && salon.opening_hours !== null) {
+      // Verificar se o setup foi concluído (setup_completed = true)
+      if (salon && salon.setup_completed === true) {
         return '/admin-dashboard';
       } else {
         return '/salon-setup';
@@ -97,7 +96,7 @@ const AdminLogin = () => {
           description: "Login realizado com sucesso!"
         });
         
-        // Verificar configuração do estabelecimento baseado em opening_hours
+        // Verificar configuração do estabelecimento baseado em setup_completed
         const redirectPath = await checkSalonConfiguration(result.admin.salon_id);
         
         setTimeout(() => {
