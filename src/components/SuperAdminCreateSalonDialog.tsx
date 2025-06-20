@@ -47,12 +47,19 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
       return;
     }
 
-    // Create salon with sequential name
+    // Create salon with sequential name and temporary address
     const salonData = {
       name: generateSequentialSalonName(),
-      ...newSalon,
-      address: 'Endereço será preenchido na configuração'
+      owner_name: newSalon.owner_name,
+      phone: newSalon.phone,
+      plan: newSalon.plan,
+      address: 'Endereço será preenchido na configuração',
+      category_id: null, // Permitir null para estabelecimentos temporários
+      is_open: false,
+      setup_completed: false
     };
+
+    console.log('Enviando dados do estabelecimento:', salonData);
 
     await onCreateSalon(salonData, null);
     

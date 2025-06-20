@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Salon } from '../useSupabaseData';
@@ -14,17 +13,19 @@ export const useSalonCRUD = () => {
       setLoading(true);
       console.log('Creating salon with data:', salonData);
       
-      // Validate required fields - mais específico
-      if (!salonData.name?.trim()) {
-        return { success: false, message: 'Nome do estabelecimento é obrigatório' };
-      }
+      // Validate required fields - mais específico para super admin
       if (!salonData.owner_name?.trim()) {
         return { success: false, message: 'Nome do responsável é obrigatório' };
       }
       if (!salonData.phone?.trim()) {
         return { success: false, message: 'Telefone é obrigatório' };
       }
-      if (!salonData.address?.trim()) {
+      // Para super admin, name e address são gerados automaticamente, então não validamos aqui
+      // Apenas verificamos se existem
+      if (!salonData.name) {
+        return { success: false, message: 'Nome do estabelecimento é obrigatório' };
+      }
+      if (!salonData.address) {
         return { success: false, message: 'Endereço é obrigatório' };
       }
 
@@ -65,6 +66,7 @@ export const useSalonCRUD = () => {
                               error.message.includes('owner_name') ? 'nome do responsável' :
                               error.message.includes('phone') ? 'telefone' :
                               error.message.includes('address') ? 'endereço' :
+                              error.message.includes('category_id') ? 'categoria (pode ser nulo para estabelecimentos temporários)' :
                               'campo obrigatório';
           return { success: false, message: `Campo obrigatório não preenchido: ${missingField}` };
         } else if (error.code === '42501') {
