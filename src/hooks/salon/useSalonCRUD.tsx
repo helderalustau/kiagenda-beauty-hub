@@ -14,25 +14,35 @@ export const useSalonCRUD = () => {
       setLoading(true);
       console.log('Creating salon with data:', salonData);
       
-      // Validate required fields
+      // Validate required fields - mais específico
+      if (!salonData.name?.trim()) {
+        return { success: false, message: 'Nome do estabelecimento é obrigatório' };
+      }
       if (!salonData.owner_name?.trim()) {
         return { success: false, message: 'Nome do responsável é obrigatório' };
       }
       if (!salonData.phone?.trim()) {
         return { success: false, message: 'Telefone é obrigatório' };
       }
+      if (!salonData.address?.trim()) {
+        return { success: false, message: 'Endereço é obrigatório' };
+      }
 
-      // Clean the data before inserting - NO CATEGORY REQUIRED for temporary salon
+      // Clean the data before inserting - Allow null category for temporary salon
       const cleanSalonData = {
         name: salonData.name.trim(),
         owner_name: salonData.owner_name.trim(),
         phone: salonData.phone.trim(),
-        address: salonData.address,
-        category_id: null, // Allow null for temporary salons
+        address: salonData.address.trim(),
+        category_id: salonData.category_id || null, // Allow null for temporary salons
         plan: salonData.plan || 'bronze',
         is_open: false,
         setup_completed: false,
-        max_attendants: 1
+        max_attendants: 1,
+        city: salonData.city?.trim() || null,
+        state: salonData.state?.trim() || null,
+        street_number: salonData.street_number?.trim() || null,
+        contact_phone: salonData.contact_phone?.trim() || salonData.phone.trim()
       };
 
       console.log('Clean salon data:', cleanSalonData);
@@ -50,7 +60,13 @@ export const useSalonCRUD = () => {
         if (error.code === '23505') {
           return { success: false, message: 'Já existe um estabelecimento com estes dados' };
         } else if (error.code === '23502') {
-          return { success: false, message: 'Campos obrigatórios não preenchidos' };
+          // Identificar qual campo específico está faltando
+          const missingField = error.message.includes('name') ? 'nome' :
+                              error.message.includes('owner_name') ? 'nome do responsável' :
+                              error.message.includes('phone') ? 'telefone' :
+                              error.message.includes('address') ? 'endereço' :
+                              'campo obrigatório';
+          return { success: false, message: `Campo obrigatório não preenchido: ${missingField}` };
         } else if (error.code === '42501') {
           return { success: false, message: 'Erro de permissão. Verifique as configurações do banco' };
         } else {

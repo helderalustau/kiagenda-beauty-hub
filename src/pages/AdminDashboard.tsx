@@ -41,8 +41,16 @@ const AdminDashboard = () => {
   const [showNotification, setShowNotification] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [salonStatus, setSalonStatus] = useState<boolean | null>(null);
 
   const loading = salonLoading || appointmentLoading || serviceLoading;
+
+  // Sincronizar o status local com o salon
+  useEffect(() => {
+    if (salon) {
+      setSalonStatus(salon.is_open);
+    }
+  }, [salon]);
 
   const refreshData = async () => {
     const adminData = localStorage.getItem('adminData');
@@ -164,8 +172,17 @@ const AdminDashboard = () => {
   };
 
   const handleStatusChange = async (isOpen: boolean) => {
-    // Atualizar dados após mudança de status
-    await refreshData();
+    // Atualizar o estado local imediatamente para feedback visual
+    setSalonStatus(isOpen);
+    
+    // Atualizar dados após mudança de status (sem fazer refresh da página)
+    const adminData = localStorage.getItem('adminData');
+    if (adminData) {
+      const admin = JSON.parse(adminData);
+      if (admin.salon_id) {
+        await fetchSalonData(admin.salon_id);
+      }
+    }
   };
 
   if (loading) {
@@ -228,7 +245,7 @@ const AdminDashboard = () => {
               <div className="hidden sm:block">
                 <SalonStatusToggle 
                   salonId={salon.id}
-                  isOpen={salon.is_open}
+                  isOpen={salonStatus}
                   onStatusChange={handleStatusChange}
                 />
               </div>
@@ -258,7 +275,7 @@ const AdminDashboard = () => {
               <div className="mb-4">
                 <SalonStatusToggle 
                   salonId={salon.id}
-                  isOpen={salon.is_open}
+                  isOpen={salonStatus}
                   onStatusChange={handleStatusChange}
                 />
               </div>
