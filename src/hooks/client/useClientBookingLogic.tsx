@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,51 +8,51 @@ import { Salon } from '@/hooks/useSupabaseData';
 export const useClientBookingLogic = (salonSlug: string | undefined) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { 
-    salon, 
-    loading, 
-    fetchSalonData,
-    fetchSalonBySlug 
-  } = useSupabaseData();
+  const { fetchSalonBySlug, fetchSalonData } = useSupabaseData();
   
   const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/client-login');
+  const loadSalonData = useCallback(async () => {
+    if (!salonSlug) {
+      setLoadingError('Slug do estabelecimento não fornecido');
+      setLoading(false);
       return;
     }
 
-    if (salonSlug) {
-      loadSalonData();
-    }
-  }, [user, salonSlug, navigate]);
-
-  const loadSalonData = async () => {
-    if (!salonSlug) return;
-
     try {
+      setLoading(true);
       setLoadingError(null);
       console.log('ClientBooking - Loading salon data for:', salonSlug);
 
-      // First, try to get from localStorage if available
+      // Try to get from localStorage first (if available)
       const storedSalon = localStorage.getItem('selectedSalonForBooking');
+      let salonData = null;
+
       if (storedSalon) {
-        const parsedSalon = JSON.parse(storedSalon);
-        console.log('ClientBooking - Found salon in localStorage:', parsedSalon);
-        setSelectedSalon(parsedSalon);
+        try {
+          const parsedSalon = JSON.parse(storedSalon);
+          console.log('ClientBooking - Found salon in localStorage:', parsedSalon);
+          
+          // Check if it matches the current slug
+          if (parsedSalon.unique_slug === salonSlug || parsedSalon.id === salonSlug) {
+            setSelectedSalon(parsedSalon);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.warn('Error parsing stored salon data:', e);
+          localStorage.removeItem('selectedSalonForBooking');
+        }
       }
 
-      let salonData = null;
-      
-      // Check if salonSlug looks like a UUID (contains hyphens)
+      // Fetch from database
       if (salonSlug.includes('-') && salonSlug.length > 30) {
         // Probably a UUID, try fetching by ID
         console.log('ClientBooking - Attempting to fetch by ID:', salonSlug);
-        await fetchSalonData(salonSlug);
-        salonData = salon;
+        salonData = await fetchSalonData(salonSlug);
       } else {
         // Probably a slug, try fetching by slug
         console.log('ClientBooking - Attempting to fetch by slug:', salonSlug);
@@ -71,19 +71,34 @@ export const useClientBookingLogic = (salonSlug: string | undefined) => {
     } catch (error) {
       console.error('ClientBooking - Error loading salon:', error);
       setLoadingError('Erro ao carregar estabelecimento');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [salonSlug, fetchSalonBySlug, fetchSalonData]);
 
-  const handleOpenBookingModal = () => {
+  // Load salon data on mount and when salonSlug changes
+  useEffect(() => {
+    if (!user) {
+      navigate('/client-login');
+      return;
+    }
+
+    if (salonSlug) {
+      loadSalonData();
+    }
+  }, [user, salonSlug, navigate, loadSalonData]);
+
+  const handleOpenBookingModal = useCallback(() => {
     if (selectedSalon && selectedSalon.is_open) {
       setIsBookingModalOpen(true);
     }
-  };
+  }, [selectedSalon]);
 
-  const handleBookingSuccess = () => {
-    // Redirect back to client dashboard
+  const handleBookingSuccess = useCallback(() => {
+    // Clean up localStorage and redirect
+    localStorage.removeItem('selectedSalonForBooking');
     navigate('/client-dashboard');
-  };
+  }, [navigate]);
 
   return {
     selectedSalon,

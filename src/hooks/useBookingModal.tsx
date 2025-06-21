@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useServiceData } from './useServiceData';
 import { Salon, Service } from './useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
@@ -25,13 +25,13 @@ export const useBookingModal = (salon: Salon) => {
 
   // Load available time slots when date changes
   useEffect(() => {
-    if (selectedDate && salon) {
+    if (selectedDate && salon && !slotsLoading) {
       console.log('useBookingModal - Loading available slots for date:', selectedDate);
       fetchAvailableSlots(salon, selectedDate);
     }
-  }, [selectedDate, salon]);
+  }, [selectedDate, salon?.id]); // Only depend on salon.id to avoid loops
 
-  const loadSalonServices = async () => {
+  const loadSalonServices = useCallback(async () => {
     if (!salon?.id) {
       console.error('useBookingModal - No salon ID provided');
       return;
@@ -41,7 +41,6 @@ export const useBookingModal = (salon: Salon) => {
       console.log('useBookingModal - Loading services for salon:', salon.id);
       const salonServices = await fetchSalonServices(salon.id);
       console.log('useBookingModal - Services loaded:', salonServices?.length || 0, 'services');
-      console.log('useBookingModal - All services:', salonServices);
       
       if (!salonServices || salonServices.length === 0) {
         console.warn('useBookingModal - No services found for salon:', salon.id);
@@ -71,7 +70,7 @@ export const useBookingModal = (salon: Salon) => {
         variant: "destructive"
       });
     }
-  };
+  }, [salon?.id, fetchSalonServices, toast]);
 
   const createAppointment = async (appointmentData: any) => {
     try {
@@ -130,21 +129,21 @@ export const useBookingModal = (salon: Salon) => {
     }
   };
 
-  const handleServiceSelect = (service: Service) => {
+  const handleServiceSelect = useCallback((service: Service) => {
     console.log('useBookingModal - Service selected:', service);
     setSelectedService(service);
-  };
+  }, []);
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = useCallback((date: Date | undefined) => {
     console.log('useBookingModal - Date selected:', date);
     setSelectedDate(date);
     setSelectedTime(''); // Reset selected time when date changes
-  };
+  }, []);
 
-  const handleTimeSelect = (time: string) => {
+  const handleTimeSelect = useCallback((time: string) => {
     console.log('useBookingModal - Time selected:', time);
     setSelectedTime(time);
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,7 +154,7 @@ export const useBookingModal = (salon: Salon) => {
         description: "Preencha todos os campos obrigatórios",
         variant: "destructive"
       });
-      return;
+      return { success: false };
     }
 
     setIsSubmitting(true);
@@ -203,7 +202,7 @@ export const useBookingModal = (salon: Salon) => {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setCurrentStep(1);
     setSelectedService(null);
     setSelectedDate(undefined);
@@ -214,26 +213,19 @@ export const useBookingModal = (salon: Salon) => {
       email: '',
       notes: ''
     });
-  };
+  }, []);
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const formatCurrency = (value: number) => {
+  const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
-  };
+  }, []);
 
-  // Return ALL services for the booking modal (filtering happens in components)
   return {
     // State
     currentStep,
-    services: services, // Return all services, let components filter
+    services,
     loadingServices: servicesLoading,
     selectedService,
     selectedDate,
@@ -249,7 +241,6 @@ export const useBookingModal = (salon: Salon) => {
     handleTimeSelect,
     handleSubmit,
     handleReset,
-    handleBack,
     formatCurrency,
     setClientData,
     setCurrentStep

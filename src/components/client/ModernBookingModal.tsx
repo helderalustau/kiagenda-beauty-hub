@@ -34,19 +34,18 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
     handleTimeSelect,
     handleSubmit,
     handleReset,
-    handleBack,
     formatCurrency,
     setClientData,
     setCurrentStep
   } = useBookingModal(salon);
 
-  // Load services when modal opens
+  // Load services when modal opens - only once
   useEffect(() => {
-    if (isOpen && salon?.id) {
+    if (isOpen && salon?.id && services.length === 0) {
       console.log('ModernBookingModal - Loading services for salon:', salon.id);
       loadSalonServices();
     }
-  }, [isOpen, salon?.id, loadSalonServices]);
+  }, [isOpen, salon?.id, loadSalonServices, services.length]);
 
   const handleClose = () => {
     handleReset();
