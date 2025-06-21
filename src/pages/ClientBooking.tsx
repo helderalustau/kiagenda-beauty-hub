@@ -11,7 +11,7 @@ import ModernBookingModal from '@/components/client/ModernBookingModal';
 import { Salon } from '@/hooks/useSupabaseData';
 
 const ClientBooking = () => {
-  const { salonSlug } = useParams(); // Changed from salonId to salonSlug
+  const { salonSlug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { 
@@ -256,24 +256,6 @@ const ClientBooking = () => {
       />
     </div>
   );
-
-  function getPlanColor(plan: string) {
-    switch (plan) {
-      case 'bronze': return 'bg-amber-100 text-amber-800';
-      case 'prata': return 'bg-gray-100 text-gray-800';
-      case 'gold': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  }
-
-  function getPlanName(plan: string) {
-    switch (plan) {
-      case 'bronze': return 'Bronze';
-      case 'prata': return 'Prata';
-      case 'gold': return 'Ouro';
-      default: return plan;
-    }
-  }
 };
 
 export default ClientBooking;

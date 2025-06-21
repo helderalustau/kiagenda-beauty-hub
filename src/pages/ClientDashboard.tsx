@@ -285,41 +285,6 @@ const ClientDashboard = () => {
       </div>
     </div>
   );
-
-  function loadSalons() {
-    setHasError(false);
-    setIsRefreshing(true);
-    fetchAllSalons().then(() => {
-      console.log('ClientDashboard - Estabelecimentos carregados:', salons.length);
-    }).catch((error) => {
-      console.error('ClientDashboard - Erro ao carregar estabelecimentos:', error);
-      setHasError(true);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar estabelecimentos. Tente novamente.",
-        variant: "destructive"
-      });
-    }).finally(() => {
-      setIsRefreshing(false);
-    });
-  }
-
-  function handleLogout() {
-    logout();
-    navigate('/');
-  }
-
-  function handleBackToHome() {
-    navigate('/');
-  }
-
-  function handleRetry() {
-    loadSalons();
-  }
-
-  function clearSearch() {
-    setSearchTerm('');
-  }
 };
 
 export default ClientDashboard;
