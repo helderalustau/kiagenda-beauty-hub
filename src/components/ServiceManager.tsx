@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2 } from "lucide-react";
-import { Service } from '@/hooks/useSupabaseData';
+import { Service } from '@/types/supabase-entities';
 import { useServiceData } from '@/hooks/useServiceData';
 import { useToast } from "@/components/ui/use-toast";
 import ServiceCreationModal from './service-management/ServiceCreationModal';
@@ -31,9 +31,12 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
   const loadServices = async () => {
     if (!salonId) return;
     
-    const result = await fetchSalonServices(salonId);
-    if (result.success && result.services) {
-      setServices(result.services);
+    try {
+      const fetchedServices = await fetchSalonServices(salonId);
+      setServices(fetchedServices || []);
+    } catch (error) {
+      console.error('Error loading services:', error);
+      setServices([]);
     }
   };
 
@@ -87,18 +90,35 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
     }
   };
 
-  const handleServiceCreated = (newService: Service) => {
-    setServices(prev => [...prev, newService]);
+  const handleServiceCreated = async () => {
+    await loadServices();
     setShowCreateModal(false);
     onRefresh();
   };
 
-  const handleServiceUpdated = (updatedService: Service) => {
-    setServices(prev => prev.map(service => 
-      service.id === updatedService.id ? updatedService : service
-    ));
-    setEditingService(null);
-    onRefresh();
+  const handleServiceUpdated = async (serviceId: string, updateData: Partial<Service>) => {
+    const result = await updateService(serviceId, updateData);
+    
+    if (result.success && result.service) {
+      setServices(prev => prev.map(service => 
+        service.id === serviceId ? result.service! : service
+      ));
+      setEditingService(null);
+      onRefresh();
+      
+      toast({
+        title: "Sucesso",
+        description: "Serviço atualizado com sucesso!"
+      });
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message || "Erro ao atualizar serviço",
+        variant: "destructive"
+      });
+    }
+    
+    return result;
   };
 
   const formatCurrency = (value: number) => {
@@ -192,7 +212,7 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         salonId={salonId}
-        onServiceCreated={handleServiceCreated}
+        onSuccess={handleServiceCreated}
       />
 
       {editingService && (
@@ -200,7 +220,7 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
           isOpen={true}
           onClose={() => setEditingService(null)}
           service={editingService}
-          onServiceUpdated={handleServiceUpdated}
+          onSave={handleServiceUpdated}
         />
       )}
     </div>

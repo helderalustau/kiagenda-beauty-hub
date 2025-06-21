@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, Clock, Scissors } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useServiceData } from '@/hooks/useServiceData';
 
 interface ServiceCreationModalProps {
   isOpen: boolean;
@@ -18,7 +17,7 @@ interface ServiceCreationModalProps {
 }
 
 const ServiceCreationModal = ({ isOpen, onClose, salonId, onSuccess }: ServiceCreationModalProps) => {
-  const { createService, presetServices, fetchPresetServices } = useSupabaseData();
+  const { createService, presetServices, fetchPresetServices } = useServiceData();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({

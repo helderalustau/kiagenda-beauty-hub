@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Scissors, DollarSign, Clock, FileText, ToggleLeft } from "lucide-react";
-import { Service } from '@/hooks/useSupabaseData';
+import { Service } from '@/types/supabase-entities';
 import { useToast } from "@/components/ui/use-toast";
 
 interface ServiceEditModalProps {
@@ -151,18 +150,7 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
       const result = await onSave(service.id, updateData);
 
       if (result.success) {
-        toast({
-          title: "Sucesso!",
-          description: "Serviço atualizado com sucesso"
-        });
         onClose();
-      } else {
-        console.error('ServiceEditModal - Save failed:', result.message);
-        toast({
-          title: "Erro",
-          description: result.message || "Erro ao atualizar serviço",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error('ServiceEditModal - Unexpected error:', error);
