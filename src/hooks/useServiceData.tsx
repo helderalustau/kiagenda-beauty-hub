@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Service, PresetService } from './useSupabaseData';
@@ -74,31 +73,41 @@ export const useServiceData = () => {
     }
   };
 
-  // Create a single service
+  // Create a single service - CORRIGIDO
   const createService = async (serviceData: Omit<Service, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       console.log('Creating service with data:', serviceData);
       
-      // Validate required fields
-      if (!serviceData.salon_id || !serviceData.name || !serviceData.price || serviceData.price <= 0) {
-        throw new Error('Dados obrigatórios estão faltando ou inválidos');
+      // Validate required fields - VALIDAÇÃO RIGOROSA
+      if (!serviceData.salon_id || !serviceData.name?.trim() || !serviceData.price || serviceData.price <= 0) {
+        const missingFields = [];
+        if (!serviceData.salon_id) missingFields.push('salon_id');
+        if (!serviceData.name?.trim()) missingFields.push('nome');
+        if (!serviceData.price || serviceData.price <= 0) missingFields.push('preço válido');
+        
+        throw new Error(`Campos obrigatórios faltando ou inválidos: ${missingFields.join(', ')}`);
       }
+
+      // Preparar dados com validação
+      const insertData = {
+        salon_id: serviceData.salon_id,
+        name: serviceData.name.trim(),
+        description: serviceData.description?.trim() || null,
+        price: Number(serviceData.price),
+        duration_minutes: Number(serviceData.duration_minutes) || 60,
+        active: serviceData.active !== false
+      };
+
+      console.log('Inserting service data:', insertData);
 
       const { data, error } = await supabase
         .from('services')
-        .insert({
-          salon_id: serviceData.salon_id,
-          name: serviceData.name.trim(),
-          description: serviceData.description?.trim() || null,
-          price: Number(serviceData.price),
-          duration_minutes: Number(serviceData.duration_minutes) || 60,
-          active: serviceData.active !== false
-        })
+        .insert(insertData)
         .select()
         .single();
 
       if (error) {
-        console.error('Error creating service:', error);
+        console.error('Database error creating service:', error);
         throw error;
       }
 
@@ -117,37 +126,42 @@ export const useServiceData = () => {
     }
   };
 
-  // Create services from presets - FIXED implementation
+  // Create services from presets - VERSÃO CORRIGIDA E MELHORADA
   const createServicesFromPresets = async (salonId: string, selectedServices: { id: string; price: number }[]) => {
     try {
       setLoading(true);
       console.log('Creating services from presets for salon:', salonId);
       console.log('Selected services:', selectedServices);
       
+      // Validação inicial
       if (!salonId || !selectedServices || selectedServices.length === 0) {
-        console.log('No services to create');
+        console.log('No services to create - missing data');
         return { success: true, services: [] };
       }
       
       // Fetch preset services if not loaded
       let currentPresets = presetServices;
       if (currentPresets.length === 0) {
+        console.log('Loading preset services...');
         currentPresets = await fetchPresetServices();
       }
       
-      // Prepare services to create
+      // Prepare services to create - VALIDAÇÃO RIGOROSA
       const servicesToCreate = [];
+      const invalidServices = [];
       
       for (const { id, price } of selectedServices) {
         const preset = currentPresets.find(p => p.id === id);
         if (!preset) {
           console.warn(`Preset service not found for ID: ${id}`);
+          invalidServices.push(`Serviço com ID ${id} não encontrado`);
           continue;
         }
         
         const numericPrice = Number(price);
         if (!numericPrice || numericPrice <= 0) {
           console.warn(`Invalid price for service ${preset.name}: ${price}`);
+          invalidServices.push(`Preço inválido para ${preset.name}: R$ ${price}`);
           continue;
         }
         
@@ -161,13 +175,25 @@ export const useServiceData = () => {
         });
       }
 
-      if (servicesToCreate.length === 0) {
-        console.log('No valid services to create');
-        return { success: true, services: [] };
+      // Reportar serviços inválidos
+      if (invalidServices.length > 0) {
+        console.warn('Invalid services found:', invalidServices);
       }
 
-      console.log('Services to create:', servicesToCreate);
+      if (servicesToCreate.length === 0) {
+        console.log('No valid services to create after validation');
+        return { 
+          success: false, 
+          message: invalidServices.length > 0 
+            ? `Nenhum serviço válido para criar. Problemas: ${invalidServices.join(', ')}`
+            : 'Nenhum serviço válido para criar'
+        };
+      }
 
+      console.log('Valid services to create:', servicesToCreate.length);
+      console.log('Services data:', servicesToCreate);
+
+      // Insert all services at once
       const { data, error } = await supabase
         .from('services')
         .insert(servicesToCreate)
@@ -185,7 +211,11 @@ export const useServiceData = () => {
         setServices(prev => [...prev, ...data]);
       }
       
-      return { success: true, services: data || [] };
+      return { 
+        success: true, 
+        services: data || [],
+        message: `${data?.length || 0} serviços criados com sucesso`
+      };
     } catch (error) {
       console.error('Error in createServicesFromPresets:', error);
       return { 

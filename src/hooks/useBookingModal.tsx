@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { useSupabaseData, Service, Salon } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 
@@ -58,38 +57,73 @@ export const useBookingModal = (salon: Salon) => {
       return;
     }
 
-    const dayOfWeek = selectedDate.toLocaleDateString('pt-BR', { weekday: 'long' });
-    const openingHours = salon.opening_hours[dayOfWeek.toLowerCase()];
+    // Obter dia da semana em português
+    const dayNames = {
+      'sunday': 'domingo',
+      'monday': 'segunda',
+      'tuesday': 'terça',
+      'wednesday': 'quarta',
+      'thursday': 'quinta',
+      'friday': 'sexta',
+      'saturday': 'sábado'
+    };
 
-    if (!openingHours || openingHours.closed) {
+    const dayOfWeek = selectedDate.toLocaleDateString('en-US',  { weekday: 'long' }).toLowerCase();
+    const portugueseDay = dayNames[dayOfWeek as keyof typeof dayNames];
+    
+    console.log('Generating times for day:', dayOfWeek, '-> Portuguese:', portugueseDay);
+    console.log('Opening hours:', salon.opening_hours);
+
+    const daySchedule = salon.opening_hours[portugueseDay];
+
+    if (!daySchedule || daySchedule.closed) {
+      console.log('Day is closed:', portugueseDay);
       setAvailableTimes([]);
       return;
     }
 
-    const { open, close } = openingHours;
-    const startTime = parseInt(open.split(':')[0]);
-    const endTime = parseInt(close.split(':')[0]);
-    const times: string[] = [];
+    const { open, close } = daySchedule;
+    console.log('Schedule for', portugueseDay, ':', { open, close });
 
-    for (let hour = startTime; hour < endTime; hour++) {
-      times.push(`${hour.toString().padStart(2, '0')}:00`);
-      times.push(`${hour.toString().padStart(2, '0')}:30`);
+    // Parse horários
+    const [openHour, openMinute] = open.split(':').map(Number);
+    const [closeHour, closeMinute] = close.split(':').map(Number);
+    
+    const times: string[] = [];
+    let currentHour = openHour;
+    let currentMinute = openMinute;
+
+    // Gerar slots de 30 em 30 minutos
+    while (currentHour < closeHour || (currentHour === closeHour && currentMinute < closeMinute)) {
+      const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+      times.push(timeString);
+      
+      // Avançar 30 minutos
+      currentMinute += 30;
+      if (currentMinute >= 60) {
+        currentMinute = 0;
+        currentHour += 1;
+      }
     }
 
+    console.log('Generated times:', times);
     setAvailableTimes(times);
   };
 
   const handleServiceSelect = (service: Service) => {
+    console.log('Service selected:', service);
     setSelectedService(service);
     setCurrentStep(2);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
+    console.log('Date selected:', date);
     setSelectedDate(date);
     setSelectedTime('');
   };
 
   const handleTimeSelect = (time: string) => {
+    console.log('Time selected:', time);
     setSelectedTime(time);
     setCurrentStep(3);
   };
@@ -97,10 +131,18 @@ export const useBookingModal = (salon: Salon) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validação rigorosa dos dados obrigatórios
     if (!selectedService || !selectedDate || !selectedTime || !clientData.name || !clientData.phone) {
+      const missingFields = [];
+      if (!selectedService) missingFields.push('serviço');
+      if (!selectedDate) missingFields.push('data');
+      if (!selectedTime) missingFields.push('horário');
+      if (!clientData.name) missingFields.push('nome');
+      if (!clientData.phone) missingFields.push('telefone');
+      
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        description: `Campos obrigatórios faltando: ${missingFields.join(', ')}`,
         variant: "destructive"
       });
       return;
@@ -109,27 +151,35 @@ export const useBookingModal = (salon: Salon) => {
     setIsSubmitting(true);
 
     try {
+      // Preparar dados do agendamento com validação de horário
       const appointmentData = {
         salon_id: salon.id,
         service_id: selectedService.id,
         appointment_date: format(selectedDate, 'yyyy-MM-dd'),
-        appointment_time: selectedTime,
+        appointment_time: selectedTime, // Garantir que seja uma string válida de tempo
         notes: clientData.notes,
-        clientName: clientData.name,
-        clientPhone: clientData.phone,
-        clientEmail: clientData.email
+        clientName: clientData.name.trim(),
+        clientPhone: clientData.phone.trim(),
+        clientEmail: clientData.email?.trim() || null
       };
 
-      console.log('useBookingModal - Creating appointment:', appointmentData);
+      console.log('useBookingModal - Creating appointment with data:', appointmentData);
+
+      // Validar formato do horário
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(selectedTime)) {
+        throw new Error('Formato de horário inválido');
+      }
 
       const result = await createAppointment(appointmentData);
 
       if (result.success) {
         toast({
           title: "Sucesso!",
-          description: "Agendamento realizado com sucesso! Você receberá uma confirmação em breve.",
+          description: `Agendamento realizado para ${format(selectedDate, 'dd/MM/yyyy')} às ${selectedTime}. Você receberá uma confirmação em breve.`,
         });
         
+        console.log('useBookingModal - Appointment created successfully');
         return { success: true };
       } else {
         toast({
@@ -143,7 +193,7 @@ export const useBookingModal = (salon: Salon) => {
       console.error("useBookingModal - Error creating appointment:", error);
       toast({
         title: "Erro",
-        description: "Erro inesperado ao realizar agendamento. Tente novamente.",
+        description: "Erro inesperado ao realizar agendamento. Verifique os dados e tente novamente.",
         variant: "destructive"
       });
       return { success: false };

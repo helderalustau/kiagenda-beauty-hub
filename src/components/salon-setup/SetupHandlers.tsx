@@ -61,7 +61,72 @@ export const useSetupHandlers = ({
           return false;
         }
         break;
+        
+      case 4: // Services - Validação rigorosa de preços
+        const selectedServicesList = Object.entries(selectedServices).filter(([_, serviceData]) => {
+          const service = serviceData as { selected: boolean; price: number };
+          return service.selected;
+        });
+        
+        if (selectedServicesList.length === 0) {
+          toast({
+            title: "Erro",
+            description: "Selecione pelo menos um serviço para continuar",
+            variant: "destructive"
+          });
+          return false;
+        }
+        
+        const servicesWithoutPrice = selectedServicesList.filter(([_, serviceData]) => {
+          const service = serviceData as { selected: boolean; price: number };
+          return !service.price || service.price <= 0;
+        });
+        
+        if (servicesWithoutPrice.length > 0) {
+          toast({
+            title: "Erro",
+            description: `Defina um preço válido para todos os ${servicesWithoutPrice.length} serviços selecionados. O preço é obrigatório.`,
+            variant: "destructive"
+          });
+          return false;
+        }
+        break;
     }
+    return true;
+  };
+
+  const validateServicesBeforeFinish = () => {
+    const selectedServicesList = Object.entries(selectedServices).filter(([_, serviceData]) => {
+      const service = serviceData as { selected: boolean; price: number };
+      return service.selected;
+    });
+
+    // Deve ter pelo menos um serviço
+    if (selectedServicesList.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Você deve selecionar pelo menos um serviço para finalizar a configuração",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Todos os serviços selecionados devem ter preço válido
+    const servicesWithValidPrice = selectedServicesList.filter(([_, serviceData]) => {
+      const service = serviceData as { selected: boolean; price: number };
+      return service.price && service.price > 0;
+    });
+
+    if (servicesWithValidPrice.length !== selectedServicesList.length) {
+      const invalidCount = selectedServicesList.length - servicesWithValidPrice.length;
+      toast({
+        title: "Erro",
+        description: `${invalidCount} serviços selecionados não possuem preço válido. Defina um preço maior que R$ 0,00 para todos os serviços.`,
+        variant: "destructive"
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -134,6 +199,11 @@ export const useSetupHandlers = ({
       return;
     }
 
+    // Validação rigorosa dos serviços antes de finalizar
+    if (!validateServicesBeforeFinish()) {
+      return;
+    }
+
     setIsFinishing(true);
 
     try {
@@ -159,7 +229,7 @@ export const useSetupHandlers = ({
 
       console.log('Setup - Configuração do estabelecimento finalizada com sucesso');
 
-      // Process selected services
+      // Process selected services - apenas serviços com preço válido
       const selectedServicesList = Object.entries(selectedServices)
         .filter(([_, serviceData]) => {
           const service = serviceData as { selected: boolean; price: number };
@@ -173,7 +243,7 @@ export const useSetupHandlers = ({
           };
         });
 
-      console.log('Setup - Serviços selecionados para criação:', selectedServicesList);
+      console.log('Setup - Serviços válidos para criação:', selectedServicesList);
 
       if (selectedServicesList.length > 0) {
         console.log('Setup - Criando serviços selecionados...');
@@ -191,7 +261,12 @@ export const useSetupHandlers = ({
           console.log('Setup - Serviços criados com sucesso:', servicesResult.services?.length || 0, 'serviços');
         }
       } else {
-        console.log('Setup - Nenhum serviço foi selecionado para criação');
+        console.log('Setup - Nenhum serviço válido foi selecionado para criação');
+        toast({
+          title: "Aviso",
+          description: "Estabelecimento configurado sem serviços. Adicione serviços na aba Serviços para começar a receber agendamentos.",
+          variant: "default"
+        });
       }
 
       // Update localStorage with correct salon data
@@ -233,6 +308,7 @@ export const useSetupHandlers = ({
   return {
     handleNext,
     handlePrevious,
-    handleFinishSetup
+    handleFinishSetup,
+    validateCurrentStep
   };
 };
