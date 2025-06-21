@@ -242,6 +242,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
                     key={service.id}
                     service={service}
                     onSelect={handleServiceSelect}
+                    isSelected={selectedService?.id === service.id}
                   />
                 ))}
               </div>
