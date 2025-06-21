@@ -1,31 +1,41 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Info, Clock, FileText, Plus, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Info, Clock, FileText, Plus, AlertCircle, Scissors } from "lucide-react";
 import { PresetService } from '@/hooks/useSupabaseData';
+import CustomServiceModal from './CustomServiceModal';
 
 interface ServicesStepProps {
   presetServices: PresetService[];
   selectedServices: { [key: string]: { selected: boolean; price: number } };
   onServiceToggle: (serviceId: string) => void;
   onServicePriceChange: (serviceId: string, price: number) => void;
+  salonId?: string;
 }
 
 const ServicesStep = ({ 
   presetServices, 
   selectedServices, 
   onServiceToggle, 
-  onServicePriceChange 
+  onServicePriceChange,
+  salonId 
 }: ServicesStepProps) => {
-  const groupedServices = presetServices.reduce((acc, service) => {
-    if (!acc[service.category]) {
-      acc[service.category] = [];
+  const [showCustomServiceModal, setShowCustomServiceModal] = useState(false);
+  const [customServices, setCustomServices] = useState<any[]>([]);
+
+  const allServices = [...presetServices, ...customServices];
+  
+  const groupedServices = allServices.reduce((acc, service) => {
+    const category = service.category || 'personalizado';
+    if (!acc[category]) {
+      acc[category] = [];
     }
-    acc[service.category].push(service);
+    acc[category].push(service);
     return acc;
-  }, {} as Record<string, PresetService[]>);
+  }, {} as Record<string, any[]>);
 
   const getCategoryName = (category: string) => {
     const names: { [key: string]: string } = {
@@ -34,9 +44,23 @@ const ServicesStep = ({
       'coloracao': 'Coloração',
       'escova_penteado': 'Escova e Penteados',
       'estetica': 'Estética',
-      'manicure_pedicure': 'Manicure e Pedicure'
+      'manicure_pedicure': 'Manicure e Pedicure',
+      'personalizado': 'Serviços Personalizados'
     };
     return names[category] || category;
+  };
+
+  const handleCustomServiceCreated = (service: any) => {
+    // Adicionar o serviço personalizado à lista
+    setCustomServices(prev => [...prev, {
+      ...service,
+      category: 'personalizado',
+      default_duration_minutes: service.duration_minutes
+    }]);
+
+    // Automaticamente selecionar o serviço criado com o preço definido
+    onServiceToggle(service.id);
+    onServicePriceChange(service.id, service.price);
   };
 
   // Validar se todos os serviços selecionados têm preço
@@ -56,7 +80,19 @@ const ServicesStep = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Selecione os Serviços (Opcional)</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Selecione os Serviços (Opcional)</h3>
+          <Button
+            onClick={() => setShowCustomServiceModal(true)}
+            variant="outline"
+            size="sm"
+            className="flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Novo Serviço</span>
+          </Button>
+        </div>
+        
         <p className="text-gray-600 mb-4">
           Escolha os serviços que você oferece. Se selecionar um serviço, o <strong>preço é obrigatório</strong>. 
           Você pode pular esta etapa e adicionar serviços depois.
@@ -101,7 +137,7 @@ const ServicesStep = ({
                 </p>
                 <ul className="text-sm text-amber-700 list-disc list-inside">
                   {selectedWithoutPrice.map(([serviceId]) => {
-                    const service = presetServices.find(s => s.id === serviceId);
+                    const service = allServices.find(s => s.id === serviceId);
                     return service ? (
                       <li key={serviceId}>{service.name}</li>
                     ) : null;
@@ -123,6 +159,9 @@ const ServicesStep = ({
             <Badge variant="outline" className="text-xs">
               {services.length} serviços
             </Badge>
+            {category === 'personalizado' && (
+              <Scissors className="h-4 w-4 text-blue-600" />
+            )}
           </h4>
           <div className="grid md:grid-cols-2 gap-3">
             {services.map((service) => {
@@ -141,12 +180,19 @@ const ServicesStep = ({
                     onCheckedChange={() => onServiceToggle(service.id)}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{service.name}</div>
+                    <div className="font-medium text-sm flex items-center space-x-2">
+                      <span>{service.name}</span>
+                      {category === 'personalizado' && (
+                        <Badge variant="secondary" className="text-xs">
+                          Personalizado
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-gray-500 flex items-center space-x-2">
-                      <span className="truncate">{service.description}</span>
+                      <span className="truncate">{service.description || 'Sem descrição'}</span>
                       <span className="flex items-center space-x-1 flex-shrink-0">
                         <Clock className="h-3 w-3" />
-                        <span>{service.default_duration_minutes} min</span>
+                        <span>{service.default_duration_minutes || service.duration_minutes} min</span>
                       </span>
                     </div>
                   </div>
@@ -202,6 +248,16 @@ const ServicesStep = ({
           </p>
         )}
       </div>
+
+      {/* Modal para criar serviço personalizado */}
+      {salonId && (
+        <CustomServiceModal
+          isOpen={showCustomServiceModal}
+          onClose={() => setShowCustomServiceModal(false)}
+          salonId={salonId}
+          onServiceCreated={handleCustomServiceCreated}
+        />
+      )}
     </div>
   );
 };

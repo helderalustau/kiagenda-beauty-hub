@@ -61,6 +61,7 @@ export const StepRenderer = ({
           selectedServices={selectedServices}
           onServiceToggle={onServiceToggle}
           onServicePriceChange={onServicePriceChange}
+          salonId={salon?.id}
         />
       );
     default:
