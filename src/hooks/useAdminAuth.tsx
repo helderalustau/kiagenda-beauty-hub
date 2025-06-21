@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePasswordSecurity } from './usePasswordSecurity';
@@ -122,6 +123,7 @@ export const useAdminAuth = () => {
       const adminData = {
         salon_id: salonId,
         name: nameValidation.value,
+        password: 'temp', // Temporary value to satisfy required field
         password_hash: hashedPassword,
         email: emailValidation.value,
         phone: phone?.replace(/\D/g, '') || null,

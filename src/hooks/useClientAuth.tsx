@@ -110,6 +110,7 @@ export const useClientAuth = () => {
         .from('client_auth')
         .insert({
           name: nameValidation.value,
+          password: 'temp', // Temporary value to satisfy required field
           password_hash: hashedPassword,
           phone: phoneValidation.value,
           email: email ? sanitizeAndValidate(email, 'email').value : null
