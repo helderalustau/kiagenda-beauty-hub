@@ -25,6 +25,7 @@ export interface Salon {
   opening_hours?: any;
   is_open?: boolean;
   setup_completed?: boolean;
+  admin_setup_completed?: boolean;
   banner_image_url?: string;
   max_attendants?: number;
   unique_slug?: string;
