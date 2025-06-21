@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Appointment } from '@/types/supabase-entities';
-import { Calendar, Clock, User, Phone, CheckCircle, X, AlertCircle, MapPin } from "lucide-react";
+import { Calendar, Clock, User, Phone, CheckCircle, X, AlertCircle, MapPin, History } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAppointmentData } from '@/hooks/useAppointmentData';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminCalendarViewProps {
   appointments: Appointment[];
@@ -21,7 +21,6 @@ const AdminCalendarView = ({ appointments, onRefresh, salonId }: AdminCalendarVi
   const { updateAppointmentStatus } = useAppointmentData();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -71,40 +70,121 @@ const AdminCalendarView = ({ appointments, onRefresh, salonId }: AdminCalendarVi
     }
   };
 
-  // Filter appointments by status and date
-  const filteredAppointments = appointments.filter(appointment => {
-    const matchesStatus = statusFilter === 'all' || appointment.status === statusFilter;
-    const appointmentDate = new Date(appointment.appointment_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    appointmentDate.setHours(0, 0, 0, 0);
-    
-    return matchesStatus && appointmentDate >= today;
+  // Get today's date
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Filter appointments
+  const todayAppointments = appointments.filter(apt => apt.appointment_date === today);
+  const upcomingAppointments = appointments.filter(apt => {
+    const appointmentDate = apt.appointment_date;
+    return appointmentDate > today && apt.status !== 'cancelled';
   });
-
-  // Group appointments by date
-  const appointmentsByDate = filteredAppointments.reduce((acc, appointment) => {
-    const date = appointment.appointment_date;
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(appointment);
-    return acc;
-  }, {} as Record<string, Appointment[]>);
-
-  // Sort appointments by time within each date
-  Object.keys(appointmentsByDate).forEach(date => {
-    appointmentsByDate[date].sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
-  });
-
-  const todayAppointments = appointments.filter(apt => {
-    const today = new Date().toISOString().split('T')[0];
-    return apt.appointment_date === today;
-  });
-
+  const completedAppointments = appointments.filter(apt => apt.status === 'completed');
+  
   const pendingCount = appointments.filter(apt => apt.status === 'pending').length;
   const confirmedCount = appointments.filter(apt => apt.status === 'confirmed').length;
-  const completedCount = appointments.filter(apt => apt.status === 'completed').length;
+  const completedCount = completedAppointments.length;
+
+  const renderAppointmentCard = (appointment: Appointment, showActions: boolean = true) => (
+    <Card 
+      key={appointment.id} 
+      className={`hover:shadow-md transition-shadow ${
+        appointment.status === 'pending' 
+          ? 'border-yellow-200 bg-yellow-50/50 shadow-lg' 
+          : ''
+      }`}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center space-x-4 mb-2">
+              <div className="flex items-center text-gray-600">
+                <Clock className="h-4 w-4 mr-1" />
+                <span className="font-medium">{appointment.appointment_time}</span>
+              </div>
+              {getStatusBadge(appointment.status)}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center text-gray-700 mb-1">
+                  <User className="h-4 w-4 mr-2" />
+                  <span className="font-medium">{appointment.client?.name}</span>
+                </div>
+                <div className="flex items-center text-gray-600 text-sm">
+                  <Phone className="h-4 w-4 mr-2" />
+                  <span>{appointment.client?.phone}</span>
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex items-center text-gray-700 mb-1">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <span className="font-medium">{appointment.service?.name}</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium text-green-600">
+                    {formatCurrency(appointment.service?.price || 0)}
+                  </span>
+                  {appointment.service?.duration_minutes && (
+                    <span className="text-gray-500 ml-2">
+                      ({appointment.service.duration_minutes} min)
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {appointment.notes && (
+              <div className="mt-3 bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  <strong>Observações:</strong> {appointment.notes}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          {showActions && appointment.status !== 'cancelled' && (
+            <div className="flex flex-col space-y-2 ml-4">
+              {appointment.status === 'pending' && (
+                <>
+                  <Button
+                    onClick={() => handleStatusChange(appointment.id, 'confirmed')}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Aprovar
+                  </Button>
+                  <Button
+                    onClick={() => handleStatusChange(appointment.id, 'cancelled')}
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Recusar
+                  </Button>
+                </>
+              )}
+              
+              {appointment.status === 'confirmed' && (
+                <Button
+                  onClick={() => handleStatusChange(appointment.id, 'completed')}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Concluir
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -159,149 +239,114 @@ const AdminCalendarView = ({ appointments, onRefresh, salonId }: AdminCalendarVi
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center space-x-4">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os Status</SelectItem>
-            <SelectItem value="pending">Pendentes</SelectItem>
-            <SelectItem value="confirmed">Confirmados</SelectItem>
-            <SelectItem value="completed">Concluídos</SelectItem>
-            <SelectItem value="cancelled">Cancelados</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Appointments List */}
-      <div className="space-y-6">
-        {Object.keys(appointmentsByDate).length === 0 ? (
+      {/* Today's Appointments */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+          <Calendar className="h-6 w-6 mr-2" />
+          Agendamentos de Hoje
+          {todayAppointments.length > 0 && (
+            <Badge variant="outline" className="ml-2">
+              {todayAppointments.length} agendamento{todayAppointments.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
+        </h3>
+        
+        {todayAppointments.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
               <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento encontrado</h3>
-              <p className="text-gray-500">Não há agendamentos para os filtros selecionados.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento para hoje</h3>
+              <p className="text-gray-500">Você não tem agendamentos para hoje.</p>
             </CardContent>
           </Card>
         ) : (
-          Object.keys(appointmentsByDate)
-            .sort()
-            .map(date => (
-              <div key={date}>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  {format(new Date(date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  <Badge variant="outline" className="ml-2">
-                    {appointmentsByDate[date].length} agendamento{appointmentsByDate[date].length !== 1 ? 's' : ''}
-                  </Badge>
-                </h3>
-                
-                <div className="space-y-3">
-                  {appointmentsByDate[date].map((appointment) => (
-                    <Card 
-                      key={appointment.id} 
-                      className={`hover:shadow-md transition-shadow ${
-                        appointment.status === 'pending' 
-                          ? 'border-yellow-200 bg-yellow-50/50 shadow-lg' 
-                          : ''
-                      }`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-4 mb-2">
-                              <div className="flex items-center text-gray-600">
-                                <Clock className="h-4 w-4 mr-1" />
-                                <span className="font-medium">{appointment.appointment_time}</span>
-                              </div>
-                              {getStatusBadge(appointment.status)}
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <div className="flex items-center text-gray-700 mb-1">
-                                  <User className="h-4 w-4 mr-2" />
-                                  <span className="font-medium">{appointment.client?.name}</span>
-                                </div>
-                                <div className="flex items-center text-gray-600 text-sm">
-                                  <Phone className="h-4 w-4 mr-2" />
-                                  <span>{appointment.client?.phone}</span>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <div className="flex items-center text-gray-700 mb-1">
-                                  <MapPin className="h-4 w-4 mr-2" />
-                                  <span className="font-medium">{appointment.service?.name}</span>
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  <span className="font-medium text-green-600">
-                                    {formatCurrency(appointment.service?.price || 0)}
-                                  </span>
-                                  {appointment.service?.duration_minutes && (
-                                    <span className="text-gray-500 ml-2">
-                                      ({appointment.service.duration_minutes} min)
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+          <div className="space-y-3">
+            {todayAppointments
+              .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
+              .map(appointment => renderAppointmentCard(appointment, true))}
+          </div>
+        )}
+      </div>
 
-                            {appointment.notes && (
-                              <div className="mt-3 bg-gray-50 p-3 rounded-lg">
-                                <p className="text-sm text-gray-700">
-                                  <strong>Observações:</strong> {appointment.notes}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Action Buttons */}
-                          {appointment.status !== 'cancelled' && (
-                            <div className="flex flex-col space-y-2 ml-4">
-                              {appointment.status === 'pending' && (
-                                <>
-                                  <Button
-                                    onClick={() => handleStatusChange(appointment.id, 'confirmed')}
-                                    size="sm"
-                                    className="bg-blue-600 hover:bg-blue-700"
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Aprovar
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleStatusChange(appointment.id, 'cancelled')}
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-red-600 border-red-200 hover:bg-red-50"
-                                  >
-                                    <X className="h-4 w-4 mr-1" />
-                                    Recusar
-                                  </Button>
-                                </>
-                              )}
-                              
-                              {appointment.status === 'confirmed' && (
-                                <Button
-                                  onClick={() => handleStatusChange(appointment.id, 'completed')}
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Concluir
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+      {/* Upcoming Appointments */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+          <Clock className="h-6 w-6 mr-2" />
+          Próximos Agendamentos
+          {upcomingAppointments.length > 0 && (
+            <Badge variant="outline" className="ml-2">
+              {upcomingAppointments.length} agendamento{upcomingAppointments.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
+        </h3>
+        
+        {upcomingAppointments.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento futuro</h3>
+              <p className="text-gray-500">Você não tem agendamentos futuros.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {upcomingAppointments
+              .sort((a, b) => {
+                if (a.appointment_date === b.appointment_date) {
+                  return a.appointment_time.localeCompare(b.appointment_time);
+                }
+                return a.appointment_date.localeCompare(b.appointment_date);
+              })
+              .map(appointment => (
+                <div key={appointment.id}>
+                  <div className="text-sm font-medium text-gray-600 mb-2">
+                    {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </div>
+                  {renderAppointmentCard(appointment, true)}
                 </div>
-              </div>
-            ))
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* Completed Appointments History */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+          <History className="h-6 w-6 mr-2" />
+          Histórico de Agendamentos Concluídos
+          {completedAppointments.length > 0 && (
+            <Badge variant="outline" className="ml-2">
+              {completedAppointments.length} agendamento{completedAppointments.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
+        </h3>
+        
+        {completedAppointments.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento concluído</h3>
+              <p className="text-gray-500">O histórico aparecerá aqui conforme os agendamentos forem concluídos.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {completedAppointments
+              .sort((a, b) => {
+                if (a.appointment_date === b.appointment_date) {
+                  return b.appointment_time.localeCompare(a.appointment_time);
+                }
+                return b.appointment_date.localeCompare(a.appointment_date);
+              })
+              .map(appointment => (
+                <div key={appointment.id}>
+                  <div className="text-sm font-medium text-gray-600 mb-2">
+                    {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </div>
+                  {renderAppointmentCard(appointment, false)}
+                </div>
+              ))}
+          </div>
         )}
       </div>
     </div>

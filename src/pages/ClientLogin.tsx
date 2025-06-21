@@ -1,17 +1,19 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { User } from "lucide-react";
+import { User, ArrowLeft } from "lucide-react";
 import { useAuthData } from '@/hooks/useAuthData';
+import { useAuth } from '@/hooks/useAuth';
 
 const ClientLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { authenticateClient, registerClient, loading } = useAuthData();
   
   const [isRegistering, setIsRegistering] = useState(false);
@@ -21,6 +23,13 @@ const ClientLogin = () => {
     phone: '',
     email: ''
   });
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !user.role) { // Client doesn't have a role
+      navigate('/client-dashboard');
+    }
+  }, [user, navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -51,27 +60,31 @@ const ClientLogin = () => {
     }
 
     try {
+      console.log('Attempting client login with:', formData.username);
       const result = await authenticateClient(formData.username, formData.password);
       
       if (result.success) {
         toast({
           title: "Sucesso",
-          description: "Login realizado com sucesso! Redirecionando para estabelecimentos..."
+          description: "Login realizado com sucesso!"
         });
         
-        // Redirecionar para dashboard do cliente onde verá os estabelecimentos
-        setTimeout(() => {
-          navigate('/client-dashboard');
-        }, 1500);
+        // Store client auth and redirect
+        localStorage.setItem('clientAuth', JSON.stringify({
+          id: result.client.id,
+          name: result.client.name
+        }));
+        
+        navigate('/client-dashboard');
       } else {
         toast({
-          title: "Erro",
-          description: result.message || "Credenciais inválidas. Verifique seu usuário e senha ou crie uma nova conta.",
+          title: "Erro de Login",
+          description: result.message || "Credenciais inválidas. Verifique seu usuário e senha.",
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('Erro no login do cliente:', error);
       toast({
         title: "Erro",
         description: "Erro inesperado durante o login",
@@ -92,10 +105,10 @@ const ClientLogin = () => {
       return;
     }
 
-    if (!formData.password.trim()) {
+    if (!formData.password.trim() || formData.password.length < 6) {
       toast({
         title: "Erro",
-        description: "Senha é obrigatória",
+        description: "Senha deve ter pelo menos 6 caracteres",
         variant: "destructive"
       });
       return;
@@ -124,10 +137,14 @@ const ClientLogin = () => {
           description: "Conta criada com sucesso! Fazendo login automaticamente..."
         });
         
-        // Fazer login automático após registro
+        // Auto login after registration
         setTimeout(async () => {
           const loginResult = await authenticateClient(formData.username, formData.password);
           if (loginResult.success) {
+            localStorage.setItem('clientAuth', JSON.stringify({
+              id: loginResult.client.id,
+              name: loginResult.client.name
+            }));
             navigate('/client-dashboard');
           }
         }, 1000);
@@ -148,11 +165,8 @@ const ClientLogin = () => {
     }
   };
 
-  const handleForgotPassword = () => {
-    toast({
-      title: "Recuperar Senha",
-      description: "Entre em contato com o estabelecimento onde você é cliente para recuperar sua senha.",
-    });
+  const handleBackToHome = () => {
+    navigate('/');
   };
 
   return (
@@ -160,7 +174,7 @@ const ClientLogin = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-r from-blue-600 to-pink-600 rounded-lg p-2">
                 <User className="h-6 w-6 text-white" />
@@ -169,6 +183,14 @@ const ClientLogin = () => {
                 BeautyFlow - Cliente
               </h1>
             </div>
+            <Button 
+              onClick={handleBackToHome}
+              variant="outline" 
+              size="sm"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar ao Início
+            </Button>
           </div>
         </div>
       </div>
@@ -256,17 +278,6 @@ const ClientLogin = () => {
                     {isRegistering ? 'Fazer login' : 'Criar conta'}
                   </button>
                 </p>
-                
-                {!isRegistering && (
-                  <p className="text-sm text-gray-500">
-                    <button
-                      onClick={handleForgotPassword}
-                      className="text-blue-600 hover:text-blue-700 underline"
-                    >
-                      Esqueceu sua senha?
-                    </button>
-                  </p>
-                )}
               </div>
             </CardContent>
           </Card>
