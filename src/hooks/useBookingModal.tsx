@@ -94,34 +94,25 @@ export const useBookingModal = (salon: Salon) => {
         client: clientData.name
       });
 
-      // Get or create client
-      const clientResult = await getOrCreateClient({
-        name: clientData.name,
-        phone: clientData.phone,
-        email: clientData.email || undefined
-      });
-
-      if (!clientResult.success || !clientResult.client) {
-        throw new Error('Erro ao criar/encontrar cliente');
-      }
-
-      // Create appointment
+      // Create appointment directly with client data
       const appointmentResult = await createAppointment({
         salon_id: salon.id,
-        client_id: clientResult.client.id,
         service_id: selectedService.id,
         appointment_date: selectedDate.toISOString().split('T')[0],
         appointment_time: selectedTime,
+        clientName: clientData.name,
+        clientPhone: clientData.phone,
+        clientEmail: clientData.email || undefined,
         notes: clientData.notes || undefined
       });
 
       if (!appointmentResult.success) {
-        throw new Error(appointmentResult.message || 'Erro ao criar agendamento');
+        throw new Error(appointmentResult.message || 'Erro ao criar solicitação de agendamento');
       }
 
       toast({
-        title: "Agendamento Criado!",
-        description: "Seu agendamento foi enviado para análise. Você receberá uma confirmação em breve.",
+        title: "Solicitação Enviada!",
+        description: "Sua solicitação de agendamento foi enviada para o estabelecimento. Você receberá uma resposta em breve.",
       });
 
       return { success: true };
@@ -130,7 +121,7 @@ export const useBookingModal = (salon: Salon) => {
       console.error('Error creating appointment:', error);
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao criar agendamento",
+        description: error instanceof Error ? error.message : "Erro ao enviar solicitação de agendamento",
         variant: "destructive"
       });
       return { success: false };

@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, Phone, Check, X } from "lucide-react";
+import { Calendar, Clock, User, Phone, Check, X, MapPin } from "lucide-react";
 import NotificationSounds from './NotificationSounds';
 
 interface AppointmentNotificationProps {
@@ -61,9 +61,9 @@ const AppointmentNotification = ({
       <Dialog open={isOpen} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md border-4 border-orange-400 bg-orange-50">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2 text-orange-800">
+            <DialogTitle className="flex items-center space-x-2 text-orange-800 text-center">
               <Calendar className="h-6 w-6" />
-              <span>🔔 Novo Agendamento!</span>
+              <span>🔔 Nova Solicitação de Agendamento!</span>
             </DialogTitle>
           </DialogHeader>
           
@@ -73,7 +73,7 @@ const AppointmentNotification = ({
                 <div className="flex items-center space-x-2">
                   <User className="h-5 w-5 text-blue-600" />
                   <div>
-                    <div className="font-semibold">{appointment.clients?.name}</div>
+                    <div className="font-semibold text-lg">{appointment.clients?.name}</div>
                     <div className="text-sm text-gray-600 flex items-center space-x-1">
                       <Phone className="h-4 w-4" />
                       <span>{appointment.clients?.phone}</span>
@@ -81,50 +81,65 @@ const AppointmentNotification = ({
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="font-medium">{formatDate(appointment.appointment_date)}</div>
-                    <div className="text-sm text-gray-600 flex items-center space-x-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{formatTime(appointment.appointment_time)}</span>
+                <div className="border-t pt-3">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Calendar className="h-5 w-5 text-green-600" />
+                    <div>
+                      <div className="font-medium text-lg">{formatDate(appointment.appointment_date)}</div>
+                      <div className="text-lg text-blue-600 flex items-center space-x-1">
+                        <Clock className="h-5 w-5" />
+                        <span className="font-semibold">{formatTime(appointment.appointment_time)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-t pt-3">
-                  <div className="font-medium text-purple-700">{appointment.services?.name}</div>
+                  <div className="font-medium text-purple-700 text-lg">{appointment.services?.name}</div>
                   <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                    <span>R$ {appointment.services?.price.toFixed(2)}</span>
-                    <span>{appointment.services?.duration_minutes} min</span>
+                    <span className="text-lg font-semibold text-green-600">
+                      R$ {appointment.services?.price.toFixed(2)}
+                    </span>
+                    <span className="text-blue-600">
+                      {appointment.services?.duration_minutes} min
+                    </span>
                   </div>
                 </div>
 
                 {appointment.notes && (
                   <div className="border-t pt-3">
-                    <div className="text-sm text-gray-600">
-                      <strong>Observações:</strong> {appointment.notes}
+                    <div className="text-sm">
+                      <strong className="text-gray-700">Observações do cliente:</strong>
+                      <p className="mt-1 text-gray-600 italic">"{appointment.notes}"</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800 text-center">
+                <strong>Atenção:</strong> Esta é uma solicitação de agendamento que precisa da sua aprovação.
+              </p>
+            </div>
+
             <div className="flex justify-center space-x-4">
               <Button 
                 onClick={onReject}
                 variant="outline"
+                size="lg"
                 className="flex items-center space-x-2 border-red-300 text-red-700 hover:bg-red-50"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
                 <span>Recusar</span>
               </Button>
               <Button 
                 onClick={onAccept}
+                size="lg"
                 className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
               >
-                <Check className="h-4 w-4" />
-                <span>Aceitar Agendamento</span>
+                <Check className="h-5 w-5" />
+                <span>Aprovar Agendamento</span>
               </Button>
             </div>
           </div>

@@ -54,7 +54,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
-    console.log('ModernBookingModal - Submitting form');
+    console.log('ModernBookingModal - Submitting booking request');
     const result = await handleSubmit(e);
     if (result?.success) {
       handleReset();
@@ -83,7 +83,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
       case 1:
         return (
           <ServiceSelectionStep
-            services={services}
+            services={services.filter(service => service.active)}
             loadingServices={loadingServices}
             selectedService={selectedService}
             onServiceSelect={handleServiceSelect}
@@ -125,13 +125,35 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
     }
   };
 
+  if (!salon?.is_open) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-red-600">
+              Estabelecimento Fechado
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {salon.name} não está aceitando agendamentos no momento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center mt-4">
+            <Button onClick={handleClose} variant="outline">
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
-              Agendar Serviço
+              Solicitar Agendamento
             </DialogTitle>
             <DialogDescription className="text-blue-100">
               {salon.name} - {salon.address}
@@ -141,6 +163,13 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
 
         <div className="p-6">
           <BookingProgressIndicator currentStep={currentStep} />
+          
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Importante:</strong> Sua solicitação será enviada para análise do estabelecimento. 
+              Você receberá uma resposta em breve sobre a aprovação do seu agendamento.
+            </p>
+          </div>
           
           {renderStepContent()}
 
@@ -175,7 +204,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
                 disabled={isSubmitting}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center px-8"
               >
-                {isSubmitting ? 'Agendando...' : 'Confirmar Agendamento'}
+                {isSubmitting ? 'Enviando Solicitação...' : 'Enviar Solicitação de Agendamento'}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
