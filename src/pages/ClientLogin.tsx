@@ -8,12 +8,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { User, ArrowLeft } from "lucide-react";
 import { useAuthData } from '@/hooks/useAuthData';
-import { useAuth } from '@/hooks/useAuth';
 
 const ClientLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { authenticateClient, registerClient, loading } = useAuthData();
   
   const [isRegistering, setIsRegistering] = useState(false);
@@ -24,12 +22,21 @@ const ClientLogin = () => {
     email: ''
   });
 
-  // Redirect if already logged in
+  // Check if already logged in as client
   useEffect(() => {
-    if (user && !user.role) { // Client doesn't have a role
-      navigate('/client-dashboard');
+    const clientAuth = localStorage.getItem('clientAuth');
+    if (clientAuth) {
+      try {
+        const userData = JSON.parse(clientAuth);
+        if (userData.id && userData.name) {
+          navigate('/client-dashboard');
+        }
+      } catch (error) {
+        console.error('Error parsing client auth:', error);
+        localStorage.removeItem('clientAuth');
+      }
     }
-  }, [user, navigate]);
+  }, [navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
