@@ -23,11 +23,11 @@ export const useAppointmentData = () => {
     };
   };
 
-  // Fetch all appointments
-  const fetchAllAppointments = async (salonId: string) => {
+  // Fetch all appointments - Fixed return type
+  const fetchAllAppointments = async (salonId: string, includeDeleted: boolean = false) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('appointments')
         .select(`
           *,
@@ -39,28 +39,43 @@ export const useAppointmentData = () => {
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
+      if (!includeDeleted) {
+        query = query.is('deleted_at', null);
+      } else {
+        query = query.not('deleted_at', 'is', null);
+      }
+
+      const { data, error } = await query;
+
       if (error) {
         console.error('Error fetching appointments:', error);
-        return;
+        return { success: false, data: [], message: error.message };
       }
 
       // Normalize the appointments data
       const normalizedAppointments = (data || []).map(normalizeAppointment);
       setAppointments(normalizedAppointments);
+      return { success: true, data: normalizedAppointments };
     } catch (error) {
       console.error('Error fetching appointments:', error);
+      return { success: false, data: [], message: 'Erro ao buscar agendamentos' };
     } finally {
       setLoading(false);
     }
   };
 
-  // Update appointment status
-  const updateAppointmentStatus = async (appointmentId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled') => {
+  // Update appointment status - Fixed signature
+  const updateAppointmentStatus = async (appointmentId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled', reason?: string) => {
     try {
       setLoading(true);
+      const updateData: any = { status };
+      if (reason) {
+        updateData.notes = reason;
+      }
+
       const { data, error } = await supabase
         .from('appointments')
-        .update({ status })
+        .update(updateData)
         .eq('id', appointmentId)
         .select(`
           *,
@@ -141,14 +156,16 @@ export const useAppointmentData = () => {
 
       if (error) {
         console.error('Error fetching client appointments:', error);
-        return;
+        return { success: false, data: [] };
       }
 
       // Normalize the appointments data
       const normalizedAppointments = (data || []).map(normalizeAppointment);
       setAppointments(normalizedAppointments);
+      return { success: true, data: normalizedAppointments };
     } catch (error) {
       console.error('Error fetching client appointments:', error);
+      return { success: false, data: [] };
     } finally {
       setLoading(false);
     }

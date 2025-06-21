@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,7 +99,7 @@ const AdminDashboard = () => {
       await fetchSalonData(salonId);
       await fetchSalonServices(salonId);
       const appointmentResult = await fetchAllAppointments(salonId);
-      if (appointmentResult.success) {
+      if (appointmentResult && appointmentResult.success) {
         console.log('Appointments refreshed successfully');
       }
     } else {
@@ -168,7 +167,7 @@ const AdminDashboard = () => {
         const admin = JSON.parse(adminData);
         if (admin.salon_id) {
           const result = await fetchAllAppointments(admin.salon_id);
-          if (result.success) {
+          if (result && result.success) {
             console.log('Verificação automática de agendamentos concluída');
           }
         }
