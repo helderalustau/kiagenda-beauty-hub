@@ -1,0 +1,167 @@
+
+import { useToast } from "@/components/ui/use-toast";
+import { useClientData } from '@/hooks/useClientData';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Service, Salon } from '@/hooks/useSupabaseData';
+
+interface CreateAppointmentData {
+  salon_id: string;
+  service_id: string;
+  appointment_date: string;
+  appointment_time: string;
+  clientName: string;
+  clientPhone: string;
+  notes?: string;
+}
+
+export const useBookingAppointment = () => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { getClientByPhone } = useClientData();
+
+  const createAppointmentWithLoggedClient = async (appointmentData: CreateAppointmentData) => {
+    try {
+      console.log('Creating appointment with logged client data:', appointmentData);
+
+      if (!user?.id) {
+        throw new Error('Cliente não está logado');
+      }
+
+      const clientResult = await getClientByPhone(user.id);
+      let clientId = null;
+
+      if (clientResult.success && clientResult.client) {
+        clientId = clientResult.client.id;
+        console.log('Using existing client:', clientResult.client);
+      } else {
+        console.log('Creating new client for logged user');
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert({
+            name: user.name || appointmentData.clientName,
+            phone: user.id,
+            email: null
+          })
+          .select()
+          .single();
+
+        if (clientError) {
+          console.error('Error creating client:', clientError);
+          throw new Error('Erro ao criar dados do cliente');
+        }
+
+        clientId = newClient.id;
+        console.log('New client created:', newClient);
+      }
+
+      const { data: appointment, error: appointmentError } = await supabase
+        .from('appointments')
+        .insert({
+          salon_id: appointmentData.salon_id,
+          service_id: appointmentData.service_id,
+          client_id: clientId,
+          appointment_date: appointmentData.appointment_date,
+          appointment_time: appointmentData.appointment_time,
+          status: 'pending',
+          notes: appointmentData.notes || null
+        })
+        .select(`
+          *,
+          salon:salons(id, name, address, phone),
+          service:services(id, name, price, duration_minutes),
+          client:clients(id, name, phone, email)
+        `)
+        .single();
+
+      if (appointmentError) {
+        console.error('Error creating appointment:', appointmentError);
+        throw new Error('Erro ao criar agendamento');
+      }
+
+      console.log('Appointment created successfully:', appointment);
+      return { success: true, appointment };
+
+    } catch (error) {
+      console.error('Error in createAppointmentWithLoggedClient:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Erro ao criar agendamento' 
+      };
+    }
+  };
+
+  const handleSubmit = async (
+    selectedService: Service | null,
+    selectedDate: Date | undefined,
+    selectedTime: string,
+    clientData: { name: string; phone: string; notes: string },
+    salon: Salon,
+    setIsSubmitting: (value: boolean) => void
+  ) => {
+    if (!selectedService || !selectedDate || !selectedTime || !clientData.name || !clientData.phone) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive"
+      });
+      return { success: false };
+    }
+
+    if (!user?.id) {
+      toast({
+        title: "Erro", 
+        description: "Você precisa estar logado para fazer um agendamento",
+        variant: "destructive"
+      });
+      return { success: false };
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      console.log('Creating appointment with data:', {
+        service: selectedService.name,
+        date: selectedDate,
+        time: selectedTime,
+        client: clientData.name
+      });
+
+      const appointmentResult = await createAppointmentWithLoggedClient({
+        salon_id: salon.id,
+        service_id: selectedService.id,
+        appointment_date: selectedDate.toISOString().split('T')[0],
+        appointment_time: selectedTime,
+        clientName: clientData.name,
+        clientPhone: clientData.phone,
+        notes: clientData.notes || undefined
+      });
+
+      if (!appointmentResult.success) {
+        throw new Error(appointmentResult.message || 'Erro ao criar solicitação de agendamento');
+      }
+
+      toast({
+        title: "Solicitação Enviada!",
+        description: "Sua solicitação de agendamento foi enviada para o estabelecimento. Você receberá uma resposta em breve.",
+      });
+
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao enviar solicitação de agendamento",
+        variant: "destructive"
+      });
+      return { success: false };
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return {
+    handleSubmit
+  };
+};
