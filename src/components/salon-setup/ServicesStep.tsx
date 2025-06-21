@@ -73,8 +73,8 @@ const ServicesStep = ({
 
   const validSelectedServices = getValidSelectedServices();
   
-  // Fix: Properly type the selectedWithoutPrice array
-  const selectedWithoutPrice: [string, { selected: boolean; price: number }][] = Object.entries(selectedServices).filter(([_, serviceData]) => {
+  // Fix: Properly type the selectedWithoutPrice array and ensure all operations are typed
+  const selectedWithoutPriceEntries = Object.entries(selectedServices).filter(([_, serviceData]) => {
     const service = serviceData as { selected: boolean; price: number };
     return service.selected && (!service.price || service.price <= 0);
   });
@@ -128,7 +128,7 @@ const ServicesStep = ({
         </div>
 
         {/* Alerta para serviços sem preço */}
-        {selectedWithoutPrice.length > 0 && (
+        {selectedWithoutPriceEntries.length > 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
             <div className="flex items-start space-x-3">
               <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -138,7 +138,7 @@ const ServicesStep = ({
                   Os seguintes serviços estão selecionados mas não possuem preço definido:
                 </p>
                 <ul className="text-sm text-amber-700 list-disc list-inside">
-                  {selectedWithoutPrice.map(([serviceId]) => {
+                  {selectedWithoutPriceEntries.map(([serviceId]) => {
                     const service = allServices.find(s => s.id === serviceId);
                     return service ? (
                       <li key={serviceId}>{service.name}</li>
@@ -238,13 +238,13 @@ const ServicesStep = ({
           validSelectedServices.length > 0 ? 'text-green-800' : 'text-gray-600'
         }`}>
           <strong>{validSelectedServices.length}</strong> serviços selecionados com preços definidos
-          {selectedWithoutPrice.length > 0 && (
+          {selectedWithoutPriceEntries.length > 0 && (
             <span className="text-amber-600 ml-2">
-              • <strong>{selectedWithoutPrice.length}</strong> serviços precisam de preço
+              • <strong>{selectedWithoutPriceEntries.length}</strong> serviços precisam de preço
             </span>
           )}
         </p>
-        {validSelectedServices.length === 0 && selectedWithoutPrice.length === 0 && (
+        {validSelectedServices.length === 0 && selectedWithoutPriceEntries.length === 0 && (
           <p className="text-xs text-gray-500 mt-1">
             Nenhum serviço selecionado. Você pode adicionar serviços depois na aba Serviços.
           </p>
