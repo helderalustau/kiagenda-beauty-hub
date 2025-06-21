@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -73,11 +72,11 @@ const ServicesStep = ({
 
   const validSelectedServices = getValidSelectedServices();
   
-  // Fix: Properly type the selectedWithoutPrice array and ensure all operations are typed
-  const selectedWithoutPriceEntries = Object.entries(selectedServices).filter(([_, serviceData]) => {
+  // Fix: Properly type the selectedWithoutPriceEntries array with explicit typing
+  const selectedWithoutPriceEntries: Array<[string, { selected: boolean; price: number }]> = Object.entries(selectedServices).filter(([_, serviceData]) => {
     const service = serviceData as { selected: boolean; price: number };
     return service.selected && (!service.price || service.price <= 0);
-  });
+  }) as Array<[string, { selected: boolean; price: number }]>;
 
   return (
     <div className="space-y-6">
