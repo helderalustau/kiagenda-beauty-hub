@@ -72,7 +72,9 @@ const ServicesStep = ({
   };
 
   const validSelectedServices = getValidSelectedServices();
-  const selectedWithoutPrice = Object.entries(selectedServices).filter(([_, serviceData]) => {
+  
+  // Fix: Properly type the selectedWithoutPrice array
+  const selectedWithoutPrice: [string, { selected: boolean; price: number }][] = Object.entries(selectedServices).filter(([_, serviceData]) => {
     const service = serviceData as { selected: boolean; price: number };
     return service.selected && (!service.price || service.price <= 0);
   });
