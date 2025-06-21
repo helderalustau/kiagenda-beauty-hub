@@ -1,23 +1,17 @@
 
 import { useState, useEffect } from 'react';
-import { useSupabaseData, Salon, Service } from './useSupabaseData';
+import { useServiceData } from './useServiceData';
+import { Salon, Service } from './useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import { useAvailableTimeSlots } from './useAvailableTimeSlots';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useBookingModal = (salon: Salon) => {
   const { toast } = useToast();
-  const { 
-    services, 
-    fetchSalonServices, 
-    createAppointment, 
-    getOrCreateClient,
-    loading: dataLoading 
-  } = useSupabaseData();
-  
+  const { services, fetchSalonServices, loading: servicesLoading } = useServiceData();
   const { availableSlots, loading: slotsLoading, fetchAvailableSlots } = useAvailableTimeSlots();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [loadingServices, setLoadingServices] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState('');
@@ -38,21 +32,88 @@ export const useBookingModal = (salon: Salon) => {
   }, [selectedDate, salon]);
 
   const loadSalonServices = async () => {
-    if (!salon?.id) return;
+    if (!salon?.id) {
+      console.error('useBookingModal - No salon ID provided');
+      return;
+    }
     
     try {
-      setLoadingServices(true);
       console.log('useBookingModal - Loading services for salon:', salon.id);
-      await fetchSalonServices(salon.id);
+      const salonServices = await fetchSalonServices(salon.id);
+      console.log('useBookingModal - Services loaded:', salonServices?.length || 0, 'services');
+      
+      if (!salonServices || salonServices.length === 0) {
+        console.warn('useBookingModal - No services found for salon:', salon.id);
+        toast({
+          title: "Aviso",
+          description: "Este estabelecimento ainda não possui serviços cadastrados.",
+          variant: "default"
+        });
+      }
     } catch (error) {
-      console.error('Error loading salon services:', error);
+      console.error('useBookingModal - Error loading salon services:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar serviços do estabelecimento",
         variant: "destructive"
       });
-    } finally {
-      setLoadingServices(false);
+    }
+  };
+
+  const createAppointment = async (appointmentData: any) => {
+    try {
+      console.log('useBookingModal - Creating appointment with data:', appointmentData);
+
+      // Create client first
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .upsert({
+          name: appointmentData.clientName,
+          phone: appointmentData.clientPhone,
+          email: appointmentData.clientEmail || null
+        }, {
+          onConflict: 'phone',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+
+      if (clientError) {
+        console.error('Error creating/updating client:', clientError);
+        throw new Error('Erro ao criar cliente');
+      }
+
+      console.log('Client created/updated:', clientData);
+
+      // Create appointment
+      const { data: appointment, error: appointmentError } = await supabase
+        .from('appointments')
+        .insert({
+          salon_id: appointmentData.salon_id,
+          service_id: appointmentData.service_id,
+          client_id: clientData.id,
+          appointment_date: appointmentData.appointment_date,
+          appointment_time: appointmentData.appointment_time,
+          status: 'pending',
+          notes: appointmentData.notes || null
+        })
+        .select()
+        .single();
+
+      if (appointmentError) {
+        console.error('Error creating appointment:', appointmentError);
+        throw new Error('Erro ao criar agendamento');
+      }
+
+      console.log('Appointment created successfully:', appointment);
+      return { success: true, appointment };
+
+    } catch (error) {
+      console.error('Error in createAppointment:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Erro ao criar agendamento' 
+      };
     }
   };
 
@@ -94,7 +155,6 @@ export const useBookingModal = (salon: Salon) => {
         client: clientData.name
       });
 
-      // Create appointment directly with client data
       const appointmentResult = await createAppointment({
         salon_id: salon.id,
         service_id: selectedService.id,
@@ -156,11 +216,14 @@ export const useBookingModal = (salon: Salon) => {
     }).format(value);
   };
 
+  // Filter only active services
+  const activeServices = services.filter(service => service.active);
+
   return {
     // State
     currentStep,
-    services: services || [],
-    loadingServices: loadingServices || dataLoading,
+    services: activeServices,
+    loadingServices: servicesLoading,
     selectedService,
     selectedDate,
     selectedTime,

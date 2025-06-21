@@ -17,6 +17,12 @@ const ServiceSelectionStep = ({
   selectedService, 
   onServiceSelect 
 }: ServiceSelectionStepProps) => {
+  console.log('ServiceSelectionStep - Props:', { 
+    servicesCount: services?.length || 0, 
+    loadingServices, 
+    selectedService: selectedService?.name || 'none' 
+  });
+
   return (
     <div className="space-y-4">
       <div className="text-center mb-6">
@@ -44,7 +50,7 @@ const ServiceSelectionStep = ({
         <div className="text-center py-8">
           <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum serviço disponível</h3>
-          <p className="text-gray-600">Este estabelecimento ainda não possui serviços cadastrados.</p>
+          <p className="text-gray-600">Este estabelecimento ainda não possui serviços ativos cadastrados.</p>
         </div>
       )}
     </div>

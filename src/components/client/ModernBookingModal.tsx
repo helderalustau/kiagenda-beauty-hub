@@ -46,7 +46,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
       console.log('ModernBookingModal - Loading services for salon:', salon.id);
       loadSalonServices();
     }
-  }, [isOpen, salon?.id]);
+  }, [isOpen, salon?.id, loadSalonServices]);
 
   const handleClose = () => {
     handleReset();
@@ -83,7 +83,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
       case 1:
         return (
           <ServiceSelectionStep
-            services={services.filter(service => service.active)}
+            services={services}
             loadingServices={loadingServices}
             selectedService={selectedService}
             onServiceSelect={handleServiceSelect}
