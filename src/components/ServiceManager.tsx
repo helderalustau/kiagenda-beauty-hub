@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Clock, DollarSign, Eye, EyeOff, Save } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 import { Service } from '@/hooks/useSupabaseData';
+import ServiceCard from '@/components/service-management/ServiceCard';
+import ServiceEditModal from '@/components/service-management/ServiceEditModal';
 
 interface ServiceManagerProps {
   salon: any;
@@ -82,6 +83,7 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
       });
       setNewService({ name: '', description: '', price: '', duration_minutes: '60' });
       setIsCreateModalOpen(false);
+      await fetchSalonServices(salon.id);
       onRefresh();
     } else {
       toast({
@@ -92,52 +94,27 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
     }
   };
 
-  const handleUpdateService = async (service: Service) => {
+  const handleUpdateService = async (serviceId: string, updateData: Partial<Service>) => {
     if (!salon?.id) {
       toast({
         title: "Erro",
         description: "Estabelecimento não encontrado. Recarregue a página.",
         variant: "destructive"
       });
-      return;
+      return { success: false, message: "Estabelecimento não encontrado" };
     }
 
-    if (!service.name.trim() || !service.price || service.price <= 0) {
-      toast({
-        title: "Erro",
-        description: "Nome e preço válido são obrigatórios",
-        variant: "destructive"
-      });
-      return;
-    }
+    console.log('ServiceManager - Atualizando serviço:', serviceId, updateData);
 
-    setIsUpdating(service.id);
-
-    const result = await updateService(service.id, {
-      name: service.name.trim(),
-      description: service.description?.trim() || null,
-      price: Number(service.price),
-      duration_minutes: Number(service.duration_minutes) || 60
-    });
-
-    setIsUpdating(null);
+    const result = await updateService(serviceId, updateData);
 
     if (result.success) {
-      toast({
-        title: "Sucesso!",
-        description: "Serviço atualizado com sucesso",
-      });
-      setEditingService(null);
-      // Refresh services immediately to show updated data
+      // Atualizar a lista de serviços imediatamente
       await fetchSalonServices(salon.id);
       onRefresh();
-    } else {
-      toast({
-        title: "Erro",
-        description: result.message || "Erro ao atualizar serviço",
-        variant: "destructive"
-      });
     }
+
+    return result;
   };
 
   const handleDeleteService = async () => {
@@ -150,7 +127,7 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
       return;
     }
 
-    console.log('Deletando serviço:', serviceToDelete.id);
+    console.log('ServiceManager - Deletando serviço:', serviceToDelete.id);
 
     const result = await deleteService(serviceToDelete.id);
     
@@ -160,7 +137,6 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
         description: "Serviço excluído com sucesso",
       });
       setServiceToDelete(null);
-      // Refresh services immediately to remove deleted service from UI
       await fetchSalonServices(salon.id);
       onRefresh();
     } else {
@@ -189,7 +165,6 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
         title: "Sucesso!",
         description: `Serviço ${service.active ? 'desativado' : 'ativado'} com sucesso`,
       });
-      // Refresh services immediately to show status change
       await fetchSalonServices(salon.id);
       onRefresh();
     } else {
@@ -199,13 +174,6 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
         variant: "destructive"
       });
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
   };
 
   if (!salon) {
@@ -315,126 +283,27 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
             </CardContent>
           </Card>
         ) : (
-          services.map((service) => (
-            <Card key={service.id} className={`${!service.active ? 'opacity-60' : ''}`}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      {editingService?.id === service.id ? (
-                        <Input
-                          value={editingService.name}
-                          onChange={(e) => setEditingService(prev => prev ? { ...prev, name: e.target.value } : null)}
-                          className="text-lg font-semibold"
-                        />
-                      ) : (
-                        <CardTitle className="text-lg">{service.name}</CardTitle>
-                      )}
-                      <Badge variant={service.active ? "default" : "secondary"}>
-                        {service.active ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    {editingService?.id === service.id ? (
-                      <Button
-                        size="sm"
-                        onClick={() => handleUpdateService(editingService)}
-                        className="bg-green-600 hover:bg-green-700"
-                        disabled={isUpdating === service.id}
-                      >
-                        {isUpdating === service.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                        ) : (
-                          <Save className="h-4 w-4" />
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingService(service)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleToggleStatus(service)}
-                    >
-                      {service.active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setServiceToDelete(service)}
-                      className="text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-3">
-                  {editingService?.id === service.id ? (
-                    <Textarea
-                      value={editingService.description || ''}
-                      onChange={(e) => setEditingService(prev => prev ? { ...prev, description: e.target.value } : null)}
-                      placeholder="Descrição do serviço..."
-                      rows={2}
-                    />
-                  ) : (
-                    service.description && (
-                      <p className="text-gray-600 text-sm">{service.description}</p>
-                    )
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-1 text-green-600">
-                        <DollarSign className="h-4 w-4" />
-                        {editingService?.id === service.id ? (
-                          <Input
-                            type="number"
-                            value={editingService.price}
-                            onChange={(e) => setEditingService(prev => prev ? { ...prev, price: Number(e.target.value) } : null)}
-                            className="w-24"
-                            min="0"
-                            step="0.01"
-                          />
-                        ) : (
-                          <span className="font-semibold">{formatCurrency(service.price)}</span>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center space-x-1 text-blue-600">
-                        <Clock className="h-4 w-4" />
-                        {editingService?.id === service.id ? (
-                          <Input
-                            type="number"
-                            value={editingService.duration_minutes}
-                            onChange={(e) => setEditingService(prev => prev ? { ...prev, duration_minutes: Number(e.target.value) } : null)}
-                            className="w-16"
-                            min="1"
-                          />
-                        ) : (
-                          <span>{service.duration_minutes} min</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {services.map((service) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                onEdit={setEditingService}
+                onDelete={setServiceToDelete}
+                onToggleStatus={handleToggleStatus}
+              />
+            ))}
+          </div>
         )}
       </div>
+
+      {/* Modal de Edição */}
+      <ServiceEditModal
+        service={editingService}
+        isOpen={!!editingService}
+        onClose={() => setEditingService(null)}
+        onSave={handleUpdateService}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!serviceToDelete} onOpenChange={() => setServiceToDelete(null)}>

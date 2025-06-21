@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Salon, AdminUser } from '@/hooks/useSupabaseData';
 import { useSalonData } from '@/hooks/useSalonData';
 import { useAuthData } from '@/hooks/useAuthData';
 import { useToast } from "@/components/ui/use-toast";
+import SalonConfigurationForm from '@/components/settings/SalonConfigurationForm';
 
 interface SettingsPageProps {
   salon: Salon | null;
@@ -20,15 +21,6 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [salonData, setSalonData] = useState(salon || {
-    name: '',
-    owner_name: '',
-    phone: '',
-    address: '',
-    notification_sound: 'default',
-    plan: 'bronze' as 'bronze' | 'prata' | 'gold',
-    max_attendants: 1
-  });
   const [newUserData, setNewUserData] = useState({
     name: '',
     email: '',
@@ -37,62 +29,28 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
     role: 'collaborator' as 'admin' | 'manager' | 'collaborator'
   });
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
 
-  const audioRef = useRef<HTMLAudioElement>(null);
   const { updateSalon } = useSalonData();
   const { registerAdmin, updateAdminUser, deleteAdminUser } = useAuthData();
   const { toast } = useToast();
 
-  const notificationSounds = [
-    { value: 'default', label: 'Padrão', file: '/sounds/default.mp3' },
-    { value: 'bell', label: 'Sino', file: '/sounds/bell.mp3' },
-    { value: 'chime', label: 'Carrilhão', file: '/sounds/chime.mp3' },
-    { value: 'notification', label: 'Notificação', file: '/sounds/notification.mp3' }
-  ];
-
-  const handleSaveSalon = async () => {
-    if (!salon?.id) return;
+  const handleUpdateSalon = async (data: Partial<Salon>) => {
+    if (!salon?.id) {
+      return { success: false, message: "Estabelecimento não encontrado" };
+    }
     
-    setIsSaving(true);
-    
-    const dataToUpdate = {
-      ...salonData,
+    const updateData = {
+      ...data,
       id: salon.id
     };
     
-    const result = await updateSalon(dataToUpdate);
+    const result = await updateSalon(updateData);
     
     if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Alterações salvas com sucesso!"
-      });
-      // Aplicar alterações imediatamente
       onRefresh();
-    } else {
-      toast({
-        title: "Erro",
-        description: result.message,
-        variant: "destructive"
-      });
     }
     
-    setIsSaving(false);
-  };
-
-  const handlePlayNotification = (soundFile: string) => {
-    // Simular preview do som de notificação
-    toast({
-      title: "Preview",
-      description: `Reproduzindo som: ${soundFile}`,
-    });
-    
-    // Aqui você poderia reproduzir o arquivo de áudio real
-    // if (audioRef.current) {
-    //   audioRef.current.src = soundFile;
-    //   audioRef.current.play();
-    // }
+    return result;
   };
 
   const handleCreateUser = async () => {
@@ -105,7 +63,6 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
       return;
     }
 
-    // Verificar limite baseado no plano
     const maxUsers = salon?.max_attendants || 1;
     if (adminUsers.length >= maxUsers) {
       setShowUserDialog(false);
@@ -211,117 +168,26 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
     window.location.href = '/plan-selection';
   };
 
-  // Atualizar salonData quando salon prop mudar
-  useEffect(() => {
-    if (salon) {
-      setSalonData(salon);
-    }
-  }, [salon]);
+  if (!salon) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">Estabelecimento não encontrado. Recarregue a página.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Configurações</h1>
-        <p className="text-gray-600">Gerencie as configurações do seu salão</p>
+        <p className="text-gray-600">Gerencie as configurações completas do seu estabelecimento</p>
       </div>
 
-      {/* Dados do Salão */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Settings className="h-5 w-5" />
-            <span>Dados do Salão</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Nome do Salão</label>
-              <Input
-                value={salonData.name}
-                onChange={(e) => setSalonData({...salonData, name: e.target.value})}
-                placeholder="Nome do salão"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Nome do Responsável</label>
-              <Input
-                value={salonData.owner_name}
-                onChange={(e) => setSalonData({...salonData, owner_name: e.target.value})}
-                placeholder="Nome do responsável"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Telefone</label>
-              <Input
-                value={salonData.phone}
-                onChange={(e) => setSalonData({...salonData, phone: e.target.value})}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Endereço</label>
-              <Input
-                value={salonData.address}
-                onChange={(e) => setSalonData({...salonData, address: e.target.value})}
-                placeholder="Endereço completo"
-              />
-            </div>
-          </div>
-          <Button onClick={handleSaveSalon} disabled={isSaving}>
-            {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Configurações de Notificação */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Bell className="h-5 w-5" />
-            <span>Notificações</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Som de Notificação</label>
-              <div className="flex gap-2">
-                <Select 
-                  value={salonData.notification_sound} 
-                  onValueChange={(value) => setSalonData({...salonData, notification_sound: value})}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {notificationSounds.map(sound => (
-                      <SelectItem key={sound.value} value={sound.value}>
-                        {sound.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    const selectedSound = notificationSounds.find(s => s.value === salonData.notification_sound);
-                    if (selectedSound) {
-                      handlePlayNotification(selectedSound.file);
-                    }
-                  }}
-                >
-                  <Play className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <Button onClick={handleSaveSalon} disabled={isSaving}>
-              {isSaving ? 'Salvando...' : 'Salvar Configurações'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Configuração Completa do Estabelecimento */}
+      <SalonConfigurationForm 
+        salon={salon}
+        onUpdate={handleUpdateSalon}
+      />
 
       {/* Gerenciar Usuários */}
       <Card>
@@ -535,8 +401,6 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
           </div>
         </DialogContent>
       </Dialog>
-
-      <audio ref={audioRef} />
     </div>
   );
 };
