@@ -1,0 +1,135 @@
+
+import React from 'react';
+import { User, Phone, Mail, CalendarIcon, Clock, Scissors, MapPin } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Service, Salon } from '@/hooks/useSupabaseData';
+
+interface ClientDataStepProps {
+  salon: Salon;
+  selectedService: Service | null;
+  selectedDate: Date | undefined;
+  selectedTime: string;
+  clientData: {
+    name: string;
+    phone: string;
+    email: string;
+    notes: string;
+  };
+  onClientDataChange: (data: { name: string; phone: string; email: string; notes: string }) => void;
+  formatCurrency: (value: number) => string;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+const ClientDataStep = ({
+  salon,
+  selectedService,
+  selectedDate,
+  selectedTime,
+  clientData,
+  onClientDataChange,
+  formatCurrency,
+  onSubmit
+}: ClientDataStepProps) => {
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Seus Dados</h3>
+        <p className="text-gray-600">Preencha seus dados para confirmar o agendamento</p>
+      </div>
+
+      {/* Resumo do agendamento */}
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+        <CardContent className="p-4">
+          <h4 className="font-semibold text-gray-900 mb-3">Resumo do Agendamento</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center">
+              <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+              <span>{salon.name}</span>
+            </div>
+            <div className="flex items-center">
+              <Scissors className="h-4 w-4 mr-2 text-gray-500" />
+              <span>{selectedService?.name} - {formatCurrency(selectedService?.price || 0)}</span>
+            </div>
+            <div className="flex items-center">
+              <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
+              <span>{selectedDate && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+            </div>
+            <div className="flex items-center">
+              <Clock className="h-4 w-4 mr-2 text-gray-500" />
+              <span>{selectedTime}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="clientName">Nome Completo *</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                id="clientName"
+                type="text"
+                placeholder="Seu nome completo"
+                value={clientData.name}
+                onChange={(e) => onClientDataChange({ ...clientData, name: e.target.value })}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="clientPhone">Telefone *</Label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                id="clientPhone"
+                type="tel"
+                placeholder="(11) 99999-9999"
+                value={clientData.phone}
+                onChange={(e) => onClientDataChange({ ...clientData, phone: e.target.value })}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="clientEmail">Email (opcional)</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              id="clientEmail"
+              type="email"
+              placeholder="seu@email.com"
+              value={clientData.email}
+              onChange={(e) => onClientDataChange({ ...clientData, email: e.target.value })}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="notes">Observações</Label>
+          <Textarea
+            id="notes"
+            placeholder="Alguma observação adicional?"
+            value={clientData.notes}
+            onChange={(e) => onClientDataChange({ ...clientData, notes: e.target.value })}
+            rows={3}
+          />
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default ClientDataStep;
