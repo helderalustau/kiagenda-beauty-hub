@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Salon } from '../useSupabaseData';
+import { Salon } from '@/types/supabase-entities';
 
 export const useSalonSetupCompletion = () => {
   const [loading, setLoading] = useState(false);

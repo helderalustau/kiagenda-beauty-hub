@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Salon } from '../useSupabaseData';
+import { Salon } from '@/types/supabase-entities';
 
 export const useSalonUpdate = () => {
   const updateSalon = async (salonData: any) => {

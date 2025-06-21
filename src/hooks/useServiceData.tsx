@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Service, PresetService } from './useSupabaseData';
+import { Service, PresetService } from '@/types/supabase-entities';
 
 export const useServiceData = () => {
   const [services, setServices] = useState<Service[]>([]);

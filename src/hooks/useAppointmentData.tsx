@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Appointment } from './useSupabaseData';
+import { Appointment } from '@/types/supabase-entities';
 import { useClientData } from './useClientData';
 
 export const useAppointmentData = () => {
