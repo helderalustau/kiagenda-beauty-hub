@@ -18,6 +18,7 @@ export type Database = {
           id: string
           name: string
           password: string
+          password_hash: string | null
           phone: string | null
           role: string
           salon_code: string | null
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           name: string
           password: string
+          password_hash?: string | null
           phone?: string | null
           role?: string
           salon_code?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           id?: string
           name?: string
           password?: string
+          password_hash?: string | null
           phone?: string | null
           role?: string
           salon_code?: string | null
@@ -190,6 +193,45 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string | null
+          table_name: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_auth: {
         Row: {
           created_at: string
@@ -197,6 +239,7 @@ export type Database = {
           id: string
           name: string
           password: string
+          password_hash: string | null
           phone: string | null
           updated_at: string
         }
@@ -206,6 +249,7 @@ export type Database = {
           id?: string
           name: string
           password: string
+          password_hash?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -215,6 +259,7 @@ export type Database = {
           id?: string
           name?: string
           password?: string
+          password_hash?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -516,6 +561,14 @@ export type Database = {
       generate_unique_slug: {
         Args: { salon_name: string }
         Returns: string
+      }
+      hash_password: {
+        Args: { password: string }
+        Returns: string
+      }
+      verify_password: {
+        Args: { password: string; hash: string }
+        Returns: boolean
       }
     }
     Enums: {

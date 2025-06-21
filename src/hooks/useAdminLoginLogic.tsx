@@ -1,14 +1,16 @@
 
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from 'react-router-dom';
 import { useAuthData } from '@/hooks/useAuthData';
 import { useSalonData } from '@/hooks/useSalonData';
+import { useSecureNavigation } from '@/hooks/useSecureNavigation';
+import { useInputValidation } from '@/hooks/useInputValidation';
 
 export const useAdminLoginLogic = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const { secureNavigate } = useSecureNavigation();
   const { authenticateAdmin, loading } = useAuthData();
   const { fetchSalonData, salon } = useSalonData();
+  const { sanitizeAndValidate, validateUrl } = useInputValidation();
 
   const checkSalonConfiguration = async (salonId: string) => {
     try {
@@ -26,12 +28,31 @@ export const useAdminLoginLogic = () => {
     }
   };
 
-  const handleSuperAdminAccess = (username: string, password: string) => {
+  const handleSuperAdminAccess = async (username: string, password: string) => {
     const AUTHORIZED_SUPER_ADMIN = 'Helder';
     const AUTHORIZED_PASSWORD = 'Hd@123@@';
     
-    if (username === AUTHORIZED_SUPER_ADMIN && password === AUTHORIZED_PASSWORD) {
+    // Validate inputs
+    const usernameValidation = sanitizeAndValidate(username, 'name');
+    if (!usernameValidation.isValid) {
+      return false;
+    }
+    
+    if (usernameValidation.value === AUTHORIZED_SUPER_ADMIN && password === AUTHORIZED_PASSWORD) {
       console.log(`Super Admin access granted to: ${username} at ${new Date().toISOString()}`);
+      
+      // Log security event
+      try {
+        // In a real implementation, this would log to the audit system
+        console.log('SUPER_ADMIN_LOGIN', {
+          user: username,
+          timestamp: new Date().toISOString(),
+          ip: 'N/A', // Could be enhanced
+          userAgent: navigator.userAgent
+        });
+      } catch (error) {
+        console.error('Failed to log super admin access:', error);
+      }
       
       localStorage.setItem('adminAuth', JSON.stringify({
         id: 'super-admin-helder',
@@ -48,7 +69,7 @@ export const useAdminLoginLogic = () => {
       });
       
       setTimeout(() => {
-        navigate('/super-admin-dashboard');
+        secureNavigate('/super-admin-dashboard');
       }, 1500);
       
       return true;
@@ -58,45 +79,48 @@ export const useAdminLoginLogic = () => {
   };
 
   const handleLogin = async (formData: { username: string; password: string }) => {
-    if (!formData.username.trim()) {
+    // Validate inputs
+    const usernameValidation = sanitizeAndValidate(formData.username, 'name');
+    if (!usernameValidation.isValid) {
       toast({
         title: "Erro",
-        description: "Nome de usuário é obrigatório",
+        description: usernameValidation.error || "Nome de usuário inválido",
         variant: "destructive"
       });
       return;
     }
 
-    if (!formData.password.trim()) {
+    if (!formData.password.trim() || formData.password.length < 6) {
       toast({
         title: "Erro",
-        description: "Senha é obrigatória",
+        description: "Senha deve ter pelo menos 6 caracteres",
         variant: "destructive"
       });
       return;
     }
 
-    // Primeira verificação: Super Admin
-    if (handleSuperAdminAccess(formData.username, formData.password)) {
+    // Check for super admin access first
+    if (await handleSuperAdminAccess(usernameValidation.value, formData.password)) {
       return;
     }
 
-    // Segunda verificação: Bloquear tentativas não autorizadas de super admin
-    if (formData.username === 'Helder' && formData.password !== 'Hd@123@@') {
+    // Block unauthorized super admin attempts
+    if (usernameValidation.value === 'Helder' && formData.password !== 'Hd@123@@') {
       toast({
         title: "Acesso Negado",
         description: "Credenciais de Super Admin inválidas. Tentativa registrada.",
         variant: "destructive"
       });
-      console.warn(`Unauthorized super admin access attempt from: ${formData.username} at ${new Date().toISOString()}`);
+      console.warn(`Unauthorized super admin access attempt from: ${usernameValidation.value} at ${new Date().toISOString()}`);
       return;
     }
 
-    // Terceira verificação: Admin regular
+    // Regular admin authentication
     try {
-      const result = await authenticateAdmin(formData.username, formData.password);
+      const result = await authenticateAdmin(usernameValidation.value, formData.password);
       
       if (result.success) {
+        // Security check for inconsistent accounts
         if (result.admin.role === 'super_admin' && result.admin.name !== 'Helder') {
           toast({
             title: "Erro de Segurança",
@@ -121,7 +145,7 @@ export const useAdminLoginLogic = () => {
         const redirectPath = await checkSalonConfiguration(result.admin.salon_id);
         
         setTimeout(() => {
-          navigate(redirectPath);
+          secureNavigate(redirectPath);
         }, 1500);
       } else {
         toast({
@@ -141,7 +165,7 @@ export const useAdminLoginLogic = () => {
   };
 
   const handleCreateAccount = () => {
-    navigate('/admin-registration');
+    secureNavigate('/admin-registration');
   };
 
   return {
