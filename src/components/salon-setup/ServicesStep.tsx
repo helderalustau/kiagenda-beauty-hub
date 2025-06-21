@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Info, Clock, FileText, Plus } from "lucide-react";
@@ -31,7 +30,7 @@ const ServicesStep = ({
   const validCustomServices = Array.isArray(customServices) ? customServices : [];
   const allServices = [...validPresetServices, ...validCustomServices];
   
-  const groupedServices = allServices.reduce((acc, service) => {
+  const groupedServices = allServices.reduce((acc: Record<string, any[]>, service) => {
     const category = service.category || 'personalizado';
     if (!acc[category]) {
       acc[category] = [];
