@@ -13,6 +13,8 @@ interface TimeSlotGridProps {
 }
 
 const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate }: TimeSlotGridProps) => {
+  console.log('TimeSlotGrid - Props:', { availableTimes, selectedTime, selectedDate });
+
   if (!selectedDate) {
     return (
       <div className="text-center py-8">
@@ -22,7 +24,7 @@ const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate
     );
   }
 
-  if (availableTimes.length === 0) {
+  if (!availableTimes || availableTimes.length === 0) {
     return (
       <div className="text-center py-8">
         <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -66,7 +68,10 @@ const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate
               key={time}
               variant={selectedTime === time ? "default" : "outline"}
               size="sm"
-              onClick={() => onTimeSelect(time)}
+              onClick={() => {
+                console.log('TimeSlotGrid - Time selected:', time);
+                onTimeSelect(time);
+              }}
               className={`text-sm transition-all ${
                 selectedTime === time
                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'

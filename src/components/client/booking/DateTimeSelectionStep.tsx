@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { Clock } from "lucide-react";
+import { Clock, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { ptBR } from "date-fns/locale";
 import { Service } from '@/hooks/useSupabaseData';
 import TimeSlotGrid from '../TimeSlotGrid';
@@ -15,6 +16,7 @@ interface DateTimeSelectionStepProps {
   availableTimes: string[];
   onDateSelect: (date: Date | undefined) => void;
   onTimeSelect: (time: string) => void;
+  onBack: () => void;
   formatCurrency: (value: number) => string;
 }
 
@@ -25,13 +27,32 @@ const DateTimeSelectionStep = ({
   availableTimes,
   onDateSelect,
   onTimeSelect,
+  onBack,
   formatCurrency
 }: DateTimeSelectionStepProps) => {
+  console.log('DateTimeSelectionStep - Props:', { 
+    selectedService: selectedService?.name, 
+    selectedDate, 
+    selectedTime, 
+    availableTimes 
+  });
+
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Escolha Data e Horário</h3>
-        <p className="text-gray-600">Selecione quando deseja ser atendido</p>
+      <div className="flex items-center justify-between mb-6">
+        <Button
+          variant="outline"
+          onClick={onBack}
+          className="flex items-center"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar aos Serviços
+        </Button>
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Escolha Data e Horário</h3>
+          <p className="text-gray-600">Selecione quando deseja ser atendido</p>
+        </div>
+        <div></div> {/* Spacer for centering */}
       </div>
 
       {selectedService && (
@@ -55,7 +76,10 @@ const DateTimeSelectionStep = ({
           <Calendar
             mode="single"
             selected={selectedDate}
-            onSelect={onDateSelect}
+            onSelect={(date) => {
+              console.log('DateTimeSelectionStep - Date selected:', date);
+              onDateSelect(date);
+            }}
             disabled={(date) => date < new Date() || date < new Date('1900-01-01')}
             locale={ptBR}
             className="rounded-md border"
@@ -64,18 +88,12 @@ const DateTimeSelectionStep = ({
 
         <div>
           <Label className="text-base font-medium mb-3 block">Horário</Label>
-          {selectedDate ? (
-            <TimeSlotGrid
-              availableTimes={availableTimes}
-              selectedTime={selectedTime}
-              onTimeSelect={onTimeSelect}
-            />
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <Clock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-              <p>Selecione uma data primeiro</p>
-            </div>
-          )}
+          <TimeSlotGrid
+            availableTimes={availableTimes}
+            selectedTime={selectedTime}
+            onTimeSelect={onTimeSelect}
+            selectedDate={selectedDate}
+          />
         </div>
       </div>
     </div>

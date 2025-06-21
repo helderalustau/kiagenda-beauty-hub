@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { User, Phone, Mail, CalendarIcon, Clock, Scissors, MapPin } from "lucide-react";
+import { User, Phone, Mail, CalendarIcon, Clock, Scissors, MapPin, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -21,6 +22,7 @@ interface ClientDataStepProps {
     notes: string;
   };
   onClientDataChange: (data: { name: string; phone: string; email: string; notes: string }) => void;
+  onBack: () => void;
   formatCurrency: (value: number) => string;
   onSubmit: (e: React.FormEvent) => void;
 }
@@ -32,14 +34,26 @@ const ClientDataStep = ({
   selectedTime,
   clientData,
   onClientDataChange,
+  onBack,
   formatCurrency,
   onSubmit
 }: ClientDataStepProps) => {
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Seus Dados</h3>
-        <p className="text-gray-600">Preencha seus dados para confirmar o agendamento</p>
+      <div className="flex items-center justify-between mb-6">
+        <Button
+          variant="outline"
+          onClick={onBack}
+          className="flex items-center"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar ao Horário
+        </Button>
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Seus Dados</h3>
+          <p className="text-gray-600">Preencha seus dados para confirmar o agendamento</p>
+        </div>
+        <div></div> {/* Spacer for centering */}
       </div>
 
       {/* Resumo do agendamento */}

@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 import { useBookingModal } from '@/hooks/useBookingModal';
 import ServiceSelectionStep from './booking/ServiceSelectionStep';
@@ -43,6 +43,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
   // Load services when modal opens
   useEffect(() => {
     if (isOpen && salon?.id) {
+      console.log('ModernBookingModal - Loading services for salon:', salon.id);
       loadSalonServices();
     }
   }, [isOpen, salon?.id]);
@@ -53,6 +54,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
+    console.log('ModernBookingModal - Submitting form');
     const result = await handleSubmit(e);
     if (result?.success) {
       handleReset();
@@ -62,6 +64,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
   };
 
   const handleNextStep = () => {
+    console.log('ModernBookingModal - Next step from:', currentStep);
     if (currentStep === 1 && selectedService) {
       setCurrentStep(2);
     } else if (currentStep === 2 && selectedDate && selectedTime) {
@@ -96,6 +99,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
             availableTimes={availableTimes}
             onDateSelect={handleDateSelect}
             onTimeSelect={handleTimeSelect}
+            onBack={() => setCurrentStep(1)}
             formatCurrency={formatCurrency}
           />
         );
@@ -109,6 +113,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
             selectedTime={selectedTime}
             clientData={clientData}
             onClientDataChange={setClientData}
+            onBack={() => setCurrentStep(2)}
             formatCurrency={formatCurrency}
             onSubmit={handleFormSubmit}
           />
@@ -138,28 +143,18 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
           
           {renderStepContent()}
 
-          {/* Navigation buttons */}
-          <div className="flex justify-between items-center mt-8 pt-6 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={currentStep === 1 ? handleClose : handleBack}
-              className="flex items-center"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {currentStep === 1 ? 'Cancelar' : 'Voltar'}
-            </Button>
-
-            {currentStep === 3 ? (
+          {/* Navigation buttons - Only show for step 1 */}
+          {currentStep === 1 && (
+            <div className="flex justify-between items-center mt-8 pt-6 border-t">
               <Button
-                onClick={handleFormSubmit}
-                disabled={isSubmitting}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center"
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                className="flex items-center"
               >
-                {isSubmitting ? 'Agendando...' : 'Confirmar Agendamento'}
-                <ArrowRight className="h-4 w-4 ml-2" />
+                Cancelar
               </Button>
-            ) : (
+
               <Button
                 disabled={!canProceedToNext()}
                 onClick={handleNextStep}
@@ -168,8 +163,22 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
                 Próximo
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Submit button for final step */}
+          {currentStep === 3 && (
+            <div className="flex justify-center mt-8 pt-6 border-t">
+              <Button
+                onClick={handleFormSubmit}
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center px-8"
+              >
+                {isSubmitting ? 'Agendando...' : 'Confirmar Agendamento'}
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
