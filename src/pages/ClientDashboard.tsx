@@ -5,7 +5,8 @@ import SalonList from '@/components/SalonList';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, LogOut, RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, User, LogOut, RefreshCw, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const ClientDashboard = () => {
@@ -19,6 +20,8 @@ const ClientDashboard = () => {
   const { toast } = useToast();
   const [hasError, setHasError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredSalons, setFilteredSalons] = useState(salons);
 
   useEffect(() => {
     if (!user) {
@@ -28,6 +31,19 @@ const ClientDashboard = () => {
 
     loadSalons();
   }, [user, navigate]);
+
+  // Filter salons based on search term
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredSalons(salons);
+    } else {
+      const filtered = salons.filter(salon => 
+        salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        salon.owner_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredSalons(filtered);
+    }
+  }, [salons, searchTerm]);
 
   const loadSalons = async () => {
     try {
@@ -75,6 +91,10 @@ const ClientDashboard = () => {
 
   const handleRetry = () => {
     loadSalons();
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
   };
 
   if (loading && !isRefreshing) {
@@ -176,9 +196,31 @@ const ClientDashboard = () => {
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Estabelecimentos Disponíveis
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-6">
             Escolha um estabelecimento para agendar seus serviços
           </p>
+          
+          {/* Search Bar */}
+          <div className="max-w-md mx-auto mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Pesquisar por nome do estabelecimento ou responsável..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         
         {isRefreshing ? (
@@ -186,11 +228,36 @@ const ClientDashboard = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Atualizando estabelecimentos...</p>
           </div>
-        ) : salons.length > 0 ? (
-          <SalonList 
-            salons={salons} 
-            onBookService={handleBookService}
-          />
+        ) : filteredSalons.length > 0 ? (
+          <>
+            {searchTerm && (
+              <div className="mb-4 text-center">
+                <p className="text-gray-600">
+                  {filteredSalons.length} estabelecimento{filteredSalons.length !== 1 ? 's' : ''} encontrado{filteredSalons.length !== 1 ? 's' : ''}
+                  {searchTerm && ` para "${searchTerm}"`}
+                </p>
+              </div>
+            )}
+            <SalonList 
+              salons={filteredSalons} 
+              onBookService={handleBookService}
+            />
+          </>
+        ) : searchTerm ? (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
+              <Search className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Nenhum estabelecimento encontrado
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Não encontramos estabelecimentos com o termo "{searchTerm}". Tente pesquisar por outro nome.
+              </p>
+              <Button onClick={clearSearch} variant="outline">
+                Limpar Pesquisa
+              </Button>
+            </div>
+          </div>
         ) : (
           <div className="text-center py-12">
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">

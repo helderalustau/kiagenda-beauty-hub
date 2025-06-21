@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, MapPin, Phone, Star } from "lucide-react";
+import { ArrowLeft, User, MapPin, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ModernBookingModal from '@/components/client/ModernBookingModal';
@@ -168,6 +168,9 @@ const ClientBooking = () => {
                   {getPlanName(selectedSalon.plan)}
                 </Badge>
               </div>
+              <div className="text-lg text-gray-600">
+                Responsável: {selectedSalon.owner_name}
+              </div>
             </CardHeader>
             
             <CardContent className="space-y-6">
@@ -180,11 +183,6 @@ const ClientBooking = () => {
                 <div className="flex items-center space-x-3 text-gray-600">
                   <Phone className="h-5 w-5" />
                   <span>{selectedSalon.contact_phone || selectedSalon.phone}</span>
-                </div>
-
-                <div className="flex items-center space-x-3 text-gray-600">
-                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  <span>4.8 (124 avaliações)</span>
                 </div>
               </div>
 

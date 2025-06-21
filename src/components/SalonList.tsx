@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Star, Clock, CheckCircle, XCircle } from "lucide-react";
+import { MapPin, Phone, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 
 interface SalonListProps {
@@ -49,6 +49,9 @@ const SalonList = ({ salons, onBookService }: SalonListProps) => {
                 {getPlanName(salon.plan)}
               </Badge>
             </div>
+            <div className="text-sm text-gray-600">
+              Responsável: {salon.owner_name}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -80,11 +83,6 @@ const SalonList = ({ salons, onBookService }: SalonListProps) => {
                   </>
                 )}
               </div>
-            </div>
-
-            <div className="flex items-center space-x-1 text-sm text-gray-600">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span>4.8 (124 avaliações)</span>
             </div>
 
             <div className="pt-2">
