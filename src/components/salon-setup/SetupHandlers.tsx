@@ -62,7 +62,7 @@ export const useSetupHandlers = ({
         }
         break;
         
-      case 4: // Services - Validação rigorosa de preços
+      case 4: // Services - Validação APENAS no passo de serviços
         const selectedServicesList = Object.entries(selectedServices).filter(([_, serviceData]) => {
           const service = serviceData as { selected: boolean; price: number };
           return service.selected;
@@ -90,6 +90,10 @@ export const useSetupHandlers = ({
           });
           return false;
         }
+        break;
+        
+      // Caso 5 (horários) e outros passos não precisam de validação específica
+      default:
         break;
     }
     return true;
