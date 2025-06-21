@@ -15,46 +15,52 @@ interface SettingsPageProps {
 }
 
 const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
+  const [currentSalon, setCurrentSalon] = useState<Salon | null>(salon);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const { updateSalon } = useSalonData();
   const { toast } = useToast();
 
-  const handleUpdateSalon = async (data: Partial<Salon>) => {
-    if (!salon?.id) {
-      return { success: false, message: "Estabelecimento não encontrado" };
-    }
-    
-    const updateData = {
-      ...data,
-      id: salon.id
-    };
-    
-    const result = await updateSalon(updateData);
-    
-    if (result.success) {
-      setHasChanges(false);
-      onRefresh();
-    }
-    
-    return result;
+  useEffect(() => {
+    setCurrentSalon(salon);
+  }, [salon]);
+
+  const handleSalonChange = (updatedSalon: Salon) => {
+    setCurrentSalon(updatedSalon);
+    setHasChanges(true);
   };
 
   const handleSaveAllSettings = async () => {
+    if (!currentSalon?.id) {
+      toast({
+        title: "Erro",
+        description: "Estabelecimento não encontrado",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSaving(true);
     
     try {
-      // Aqui você pode implementar a lógica para salvar todas as configurações pendentes
-      toast({
-        title: "Sucesso",
-        description: "Todas as configurações foram salvas!"
-      });
-      setHasChanges(false);
+      const result = await updateSalon(currentSalon);
+      
+      if (result.success) {
+        toast({
+          title: "Sucesso",
+          description: "Todas as configurações foram salvas!"
+        });
+        setHasChanges(false);
+        onRefresh();
+      } else {
+        throw new Error(result.message || 'Erro ao salvar configurações');
+      }
     } catch (error) {
+      console.error('Error saving settings:', error);
       toast({
         title: "Erro",
-        description: "Erro ao salvar configurações",
+        description: error instanceof Error ? error.message : "Erro ao salvar configurações",
         variant: "destructive"
       });
     } finally {
@@ -72,10 +78,10 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
       prata: 5,
       gold: 10
     };
-    return planLimits[salon?.plan as keyof typeof planLimits] || 2;
+    return planLimits[currentSalon?.plan as keyof typeof planLimits] || 2;
   };
 
-  if (!salon) {
+  if (!currentSalon) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-600">Estabelecimento não encontrado. Recarregue a página.</p>
@@ -90,21 +96,20 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
         <div className="space-y-1">
           <p className="text-gray-600">Gerencie as configurações completas do seu estabelecimento</p>
           <p className="text-sm text-gray-500">
-            <strong>Responsável:</strong> {salon.owner_name}
+            <strong>Responsável:</strong> {currentSalon.owner_name}
           </p>
         </div>
       </div>
 
       {/* Configuração Completa do Estabelecimento */}
       <SalonConfigurationForm 
-        salon={salon}
-        onUpdate={handleUpdateSalon}
-        onChange={() => setHasChanges(true)}
+        salon={currentSalon}
+        onSalonChange={handleSalonChange}
       />
 
       {/* Gerenciar Usuários */}
       <SalonUsersManager
-        salonId={salon.id}
+        salonId={currentSalon.id}
         maxUsers={getMaxUsers()}
         onUpgrade={handleUpgrade}
       />
@@ -118,7 +123,7 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
           className="min-w-48"
         >
           <Save className="h-4 w-4 mr-2" />
-          {saving ? 'Salvan&Configurações...' : 'Salvar Configurações'}
+          {saving ? 'Salvando Configurações...' : 'Salvar Configurações'}
         </Button>
       </div>
     </div>
