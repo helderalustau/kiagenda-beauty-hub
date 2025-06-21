@@ -328,6 +328,7 @@ export type Database = {
       salons: {
         Row: {
           address: string
+          admin_setup_completed: boolean | null
           banner_image_url: string | null
           city: string | null
           contact_phone: string | null
@@ -352,6 +353,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          admin_setup_completed?: boolean | null
           banner_image_url?: string | null
           city?: string | null
           contact_phone?: string | null
@@ -376,6 +378,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          admin_setup_completed?: boolean | null
           banner_image_url?: string | null
           city?: string | null
           contact_phone?: string | null

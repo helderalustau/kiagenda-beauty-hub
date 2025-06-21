@@ -1,3 +1,4 @@
+
 import { useToast } from "@/components/ui/use-toast";
 
 interface SetupHandlersProps {
@@ -186,7 +187,7 @@ export const useSetupHandlers = ({
     try {
       console.log('Setup - Finalizando configuração do estabelecimento...');
       
-      // Prepare setup data
+      // Prepare setup data - incluindo admin_setup_completed
       const setupData = {
         name: formData.salon_name,
         street_number: formData.street_number,
@@ -194,7 +195,8 @@ export const useSetupHandlers = ({
         state: formData.state,
         contact_phone: formData.contact_phone,
         address: `${formData.street_number}, ${formData.city}, ${formData.state}`,
-        opening_hours: formData.opening_hours
+        opening_hours: formData.opening_hours,
+        admin_setup_completed: true // Marcar que o admin completou a configuração
       };
       
       // Complete salon setup

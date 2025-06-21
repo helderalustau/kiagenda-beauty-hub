@@ -36,10 +36,11 @@ const AdminLogin = () => {
       // Aguardar um pequeno delay para garantir que os dados foram carregados
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Verificar se o setup foi concluído (setup_completed = true)
-      if (salon && salon.setup_completed === true) {
+      // Verificar se o admin já passou pela configuração (admin_setup_completed = true)
+      if (salon && salon.admin_setup_completed === true) {
         return '/admin-dashboard';
       } else {
+        // Se não passou pela configuração, direcionar para setup
         return '/salon-setup';
       }
 
@@ -150,7 +151,7 @@ const AdminLogin = () => {
           description: "Login realizado com sucesso!"
         });
         
-        // Verificar configuração do estabelecimento baseado em setup_completed
+        // Verificar configuração do estabelecimento baseado em admin_setup_completed
         const redirectPath = await checkSalonConfiguration(result.admin.salon_id);
         
         setTimeout(() => {

@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Info, Clock, FileText, Plus } from "lucide-react";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Scissors, Clock, DollarSign } from "lucide-react";
 import { PresetService } from '@/hooks/useSupabaseData';
-import CustomServiceModal from './CustomServiceModal';
-import { ServicesValidation } from './ServicesValidation';
-import { ServicesSelectionSummary } from './ServicesSelectionSummary';
-import { ServiceCategory } from './ServiceCategory';
 
 interface ServicesStepProps {
   presetServices: PresetService[];
@@ -16,120 +16,164 @@ interface ServicesStepProps {
   salonId?: string;
 }
 
-const ServicesStep = ({ 
-  presetServices, 
-  selectedServices, 
-  onServiceToggle, 
-  onServicePriceChange,
-  salonId 
+const ServicesStep = ({
+  presetServices,
+  selectedServices,
+  onServiceToggle,
+  onServicePriceChange
 }: ServicesStepProps) => {
-  const [showCustomServiceModal, setShowCustomServiceModal] = useState(false);
-  const [customServices, setCustomServices] = useState<any[]>([]);
+  console.log('ServicesStep - Props:', { presetServices, selectedServices });
 
-  // Ensure both arrays are valid before concatenating
-  const validPresetServices = Array.isArray(presetServices) ? presetServices : [];
-  const validCustomServices = Array.isArray(customServices) ? customServices : [];
-  const allServices = [...validPresetServices, ...validCustomServices];
-  
-  const groupedServices = allServices.reduce((acc: Record<string, any[]>, service) => {
-    const category = service.category || 'personalizado';
-    if (!acc[category]) {
-      acc[category] = [];
+  if (!presetServices || presetServices.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-600">Carregando serviços disponíveis...</p>
+      </div>
+    );
+  }
+
+  // Agrupar serviços por categoria com tipagem correta
+  const servicesByCategory = presetServices.reduce<Record<string, PresetService[]>>((acc, service) => {
+    if (!acc[service.category]) {
+      acc[service.category] = [];
     }
-    acc[category].push(service);
+    acc[service.category].push(service);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {});
 
-  const handleCustomServiceCreated = (service: any) => {
-    // Adicionar o serviço personalizado à lista
-    setCustomServices(prev => [...prev, {
-      ...service,
-      category: 'personalizado',
-      default_duration_minutes: service.duration_minutes
-    }]);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
-    // Automaticamente selecionar o serviço criado com o preço definido
-    onServiceToggle(service.id);
-    onServicePriceChange(service.id, service.price);
+  const getSelectedCount = () => {
+    return Object.values(selectedServices).filter(service => service.selected).length;
+  };
+
+  const getTotalValue = () => {
+    return Object.values(selectedServices)
+      .filter(service => service.selected)
+      .reduce((total, service) => total + (service.price || 0), 0);
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Selecione os Serviços (Opcional)</h3>
-          <Button
-            onClick={() => setShowCustomServiceModal(true)}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Novo Serviço</span>
-          </Button>
-        </div>
-        
+      <div className="text-center">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Escolha os Serviços do seu Estabelecimento
+        </h3>
         <p className="text-gray-600 mb-4">
-          Escolha os serviços que você oferece. Se selecionar um serviço, o <strong>preço é obrigatório</strong>. 
-          Você pode pular esta etapa e adicionar serviços depois.
+          Selecione os serviços que você oferece e defina os preços
         </p>
         
-        {/* Informações sobre edições futuras */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-start space-x-3">
-            <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="space-y-2">
-              <h4 className="font-medium text-blue-900">Você poderá editar depois:</h4>
-              <div className="grid md:grid-cols-3 gap-3 text-sm text-blue-800">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4" />
-                  <span>Tempo de duração</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4" />
-                  <span>Descrições detalhadas</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Plus className="h-4 w-4" />
-                  <span>Novos serviços</span>
-                </div>
-              </div>
-              <p className="text-xs text-blue-700 mt-2">
-                Após finalizar esta configuração, você terá acesso completo ao gerenciamento de serviços.
-              </p>
+        {getSelectedCount() > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-blue-700">
+                <strong>{getSelectedCount()}</strong> serviços selecionados
+              </span>
+              <span className="text-blue-700 font-semibold">
+                Valor total: {formatCurrency(getTotalValue())}
+              </span>
             </div>
           </div>
-        </div>
-
-        {/* Alerta para serviços sem preço */}
-        <ServicesValidation 
-          selectedServices={selectedServices}
-          allServices={allServices}
-        />
+        )}
       </div>
 
-      {Object.entries(groupedServices).map(([category, services]) => (
-        <ServiceCategory
-          key={category}
-          category={category}
-          services={services}
-          selectedServices={selectedServices}
-          onServiceToggle={onServiceToggle}
-          onServicePriceChange={onServicePriceChange}
-        />
-      ))}
+      <div className="space-y-6">
+        {Object.entries(servicesByCategory).map(([category, services]) => (
+          <Card key={category} className="border-gray-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <Scissors className="h-5 w-5 mr-2 text-blue-600" />
+                {category}
+                <Badge variant="secondary" className="ml-2">
+                  {services.length} serviços
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {services.map((service) => {
+                  const isSelected = selectedServices[service.id]?.selected || false;
+                  const currentPrice = selectedServices[service.id]?.price || 0;
+                  
+                  return (
+                    <div
+                      key={service.id}
+                      className={`border rounded-lg p-4 transition-all ${
+                        isSelected 
+                          ? 'border-blue-300 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id={service.id}
+                          checked={isSelected}
+                          onCheckedChange={() => onServiceToggle(service.id)}
+                          className="mt-1"
+                        />
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <Label
+                              htmlFor={service.id}
+                              className="text-base font-medium text-gray-900 cursor-pointer"
+                            >
+                              {service.name}
+                            </Label>
+                            <div className="flex items-center text-sm text-gray-500">
+                              <Clock className="h-4 w-4 mr-1" />
+                              {service.default_duration_minutes} min
+                            </div>
+                          </div>
+                          
+                          {service.description && (
+                            <p className="text-sm text-gray-600 mb-3">
+                              {service.description}
+                            </p>
+                          )}
+                          
+                          {isSelected && (
+                            <div className="flex items-center space-x-2">
+                              <DollarSign className="h-4 w-4 text-green-600" />
+                              <Label htmlFor={`price-${service.id}`} className="text-sm font-medium">
+                                Preço:
+                              </Label>
+                              <Input
+                                id={`price-${service.id}`}
+                                type="number"
+                                placeholder="0,00"
+                                value={currentPrice || ''}
+                                onChange={(e) => onServicePriceChange(service.id, Number(e.target.value))}
+                                className="w-24 text-center"
+                                min="0"
+                                step="0.01"
+                              />
+                              <span className="text-sm text-gray-500">
+                                = {formatCurrency(currentPrice || 0)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* Resumo da seleção */}
-      <ServicesSelectionSummary selectedServices={selectedServices} />
-
-      {/* Modal para criar serviço personalizado */}
-      {salonId && (
-        <CustomServiceModal
-          isOpen={showCustomServiceModal}
-          onClose={() => setShowCustomServiceModal(false)}
-          salonId={salonId}
-          onServiceCreated={handleCustomServiceCreated}
-        />
+      {getSelectedCount() === 0 && (
+        <div className="text-center py-6 text-gray-500">
+          <p>Você pode pular esta etapa e adicionar serviços depois no painel administrativo.</p>
+        </div>
       )}
     </div>
   );
