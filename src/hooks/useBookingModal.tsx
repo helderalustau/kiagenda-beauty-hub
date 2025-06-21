@@ -29,15 +29,16 @@ export const useBookingModal = (salon: Salon) => {
 
   // Preencher dados do cliente logado automaticamente
   useEffect(() => {
-    if (user && (!clientData.name || !clientData.phone)) {
+    if (user) {
       console.log('useBookingModal - Auto-filling client data from user:', user);
-      setClientData(prev => ({
-        ...prev,
-        name: user.name || prev.name,
-        phone: user.id || prev.phone // O ID do usuário é usado como phone no sistema
-      }));
+      setClientData({
+        name: user.name || '',
+        phone: user.id || '', // O ID do usuário é usado como phone no sistema
+        email: '', // Email removido como solicitado
+        notes: ''
+      });
     }
-  }, [user, clientData.name, clientData.phone]);
+  }, [user]);
 
   // Load available time slots when date changes
   useEffect(() => {
@@ -66,7 +67,6 @@ export const useBookingModal = (salon: Salon) => {
           variant: "default"
         });
       } else {
-        // Check for active services
         const activeServices = salonServices.filter(service => service.active === true);
         console.log('useBookingModal - Active services:', activeServices);
         
@@ -109,9 +109,9 @@ export const useBookingModal = (salon: Salon) => {
         const { data: newClient, error: clientError } = await supabase
           .from('clients')
           .insert({
-            name: appointmentData.clientName,
+            name: user.name || appointmentData.clientName,
             phone: user.id, // Usar ID do usuário como phone
-            email: appointmentData.clientEmail || null
+            email: null // Email removido como solicitado
           })
           .select()
           .single();
@@ -170,7 +170,7 @@ export const useBookingModal = (salon: Salon) => {
   const handleDateSelect = useCallback((date: Date | undefined) => {
     console.log('useBookingModal - Date selected:', date);
     setSelectedDate(date);
-    setSelectedTime(''); // Reset selected time when date changes
+    setSelectedTime('');
   }, []);
 
   const handleTimeSelect = useCallback((time: string) => {
@@ -216,7 +216,6 @@ export const useBookingModal = (salon: Salon) => {
         appointment_time: selectedTime,
         clientName: clientData.name,
         clientPhone: clientData.phone,
-        clientEmail: clientData.email || undefined,
         notes: clientData.notes || undefined
       });
 

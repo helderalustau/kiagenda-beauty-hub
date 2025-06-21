@@ -1,13 +1,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import SalonList from '@/components/SalonList';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppointmentData } from '@/hooks/useAppointmentData';
+import { useClientData } from '@/hooks/useClientData';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, User, LogOut, RefreshCw, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import ClientDashboardContent from '@/components/client/ClientDashboardContent';
 
 const ClientDashboard = () => {
   const { 
@@ -15,13 +17,17 @@ const ClientDashboard = () => {
     loading, 
     fetchAllSalons 
   } = useSupabaseData();
+  const { appointments, fetchClientAppointments } = useAppointmentData();
+  const { getClientByPhone } = useClientData();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  
   const [hasError, setHasError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredSalons, setFilteredSalons] = useState(salons);
+  const [clientId, setClientId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -29,7 +35,7 @@ const ClientDashboard = () => {
       return;
     }
 
-    loadSalons();
+    loadData();
   }, [user, navigate]);
 
   // Filter salons based on search term
@@ -45,19 +51,37 @@ const ClientDashboard = () => {
     }
   }, [salons, searchTerm]);
 
-  const loadSalons = async () => {
+  // Load client appointments when clientId is available
+  useEffect(() => {
+    if (clientId) {
+      fetchClientAppointments(clientId);
+    }
+  }, [clientId, fetchClientAppointments]);
+
+  const loadData = async () => {
     try {
-      console.log('ClientDashboard - Carregando estabelecimentos...');
+      console.log('ClientDashboard - Loading data...');
       setHasError(false);
       setIsRefreshing(true);
+      
+      // Load salons
       await fetchAllSalons();
-      console.log('ClientDashboard - Estabelecimentos carregados:', salons.length);
+      
+      // Load client data and appointments
+      if (user?.id) {
+        const clientResult = await getClientByPhone(user.id);
+        if (clientResult.success && clientResult.client) {
+          setClientId(clientResult.client.id);
+        }
+      }
+      
+      console.log('ClientDashboard - Data loaded successfully');
     } catch (error) {
-      console.error('ClientDashboard - Erro ao carregar estabelecimentos:', error);
+      console.error('ClientDashboard - Error loading data:', error);
       setHasError(true);
       toast({
         title: "Erro",
-        description: "Erro ao carregar estabelecimentos. Tente novamente.",
+        description: "Erro ao carregar dados. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -67,18 +91,16 @@ const ClientDashboard = () => {
 
   const handleBookService = async (salon: any) => {
     try {
-      console.log('ClientDashboard - Selecionando estabelecimento para agendamento:', salon);
+      console.log('ClientDashboard - Selecting salon for booking:', salon);
       
-      // Store salon data for the booking page
       localStorage.setItem('selectedSalonForBooking', JSON.stringify(salon));
       
-      // Navigate using the salon's unique_slug if available, otherwise use ID
       const routeParam = salon.unique_slug || salon.id;
       console.log('ClientDashboard - Navigating to booking route:', `/booking/${routeParam}`);
       
       navigate(`/booking/${routeParam}`);
     } catch (error) {
-      console.error('ClientDashboard - Erro ao selecionar estabelecimento:', error);
+      console.error('ClientDashboard - Error selecting salon:', error);
       toast({
         title: "Erro",
         description: "Erro ao selecionar estabelecimento. Tente novamente.",
@@ -97,12 +119,16 @@ const ClientDashboard = () => {
   };
 
   const handleRetry = () => {
-    loadSalons();
+    loadData();
   };
 
   const clearSearch = () => {
     setSearchTerm('');
   };
+
+  // Filter appointments by status
+  const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
+  const completedAppointments = appointments.filter(apt => apt.status === 'completed');
 
   if (loading && !isRefreshing) {
     return (
@@ -110,7 +136,7 @@ const ClientDashboard = () => {
         <div className="flex justify-center items-center h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-lg text-gray-600">Carregando estabelecimentos...</p>
+            <p className="text-lg text-gray-600">Carregando...</p>
           </div>
         </div>
       </div>
@@ -132,7 +158,7 @@ const ClientDashboard = () => {
                 Erro ao carregar dados
               </h3>
               <p className="text-gray-600 mb-4">
-                Não foi possível carregar os estabelecimentos. Verifique sua conexão e tente novamente.
+                Não foi possível carregar os dados. Verifique sua conexão e tente novamente.
               </p>
               <div className="space-y-2">
                 <Button onClick={handleRetry} className="w-full">
@@ -199,12 +225,12 @@ const ClientDashboard = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Estabelecimentos Disponíveis
+            Dashboard do Cliente
           </h2>
           <p className="text-gray-600 mb-6">
-            Escolha um estabelecimento para agendar seus serviços
+            Gerencie seus agendamentos e encontre novos estabelecimentos
           </p>
           
           {/* Search Bar */}
@@ -213,10 +239,10 @@ const ClientDashboard = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Pesquisar por nome do estabelecimento ou responsável..."
+                placeholder="Pesquisar estabelecimentos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full"
               />
               {searchTerm && (
                 <button
@@ -233,54 +259,15 @@ const ClientDashboard = () => {
         {isRefreshing ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Atualizando estabelecimentos...</p>
-          </div>
-        ) : filteredSalons.length > 0 ? (
-          <>
-            {searchTerm && (
-              <div className="mb-4 text-center">
-                <p className="text-gray-600">
-                  {filteredSalons.length} estabelecimento{filteredSalons.length !== 1 ? 's' : ''} encontrado{filteredSalons.length !== 1 ? 's' : ''}
-                  {searchTerm && ` para "${searchTerm}"`}
-                </p>
-              </div>
-            )}
-            <SalonList 
-              salons={filteredSalons} 
-              onBookService={handleBookService}
-            />
-          </>
-        ) : searchTerm ? (
-          <div className="text-center py-12">
-            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
-              <Search className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Nenhum estabelecimento encontrado
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Não encontramos estabelecimentos com o termo "{searchTerm}". Tente pesquisar por outro nome.
-              </p>
-              <Button onClick={clearSearch} variant="outline">
-                Limpar Pesquisa
-              </Button>
-            </div>
+            <p className="text-gray-600">Atualizando dados...</p>
           </div>
         ) : (
-          <div className="text-center py-12">
-            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
-              <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Nenhum estabelecimento disponível
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Não há estabelecimentos cadastrados no momento. Volte mais tarde para ver as opções disponíveis.
-              </p>
-              <Button onClick={handleRetry} variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Tentar Novamente
-              </Button>
-            </div>
-          </div>
+          <ClientDashboardContent
+            salons={filteredSalons}
+            onBookService={handleBookService}
+            pendingAppointments={pendingAppointments}
+            completedAppointments={completedAppointments}
+          />
         )}
       </div>
     </div>

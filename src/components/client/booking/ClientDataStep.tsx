@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { User, Phone, Mail, CalendarIcon, Clock, Scissors, MapPin, ArrowLeft } from "lucide-react";
+import { User, Phone, CalendarIcon, Clock, Scissors, MapPin, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,16 +43,16 @@ const ClientDataStep = ({
 
   // Auto-preencher com dados do cliente logado
   useEffect(() => {
-    if (user && (!clientData.name || !clientData.phone)) {
+    if (user) {
       console.log('ClientDataStep - Auto-filling client data from logged user:', user);
       onClientDataChange({
         name: user.name || '',
         phone: user.id || '', // O ID do cliente é usado como phone no sistema de auth
-        email: clientData.email || '',
+        email: '', // Email removido como solicitado
         notes: clientData.notes || ''
       });
     }
-  }, [user, clientData.name, clientData.phone, onClientDataChange]);
+  }, [user, onClientDataChange]);
 
   return (
     <div className="space-y-6">
@@ -69,7 +69,7 @@ const ClientDataStep = ({
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Seus Dados</h3>
           <p className="text-gray-600">Confirme seus dados para finalizar o agendamento</p>
         </div>
-        <div></div> {/* Spacer for centering */}
+        <div></div>
       </div>
 
       {/* Resumo do agendamento */}
@@ -115,7 +115,7 @@ const ClientDataStep = ({
               />
             </div>
             {user?.name && (
-              <p className="text-xs text-gray-500 mt-1">Dados preenchidos automaticamente</p>
+              <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente</p>
             )}
           </div>
 
@@ -135,23 +135,8 @@ const ClientDataStep = ({
               />
             </div>
             {user?.id && (
-              <p className="text-xs text-gray-500 mt-1">Dados preenchidos automaticamente</p>
+              <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente</p>
             )}
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="clientEmail">Email (opcional)</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              id="clientEmail"
-              type="email"
-              placeholder="seu@email.com"
-              value={clientData.email}
-              onChange={(e) => onClientDataChange({ ...clientData, email: e.target.value })}
-              className="pl-10"
-            />
           </div>
         </div>
 
