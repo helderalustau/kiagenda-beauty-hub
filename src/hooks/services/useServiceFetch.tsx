@@ -30,8 +30,21 @@ export const useServiceFetch = () => {
         throw error;
       }
 
+      console.log('useServiceFetch - Raw services data:', data);
       console.log('useServiceFetch - Services fetched successfully:', data?.length || 0, 'services');
+      
       const fetchedServices = data || [];
+      
+      // Log each service with its active status
+      fetchedServices.forEach(service => {
+        console.log('Service details:', {
+          id: service.id,
+          name: service.name,
+          active: service.active,
+          salon_id: service.salon_id
+        });
+      });
+      
       setServices(fetchedServices);
       return fetchedServices;
     } catch (error) {

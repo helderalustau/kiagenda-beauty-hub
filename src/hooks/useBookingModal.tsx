@@ -41,6 +41,7 @@ export const useBookingModal = (salon: Salon) => {
       console.log('useBookingModal - Loading services for salon:', salon.id);
       const salonServices = await fetchSalonServices(salon.id);
       console.log('useBookingModal - Services loaded:', salonServices?.length || 0, 'services');
+      console.log('useBookingModal - All services:', salonServices);
       
       if (!salonServices || salonServices.length === 0) {
         console.warn('useBookingModal - No services found for salon:', salon.id);
@@ -49,6 +50,18 @@ export const useBookingModal = (salon: Salon) => {
           description: "Este estabelecimento ainda não possui serviços cadastrados.",
           variant: "default"
         });
+      } else {
+        // Check for active services
+        const activeServices = salonServices.filter(service => service.active === true);
+        console.log('useBookingModal - Active services:', activeServices);
+        
+        if (activeServices.length === 0) {
+          toast({
+            title: "Aviso",
+            description: "Este estabelecimento não possui serviços ativos no momento.",
+            variant: "default"
+          });
+        }
       }
     } catch (error) {
       console.error('useBookingModal - Error loading salon services:', error);
@@ -216,13 +229,11 @@ export const useBookingModal = (salon: Salon) => {
     }).format(value);
   };
 
-  // Filter only active services for client booking
-  const activeServices = services.filter(service => service.active === true);
-
+  // Return ALL services for the booking modal (filtering happens in components)
   return {
     // State
     currentStep,
-    services: activeServices,
+    services: services, // Return all services, let components filter
     loadingServices: servicesLoading,
     selectedService,
     selectedDate,

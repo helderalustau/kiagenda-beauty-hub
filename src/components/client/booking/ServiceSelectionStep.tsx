@@ -20,11 +20,17 @@ const ServiceSelectionStep = ({
   console.log('ServiceSelectionStep - Props:', { 
     servicesCount: services?.length || 0, 
     loadingServices, 
-    selectedService: selectedService?.name || 'none' 
+    selectedService: selectedService?.name || 'none',
+    allServices: services
   });
 
   // Filter only active services for client selection
-  const activeServices = services.filter(service => service.active === true);
+  const activeServices = services.filter(service => {
+    console.log('Service filter check:', { name: service.name, active: service.active });
+    return service.active === true;
+  });
+
+  console.log('Active services for client:', activeServices);
 
   return (
     <div className="space-y-4">
@@ -38,7 +44,19 @@ const ServiceSelectionStep = ({
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando serviços...</p>
         </div>
-      ) : activeServices.length > 0 ? (
+      ) : services.length === 0 ? (
+        <div className="text-center py-8">
+          <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum serviço cadastrado</h3>
+          <p className="text-gray-600">Este estabelecimento ainda não possui serviços cadastrados.</p>
+        </div>
+      ) : activeServices.length === 0 ? (
+        <div className="text-center py-8">
+          <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum serviço disponível</h3>
+          <p className="text-gray-600">Este estabelecimento não possui serviços ativos no momento.</p>
+        </div>
+      ) : (
         <div className="grid gap-3 max-h-96 overflow-y-auto">
           {activeServices.map((service) => (
             <ServiceCard
@@ -48,12 +66,6 @@ const ServiceSelectionStep = ({
               isSelected={selectedService?.id === service.id}
             />
           ))}
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum serviço disponível</h3>
-          <p className="text-gray-600">Este estabelecimento ainda não possui serviços ativos cadastrados.</p>
         </div>
       )}
     </div>
