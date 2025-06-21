@@ -12,10 +12,10 @@ export const useServiceData = () => {
   const fetchSalonServices = async (salonId: string): Promise<Service[]> => {
     try {
       setLoading(true);
-      console.log('Fetching services for salon ID:', salonId);
+      console.log('useServiceData - Fetching services for salon ID:', salonId);
       
       if (!salonId) {
-        console.error('Salon ID is required');
+        console.error('useServiceData - Salon ID is required');
         return [];
       }
 
@@ -23,20 +23,19 @@ export const useServiceData = () => {
         .from('services')
         .select('*')
         .eq('salon_id', salonId)
-        .eq('active', true)
         .order('name');
 
       if (error) {
-        console.error('Error fetching services:', error);
+        console.error('useServiceData - Error fetching services:', error);
         throw error;
       }
 
-      console.log('Services fetched successfully:', data?.length || 0, 'services');
+      console.log('useServiceData - Services fetched successfully:', data?.length || 0, 'services');
       const fetchedServices = data || [];
       setServices(fetchedServices);
       return fetchedServices;
     } catch (error) {
-      console.error('Error in fetchSalonServices:', error);
+      console.error('useServiceData - Error in fetchSalonServices:', error);
       setServices([]);
       return [];
     } finally {
@@ -48,7 +47,7 @@ export const useServiceData = () => {
   const fetchPresetServices = async (): Promise<PresetService[]> => {
     try {
       setLoading(true);
-      console.log('Fetching preset services...');
+      console.log('useServiceData - Fetching preset services...');
       
       const { data, error } = await supabase
         .from('preset_services')
@@ -57,16 +56,16 @@ export const useServiceData = () => {
         .order('name', { ascending: true });
 
       if (error) {
-        console.error('Error fetching preset services:', error);
+        console.error('useServiceData - Error fetching preset services:', error);
         throw error;
       }
 
-      console.log('Preset services fetched:', data?.length || 0, 'presets');
+      console.log('useServiceData - Preset services fetched:', data?.length || 0, 'presets');
       const fetchedPresets = data || [];
       setPresetServices(fetchedPresets);
       return fetchedPresets;
     } catch (error) {
-      console.error('Error in fetchPresetServices:', error);
+      console.error('useServiceData - Error in fetchPresetServices:', error);
       setPresetServices([]);
       return [];
     } finally {
@@ -74,12 +73,12 @@ export const useServiceData = () => {
     }
   };
 
-  // Create a single service - CORRIGIDO
+  // Create a single service
   const createService = async (serviceData: Omit<Service, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('Creating service with data:', serviceData);
+      console.log('useServiceData - Creating service with data:', serviceData);
       
-      // Validate required fields - VALIDAÇÃO RIGOROSA
+      // Validate required fields
       if (!serviceData.salon_id || !serviceData.name?.trim() || !serviceData.price || serviceData.price <= 0) {
         const missingFields = [];
         if (!serviceData.salon_id) missingFields.push('salon_id');
@@ -89,7 +88,7 @@ export const useServiceData = () => {
         throw new Error(`Campos obrigatórios faltando ou inválidos: ${missingFields.join(', ')}`);
       }
 
-      // Preparar dados com validação
+      // Prepare data with validation
       const insertData = {
         salon_id: serviceData.salon_id,
         name: serviceData.name.trim(),
@@ -99,7 +98,7 @@ export const useServiceData = () => {
         active: serviceData.active !== false
       };
 
-      console.log('Inserting service data:', insertData);
+      console.log('useServiceData - Inserting service data:', insertData);
 
       const { data, error } = await supabase
         .from('services')
@@ -108,18 +107,18 @@ export const useServiceData = () => {
         .single();
 
       if (error) {
-        console.error('Database error creating service:', error);
+        console.error('useServiceData - Database error creating service:', error);
         throw error;
       }
 
-      console.log('Service created successfully:', data);
+      console.log('useServiceData - Service created successfully:', data);
       
       // Update local state immediately
       setServices(prev => [...prev, data]);
       
       return { success: true, service: data };
     } catch (error) {
-      console.error('Error in createService:', error);
+      console.error('useServiceData - Error in createService:', error);
       return { 
         success: false, 
         message: error instanceof Error ? error.message : 'Erro ao criar serviço'
@@ -127,41 +126,41 @@ export const useServiceData = () => {
     }
   };
 
-  // Create services from presets - VERSÃO CORRIGIDA E MELHORADA
+  // Create services from presets
   const createServicesFromPresets = async (salonId: string, selectedServices: { id: string; price: number }[]) => {
     try {
       setLoading(true);
-      console.log('Creating services from presets for salon:', salonId);
-      console.log('Selected services:', selectedServices);
+      console.log('useServiceData - Creating services from presets for salon:', salonId);
+      console.log('useServiceData - Selected services:', selectedServices);
       
-      // Validação inicial
+      // Initial validation
       if (!salonId || !selectedServices || selectedServices.length === 0) {
-        console.log('No services to create - missing data');
+        console.log('useServiceData - No services to create - missing data');
         return { success: true, services: [] };
       }
       
       // Fetch preset services if not loaded
       let currentPresets = presetServices;
       if (currentPresets.length === 0) {
-        console.log('Loading preset services...');
+        console.log('useServiceData - Loading preset services...');
         currentPresets = await fetchPresetServices();
       }
       
-      // Prepare services to create - VALIDAÇÃO RIGOROSA
+      // Prepare services to create with strict validation
       const servicesToCreate = [];
       const invalidServices = [];
       
       for (const { id, price } of selectedServices) {
         const preset = currentPresets.find(p => p.id === id);
         if (!preset) {
-          console.warn(`Preset service not found for ID: ${id}`);
+          console.warn(`useServiceData - Preset service not found for ID: ${id}`);
           invalidServices.push(`Serviço com ID ${id} não encontrado`);
           continue;
         }
         
         const numericPrice = Number(price);
         if (!numericPrice || numericPrice <= 0) {
-          console.warn(`Invalid price for service ${preset.name}: ${price}`);
+          console.warn(`useServiceData - Invalid price for service ${preset.name}: ${price}`);
           invalidServices.push(`Preço inválido para ${preset.name}: R$ ${price}`);
           continue;
         }
@@ -176,13 +175,13 @@ export const useServiceData = () => {
         });
       }
 
-      // Reportar serviços inválidos
+      // Report invalid services
       if (invalidServices.length > 0) {
-        console.warn('Invalid services found:', invalidServices);
+        console.warn('useServiceData - Invalid services found:', invalidServices);
       }
 
       if (servicesToCreate.length === 0) {
-        console.log('No valid services to create after validation');
+        console.log('useServiceData - No valid services to create after validation');
         return { 
           success: false, 
           message: invalidServices.length > 0 
@@ -191,8 +190,8 @@ export const useServiceData = () => {
         };
       }
 
-      console.log('Valid services to create:', servicesToCreate.length);
-      console.log('Services data:', servicesToCreate);
+      console.log('useServiceData - Valid services to create:', servicesToCreate.length);
+      console.log('useServiceData - Services data:', servicesToCreate);
 
       // Insert all services at once
       const { data, error } = await supabase
@@ -201,11 +200,11 @@ export const useServiceData = () => {
         .select();
 
       if (error) {
-        console.error('Database error creating services:', error);
+        console.error('useServiceData - Database error creating services:', error);
         throw error;
       }
 
-      console.log('Services created successfully:', data?.length || 0, 'services created');
+      console.log('useServiceData - Services created successfully:', data?.length || 0, 'services created');
       
       // Update local state
       if (data && data.length > 0) {
@@ -218,7 +217,7 @@ export const useServiceData = () => {
         message: `${data?.length || 0} serviços criados com sucesso`
       };
     } catch (error) {
-      console.error('Error in createServicesFromPresets:', error);
+      console.error('useServiceData - Error in createServicesFromPresets:', error);
       return { 
         success: false, 
         message: error instanceof Error ? error.message : 'Erro ao criar serviços'
@@ -228,11 +227,15 @@ export const useServiceData = () => {
     }
   };
 
-  // Update service - CORRIGIDO para atualização imediata
+  // Update service
   const updateService = async (serviceId: string, updateData: Partial<Service>) => {
     try {
-      console.log('Updating service:', serviceId, updateData);
+      console.log('useServiceData - Updating service:', serviceId, updateData);
       
+      if (!serviceId) {
+        throw new Error('ID do serviço é obrigatório');
+      }
+
       const { data, error } = await supabase
         .from('services')
         .update(updateData)
@@ -241,11 +244,11 @@ export const useServiceData = () => {
         .single();
 
       if (error) {
-        console.error('Error updating service:', error);
+        console.error('useServiceData - Error updating service:', error);
         throw error;
       }
 
-      console.log('Service updated successfully:', data);
+      console.log('useServiceData - Service updated successfully:', data);
       
       // Update local state immediately
       setServices(prev => prev.map(service => 
@@ -254,7 +257,7 @@ export const useServiceData = () => {
       
       return { success: true, service: data };
     } catch (error) {
-      console.error('Error in updateService:', error);
+      console.error('useServiceData - Error in updateService:', error);
       return { 
         success: false, 
         message: error instanceof Error ? error.message : 'Erro ao atualizar serviço'
@@ -262,29 +265,33 @@ export const useServiceData = () => {
     }
   };
 
-  // Delete service - CORRIGIDO para remoção imediata da UI
+  // Delete service
   const deleteService = async (serviceId: string) => {
     try {
-      console.log('Deleting service:', serviceId);
+      console.log('useServiceData - Deleting service:', serviceId);
       
+      if (!serviceId) {
+        throw new Error('ID do serviço é obrigatório');
+      }
+
       const { error } = await supabase
         .from('services')
         .delete()
         .eq('id', serviceId);
 
       if (error) {
-        console.error('Error deleting service:', error);
+        console.error('useServiceData - Error deleting service:', error);
         throw error;
       }
 
-      console.log('Service deleted successfully');
+      console.log('useServiceData - Service deleted successfully');
       
       // Update local state immediately - remove from UI
       setServices(prev => prev.filter(service => service.id !== serviceId));
       
       return { success: true };
     } catch (error) {
-      console.error('Error in deleteService:', error);
+      console.error('useServiceData - Error in deleteService:', error);
       return { 
         success: false, 
         message: error instanceof Error ? error.message : 'Erro ao excluir serviço'
@@ -292,7 +299,7 @@ export const useServiceData = () => {
     }
   };
 
-  // Toggle service status - CORRIGIDO para atualização imediata
+  // Toggle service status
   const toggleServiceStatus = async (serviceId: string, currentStatus: boolean) => {
     const result = await updateService(serviceId, { active: !currentStatus });
     

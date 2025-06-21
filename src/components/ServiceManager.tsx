@@ -41,18 +41,57 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
     duration_minutes: '60'
   });
 
+  // Buscar serviços quando o salon estiver disponível
   useEffect(() => {
+    console.log('ServiceManager - Salon prop:', salon);
     if (salon?.id) {
       console.log('ServiceManager - Loading services for salon:', salon.id);
       fetchSalonServices(salon.id);
+    } else {
+      console.log('ServiceManager - No salon ID available, trying to get from localStorage');
+      // Tentar buscar salon do localStorage como fallback
+      const storedSalon = localStorage.getItem('currentSalon');
+      if (storedSalon) {
+        try {
+          const parsedSalon = JSON.parse(storedSalon);
+          if (parsedSalon?.id) {
+            console.log('ServiceManager - Using salon from localStorage:', parsedSalon.id);
+            fetchSalonServices(parsedSalon.id);
+          }
+        } catch (error) {
+          console.error('Error parsing salon from localStorage:', error);
+        }
+      }
     }
   }, [salon?.id, fetchSalonServices]);
 
+  const getCurrentSalonId = () => {
+    // Primeiro tenta usar o salon passado via props
+    if (salon?.id) {
+      return salon.id;
+    }
+    
+    // Fallback para localStorage
+    const storedSalon = localStorage.getItem('currentSalon');
+    if (storedSalon) {
+      try {
+        const parsedSalon = JSON.parse(storedSalon);
+        return parsedSalon?.id;
+      } catch (error) {
+        console.error('Error parsing salon from localStorage:', error);
+      }
+    }
+    
+    return null;
+  };
+
   const handleCreateService = async () => {
-    if (!salon?.id) {
+    const currentSalonId = getCurrentSalonId();
+    
+    if (!currentSalonId) {
       toast({
         title: "Erro",
-        description: "Estabelecimento não encontrado. Recarregue a página.",
+        description: "Estabelecimento não encontrado. Tente fazer login novamente.",
         variant: "destructive"
       });
       return;
@@ -67,8 +106,10 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
       return;
     }
 
+    console.log('ServiceManager - Creating service for salon:', currentSalonId);
+
     const result = await createService({
-      salon_id: salon.id,
+      salon_id: currentSalonId,
       name: newService.name.trim(),
       description: newService.description.trim() || null,
       price: Number(newService.price),
@@ -83,7 +124,8 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
       });
       setNewService({ name: '', description: '', price: '', duration_minutes: '60' });
       setIsCreateModalOpen(false);
-      await fetchSalonServices(salon.id);
+      // Recarregar serviços após criação
+      await fetchSalonServices(currentSalonId);
       onRefresh();
     } else {
       toast({
@@ -95,39 +137,53 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
   };
 
   const handleUpdateService = async (serviceId: string, updateData: Partial<Service>) => {
-    if (!salon?.id) {
+    const currentSalonId = getCurrentSalonId();
+    
+    if (!currentSalonId) {
       toast({
         title: "Erro",
-        description: "Estabelecimento não encontrado. Recarregue a página.",
+        description: "Estabelecimento não encontrado. Tente fazer login novamente.",
         variant: "destructive"
       });
       return { success: false, message: "Estabelecimento não encontrado" };
     }
 
-    console.log('ServiceManager - Atualizando serviço:', serviceId, updateData);
+    console.log('ServiceManager - Updating service:', serviceId, updateData);
 
     const result = await updateService(serviceId, updateData);
 
     if (result.success) {
-      // Atualizar a lista de serviços imediatamente
-      await fetchSalonServices(salon.id);
+      toast({
+        title: "Sucesso!",
+        description: "Serviço atualizado com sucesso",
+      });
+      // Recarregar serviços após atualização
+      await fetchSalonServices(currentSalonId);
       onRefresh();
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message || "Erro ao atualizar serviço",
+        variant: "destructive"
+      });
     }
 
     return result;
   };
 
   const handleDeleteService = async () => {
-    if (!serviceToDelete || !salon?.id) {
+    if (!serviceToDelete) {
       toast({
         title: "Erro",
-        description: "Serviço ou estabelecimento não encontrado",
+        description: "Serviço não encontrado",
         variant: "destructive"
       });
       return;
     }
 
-    console.log('ServiceManager - Deletando serviço:', serviceToDelete.id);
+    const currentSalonId = getCurrentSalonId();
+
+    console.log('ServiceManager - Deleting service:', serviceToDelete.id);
 
     const result = await deleteService(serviceToDelete.id);
     
@@ -137,7 +193,11 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
         description: "Serviço excluído com sucesso",
       });
       setServiceToDelete(null);
-      await fetchSalonServices(salon.id);
+      
+      // Recarregar serviços após exclusão se salon disponível
+      if (currentSalonId) {
+        await fetchSalonServices(currentSalonId);
+      }
       onRefresh();
     } else {
       toast({
@@ -149,10 +209,12 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
   };
 
   const handleToggleStatus = async (service: Service) => {
-    if (!salon?.id) {
+    const currentSalonId = getCurrentSalonId();
+    
+    if (!currentSalonId) {
       toast({
         title: "Erro",
-        description: "Estabelecimento não encontrado. Recarregue a página.",
+        description: "Estabelecimento não encontrado. Tente fazer login novamente.",
         variant: "destructive"
       });
       return;
@@ -165,7 +227,8 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
         title: "Sucesso!",
         description: `Serviço ${service.active ? 'desativado' : 'ativado'} com sucesso`,
       });
-      await fetchSalonServices(salon.id);
+      // Recarregar serviços após alteração de status
+      await fetchSalonServices(currentSalonId);
       onRefresh();
     } else {
       toast({
@@ -176,10 +239,19 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
     }
   };
 
-  if (!salon) {
+  // Não mostrar erro se não há salon - mostrar loading ou mensagem neutra
+  const currentSalonId = getCurrentSalonId();
+  
+  if (!currentSalonId) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600">Estabelecimento não encontrado. Recarregue a página.</p>
+        <p className="text-gray-600 mb-4">Carregando informações do estabelecimento...</p>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline"
+        >
+          Recarregar Página
+        </Button>
       </div>
     );
   }

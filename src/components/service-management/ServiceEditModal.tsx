@@ -33,6 +33,7 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
   // Resetar dados quando o serviço mudar
   useEffect(() => {
     if (service) {
+      console.log('ServiceEditModal - Loading service data:', service);
       setFormData({
         name: service.name || '',
         description: service.description || '',
@@ -52,6 +53,7 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
   }, [service]);
 
   const handleInputChange = (field: string, value: string | number | boolean) => {
+    console.log(`ServiceEditModal - Changing ${field} to:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -60,6 +62,7 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
 
   const handlePriceChange = (value: string) => {
     const numericValue = parseFloat(value) || 0;
+    console.log('ServiceEditModal - Price changed to:', numericValue);
     setFormData(prev => ({
       ...prev,
       price: numericValue
@@ -68,6 +71,7 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
 
   const handleDurationChange = (value: string) => {
     const numericValue = parseInt(value) || 60;
+    console.log('ServiceEditModal - Duration changed to:', numericValue);
     setFormData(prev => ({
       ...prev,
       duration_minutes: numericValue
@@ -94,12 +98,13 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
     if (!service) {
       toast({
         title: "Erro",
-        description: "Serviço não encontrado",
+        description: "Serviço não encontrado para editar",
         variant: "destructive"
       });
       return;
     }
 
+    // Validações
     if (!formData.name.trim()) {
       toast({
         title: "Erro",
@@ -130,7 +135,8 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
     setIsSaving(true);
 
     try {
-      console.log('ServiceEditModal - Salvando serviço:', service.id, formData);
+      console.log('ServiceEditModal - Saving service:', service.id);
+      console.log('ServiceEditModal - Form data:', formData);
 
       const updateData = {
         name: formData.name.trim(),
@@ -139,6 +145,8 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
         duration_minutes: Number(formData.duration_minutes),
         active: formData.active
       };
+
+      console.log('ServiceEditModal - Update data prepared:', updateData);
 
       const result = await onSave(service.id, updateData);
 
@@ -149,6 +157,7 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
         });
         onClose();
       } else {
+        console.error('ServiceEditModal - Save failed:', result.message);
         toast({
           title: "Erro",
           description: result.message || "Erro ao atualizar serviço",
@@ -156,7 +165,7 @@ const ServiceEditModal = ({ service, isOpen, onClose, onSave }: ServiceEditModal
         });
       }
     } catch (error) {
-      console.error('ServiceEditModal - Erro ao salvar:', error);
+      console.error('ServiceEditModal - Unexpected error:', error);
       toast({
         title: "Erro",
         description: "Erro inesperado ao salvar serviço",
