@@ -114,7 +114,7 @@ export const useServiceData = () => {
 
       console.log('Service created successfully:', data);
       
-      // Update local state
+      // Update local state immediately
       setServices(prev => [...prev, data]);
       
       return { success: true, service: data };
@@ -228,7 +228,7 @@ export const useServiceData = () => {
     }
   };
 
-  // Update service
+  // Update service - CORRIGIDO para atualização imediata
   const updateService = async (serviceId: string, updateData: Partial<Service>) => {
     try {
       console.log('Updating service:', serviceId, updateData);
@@ -247,7 +247,7 @@ export const useServiceData = () => {
 
       console.log('Service updated successfully:', data);
       
-      // Update local state
+      // Update local state immediately
       setServices(prev => prev.map(service => 
         service.id === serviceId ? { ...service, ...data } : service
       ));
@@ -262,7 +262,7 @@ export const useServiceData = () => {
     }
   };
 
-  // Delete service
+  // Delete service - CORRIGIDO para remoção imediata da UI
   const deleteService = async (serviceId: string) => {
     try {
       console.log('Deleting service:', serviceId);
@@ -279,7 +279,7 @@ export const useServiceData = () => {
 
       console.log('Service deleted successfully');
       
-      // Update local state
+      // Update local state immediately - remove from UI
       setServices(prev => prev.filter(service => service.id !== serviceId));
       
       return { success: true };
@@ -292,9 +292,18 @@ export const useServiceData = () => {
     }
   };
 
-  // Toggle service status
+  // Toggle service status - CORRIGIDO para atualização imediata
   const toggleServiceStatus = async (serviceId: string, currentStatus: boolean) => {
-    return await updateService(serviceId, { active: !currentStatus });
+    const result = await updateService(serviceId, { active: !currentStatus });
+    
+    if (result.success) {
+      // Update local state immediately
+      setServices(prev => prev.map(service => 
+        service.id === serviceId ? { ...service, active: !currentStatus } : service
+      ));
+    }
+    
+    return result;
   };
 
   return {

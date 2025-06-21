@@ -69,6 +69,20 @@ export const useSalonSetup = () => {
     return null;
   };
 
+  // Check if admin setup is completed and redirect to dashboard
+  useEffect(() => {
+    if (salon && salon.admin_setup_completed === true) {
+      console.log('SalonSetup - Admin setup já concluído, redirecionando para dashboard');
+      toast({
+        title: "Configuração já concluída",
+        description: "Redirecionando para o painel administrativo...",
+      });
+      setTimeout(() => {
+        window.location.href = '/admin-dashboard';
+      }, 1500);
+    }
+  }, [salon, toast]);
+
   // Initialize data only once
   useEffect(() => {
     if (initialized) return;

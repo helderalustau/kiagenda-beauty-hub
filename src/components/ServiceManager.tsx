@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Edit, Trash2, Clock, DollarSign, Eye, EyeOff, Save } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
@@ -30,6 +31,8 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
   const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [newService, setNewService] = useState({
     name: '',
     description: '',
@@ -108,6 +111,8 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
       return;
     }
 
+    setIsUpdating(service.id);
+
     const result = await updateService(service.id, {
       name: service.name.trim(),
       description: service.description?.trim() || null,
@@ -115,12 +120,16 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
       duration_minutes: Number(service.duration_minutes) || 60
     });
 
+    setIsUpdating(null);
+
     if (result.success) {
       toast({
         title: "Sucesso!",
         description: "Serviço atualizado com sucesso",
       });
       setEditingService(null);
+      // Refresh services immediately to show updated data
+      await fetchSalonServices(salon.id);
       onRefresh();
     } else {
       toast({
@@ -131,23 +140,28 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
     }
   };
 
-  const handleDeleteService = async (serviceId: string) => {
-    if (!salon?.id) {
+  const handleDeleteService = async () => {
+    if (!serviceToDelete || !salon?.id) {
       toast({
         title: "Erro",
-        description: "Estabelecimento não encontrado. Recarregue a página.",
+        description: "Serviço ou estabelecimento não encontrado",
         variant: "destructive"
       });
       return;
     }
 
-    const result = await deleteService(serviceId);
+    console.log('Deletando serviço:', serviceToDelete.id);
+
+    const result = await deleteService(serviceToDelete.id);
     
     if (result.success) {
       toast({
         title: "Sucesso!",
         description: "Serviço excluído com sucesso",
       });
+      setServiceToDelete(null);
+      // Refresh services immediately to remove deleted service from UI
+      await fetchSalonServices(salon.id);
       onRefresh();
     } else {
       toast({
@@ -175,6 +189,8 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
         title: "Sucesso!",
         description: `Serviço ${service.active ? 'desativado' : 'ativado'} com sucesso`,
       });
+      // Refresh services immediately to show status change
+      await fetchSalonServices(salon.id);
       onRefresh();
     } else {
       toast({
@@ -326,8 +342,13 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
                         size="sm"
                         onClick={() => handleUpdateService(editingService)}
                         className="bg-green-600 hover:bg-green-700"
+                        disabled={isUpdating === service.id}
                       >
-                        <Save className="h-4 w-4" />
+                        {isUpdating === service.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
                       </Button>
                     ) : (
                       <Button
@@ -350,7 +371,7 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDeleteService(service.id)}
+                      onClick={() => setServiceToDelete(service)}
                       className="text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -414,6 +435,28 @@ const ServiceManager = ({ salon, onRefresh }: ServiceManagerProps) => {
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!serviceToDelete} onOpenChange={() => setServiceToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o serviço "{serviceToDelete?.name}"? 
+              Esta ação não pode ser desfeita e todos os agendamentos relacionados a este serviço serão afetados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteService}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Excluir Serviço
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
