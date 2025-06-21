@@ -67,9 +67,16 @@ const ClientDashboard = () => {
 
   const handleBookService = async (salon: any) => {
     try {
-      console.log('ClientDashboard - Selecionando estabelecimento para agendamento:', salon.id);
+      console.log('ClientDashboard - Selecionando estabelecimento para agendamento:', salon);
+      
+      // Store salon data for the booking page
       localStorage.setItem('selectedSalonForBooking', JSON.stringify(salon));
-      navigate(`/booking/${salon.unique_slug || salon.id}`);
+      
+      // Navigate using the salon's unique_slug if available, otherwise use ID
+      const routeParam = salon.unique_slug || salon.id;
+      console.log('ClientDashboard - Navigating to booking route:', `/booking/${routeParam}`);
+      
+      navigate(`/booking/${routeParam}`);
     } catch (error) {
       console.error('ClientDashboard - Erro ao selecionar estabelecimento:', error);
       toast({
@@ -278,6 +285,41 @@ const ClientDashboard = () => {
       </div>
     </div>
   );
+
+  function loadSalons() {
+    setHasError(false);
+    setIsRefreshing(true);
+    fetchAllSalons().then(() => {
+      console.log('ClientDashboard - Estabelecimentos carregados:', salons.length);
+    }).catch((error) => {
+      console.error('ClientDashboard - Erro ao carregar estabelecimentos:', error);
+      setHasError(true);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar estabelecimentos. Tente novamente.",
+        variant: "destructive"
+      });
+    }).finally(() => {
+      setIsRefreshing(false);
+    });
+  }
+
+  function handleLogout() {
+    logout();
+    navigate('/');
+  }
+
+  function handleBackToHome() {
+    navigate('/');
+  }
+
+  function handleRetry() {
+    loadSalons();
+  }
+
+  function clearSearch() {
+    setSearchTerm('');
+  }
 };
 
 export default ClientDashboard;

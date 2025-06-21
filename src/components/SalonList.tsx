@@ -38,6 +38,15 @@ const SalonList = ({ salons, onBookService }: SalonListProps) => {
     }
   };
 
+  const handleBookService = async (salon: Salon) => {
+    console.log('SalonList - Booking service for salon:', salon);
+    try {
+      await onBookService(salon);
+    } catch (error) {
+      console.error('SalonList - Error booking service:', error);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {salons.map((salon) => (
@@ -87,7 +96,7 @@ const SalonList = ({ salons, onBookService }: SalonListProps) => {
 
             <div className="pt-2">
               <Button 
-                onClick={() => onBookService(salon)}
+                onClick={() => handleBookService(salon)}
                 className={`w-full font-semibold transition-all duration-300 ${
                   salon.is_open 
                     ? 'bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl' 

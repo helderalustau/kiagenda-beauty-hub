@@ -11,7 +11,7 @@ import ModernBookingModal from '@/components/client/ModernBookingModal';
 import { Salon } from '@/hooks/useSupabaseData';
 
 const ClientBooking = () => {
-  const { salonId } = useParams();
+  const { salonSlug } = useParams(); // Changed from salonId to salonSlug
   const navigate = useNavigate();
   const { user } = useAuth();
   const { 
@@ -23,6 +23,7 @@ const ClientBooking = () => {
   
   const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -30,35 +31,52 @@ const ClientBooking = () => {
       return;
     }
 
-    if (salonId) {
+    if (salonSlug) {
       loadSalonData();
     }
-  }, [user, salonId, navigate]);
+  }, [user, salonSlug, navigate]);
 
   const loadSalonData = async () => {
-    if (!salonId) return;
+    if (!salonSlug) return;
 
-    // Primeiro tentar carregar do localStorage se disponível
-    const storedSalon = localStorage.getItem('selectedSalonForBooking');
-    if (storedSalon) {
-      const parsedSalon = JSON.parse(storedSalon);
-      setSelectedSalon(parsedSalon);
-    }
+    try {
+      setLoadingError(null);
+      console.log('ClientBooking - Loading salon data for:', salonSlug);
 
-    // Tentar buscar por slug primeiro, depois por ID
-    let salonData = null;
-    
-    if (salonId.includes('-')) {
-      // Provavelmente é um slug
-      salonData = await fetchSalonBySlug(salonId);
-    } else {
-      // Provavelmente é um ID
-      await fetchSalonData(salonId);
-      salonData = salon;
-    }
+      // First, try to get from localStorage if available
+      const storedSalon = localStorage.getItem('selectedSalonForBooking');
+      if (storedSalon) {
+        const parsedSalon = JSON.parse(storedSalon);
+        console.log('ClientBooking - Found salon in localStorage:', parsedSalon);
+        setSelectedSalon(parsedSalon);
+      }
 
-    if (salonData) {
-      setSelectedSalon(salonData);
+      let salonData = null;
+      
+      // Check if salonSlug looks like a UUID (contains hyphens)
+      if (salonSlug.includes('-') && salonSlug.length > 30) {
+        // Probably a UUID, try fetching by ID
+        console.log('ClientBooking - Attempting to fetch by ID:', salonSlug);
+        await fetchSalonData(salonSlug);
+        salonData = salon;
+      } else {
+        // Probably a slug, try fetching by slug
+        console.log('ClientBooking - Attempting to fetch by slug:', salonSlug);
+        salonData = await fetchSalonBySlug(salonSlug);
+      }
+
+      if (salonData) {
+        console.log('ClientBooking - Salon data loaded:', salonData);
+        setSelectedSalon(salonData);
+        // Update localStorage with fresh data
+        localStorage.setItem('selectedSalonForBooking', JSON.stringify(salonData));
+      } else {
+        console.warn('ClientBooking - No salon data found for:', salonSlug);
+        setLoadingError('Estabelecimento não encontrado');
+      }
+    } catch (error) {
+      console.error('ClientBooking - Error loading salon:', error);
+      setLoadingError('Erro ao carregar estabelecimento');
     }
   };
 
@@ -69,7 +87,7 @@ const ClientBooking = () => {
   };
 
   const handleBookingSuccess = () => {
-    // Redirecionar de volta para o dashboard do cliente
+    // Redirect back to client dashboard
     navigate('/client-dashboard');
   };
 
@@ -108,14 +126,17 @@ const ClientBooking = () => {
     );
   }
 
-  if (!selectedSalon) {
+  if (loadingError || !selectedSalon) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Estabelecimento não encontrado
+              {loadingError || 'Estabelecimento não encontrado'}
             </h2>
+            <p className="text-gray-600 mb-4">
+              O estabelecimento que você está tentando acessar não foi encontrado ou não está disponível.
+            </p>
             <Button onClick={handleBackToDashboard}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar aos Estabelecimentos
@@ -235,6 +256,24 @@ const ClientBooking = () => {
       />
     </div>
   );
+
+  function getPlanColor(plan: string) {
+    switch (plan) {
+      case 'bronze': return 'bg-amber-100 text-amber-800';
+      case 'prata': return 'bg-gray-100 text-gray-800';
+      case 'gold': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  function getPlanName(plan: string) {
+    switch (plan) {
+      case 'bronze': return 'Bronze';
+      case 'prata': return 'Prata';
+      case 'gold': return 'Ouro';
+      default: return plan;
+    }
+  }
 };
 
 export default ClientBooking;
