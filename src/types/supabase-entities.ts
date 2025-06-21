@@ -1,4 +1,3 @@
-
 // Centralized type definitions for Supabase entities
 export interface Salon {
   id: string;
@@ -90,6 +89,19 @@ export interface AdminUser {
   avatar_url?: string;
 }
 
+export interface SalonUser {
+  id: string;
+  salon_id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  role: string;
+  is_owner: boolean;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PresetService {
   id: string;
   category: string;
@@ -106,6 +118,7 @@ export interface PlanConfiguration {
   description?: string;
   max_attendants?: number;
   max_appointments?: number;
+  max_users?: number;
 }
 
 export interface DashboardStats {

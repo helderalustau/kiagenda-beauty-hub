@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,77 +5,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { StateSelect } from "@/components/ui/state-select";
-import { Store, MapPin, Phone, Clock, Bell } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Building2, MapPin, Phone, Clock, Bell } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
 
 interface SalonConfigurationFormProps {
   salon: Salon;
-  onUpdate: (data: Partial<Salon>) => Promise<{ success: boolean; message?: string }>;
+  onUpdate: (data: Partial<Salon>) => Promise<any>;
+  onChange?: () => void;
 }
 
-const SalonConfigurationForm = ({ salon, onUpdate }: SalonConfigurationFormProps) => {
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
+const SalonConfigurationForm = ({ salon, onUpdate, onChange }: SalonConfigurationFormProps) => {
   const [formData, setFormData] = useState({
     name: salon.name || '',
     owner_name: salon.owner_name || '',
     phone: salon.phone || '',
     contact_phone: salon.contact_phone || '',
+    address: salon.address || '',
     street_number: salon.street_number || '',
     city: salon.city || '',
     state: salon.state || '',
-    address: salon.address || '',
+    is_open: salon.is_open || false,
     notification_sound: salon.notification_sound || 'default',
     opening_hours: salon.opening_hours || {
-      monday: { open: '08:00', close: '18:00', closed: false },
-      tuesday: { open: '08:00', close: '18:00', closed: false },
-      wednesday: { open: '08:00', close: '18:00', closed: false },
-      thursday: { open: '08:00', close: '18:00', closed: false },
-      friday: { open: '08:00', close: '18:00', closed: false },
-      saturday: { open: '08:00', close: '16:00', closed: false },
-      sunday: { open: '08:00', close: '16:00', closed: true }
+      monday: { open: '09:00', close: '18:00', closed: false },
+      tuesday: { open: '09:00', close: '18:00', closed: false },
+      wednesday: { open: '09:00', close: '18:00', closed: false },
+      thursday: { open: '09:00', close: '18:00', closed: false },
+      friday: { open: '09:00', close: '18:00', closed: false },
+      saturday: { open: '09:00', close: '18:00', closed: false },
+      sunday: { open: '09:00', close: '18:00', closed: true }
     }
   });
 
-  const days = [
-    { key: 'monday', label: 'Segunda-feira' },
-    { key: 'tuesday', label: 'Terça-feira' },
-    { key: 'wednesday', label: 'Quarta-feira' },
-    { key: 'thursday', label: 'Quinta-feira' },
-    { key: 'friday', label: 'Sexta-feira' },
-    { key: 'saturday', label: 'Sábado' },
-    { key: 'sunday', label: 'Domingo' }
-  ];
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const notificationSounds = [
-    { value: 'default', label: 'Padrão' },
-    { value: 'bell', label: 'Sino' },
-    { value: 'chime', label: 'Carrilhão' },
-    { value: 'notification', label: 'Notificação' }
-  ];
-
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 10) {
-      return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    }
-    return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    if (field === 'phone' || field === 'contact_phone') {
-      value = formatPhone(value);
-    } else if (['name', 'owner_name', 'city', 'state'].includes(field)) {
-      value = value.toUpperCase();
-    }
-    
+  const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (onChange) onChange();
   };
 
-  const handleHoursChange = (day: string, field: 'open' | 'close' | 'closed', value: string | boolean) => {
+  const handleHoursChange = (day: string, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       opening_hours: {
@@ -87,141 +58,99 @@ const SalonConfigurationForm = ({ salon, onUpdate }: SalonConfigurationFormProps
         }
       }
     }));
+    if (onChange) onChange();
   };
 
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      toast({
-        title: "Erro",
-        description: "Nome do estabelecimento é obrigatório",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSaving(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
     try {
-      const updateData = {
-        ...formData,
-        address: `${formData.street_number}, ${formData.city}, ${formData.state}`.replace(/^, |, $/, '')
-      };
-
-      const result = await onUpdate(updateData);
-
+      const result = await onUpdate(formData);
+      
       if (result.success) {
         toast({
-          title: "Sucesso!",
-          description: "Configurações salvas com sucesso"
+          title: "Sucesso",
+          description: "Configurações atualizadas com sucesso!"
         });
       } else {
         toast({
           title: "Erro",
-          description: result.message || "Erro ao salvar configurações",
+          description: result.message || "Erro ao atualizar configurações",
           variant: "destructive"
         });
       }
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao salvar configurações",
+        description: "Erro inesperado ao salvar",
         variant: "destructive"
       });
     } finally {
-      setIsSaving(false);
+      setLoading(false);
     }
   };
 
+  const weekDays = [
+    { key: 'monday', label: 'Segunda-feira' },
+    { key: 'tuesday', label: 'Terça-feira' },
+    { key: 'wednesday', label: 'Quarta-feira' },
+    { key: 'thursday', label: 'Quinta-feira' },
+    { key: 'friday', label: 'Sexta-feira' },
+    { key: 'saturday', label: 'Sábado' },
+    { key: 'sunday', label: 'Domingo' }
+  ];
+
+  const soundOptions = [
+    { value: 'default', label: 'Padrão' },
+    { value: 'chime', label: 'Sino' },
+    { value: 'bell', label: 'Campainha' },
+    { value: 'notification', label: 'Notificação' }
+  ];
+
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Informações Básicas */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Store className="h-5 w-5" />
+            <Building2 className="h-5 w-5" />
             <span>Informações Básicas</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Nome do Estabelecimento *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Nome do estabelecimento"
+                placeholder="Nome do seu estabelecimento"
+                required
               />
             </div>
             <div>
-              <Label htmlFor="owner_name">Nome do Responsável</Label>
+              <Label htmlFor="owner_name">Nome do Responsável *</Label>
               <Input
                 id="owner_name"
                 value={formData.owner_name}
                 onChange={(e) => handleInputChange('owner_name', e.target.value)}
-                placeholder="Nome do responsável"
+                placeholder="Seu nome"
+                required
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Endereço */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <MapPin className="h-5 w-5" />
-            <span>Endereço</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-3 gap-4">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="street_number">Endereço e Número</Label>
-              <Input
-                id="street_number"
-                value={formData.street_number}
-                onChange={(e) => handleInputChange('street_number', e.target.value)}
-                placeholder="Rua, nº 123"
-              />
-            </div>
-            <div>
-              <Label htmlFor="city">Cidade</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="Cidade"
-              />
-            </div>
-            <div>
-              <Label htmlFor="state">Estado</Label>
-              <StateSelect
-                value={formData.state}
-                onValueChange={(value) => handleInputChange('state', value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Contato */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Phone className="h-5 w-5" />
-            <span>Contato</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="phone">Telefone Principal</Label>
+              <Label htmlFor="phone">Telefone Principal *</Label>
               <Input
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="(11) 99999-9999"
+                required
               />
             </div>
             <div>
@@ -237,76 +166,93 @@ const SalonConfigurationForm = ({ salon, onUpdate }: SalonConfigurationFormProps
         </CardContent>
       </Card>
 
-      {/* Horário de Funcionamento */}
+      {/* Endereço */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Clock className="h-5 w-5" />
-            <span>Horário de Funcionamento</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {days.map(({ key, label }) => (
-            <div key={key} className="flex items-center space-x-4 p-3 border rounded-lg">
-              <div className="w-32">
-                <span className="font-medium">{label}</span>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`${key}-closed`}
-                  checked={formData.opening_hours[key]?.closed || false}
-                  onCheckedChange={(checked) => handleHoursChange(key, 'closed', checked)}
-                />
-                <Label htmlFor={`${key}-closed`} className="text-sm">
-                  Fechado
-                </Label>
-              </div>
-              
-              {!formData.opening_hours[key]?.closed && (
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="time"
-                    value={formData.opening_hours[key]?.open || '08:00'}
-                    onChange={(e) => handleHoursChange(key, 'open', e.target.value)}
-                    className="w-32"
-                  />
-                  <span className="text-gray-600">às</span>
-                  <Input
-                    type="time"
-                    value={formData.opening_hours[key]?.close || '18:00'}
-                    onChange={(e) => handleHoursChange(key, 'close', e.target.value)}
-                    className="w-32"
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Notificações */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Bell className="h-5 w-5" />
-            <span>Configurações de Notificação</span>
+            <MapPin className="h-5 w-5" />
+            <span>Endereço</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
+            <Label htmlFor="address">Endereço Completo</Label>
+            <Textarea
+              id="address"
+              value={formData.address}
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              placeholder="Rua, número, bairro"
+              rows={2}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="street_number">Rua e Número</Label>
+              <Input
+                id="street_number"
+                value={formData.street_number}
+                onChange={(e) => handleInputChange('street_number', e.target.value)}
+                placeholder="Rua das Flores, 123"
+              />
+            </div>
+            <div>
+              <Label htmlFor="city">Cidade</Label>
+              <Input
+                id="city"
+                value={formData.city}
+                onChange={(e) => handleInputChange('city', e.target.value)}
+                placeholder="São Paulo"
+              />
+            </div>
+            <div>
+              <Label htmlFor="state">Estado</Label>
+              <Input
+                id="state"
+                value={formData.state}
+                onChange={(e) => handleInputChange('state', e.target.value)}
+                placeholder="SP"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Status e Configurações */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Bell className="h-5 w-5" />
+            <span>Configurações Gerais</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <Switch
+              checked={formData.is_open}
+              onCheckedChange={(checked) => handleInputChange('is_open', checked)}
+            />
+            <div>
+              <Label>Estabelecimento Aberto</Label>
+              <p className="text-sm text-gray-500">
+                Quando ativo, clientes podem fazer agendamentos
+              </p>
+            </div>
+          </div>
+
+          <div>
             <Label htmlFor="notification_sound">Som de Notificação</Label>
-            <Select 
-              value={formData.notification_sound} 
+            <Select
+              value={formData.notification_sound}
               onValueChange={(value) => handleInputChange('notification_sound', value)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {notificationSounds.map(sound => (
-                  <SelectItem key={sound.value} value={sound.value}>
-                    {sound.label}
+                {soundOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -315,17 +261,49 @@ const SalonConfigurationForm = ({ salon, onUpdate }: SalonConfigurationFormProps
         </CardContent>
       </Card>
 
-      {/* Botão Salvar */}
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleSave} 
-          disabled={isSaving}
-          className="px-8"
-        >
-          {isSaving ? 'Salvando...' : 'Salvar Configurações'}
-        </Button>
-      </div>
-    </div>
+      {/* Horários de Funcionamento */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Clock className="h-5 w-5" />
+            <span>Horários de Funcionamento</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {weekDays.map(day => (
+            <div key={day.key} className="flex items-center space-x-4">
+              <div className="w-24">
+                <Label className="text-sm font-medium">{day.label}</Label>
+              </div>
+              <Switch
+                checked={!formData.opening_hours[day.key]?.closed}
+                onCheckedChange={(checked) => handleHoursChange(day.key, 'closed', !checked)}
+              />
+              {!formData.opening_hours[day.key]?.closed && (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="time"
+                    value={formData.opening_hours[day.key]?.open || '09:00'}
+                    onChange={(e) => handleHoursChange(day.key, 'open', e.target.value)}
+                    className="w-24"
+                  />
+                  <span className="text-gray-500">às</span>
+                  <Input
+                    type="time"
+                    value={formData.opening_hours[day.key]?.close || '18:00'}
+                    onChange={(e) => handleHoursChange(day.key, 'close', e.target.value)}
+                    className="w-24"
+                  />
+                </div>
+              )}
+              {formData.opening_hours[day.key]?.closed && (
+                <span className="text-gray-500 text-sm">Fechado</span>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </form>
   );
 };
 

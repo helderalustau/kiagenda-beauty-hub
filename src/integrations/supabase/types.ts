@@ -315,6 +315,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          max_users: number | null
           name: string
           plan_type: string
           price: number
@@ -324,6 +325,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          max_users?: number | null
           name: string
           plan_type: string
           price: number
@@ -333,6 +335,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          max_users?: number | null
           name?: string
           plan_type?: string
           price?: number
@@ -366,6 +369,45 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      salon_users: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string | null
+          id: string
+          is_owner: boolean
+          name: string
+          phone: string | null
+          role: string
+          salon_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_owner?: boolean
+          name: string
+          phone?: string | null
+          role?: string
+          salon_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_owner?: boolean
+          name?: string
+          phone?: string | null
+          role?: string
+          salon_id?: string
           updated_at?: string
         }
         Relationships: []
