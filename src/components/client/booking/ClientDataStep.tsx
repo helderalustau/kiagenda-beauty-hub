@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { User, Phone, Mail, CalendarIcon, Clock, Scissors, MapPin, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service, Salon } from '@/hooks/useSupabaseData';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ClientDataStepProps {
   salon: Salon;
@@ -38,6 +39,21 @@ const ClientDataStep = ({
   formatCurrency,
   onSubmit
 }: ClientDataStepProps) => {
+  const { user } = useAuth();
+
+  // Auto-preencher com dados do cliente logado
+  useEffect(() => {
+    if (user && (!clientData.name || !clientData.phone)) {
+      console.log('ClientDataStep - Auto-filling client data from logged user:', user);
+      onClientDataChange({
+        name: user.name || '',
+        phone: user.id || '', // O ID do cliente é usado como phone no sistema de auth
+        email: clientData.email || '',
+        notes: clientData.notes || ''
+      });
+    }
+  }, [user, clientData.name, clientData.phone, onClientDataChange]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -51,7 +67,7 @@ const ClientDataStep = ({
         </Button>
         <div className="text-center">
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Seus Dados</h3>
-          <p className="text-gray-600">Preencha seus dados para confirmar o agendamento</p>
+          <p className="text-gray-600">Confirme seus dados para finalizar o agendamento</p>
         </div>
         <div></div> {/* Spacer for centering */}
       </div>
@@ -95,8 +111,12 @@ const ClientDataStep = ({
                 onChange={(e) => onClientDataChange({ ...clientData, name: e.target.value })}
                 className="pl-10"
                 required
+                readOnly={!!user?.name}
               />
             </div>
+            {user?.name && (
+              <p className="text-xs text-gray-500 mt-1">Dados preenchidos automaticamente</p>
+            )}
           </div>
 
           <div>
@@ -111,8 +131,12 @@ const ClientDataStep = ({
                 onChange={(e) => onClientDataChange({ ...clientData, phone: e.target.value })}
                 className="pl-10"
                 required
+                readOnly={!!user?.id}
               />
             </div>
+            {user?.id && (
+              <p className="text-xs text-gray-500 mt-1">Dados preenchidos automaticamente</p>
+            )}
           </div>
         </div>
 
