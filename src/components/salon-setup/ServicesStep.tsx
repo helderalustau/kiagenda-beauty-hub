@@ -26,7 +26,10 @@ const ServicesStep = ({
   const [showCustomServiceModal, setShowCustomServiceModal] = useState(false);
   const [customServices, setCustomServices] = useState<any[]>([]);
 
-  const allServices = [...presetServices, ...customServices];
+  // Ensure both arrays are valid before concatenating
+  const validPresetServices = Array.isArray(presetServices) ? presetServices : [];
+  const validCustomServices = Array.isArray(customServices) ? customServices : [];
+  const allServices = [...validPresetServices, ...validCustomServices];
   
   const groupedServices = allServices.reduce((acc, service) => {
     const category = service.category || 'personalizado';
