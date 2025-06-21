@@ -48,8 +48,8 @@ function App() {
               <Route path="/salon-selection" element={<SalonSelection />} />
               <Route path="/booking/:salonSlug" element={<ClientBooking />} />
               <Route path="/salon/:salonSlug" element={<SalonLink />} />
-              <Route path="/services" element={<ServicesPage services={[]} onRefresh={() => {}} />} />
-              <Route path="/settings" element={<SettingsPage salon={null} onRefresh={() => {}} />} />
+              <Route path="/services" element={<ServicesPage services={[]} onRefresh={async () => {}} />} />
+              <Route path="/settings" element={<SettingsPage salon={null} onRefresh={async () => {}} />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
