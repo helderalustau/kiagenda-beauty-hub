@@ -23,6 +23,9 @@ const ServiceSelectionStep = ({
     selectedService: selectedService?.name || 'none' 
   });
 
+  // Filter only active services for client selection
+  const activeServices = services.filter(service => service.active === true);
+
   return (
     <div className="space-y-4">
       <div className="text-center mb-6">
@@ -35,9 +38,9 @@ const ServiceSelectionStep = ({
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando serviços...</p>
         </div>
-      ) : services.length > 0 ? (
+      ) : activeServices.length > 0 ? (
         <div className="grid gap-3 max-h-96 overflow-y-auto">
-          {services.map((service) => (
+          {activeServices.map((service) => (
             <ServiceCard
               key={service.id}
               service={service}

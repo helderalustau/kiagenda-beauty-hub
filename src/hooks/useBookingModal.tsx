@@ -216,8 +216,8 @@ export const useBookingModal = (salon: Salon) => {
     }).format(value);
   };
 
-  // Filter only active services
-  const activeServices = services.filter(service => service.active);
+  // Filter only active services for client booking
+  const activeServices = services.filter(service => service.active === true);
 
   return {
     // State

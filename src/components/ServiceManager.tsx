@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,7 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  const { fetchSalonServices, updateService, deleteService, toggleServiceStatus } = useServiceData();
+  const { fetchSalonServices, updateService, deleteService } = useServiceData();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,7 +31,9 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
     if (!salonId) return;
     
     try {
+      console.log('ServiceManager - Loading services for salon:', salonId);
       const fetchedServices = await fetchSalonServices(salonId);
+      console.log('ServiceManager - Services loaded:', fetchedServices?.length || 0);
       setServices(fetchedServices || []);
     } catch (error) {
       console.error('Error loading services:', error);
@@ -41,30 +42,43 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
   };
 
   const handleToggleStatus = async (serviceId: string, currentStatus: boolean) => {
+    console.log('ServiceManager - Toggling service status:', { serviceId, currentStatus, newStatus: !currentStatus });
     setUpdating(serviceId);
     
-    const result = await toggleServiceStatus(serviceId, !currentStatus);
-    
-    if (result.success) {
-      setServices(prev => prev.map(service => 
-        service.id === serviceId 
-          ? { ...service, active: !currentStatus }
-          : service
-      ));
+    try {
+      const result = await updateService(serviceId, { active: !currentStatus });
       
-      toast({
-        title: "Sucesso",
-        description: `Serviço ${!currentStatus ? 'ativado' : 'desativado'} com sucesso!`
-      });
-    } else {
+      if (result.success) {
+        console.log('ServiceManager - Service status updated successfully');
+        // Update local state immediately
+        setServices(prev => prev.map(service => 
+          service.id === serviceId 
+            ? { ...service, active: !currentStatus }
+            : service
+        ));
+        
+        toast({
+          title: "Sucesso",
+          description: `Serviço ${!currentStatus ? 'ativado' : 'desativado'} com sucesso!`
+        });
+      } else {
+        console.error('ServiceManager - Failed to update service status:', result.message);
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao atualizar status do serviço",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('ServiceManager - Error toggling service status:', error);
       toast({
         title: "Erro",
-        description: result.message || "Erro ao atualizar status do serviço",
+        description: "Erro inesperado ao atualizar status do serviço",
         variant: "destructive"
       });
+    } finally {
+      setUpdating(null);
     }
-    
-    setUpdating(null);
   };
 
   const handleDeleteService = async (serviceId: string) => {

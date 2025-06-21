@@ -9,16 +9,18 @@ interface ServiceToggleProps {
 }
 
 const ServiceToggle = ({ isActive, onToggle, disabled = false }: ServiceToggleProps) => {
+  console.log('ServiceToggle - Props:', { isActive, disabled });
+  
   return (
     <div className="flex items-center space-x-2">
       <Switch
         checked={isActive}
         onCheckedChange={onToggle}
         disabled={disabled}
-        className={`${isActive ? 'bg-green-500' : 'bg-gray-400'} data-[state=checked]:bg-green-500`}
+        className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-400"
       />
       <span className={`text-sm font-medium ${isActive ? 'text-green-600' : 'text-gray-500'}`}>
-        {isActive ? 'Ativo' : 'Inativo'}
+        {isActive ? 'Ativo' : 'Desabilitado'}
       </span>
     </div>
   );

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, User, AlertCircle } from "lucide-react";
+import { Plus, Edit, Trash2, User, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useSalonUsers } from '@/hooks/useSalonUsers';
 import { useToast } from "@/components/ui/use-toast";
 
@@ -21,10 +21,12 @@ const SalonUsersManager = ({ salonId, maxUsers, onUpgrade }: SalonUsersManagerPr
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [newUserData, setNewUserData] = useState({
     name: '',
     email: '',
     phone: '',
+    password: '',
     role: 'user'
   });
 
@@ -47,6 +49,15 @@ const SalonUsersManager = ({ salonId, maxUsers, onUpgrade }: SalonUsersManagerPr
       return;
     }
 
+    if (!newUserData.password.trim()) {
+      toast({
+        title: "Erro",
+        description: "Senha é obrigatória",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (salonUsers.length >= maxUsers) {
       setShowCreateDialog(false);
       setShowUpgradeDialog(true);
@@ -57,7 +68,7 @@ const SalonUsersManager = ({ salonId, maxUsers, onUpgrade }: SalonUsersManagerPr
 
     if (result.success) {
       setShowCreateDialog(false);
-      setNewUserData({ name: '', email: '', phone: '', role: 'user' });
+      setNewUserData({ name: '', email: '', phone: '', password: '', role: 'user' });
     }
   };
 
@@ -104,6 +115,12 @@ const SalonUsersManager = ({ salonId, maxUsers, onUpgrade }: SalonUsersManagerPr
     return roles[role as keyof typeof roles] || roles.user;
   };
 
+  const canEditOrDelete = (role: string, isOwner: boolean) => {
+    // Apenas administradores podem editar/excluir outros usuários
+    // Proprietário não pode ser excluído
+    return role === 'admin' && !isOwner;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -120,6 +137,9 @@ const SalonUsersManager = ({ salonId, maxUsers, onUpgrade }: SalonUsersManagerPr
             Novo Usuário
           </Button>
         </div>
+        <p className="text-sm text-gray-600 mt-2">
+          Apenas usuários com cargo de <strong>Administrador</strong> podem cadastrar e editar outros usuários.
+        </p>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -211,6 +231,26 @@ const SalonUsersManager = ({ salonId, maxUsers, onUpgrade }: SalonUsersManagerPr
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium mb-2">Senha *</label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Digite uma senha"
+                    value={newUserData.password}
+                    onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div>
                 <label className="block text-sm font-medium mb-2">Cargo</label>
                 <Select value={newUserData.role} onValueChange={(value) => setNewUserData({...newUserData, role: value})}>
                   <SelectTrigger>
@@ -222,6 +262,11 @@ const SalonUsersManager = ({ salonId, maxUsers, onUpgrade }: SalonUsersManagerPr
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>Importante:</strong> Apenas usuários com cargo de <strong>Administrador</strong> podem cadastrar e editar outros usuários.
+                </p>
               </div>
               <div className="flex space-x-2">
                 <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="flex-1">

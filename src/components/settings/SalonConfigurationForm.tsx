@@ -1,165 +1,139 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Building2, MapPin, Phone, Clock, Bell } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Phone, Clock, User } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
-import { useToast } from "@/components/ui/use-toast";
 
 interface SalonConfigurationFormProps {
   salon: Salon;
-  onUpdate: (data: Partial<Salon>) => Promise<any>;
-  onChange?: () => void;
+  onSalonChange: (salon: Salon) => void;
 }
 
-const SalonConfigurationForm = ({ salon, onUpdate, onChange }: SalonConfigurationFormProps) => {
-  const [formData, setFormData] = useState({
-    name: salon.name || '',
-    owner_name: salon.owner_name || '',
-    phone: salon.phone || '',
-    contact_phone: salon.contact_phone || '',
-    address: salon.address || '',
-    street_number: salon.street_number || '',
-    city: salon.city || '',
-    state: salon.state || '',
-    is_open: salon.is_open || false,
-    notification_sound: salon.notification_sound || 'default',
-    opening_hours: salon.opening_hours || {
-      monday: { open: '09:00', close: '18:00', closed: false },
-      tuesday: { open: '09:00', close: '18:00', closed: false },
-      wednesday: { open: '09:00', close: '18:00', closed: false },
-      thursday: { open: '09:00', close: '18:00', closed: false },
-      friday: { open: '09:00', close: '18:00', closed: false },
-      saturday: { open: '09:00', close: '18:00', closed: false },
-      sunday: { open: '09:00', close: '18:00', closed: true }
-    }
+const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationFormProps) => {
+  const [openingHours, setOpeningHours] = useState<any>({
+    monday: { open: '09:00', close: '18:00', closed: false },
+    tuesday: { open: '09:00', close: '18:00', closed: false },
+    wednesday: { open: '09:00', close: '18:00', closed: false },
+    thursday: { open: '09:00', close: '18:00', closed: false },
+    friday: { open: '09:00', close: '18:00', closed: false },
+    saturday: { open: '09:00', close: '16:00', closed: false },
+    sunday: { open: '09:00', close: '16:00', closed: true }
   });
 
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (onChange) onChange();
-  };
-
-  const handleHoursChange = (day: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      opening_hours: {
-        ...prev.opening_hours,
-        [day]: {
-          ...prev.opening_hours[day],
-          [field]: value
-        }
-      }
-    }));
-    if (onChange) onChange();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const result = await onUpdate(formData);
-      
-      if (result.success) {
-        toast({
-          title: "Sucesso",
-          description: "Configurações atualizadas com sucesso!"
-        });
-      } else {
-        toast({
-          title: "Erro",
-          description: result.message || "Erro ao atualizar configurações",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao salvar",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (salon?.opening_hours) {
+      setOpeningHours(salon.opening_hours);
     }
+  }, [salon?.opening_hours]);
+
+  const handleHourChange = (day: string, field: string, value: string | boolean) => {
+    const newHours = {
+      ...openingHours,
+      [day]: {
+        ...openingHours[day],
+        [field]: value
+      }
+    };
+    setOpeningHours(newHours);
+    onSalonChange({
+      ...salon,
+      opening_hours: newHours
+    });
   };
 
-  const weekDays = [
-    { key: 'monday', label: 'Segunda-feira' },
-    { key: 'tuesday', label: 'Terça-feira' },
-    { key: 'wednesday', label: 'Quarta-feira' },
-    { key: 'thursday', label: 'Quinta-feira' },
-    { key: 'friday', label: 'Sexta-feira' },
-    { key: 'saturday', label: 'Sábado' },
-    { key: 'sunday', label: 'Domingo' }
-  ];
+  const dayNames = {
+    monday: 'Segunda-feira',
+    tuesday: 'Terça-feira',
+    wednesday: 'Quarta-feira',
+    thursday: 'Quinta-feira',
+    friday: 'Sexta-feira',
+    saturday: 'Sábado',
+    sunday: 'Domingo'
+  };
 
-  const soundOptions = [
-    { value: 'default', label: 'Padrão' },
-    { value: 'chime', label: 'Sino' },
-    { value: 'bell', label: 'Campainha' },
-    { value: 'notification', label: 'Notificação' }
-  ];
+  const planTypes = {
+    bronze: { name: 'Bronze', color: 'bg-amber-600' },
+    silver: { name: 'Prata', color: 'bg-gray-500' },
+    gold: { name: 'Ouro', color: 'bg-yellow-500' }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       {/* Informações Básicas */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Building2 className="h-5 w-5" />
+            <User className="h-5 w-5" />
             <span>Informações Básicas</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Nome do Estabelecimento *</Label>
+              <Label htmlFor="salon-name">Nome do Estabelecimento</Label>
               <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                id="salon-name"
+                value={salon?.name || ''}
+                onChange={(e) => onSalonChange({ ...salon, name: e.target.value })}
                 placeholder="Nome do seu estabelecimento"
-                required
               />
             </div>
             <div>
-              <Label htmlFor="owner_name">Nome do Responsável *</Label>
+              <Label htmlFor="owner-name">Nome do Responsável</Label>
               <Input
-                id="owner_name"
-                value={formData.owner_name}
-                onChange={(e) => handleInputChange('owner_name', e.target.value)}
-                placeholder="Seu nome"
-                required
+                id="owner-name"
+                value={salon?.owner_name || ''}
+                onChange={(e) => onSalonChange({ ...salon, owner_name: e.target.value })}
+                placeholder="Nome do responsável"
               />
             </div>
           </div>
-          
+
+          <div>
+            <Label htmlFor="salon-plan">Plano Atual</Label>
+            <div className="flex items-center space-x-2 mt-1">
+              <Badge className={`${planTypes[salon?.plan as keyof typeof planTypes]?.color || 'bg-gray-500'} text-white`}>
+                {planTypes[salon?.plan as keyof typeof planTypes]?.name || 'Bronze'}
+              </Badge>
+              <span className="text-sm text-gray-600">
+                Plano ativo do estabelecimento
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Informações de Contato */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Phone className="h-5 w-5" />
+            <span>Informações de Contato</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="phone">Telefone Principal *</Label>
+              <Label htmlFor="salon-phone">Telefone Principal</Label>
               <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                id="salon-phone"
+                value={salon?.phone || ''}
+                onChange={(e) => onSalonChange({ ...salon, phone: e.target.value })}
                 placeholder="(11) 99999-9999"
-                required
               />
             </div>
             <div>
-              <Label htmlFor="contact_phone">Telefone de Contato</Label>
+              <Label htmlFor="contact-phone">Telefone de Contato</Label>
               <Input
-                id="contact_phone"
-                value={formData.contact_phone}
-                onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                placeholder="(11) 99999-9999"
+                id="contact-phone"
+                value={salon?.contact_phone || ''}
+                onChange={(e) => onSalonChange({ ...salon, contact_phone: e.target.value })}
+                placeholder="(11) 88888-8888"
               />
             </div>
           </div>
@@ -176,134 +150,70 @@ const SalonConfigurationForm = ({ salon, onUpdate, onChange }: SalonConfiguratio
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="address">Endereço Completo</Label>
+            <Label htmlFor="salon-address">Endereço Completo</Label>
             <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder="Rua, número, bairro"
-              rows={2}
+              id="salon-address"
+              value={salon?.address || ''}
+              onChange={(e) => onSalonChange({ ...salon, address: e.target.value })}
+              placeholder="Rua, número, bairro, cidade, estado"
+              rows={3}
             />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="street_number">Rua e Número</Label>
-              <Input
-                id="street_number"
-                value={formData.street_number}
-                onChange={(e) => handleInputChange('street_number', e.target.value)}
-                placeholder="Rua das Flores, 123"
-              />
-            </div>
-            <div>
-              <Label htmlFor="city">Cidade</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="São Paulo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="state">Estado</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                placeholder="SP"
-              />
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Status e Configurações */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Bell className="h-5 w-5" />
-            <span>Configurações Gerais</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-3">
-            <Switch
-              checked={formData.is_open}
-              onCheckedChange={(checked) => handleInputChange('is_open', checked)}
-            />
-            <div>
-              <Label>Estabelecimento Aberto</Label>
-              <p className="text-sm text-gray-500">
-                Quando ativo, clientes podem fazer agendamentos
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="notification_sound">Som de Notificação</Label>
-            <Select
-              value={formData.notification_sound}
-              onValueChange={(value) => handleInputChange('notification_sound', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {soundOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Horários de Funcionamento */}
+      {/* Horário de Funcionamento */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Clock className="h-5 w-5" />
-            <span>Horários de Funcionamento</span>
+            <span>Horário de Funcionamento</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {weekDays.map(day => (
-            <div key={day.key} className="flex items-center space-x-4">
-              <div className="w-24">
-                <Label className="text-sm font-medium">{day.label}</Label>
-              </div>
-              <Switch
-                checked={!formData.opening_hours[day.key]?.closed}
-                onCheckedChange={(checked) => handleHoursChange(day.key, 'closed', !checked)}
-              />
-              {!formData.opening_hours[day.key]?.closed && (
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="time"
-                    value={formData.opening_hours[day.key]?.open || '09:00'}
-                    onChange={(e) => handleHoursChange(day.key, 'open', e.target.value)}
-                    className="w-24"
-                  />
-                  <span className="text-gray-500">às</span>
-                  <Input
-                    type="time"
-                    value={formData.opening_hours[day.key]?.close || '18:00'}
-                    onChange={(e) => handleHoursChange(day.key, 'close', e.target.value)}
-                    className="w-24"
-                  />
+        <CardContent>
+          <div className="space-y-4">
+            {Object.entries(dayNames).map(([day, dayName]) => (
+              <div key={day} className="flex items-center space-x-4">
+                <div className="w-32">
+                  <span className="font-medium">{dayName}</span>
                 </div>
-              )}
-              {formData.opening_hours[day.key]?.closed && (
-                <span className="text-gray-500 text-sm">Fechado</span>
-              )}
-            </div>
-          ))}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={!openingHours[day]?.closed}
+                    onChange={(e) => handleHourChange(day, 'closed', !e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Aberto</span>
+                </div>
+                {!openingHours[day]?.closed && (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <Label className="text-sm">Das:</Label>
+                      <Input
+                        type="time"
+                        value={openingHours[day]?.open || '09:00'}
+                        onChange={(e) => handleHourChange(day, 'open', e.target.value)}
+                        className="w-24"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Label className="text-sm">Às:</Label>
+                      <Input
+                        type="time"
+                        value={openingHours[day]?.close || '18:00'}
+                        onChange={(e) => handleHourChange(day, 'close', e.target.value)}
+                        className="w-24"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
-    </form>
+    </div>
   );
 };
 
