@@ -61,6 +61,20 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
     }
   };
 
+  const handleNextStep = () => {
+    if (currentStep === 1 && selectedService) {
+      setCurrentStep(2);
+    } else if (currentStep === 2 && selectedDate && selectedTime) {
+      setCurrentStep(3);
+    }
+  };
+
+  const canProceedToNext = () => {
+    if (currentStep === 1) return selectedService !== null;
+    if (currentStep === 2) return selectedDate !== undefined && selectedTime !== '';
+    return false;
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -147,11 +161,8 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
               </Button>
             ) : (
               <Button
-                disabled={
-                  (currentStep === 1 && !selectedService) ||
-                  (currentStep === 2 && (!selectedDate || !selectedTime))
-                }
-                onClick={() => currentStep === 2 && selectedDate && selectedTime ? setCurrentStep(3) : undefined}
+                disabled={!canProceedToNext()}
+                onClick={handleNextStep}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center"
               >
                 Próximo

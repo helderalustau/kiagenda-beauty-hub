@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface TimeSlotGridProps {
   availableTimes: string[];
@@ -26,10 +27,10 @@ const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate
       <div className="text-center py-8">
         <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600">
-          Nenhum horário disponível para {format(selectedDate, "dd/MM/yyyy")}
+          Nenhum horário disponível para {format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
         </p>
         <p className="text-sm text-gray-500 mt-2">
-          Tente selecionar outra data
+          Este estabelecimento pode estar fechado neste dia. Tente selecionar outra data.
         </p>
       </div>
     );
@@ -66,9 +67,9 @@ const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate
               variant={selectedTime === time ? "default" : "outline"}
               size="sm"
               onClick={() => onTimeSelect(time)}
-              className={`text-sm ${
+              className={`text-sm transition-all ${
                 selectedTime === time
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
                   : 'hover:bg-blue-50 hover:border-blue-300'
               }`}
             >
@@ -87,7 +88,7 @@ const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate
           Horários Disponíveis
         </h3>
         <p className="text-sm text-gray-600">
-          {format(selectedDate, "EEEE, dd/MM/yyyy")}
+          {format(selectedDate, "EEEE, dd/MM/yyyy", { locale: ptBR })}
         </p>
       </div>
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { format, parseISO } from "date-fns";
 import { useSupabaseData, Service, Salon } from '@/hooks/useSupabaseData';
@@ -53,12 +54,27 @@ export const useBookingModal = (salon: Salon) => {
 
   const generateAvailableTimes = () => {
     if (!selectedDate || !salon.opening_hours) {
+      console.log('No date selected or no opening hours available');
       setAvailableTimes([]);
       return;
     }
 
-    // Obter dia da semana em português
-    const dayNames = {
+    // Mapeamento correto dos dias da semana
+    const dayNames = [
+      'sunday',    // 0
+      'monday',    // 1  
+      'tuesday',   // 2
+      'wednesday', // 3
+      'thursday',  // 4
+      'friday',    // 5
+      'saturday'   // 6
+    ];
+
+    const dayIndex = selectedDate.getDay();
+    const englishDay = dayNames[dayIndex];
+    
+    // Mapeamento para português
+    const dayNamesPortuguese: { [key: string]: string } = {
       'sunday': 'domingo',
       'monday': 'segunda',
       'tuesday': 'terça',
@@ -68,15 +84,20 @@ export const useBookingModal = (salon: Salon) => {
       'saturday': 'sábado'
     };
 
-    const dayOfWeek = selectedDate.toLocaleDateString('en-US',  { weekday: 'long' }).toLowerCase();
-    const portugueseDay = dayNames[dayOfWeek as keyof typeof dayNames];
+    const portugueseDay = dayNamesPortuguese[englishDay];
     
-    console.log('Generating times for day:', dayOfWeek, '-> Portuguese:', portugueseDay);
+    console.log('Generating times for day:', englishDay, '-> Portuguese:', portugueseDay);
     console.log('Opening hours:', salon.opening_hours);
 
     const daySchedule = salon.opening_hours[portugueseDay];
 
-    if (!daySchedule || daySchedule.closed) {
+    if (!daySchedule) {
+      console.log('No schedule found for day:', portugueseDay);
+      setAvailableTimes([]);
+      return;
+    }
+
+    if (daySchedule.closed === true) {
       console.log('Day is closed:', portugueseDay);
       setAvailableTimes([]);
       return;
@@ -125,7 +146,6 @@ export const useBookingModal = (salon: Salon) => {
   const handleTimeSelect = (time: string) => {
     console.log('Time selected:', time);
     setSelectedTime(time);
-    setCurrentStep(3);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
