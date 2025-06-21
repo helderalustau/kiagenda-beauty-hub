@@ -56,10 +56,10 @@ const ServicesStep = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Selecione os Serviços</h3>
+        <h3 className="text-lg font-semibold mb-4">Selecione os Serviços (Opcional)</h3>
         <p className="text-gray-600 mb-4">
-          Escolha os serviços que você oferece e defina os <strong>preços</strong>. 
-          O preço é obrigatório para cada serviço selecionado.
+          Escolha os serviços que você oferece. Se selecionar um serviço, o <strong>preço é obrigatório</strong>. 
+          Você pode pular esta etapa e adicionar serviços depois.
         </p>
         
         {/* Informações sobre edições futuras */}
@@ -91,15 +91,15 @@ const ServicesStep = ({
 
         {/* Alerta para serviços sem preço */}
         {selectedWithoutPrice.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
             <div className="flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-medium text-red-900 mb-2">Atenção: Preços obrigatórios</h4>
-                <p className="text-sm text-red-800 mb-2">
+                <h4 className="font-medium text-amber-900 mb-2">Preços necessários para serviços selecionados</h4>
+                <p className="text-sm text-amber-800 mb-2">
                   Os seguintes serviços estão selecionados mas não possuem preço definido:
                 </p>
-                <ul className="text-sm text-red-700 list-disc list-inside">
+                <ul className="text-sm text-amber-700 list-disc list-inside">
                   {selectedWithoutPrice.map(([serviceId]) => {
                     const service = presetServices.find(s => s.id === serviceId);
                     return service ? (
@@ -107,8 +107,8 @@ const ServicesStep = ({
                     ) : null;
                   })}
                 </ul>
-                <p className="text-sm text-red-800 mt-2">
-                  <strong>Defina um preço para cada serviço selecionado antes de continuar.</strong>
+                <p className="text-sm text-amber-800 mt-2">
+                  <strong>Defina um preço para cada serviço selecionado ou desmarque-os para continuar.</strong>
                 </p>
               </div>
             </div>
@@ -134,7 +134,7 @@ const ServicesStep = ({
               
               return (
                 <div key={service.id} className={`flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors ${
-                  isSelected && !hasValidPrice ? 'border-red-300 bg-red-50' : ''
+                  isSelected && !hasValidPrice ? 'border-amber-300 bg-amber-50' : ''
                 }`}>
                   <Checkbox
                     checked={isSelected}
@@ -157,13 +157,13 @@ const ServicesStep = ({
                         placeholder="R$ 0,00"
                         value={currentPrice}
                         onChange={(e) => onServicePriceChange(service.id, Number(e.target.value))}
-                        className={`text-sm h-8 ${!hasValidPrice ? 'border-red-300' : ''}`}
+                        className={`text-sm h-8 ${!hasValidPrice ? 'border-amber-300' : ''}`}
                         min="0.01"
                         step="0.01"
                         required
                       />
                       {isSelected && !hasValidPrice && (
-                        <p className="text-xs text-red-600 mt-1">Preço obrigatório</p>
+                        <p className="text-xs text-amber-600 mt-1">Preço obrigatório</p>
                       )}
                     </div>
                   )}
@@ -191,14 +191,14 @@ const ServicesStep = ({
         }`}>
           <strong>{validSelectedServices.length}</strong> serviços selecionados com preços definidos
           {selectedWithoutPrice.length > 0 && (
-            <span className="text-red-600 ml-2">
+            <span className="text-amber-600 ml-2">
               • <strong>{selectedWithoutPrice.length}</strong> serviços precisam de preço
             </span>
           )}
         </p>
-        {validSelectedServices.length === 0 && (
+        {validSelectedServices.length === 0 && selectedWithoutPrice.length === 0 && (
           <p className="text-xs text-gray-500 mt-1">
-            Selecione pelo menos um serviço com preço para continuar
+            Nenhum serviço selecionado. Você pode adicionar serviços depois na aba Serviços.
           </p>
         )}
       </div>

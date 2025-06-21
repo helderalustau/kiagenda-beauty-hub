@@ -22,15 +22,15 @@ const ContactStep = ({ formData, updateFormData }: ContactStepProps) => {
     <div className="space-y-4">
       <div className="text-center py-4 mb-6">
         <h3 className="text-xl font-semibold text-gray-800 mb-4">
-          Contato do Estabelecimento
+          Informações de Contato
         </h3>
         <p className="text-gray-600">
-          Forneça informações de contato para que os clientes possam entrar em contato.
+          Defina as informações de contato do seu estabelecimento (campos opcionais).
         </p>
       </div>
 
       <div>
-        <Label htmlFor="contact_phone">Telefone para Contato *</Label>
+        <Label htmlFor="contact_phone">Telefone de Contato</Label>
         <Input
           id="contact_phone"
           value={formData.contact_phone}
@@ -38,7 +38,7 @@ const ContactStep = ({ formData, updateFormData }: ContactStepProps) => {
           placeholder="(11) 99999-9999"
         />
         <p className="text-sm text-gray-500 mt-1">
-          Este telefone será exibido para os clientes entrarem em contato
+          Telefone que será exibido para os clientes entrarem em contato
         </p>
       </div>
     </div>

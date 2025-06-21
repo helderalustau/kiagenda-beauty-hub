@@ -1,4 +1,3 @@
-
 import { useToast } from "@/components/ui/use-toast";
 
 interface SetupHandlersProps {
@@ -29,7 +28,7 @@ export const useSetupHandlers = ({
   
   const validateCurrentStep = () => {
     switch (currentStep) {
-      case 1: // Basic Salon Info
+      case 1: // Basic Salon Info - apenas nome obrigatório
         if (!formData.salon_name?.trim()) {
           toast({
             title: "Erro",
@@ -40,59 +39,31 @@ export const useSetupHandlers = ({
         }
         break;
         
-      case 2: // Address
-        if (!formData.street_number?.trim() || !formData.city?.trim() || !formData.state?.trim()) {
-          toast({
-            title: "Erro",
-            description: "Todos os campos de endereço são obrigatórios",
-            variant: "destructive"
-          });
-          return false;
-        }
-        break;
-        
-      case 3: // Contact
-        if (!formData.contact_phone?.trim()) {
-          toast({
-            title: "Erro",
-            description: "Telefone de contato é obrigatório",
-            variant: "destructive"
-          });
-          return false;
-        }
-        break;
-        
-      case 4: // Services - Validação APENAS neste passo específico
+      case 4: // Services - Validação apenas dos preços dos serviços selecionados
         const selectedServicesList = Object.entries(selectedServices).filter(([_, serviceData]) => {
           const service = serviceData as { selected: boolean; price: number };
           return service.selected;
         });
         
-        if (selectedServicesList.length === 0) {
-          toast({
-            title: "Erro",
-            description: "Selecione pelo menos um serviço para continuar",
-            variant: "destructive"
+        // Se há serviços selecionados, todos devem ter preço válido
+        if (selectedServicesList.length > 0) {
+          const servicesWithoutPrice = selectedServicesList.filter(([_, serviceData]) => {
+            const service = serviceData as { selected: boolean; price: number };
+            return !service.price || service.price <= 0;
           });
-          return false;
-        }
-        
-        const servicesWithoutPrice = selectedServicesList.filter(([_, serviceData]) => {
-          const service = serviceData as { selected: boolean; price: number };
-          return !service.price || service.price <= 0;
-        });
-        
-        if (servicesWithoutPrice.length > 0) {
-          toast({
-            title: "Erro",
-            description: `Defina um preço válido para todos os ${servicesWithoutPrice.length} serviços selecionados. O preço é obrigatório.`,
-            variant: "destructive"
-          });
-          return false;
+          
+          if (servicesWithoutPrice.length > 0) {
+            toast({
+              title: "Erro",
+              description: `Defina um preço válido para todos os ${servicesWithoutPrice.length} serviços selecionados.`,
+              variant: "destructive"
+            });
+            return false;
+          }
         }
         break;
         
-      // Todos os outros passos (5 - horários, etc.) passam sem validação específica
+      // Todos os outros passos passam sem validação obrigatória
       default:
         break;
     }
@@ -105,30 +76,22 @@ export const useSetupHandlers = ({
       return service.selected;
     });
 
-    // Deve ter pelo menos um serviço
-    if (selectedServicesList.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Você deve selecionar pelo menos um serviço para finalizar a configuração",
-        variant: "destructive"
+    // Se há serviços selecionados, todos devem ter preço válido
+    if (selectedServicesList.length > 0) {
+      const servicesWithValidPrice = selectedServicesList.filter(([_, serviceData]) => {
+        const service = serviceData as { selected: boolean; price: number };
+        return service.price && service.price > 0;
       });
-      return false;
-    }
 
-    // Todos os serviços selecionados devem ter preço válido
-    const servicesWithValidPrice = selectedServicesList.filter(([_, serviceData]) => {
-      const service = serviceData as { selected: boolean; price: number };
-      return service.price && service.price > 0;
-    });
-
-    if (servicesWithValidPrice.length !== selectedServicesList.length) {
-      const invalidCount = selectedServicesList.length - servicesWithValidPrice.length;
-      toast({
-        title: "Erro",
-        description: `${invalidCount} serviços selecionados não possuem preço válido. Defina um preço maior que R$ 0,00 para todos os serviços.`,
-        variant: "destructive"
-      });
-      return false;
+      if (servicesWithValidPrice.length !== selectedServicesList.length) {
+        const invalidCount = selectedServicesList.length - servicesWithValidPrice.length;
+        toast({
+          title: "Erro",
+          description: `${invalidCount} serviços selecionados não possuem preço válido. Defina um preço maior que R$ 0,00 para todos os serviços selecionados.`,
+          variant: "destructive"
+        });
+        return false;
+      }
     }
 
     return true;
@@ -203,7 +166,17 @@ export const useSetupHandlers = ({
       return;
     }
 
-    // Validação rigorosa dos serviços antes de finalizar
+    // Validação apenas do nome do estabelecimento e serviços selecionados
+    if (!formData.salon_name?.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome do estabelecimento é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validação dos serviços antes de finalizar
     if (!validateServicesBeforeFinish()) {
       return;
     }
