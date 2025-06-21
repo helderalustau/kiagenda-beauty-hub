@@ -128,7 +128,9 @@ const ServicesStep = ({
             {services.map((service) => {
               const isSelected = selectedServices[service.id]?.selected || false;
               const currentPrice = selectedServices[service.id]?.price || '';
-              const hasValidPrice = isSelected && currentPrice > 0;
+              // Fix: Convert to number for comparison
+              const numericPrice = typeof currentPrice === 'string' ? parseFloat(currentPrice) || 0 : currentPrice;
+              const hasValidPrice = isSelected && numericPrice > 0;
               
               return (
                 <div key={service.id} className={`flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors ${

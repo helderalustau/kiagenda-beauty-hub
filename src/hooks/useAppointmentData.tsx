@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment } from './useSupabaseData';
@@ -7,6 +8,20 @@ export const useAppointmentData = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
   const { getOrCreateClient } = useClientData();
+
+  // Type assertion helper for appointment status
+  const normalizeAppointmentStatus = (status: string): 'pending' | 'confirmed' | 'completed' | 'cancelled' => {
+    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'] as const;
+    return validStatuses.includes(status as any) ? status as 'pending' | 'confirmed' | 'completed' | 'cancelled' : 'pending';
+  };
+
+  // Helper to normalize appointment data from database
+  const normalizeAppointment = (rawAppointment: any): Appointment => {
+    return {
+      ...rawAppointment,
+      status: normalizeAppointmentStatus(rawAppointment.status)
+    };
+  };
 
   // Fetch all appointments
   const fetchAllAppointments = async (salonId: string) => {
@@ -29,7 +44,9 @@ export const useAppointmentData = () => {
         return;
       }
 
-      setAppointments(data || []);
+      // Normalize the appointments data
+      const normalizedAppointments = (data || []).map(normalizeAppointment);
+      setAppointments(normalizedAppointments);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {
@@ -58,9 +75,12 @@ export const useAppointmentData = () => {
         return { success: false, message: error.message };
       }
 
-      // Update local state
-      setAppointments(prev => prev.map(appointment => appointment.id === appointmentId ? data : appointment));
-      return { success: true, appointment: data };
+      // Update local state with normalized data
+      const normalizedAppointment = normalizeAppointment(data);
+      setAppointments(prev => prev.map(appointment => 
+        appointment.id === appointmentId ? normalizedAppointment : appointment
+      ));
+      return { success: true, appointment: normalizedAppointment };
     } catch (error) {
       console.error('Error updating appointment status:', error);
       return { success: false, message: 'Erro ao atualizar o status do agendamento' };
@@ -90,9 +110,12 @@ export const useAppointmentData = () => {
         return { success: false, message: error.message };
       }
 
-      // Update local state
-      setAppointments(prev => prev.map(appointment => appointment.id === appointmentId ? data : appointment));
-      return { success: true, appointment: data };
+      // Update local state with normalized data
+      const normalizedAppointment = normalizeAppointment(data);
+      setAppointments(prev => prev.map(appointment => 
+        appointment.id === appointmentId ? normalizedAppointment : appointment
+      ));
+      return { success: true, appointment: normalizedAppointment };
     } catch (error) {
       console.error('Error restoring appointment:', error);
       return { success: false, message: 'Erro ao restaurar o agendamento' };
@@ -121,7 +144,9 @@ export const useAppointmentData = () => {
         return;
       }
 
-      setAppointments(data || []);
+      // Normalize the appointments data
+      const normalizedAppointments = (data || []).map(normalizeAppointment);
+      setAppointments(normalizedAppointments);
     } catch (error) {
       console.error('Error fetching client appointments:', error);
     } finally {
@@ -202,12 +227,13 @@ export const useAppointmentData = () => {
 
       console.log('Appointment created successfully:', data);
       
-      // Atualizar estado local
-      setAppointments(prev => [data, ...prev]);
+      // Atualizar estado local com dados normalizados
+      const normalizedAppointment = normalizeAppointment(data);
+      setAppointments(prev => [normalizedAppointment, ...prev]);
       
       return { 
         success: true, 
-        appointment: data,
+        appointment: normalizedAppointment,
         message: `Agendamento criado para ${appointmentData.appointment_date} às ${appointmentData.appointment_time}`
       };
     } catch (error) {
