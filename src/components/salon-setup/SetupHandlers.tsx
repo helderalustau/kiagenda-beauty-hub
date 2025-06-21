@@ -62,7 +62,7 @@ export const useSetupHandlers = ({
         }
         break;
         
-      case 4: // Services - Validação APENAS no passo de serviços
+      case 4: // Services - Validação APENAS neste passo específico
         const selectedServicesList = Object.entries(selectedServices).filter(([_, serviceData]) => {
           const service = serviceData as { selected: boolean; price: number };
           return service.selected;
@@ -92,7 +92,7 @@ export const useSetupHandlers = ({
         }
         break;
         
-      // Caso 5 (horários) e outros passos não precisam de validação específica
+      // Todos os outros passos (5 - horários, etc.) passam sem validação específica
       default:
         break;
     }
