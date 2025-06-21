@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { Clock, ArrowLeft } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, ArrowRight, Clock, Calendar as CalendarIcon, DollarSign } from "lucide-react";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from '@/hooks/useSupabaseData';
-import TimeSlotGrid from '../TimeSlotGrid';
 
 interface DateTimeSelectionStepProps {
   selectedService: Service | null;
@@ -18,6 +18,7 @@ interface DateTimeSelectionStepProps {
   onTimeSelect: (time: string) => void;
   onBack: () => void;
   formatCurrency: (value: number) => string;
+  onContinue: () => void;
 }
 
 const DateTimeSelectionStep = ({
@@ -28,73 +29,142 @@ const DateTimeSelectionStep = ({
   onDateSelect,
   onTimeSelect,
   onBack,
-  formatCurrency
+  formatCurrency,
+  onContinue
 }: DateTimeSelectionStepProps) => {
-  console.log('DateTimeSelectionStep - Props:', { 
-    selectedService: selectedService?.name, 
-    selectedDate, 
-    selectedTime, 
-    availableTimes 
-  });
+  const canContinue = selectedDate && selectedTime;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <Button
           variant="outline"
           onClick={onBack}
           className="flex items-center"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar aos Serviços
+          Voltar
         </Button>
-        <div className="text-center">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Escolha Data e Horário</h3>
-          <p className="text-gray-600">Selecione quando deseja ser atendido</p>
-        </div>
-        <div></div> {/* Spacer for centering */}
+        
+        <Badge variant="outline" className="text-sm">
+          Passo 2 de 3
+        </Badge>
       </div>
 
       {selectedService && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-blue-900">Serviço Selecionado</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-center">
               <div>
-                <h4 className="font-semibold text-blue-900">{selectedService.name}</h4>
-                <p className="text-sm text-blue-700">
-                  {selectedService.duration_minutes} min • {formatCurrency(selectedService.price)}
-                </p>
+                <h3 className="font-semibold text-blue-900">{selectedService.name}</h3>
+                <div className="flex items-center space-x-4 mt-1">
+                  <div className="flex items-center text-green-600">
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    <span className="font-semibold">{formatCurrency(selectedService.price)}</span>
+                  </div>
+                  <div className="flex items-center text-blue-600">
+                    <Clock className="h-4 w-4 mr-1" />
+                    <span>{selectedService.duration_minutes} min</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <Label className="text-base font-medium mb-3 block">Data</Label>
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={(date) => {
-              console.log('DateTimeSelectionStep - Date selected:', date);
-              onDateSelect(date);
-            }}
-            disabled={(date) => date < new Date() || date < new Date('1900-01-01')}
-            locale={ptBR}
-            className="rounded-md border"
-          />
-        </div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CalendarIcon className="h-5 w-5 mr-2" />
+              Escolha a Data
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={onDateSelect}
+              disabled={(date) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return date < today;
+              }}
+              locale={ptBR}
+              className="rounded-md border w-full"
+            />
+          </CardContent>
+        </Card>
 
-        <div>
-          <Label className="text-base font-medium mb-3 block">Horário</Label>
-          <TimeSlotGrid
-            availableTimes={availableTimes}
-            selectedTime={selectedTime}
-            onTimeSelect={onTimeSelect}
-            selectedDate={selectedDate}
-          />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Clock className="h-5 w-5 mr-2" />
+              Escolha o Horário
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!selectedDate ? (
+              <div className="text-center py-8 text-gray-500">
+                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Selecione uma data primeiro</p>
+              </div>
+            ) : availableTimes.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhum horário disponível para esta data</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                {availableTimes.map((time) => (
+                  <Button
+                    key={time}
+                    variant={selectedTime === time ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => onTimeSelect(time)}
+                    className={`h-10 ${
+                      selectedTime === time 
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" 
+                        : ""
+                    }`}
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {selectedDate && selectedTime && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="pt-4">
+            <div className="text-center">
+              <h4 className="font-semibold text-green-900 mb-2">Resumo do Agendamento</h4>
+              <p className="text-green-800">
+                <strong>Data:</strong> {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              </p>
+              <p className="text-green-800">
+                <strong>Horário:</strong> {selectedTime}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex justify-end">
+        <Button
+          disabled={!canContinue}
+          onClick={onContinue}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center px-8"
+        >
+          Continuar
+          <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
       </div>
     </div>
   );

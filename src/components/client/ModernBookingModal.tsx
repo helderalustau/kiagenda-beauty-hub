@@ -101,6 +101,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Modern
             onTimeSelect={handleTimeSelect}
             onBack={() => setCurrentStep(1)}
             formatCurrency={formatCurrency}
+            onContinue={handleNextStep}
           />
         );
 
