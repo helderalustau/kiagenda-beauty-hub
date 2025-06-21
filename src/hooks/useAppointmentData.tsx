@@ -1,290 +1,71 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Appointment } from '@/types/supabase-entities';
-import { useClientData } from './useClientData';
+import { useAppointmentFetch } from './appointments/useAppointmentFetch';
+import { useAppointmentCreate } from './appointments/useAppointmentCreate';
+import { useAppointmentUpdate } from './appointments/useAppointmentUpdate';
 
 export const useAppointmentData = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { getOrCreateClient } = useClientData();
+  
+  const fetchHook = useAppointmentFetch();
+  const createHook = useAppointmentCreate();
+  const updateHook = useAppointmentUpdate();
 
-  // Type assertion helper for appointment status
-  const normalizeAppointmentStatus = (status: string): 'pending' | 'confirmed' | 'completed' | 'cancelled' => {
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'] as const;
-    return validStatuses.includes(status as any) ? status as 'pending' | 'confirmed' | 'completed' | 'cancelled' : 'pending';
-  };
+  // Combine loading states
+  const loading = fetchHook.loading || createHook.loading || updateHook.loading;
 
-  // Helper to normalize appointment data from database
-  const normalizeAppointment = (rawAppointment: any): Appointment => {
-    return {
-      ...rawAppointment,
-      status: normalizeAppointmentStatus(rawAppointment.status)
-    };
-  };
-
-  // Fetch all appointments - Fixed return type
+  // Wrapper functions that also update local state
   const fetchAllAppointments = async (salonId: string, includeDeleted: boolean = false) => {
-    try {
-      setLoading(true);
-      let query = supabase
-        .from('appointments')
-        .select(`
-          *,
-          salon:salons(id, name, address, phone),
-          service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
-        `)
-        .eq('salon_id', salonId)
-        .order('appointment_date', { ascending: false })
-        .order('appointment_time', { ascending: false });
-
-      if (!includeDeleted) {
-        query = query.is('deleted_at', null);
-      } else {
-        query = query.not('deleted_at', 'is', null);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching appointments:', error);
-        return { success: false, data: [], message: error.message };
-      }
-
-      // Normalize the appointments data
-      const normalizedAppointments = (data || []).map(normalizeAppointment);
-      setAppointments(normalizedAppointments);
-      return { success: true, data: normalizedAppointments };
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      return { success: false, data: [], message: 'Erro ao buscar agendamentos' };
-    } finally {
-      setLoading(false);
+    const result = await fetchHook.fetchAllAppointments(salonId, includeDeleted);
+    if (result.success) {
+      setAppointments(result.data);
     }
-  };
-
-  // Update appointment status - Fixed signature
-  const updateAppointmentStatus = async (appointmentId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled', reason?: string) => {
-    try {
-      setLoading(true);
-      const updateData: any = { status };
-      if (reason) {
-        updateData.notes = reason;
-      }
-
-      const { data, error } = await supabase
-        .from('appointments')
-        .update(updateData)
-        .eq('id', appointmentId)
-        .select(`
-          *,
-          salon:salons(id, name, address, phone),
-          service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
-        `)
-        .single();
-
-      if (error) {
-        console.error('Error updating appointment status:', error);
-        return { success: false, message: error.message };
-      }
-
-      // Update local state with normalized data
-      const normalizedAppointment = normalizeAppointment(data);
-      setAppointments(prev => prev.map(appointment => 
-        appointment.id === appointmentId ? normalizedAppointment : appointment
-      ));
-      return { success: true, appointment: normalizedAppointment };
-    } catch (error) {
-      console.error('Error updating appointment status:', error);
-      return { success: false, message: 'Erro ao atualizar o status do agendamento' };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Restore appointment
-  const restoreAppointment = async (appointmentId: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('appointments')
-        .update({ deleted_at: null })
-        .eq('id', appointmentId)
-        .select(`
-          *,
-          salon:salons(id, name, address, phone),
-          service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
-        `)
-        .single();
-
-      if (error) {
-        console.error('Error restoring appointment:', error);
-        return { success: false, message: error.message };
-      }
-
-      // Update local state with normalized data
-      const normalizedAppointment = normalizeAppointment(data);
-      setAppointments(prev => prev.map(appointment => 
-        appointment.id === appointmentId ? normalizedAppointment : appointment
-      ));
-      return { success: true, appointment: normalizedAppointment };
-    } catch (error) {
-      console.error('Error restoring appointment:', error);
-      return { success: false, message: 'Erro ao restaurar o agendamento' };
-    } finally {
-      setLoading(false);
-    }
+    return result;
   };
 
   const fetchClientAppointments = async (clientId: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          salon:salons(id, name, address, phone),
-          service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
-        `)
-        .eq('client_id', clientId)
-        .order('appointment_date', { ascending: false })
-        .order('appointment_time', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching client appointments:', error);
-        return { success: false, data: [] };
-      }
-
-      // Normalize the appointments data
-      const normalizedAppointments = (data || []).map(normalizeAppointment);
-      setAppointments(normalizedAppointments);
-      return { success: true, data: normalizedAppointments };
-    } catch (error) {
-      console.error('Error fetching client appointments:', error);
-      return { success: false, data: [] };
-    } finally {
-      setLoading(false);
+    const result = await fetchHook.fetchClientAppointments(clientId);
+    if (result.success) {
+      setAppointments(result.data);
     }
+    return result;
   };
 
-  // Create appointment - VERSÃO CORRIGIDA
   const createAppointment = async (appointmentData: any) => {
-    try {
-      console.log('Creating appointment with data:', appointmentData);
-      
-      // Validação rigorosa dos dados obrigatórios
-      const requiredFields = ['salon_id', 'service_id', 'appointment_date', 'appointment_time', 'clientName', 'clientPhone'];
-      const missingFields = requiredFields.filter(field => !appointmentData[field]);
-      
-      if (missingFields.length > 0) {
-        throw new Error(`Campos obrigatórios faltando: ${missingFields.join(', ')}`);
-      }
-
-      // Validar formato da data
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(appointmentData.appointment_date)) {
-        throw new Error('Formato de data inválido. Use YYYY-MM-DD');
-      }
-
-      // Validar formato do horário
-      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-      if (!timeRegex.test(appointmentData.appointment_time)) {
-        throw new Error('Formato de horário inválido. Use HH:MM');
-      }
-
-      // Buscar ou criar cliente
-      console.log('Getting or creating client...');
-      const clientResult = await getOrCreateClient({
-        name: appointmentData.clientName,
-        phone: appointmentData.clientPhone,
-        email: appointmentData.clientEmail
-      });
-      
-      if (!clientResult.success || !clientResult.client) {
-        throw new Error(clientResult.message || 'Erro ao processar dados do cliente');
-      }
-
-      const client = clientResult.client;
-      console.log('Client processed:', client);
-
-      // Preparar dados do agendamento
-      const insertData = {
-        salon_id: appointmentData.salon_id,
-        client_id: client.id,
-        service_id: appointmentData.service_id,
-        appointment_date: appointmentData.appointment_date,
-        appointment_time: appointmentData.appointment_time, // Inserir horário diretamente
-        status: 'pending' as const,
-        notes: appointmentData.notes || null,
-        user_id: appointmentData.user_id || null
-      };
-
-      console.log('Inserting appointment data:', insertData);
-
-      // Criar agendamento
-      const { data, error } = await supabase
-        .from('appointments')
-        .insert(insertData)
-        .select(`
-          *,
-          salon:salons(id, name, address, phone),
-          service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
-        `)
-        .single();
-
-      if (error) {
-        console.error('Database error creating appointment:', error);
-        throw error;
-      }
-
-      console.log('Appointment created successfully:', data);
-      
-      // Atualizar estado local com dados normalizados
-      const normalizedAppointment = normalizeAppointment(data);
-      setAppointments(prev => [normalizedAppointment, ...prev]);
-      
-      return { 
-        success: true, 
-        appointment: normalizedAppointment,
-        message: `Agendamento criado para ${appointmentData.appointment_date} às ${appointmentData.appointment_time}`
-      };
-    } catch (error) {
-      console.error('Error in createAppointment:', error);
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Erro ao criar agendamento'
-      };
+    const result = await createHook.createAppointment(appointmentData);
+    if (result.success && result.appointment) {
+      setAppointments(prev => [result.appointment, ...prev]);
     }
+    return result;
   };
 
-  // Delete appointment
-  const deleteAppointment = async (appointmentId: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('appointments')
-        .delete()
-        .eq('id', appointmentId);
-
-      if (error) {
-        console.error('Error deleting appointment:', error);
-        return { success: false, message: error.message };
-      }
-
-      // Update local state
-      setAppointments(prev => prev.filter(appointment => appointment.id !== appointmentId));
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting appointment:', error);
-      return { success: false, message: 'Erro ao excluir o agendamento' };
-    } finally {
-      setLoading(false);
+  const updateAppointmentStatus = async (appointmentId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled', reason?: string) => {
+    const result = await updateHook.updateAppointmentStatus(appointmentId, status, reason);
+    if (result.success && result.appointment) {
+      setAppointments(prev => prev.map(appointment => 
+        appointment.id === appointmentId ? result.appointment : appointment
+      ));
     }
+    return result;
+  };
+
+  const restoreAppointment = async (appointmentId: string) => {
+    const result = await updateHook.restoreAppointment(appointmentId);
+    if (result.success && result.appointment) {
+      setAppointments(prev => prev.map(appointment => 
+        appointment.id === appointmentId ? result.appointment : appointment
+      ));
+    }
+    return result;
+  };
+
+  const deleteAppointment = async (appointmentId: string) => {
+    const result = await updateHook.deleteAppointment(appointmentId);
+    if (result.success) {
+      setAppointments(prev => prev.filter(appointment => appointment.id !== appointmentId));
+    }
+    return result;
   };
 
   return {
@@ -295,6 +76,7 @@ export const useAppointmentData = () => {
     fetchAllAppointments,
     restoreAppointment,
     fetchClientAppointments,
+    deleteAppointment,
     setAppointments
   };
 };
