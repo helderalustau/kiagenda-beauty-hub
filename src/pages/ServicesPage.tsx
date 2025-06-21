@@ -18,8 +18,8 @@ interface ServicesPageProps {
 }
 
 const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
-  const { salon } = useSalonData();
-  const { createService } = useServiceData();
+  const { salon, fetchSalonData } = useSalonData();
+  const { createService, updateService, deleteService } = useServiceData();
   const { toast } = useToast();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -27,17 +27,86 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
     name: '',
     description: '',
     price: '',
-    duration_minutes: ''
+    duration_minutes: '60'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Ensure salon data is loaded
+  useEffect(() => {
+    const loadSalonData = async () => {
+      // Try to get salon ID from localStorage first
+      const storedSalon = localStorage.getItem('currentSalon');
+      const adminAuth = localStorage.getItem('adminAuth');
+      
+      let salonId = null;
+      
+      if (storedSalon) {
+        try {
+          const parsedSalon = JSON.parse(storedSalon);
+          salonId = parsedSalon?.id;
+        } catch (error) {
+          console.error('Error parsing stored salon:', error);
+        }
+      }
+      
+      if (!salonId && adminAuth) {
+        try {
+          const parsedAuth = JSON.parse(adminAuth);
+          salonId = parsedAuth?.salon_id;
+        } catch (error) {
+          console.error('Error parsing admin auth:', error);
+        }
+      }
+      
+      if (salonId && !salon) {
+        console.log('Loading salon data for ServicesPage:', salonId);
+        await fetchSalonData(salonId);
+      }
+    };
+
+    loadSalonData();
+  }, [salon, fetchSalonData]);
+
+  const getCurrentSalonId = () => {
+    // First try the salon from hook
+    if (salon?.id) {
+      return salon.id;
+    }
+    
+    // Try stored salon
+    const storedSalon = localStorage.getItem('currentSalon');
+    if (storedSalon) {
+      try {
+        const parsedSalon = JSON.parse(storedSalon);
+        return parsedSalon?.id;
+      } catch (error) {
+        console.error('Error parsing stored salon:', error);
+      }
+    }
+    
+    // Try admin auth
+    const adminAuth = localStorage.getItem('adminAuth');
+    if (adminAuth) {
+      try {
+        const parsedAuth = JSON.parse(adminAuth);
+        return parsedAuth?.salon_id;
+      } catch (error) {
+        console.error('Error parsing admin auth:', error);
+      }
+    }
+    
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!salon?.id) {
+    const currentSalonId = getCurrentSalonId();
+    
+    if (!currentSalonId) {
       toast({
         title: "Erro",
-        description: "Estabelecimento não encontrado. Recarregue a página.",
+        description: "Estabelecimento não encontrado. Tente fazer login novamente.",
         variant: "destructive"
       });
       return;
@@ -54,38 +123,76 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
 
     setIsSubmitting(true);
 
-    const serviceData = {
-      salon_id: salon.id,
-      name: formData.name.trim(),
-      description: formData.description?.trim() || null,
-      price: parseFloat(formData.price),
-      duration_minutes: parseInt(formData.duration_minutes),
-      active: true
-    };
+    try {
+      if (editingService) {
+        // Update existing service
+        const updateData = {
+          name: formData.name.trim(),
+          description: formData.description?.trim() || null,
+          price: parseFloat(formData.price),
+          duration_minutes: parseInt(formData.duration_minutes)
+        };
 
-    console.log('Criando serviço com dados:', serviceData);
+        console.log('Updating service:', editingService.id, updateData);
+        const result = await updateService(editingService.id, updateData);
+        
+        if (result.success) {
+          toast({
+            title: "Sucesso",
+            description: "Serviço atualizado com sucesso!"
+          });
+          handleCloseDialog();
+          onRefresh();
+        } else {
+          toast({
+            title: "Erro",
+            description: result.message || "Erro ao atualizar serviço",
+            variant: "destructive"
+          });
+        }
+      } else {
+        // Create new service
+        const serviceData = {
+          salon_id: currentSalonId,
+          name: formData.name.trim(),
+          description: formData.description?.trim() || null,
+          price: parseFloat(formData.price),
+          duration_minutes: parseInt(formData.duration_minutes),
+          active: true
+        };
 
-    const result = await createService(serviceData);
-    
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Serviço criado com sucesso!"
-      });
-      handleCloseDialog();
-      onRefresh();
-    } else {
+        console.log('Creating service with data:', serviceData);
+        const result = await createService(serviceData);
+        
+        if (result.success) {
+          toast({
+            title: "Sucesso",
+            description: "Serviço criado com sucesso!"
+          });
+          handleCloseDialog();
+          onRefresh();
+        } else {
+          toast({
+            title: "Erro",
+            description: result.message || "Erro ao criar serviço",
+            variant: "destructive"
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
       toast({
         title: "Erro",
-        description: result.message || "Erro ao criar serviço",
+        description: "Erro inesperado. Tente novamente.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
   const handleEdit = (service: Service) => {
+    console.log('Editing service:', service);
     setEditingService(service);
     setFormData({
       name: service.name,
@@ -97,24 +204,40 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
   };
 
   const handleDelete = async (serviceId: string) => {
-    // TODO: Implementar função de deletar serviço
-    console.log('Deletar serviço:', serviceId);
-    toast({
-      title: "Em desenvolvimento",
-      description: "Função de deletar serviço será implementada em breve",
-    });
+    if (!window.confirm('Tem certeza que deseja excluir este serviço?')) {
+      return;
+    }
+
+    console.log('Deleting service:', serviceId);
+    
+    const result = await deleteService(serviceId);
+    
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: "Serviço excluído com sucesso!"
+      });
+      onRefresh();
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message || "Erro ao excluir serviço",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCloseDialog = () => {
     setShowAddDialog(false);
     setEditingService(null);
-    setFormData({ name: '', description: '', price: '', duration_minutes: '' });
+    setFormData({ name: '', description: '', price: '', duration_minutes: '60' });
     setIsSubmitting(false);
   };
 
-  // Debug: Mostrar ID do salon no console
+  // Debug: Log current salon state
   useEffect(() => {
-    console.log('ServicesPage - Salon atual:', salon);
+    console.log('ServicesPage - Current salon:', salon);
+    console.log('ServicesPage - Current salon ID:', getCurrentSalonId());
   }, [salon]);
 
   return (
@@ -201,7 +324,7 @@ const ServicesPage = ({ services, onRefresh }: ServicesPageProps) => {
         </div>
       )}
 
-      {/* Dialog para Adicionar/Editar Serviço - Responsivo */}
+      {/* Dialog para Adicionar/Editar Serviço */}
       <Dialog open={showAddDialog} onOpenChange={handleCloseDialog}>
         <DialogContent className="mx-4 max-w-md sm:max-w-lg">
           <DialogHeader>

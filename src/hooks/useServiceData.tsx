@@ -236,9 +236,48 @@ export const useServiceData = () => {
         throw new Error('ID do serviço é obrigatório');
       }
 
+      // Validate the update data
+      const cleanUpdateData: any = {};
+      
+      if (updateData.name !== undefined) {
+        if (!updateData.name?.trim()) {
+          throw new Error('Nome do serviço não pode estar vazio');
+        }
+        cleanUpdateData.name = updateData.name.trim();
+      }
+      
+      if (updateData.description !== undefined) {
+        cleanUpdateData.description = updateData.description?.trim() || null;
+      }
+      
+      if (updateData.price !== undefined) {
+        const price = Number(updateData.price);
+        if (isNaN(price) || price <= 0) {
+          throw new Error('Preço deve ser um número válido maior que zero');
+        }
+        cleanUpdateData.price = price;
+      }
+      
+      if (updateData.duration_minutes !== undefined) {
+        const duration = Number(updateData.duration_minutes);
+        if (isNaN(duration) || duration <= 0) {
+          throw new Error('Duração deve ser um número válido maior que zero');
+        }
+        cleanUpdateData.duration_minutes = duration;
+      }
+      
+      if (updateData.active !== undefined) {
+        cleanUpdateData.active = Boolean(updateData.active);
+      }
+      
+      // Add updated_at timestamp
+      cleanUpdateData.updated_at = new Date().toISOString();
+
+      console.log('useServiceData - Clean update data:', cleanUpdateData);
+
       const { data, error } = await supabase
         .from('services')
-        .update(updateData)
+        .update(cleanUpdateData)
         .eq('id', serviceId)
         .select()
         .single();
