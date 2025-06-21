@@ -72,11 +72,13 @@ const ServicesStep = ({
 
   const validSelectedServices = getValidSelectedServices();
   
-  // Fix: Properly type the selectedWithoutPriceEntries array with explicit typing
-  const selectedWithoutPriceEntries: Array<[string, { selected: boolean; price: number }]> = Object.entries(selectedServices).filter(([_, serviceData]) => {
-    const service = serviceData as { selected: boolean; price: number };
-    return service.selected && (!service.price || service.price <= 0);
-  }) as Array<[string, { selected: boolean; price: number }]>;
+  // Fix: Create properly typed array for services without price
+  const selectedWithoutPriceEntries = Object.entries(selectedServices)
+    .filter(([_, serviceData]) => {
+      const service = serviceData as { selected: boolean; price: number };
+      return service.selected && (!service.price || service.price <= 0);
+    })
+    .map(([serviceId, serviceData]) => [serviceId, serviceData as { selected: boolean; price: number }]) as Array<[string, { selected: boolean; price: number }]>;
 
   return (
     <div className="space-y-6">
