@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Salon } from '@/hooks/useSupabaseData';
 import { MapPin, Clock, Phone, Star, Calendar, CheckCircle, AlertCircle } from "lucide-react";
-import PlanUpgradeCard from './PlanUpgradeCard';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
@@ -30,7 +30,7 @@ const ClientDashboardContent = ({
   return (
     <div className="space-y-8">
       {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -54,9 +54,6 @@ const ClientDashboardContent = ({
             </div>
           </CardContent>
         </Card>
-
-        {/* Plan Upgrade Card */}
-        <PlanUpgradeCard currentPlan="bronze" />
       </div>
 
       {/* Agendamentos Pendentes */}

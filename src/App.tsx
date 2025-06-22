@@ -16,7 +16,6 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SalonSetup from "./pages/SalonSetup";
 import BusinessSetup from "./pages/BusinessSetup";
 import PlanSelection from "./pages/PlanSelection";
-import PlanUpgrade from "./pages/PlanUpgrade";
 import SalonSelection from "./pages/SalonSelection";
 import ClientBooking from "./pages/ClientBooking";
 import SalonLink from "./pages/SalonLink";
@@ -46,7 +45,6 @@ function App() {
               <Route path="/salon-setup" element={<SalonSetup />} />
               <Route path="/business-setup" element={<BusinessSetup />} />
               <Route path="/plan-selection" element={<PlanSelection />} />
-              <Route path="/plan-upgrade" element={<PlanUpgrade />} />
               <Route path="/salon-selection" element={<SalonSelection />} />
               <Route path="/booking/:salonSlug" element={<ClientBooking />} />
               <Route path="/salon/:salonSlug" element={<SalonLink />} />
