@@ -70,7 +70,18 @@ export const useClientAuth = () => {
     }
   };
 
-  // Register client with secure password hashing
+  // Format phone number to only digits
+  const formatPhoneForStorage = (phone: string): string => {
+    return phone.replace(/\D/g, '');
+  };
+
+  // Validate Brazilian phone number (10 or 11 digits)
+  const validateBrazilianPhone = (phone: string): boolean => {
+    const digits = phone.replace(/\D/g, '');
+    return digits.length >= 10 && digits.length <= 11;
+  };
+
+  // Register client with secure password hashing and phone formatting
   const registerClient = async (name: string, password: string, phone: string, email?: string) => {
     try {
       setLoading(true);
@@ -81,9 +92,23 @@ export const useClientAuth = () => {
         return { success: false, message: nameValidation.error || 'Nome inválido' };
       }
 
-      const phoneValidation = sanitizeAndValidate(phone, 'phone');
-      if (!phoneValidation.isValid) {
-        return { success: false, message: phoneValidation.error || 'Telefone inválido' };
+      // Format phone to only digits
+      const formattedPhone = formatPhoneForStorage(phone);
+      
+      // Validate phone
+      if (!validateBrazilianPhone(formattedPhone)) {
+        return { success: false, message: 'Telefone deve ter 10 ou 11 dígitos' };
+      }
+
+      // Check if phone already exists
+      const { data: existingClient, error: checkError } = await supabase
+        .from('client_auth')
+        .select('id')
+        .eq('phone', formattedPhone)
+        .single();
+
+      if (existingClient) {
+        return { success: false, message: 'Este telefone já está cadastrado' };
       }
 
       // Validate email if provided
@@ -112,7 +137,7 @@ export const useClientAuth = () => {
           name: nameValidation.value,
           password: 'temp', // Temporary value to satisfy required field
           password_hash: hashedPassword,
-          phone: phoneValidation.value,
+          phone: formattedPhone, // Store only digits
           email: email ? sanitizeAndValidate(email, 'email').value : null
         })
         .select()
@@ -120,6 +145,9 @@ export const useClientAuth = () => {
 
       if (error) {
         console.error('Error registering client:', error);
+        if (error.code === '23505') { // Unique constraint violation
+          return { success: false, message: 'Este telefone ou email já está cadastrado' };
+        }
         return { success: false, message: 'Erro ao registrar cliente' };
       }
 
