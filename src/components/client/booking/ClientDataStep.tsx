@@ -47,12 +47,33 @@ const ClientDataStep = ({
       console.log('ClientDataStep - Auto-filling client data from logged user:', user);
       onClientDataChange({
         name: user.name || '',
-        phone: user.id || '', // O ID do cliente é usado como phone no sistema de auth
+        phone: user.phone || user.id || '', // Usar phone se disponível, senão usar ID
         email: '', // Email removido como solicitado
         notes: clientData.notes || ''
       });
     }
   }, [user, onClientDataChange]);
+
+  // Função para formatar telefone brasileiro
+  const formatPhoneNumber = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    
+    // Aplica a máscara (11) 99999-9999
+    if (numbers.length <= 11) {
+      return numbers
+        .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+        .replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
+        .replace(/(\d{2})(\d{1,5})/, '($1) $2')
+        .replace(/(\d{2})/, '($1');
+    }
+    return value;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    onClientDataChange({ ...clientData, phone: formatted });
+  };
 
   return (
     <div className="space-y-6">
@@ -128,15 +149,13 @@ const ClientDataStep = ({
                 type="tel"
                 placeholder="(11) 99999-9999"
                 value={clientData.phone}
-                onChange={(e) => onClientDataChange({ ...clientData, phone: e.target.value })}
+                onChange={handlePhoneChange}
                 className="pl-10"
                 required
-                readOnly={!!user?.id}
+                maxLength={15}
               />
             </div>
-            {user?.id && (
-              <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente</p>
-            )}
+            <p className="text-xs text-gray-500 mt-1">Formato: (11) 99999-9999</p>
           </div>
         </div>
 

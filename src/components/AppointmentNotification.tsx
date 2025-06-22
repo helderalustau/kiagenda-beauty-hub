@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, Phone, Check, X, MapPin, Sparkles } from "lucide-react";
+import { Calendar, Clock, User, Phone, Check, X, Sparkles } from "lucide-react";
 import NotificationSounds from './NotificationSounds';
 
 interface AppointmentNotificationProps {
@@ -39,10 +39,9 @@ const AppointmentNotification = ({
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit'
     });
   };
 
@@ -66,119 +65,88 @@ const AppointmentNotification = ({
       />
       
       <Dialog open={isOpen} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-lg border-4 border-gradient-to-r from-orange-400 to-pink-400 bg-gradient-to-br from-orange-50 to-pink-50 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-center space-x-3 text-2xl text-orange-800 mb-4">
-              <div className="bg-gradient-to-r from-orange-500 to-pink-500 rounded-full p-3 animate-pulse">
-                <Sparkles className="h-8 w-8 text-white" />
+        <DialogContent className="sm:max-w-md bg-white shadow-xl border-2 border-orange-200">
+          <DialogHeader className="text-center pb-2">
+            <DialogTitle className="flex items-center justify-center space-x-2 text-lg text-orange-800">
+              <div className="bg-orange-500 rounded-full p-2 animate-pulse">
+                <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <span className="bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent font-bold">
-                🔔 Nova Solicitação de Agendamento!
-              </span>
+              <span className="font-bold">Nova Solicitação!</span>
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6">
-            {/* Client Information Card */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-orange-200">
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-full p-3">
-                  <User className="h-6 w-6 text-white" />
+          <div className="space-y-4">
+            {/* Informações do Cliente */}
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="flex items-center space-x-3">
+                <div className="bg-blue-500 rounded-full p-2">
+                  <User className="h-4 w-4 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900">{appointment.clients?.name}</h3>
-                  <div className="flex items-center space-x-2 text-gray-600 mt-1">
-                    <Phone className="h-4 w-4" />
-                    <span className="text-lg">{appointment.clients?.phone}</span>
+                  <h3 className="font-semibold text-gray-900">{appointment.clients?.name}</h3>
+                  <div className="flex items-center text-gray-600 text-sm">
+                    <Phone className="h-3 w-3 mr-1" />
+                    <span>{appointment.clients?.phone}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Service Information Card */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-pink-200">
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-3">
-                  <MapPin className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-purple-700">{appointment.services?.name}</h3>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center space-x-4">
-                      <Badge className="bg-green-100 text-green-800 text-lg px-3 py-1">
-                        {formatCurrency(appointment.services?.price || 0)}
-                      </Badge>
-                      <Badge variant="outline" className="text-blue-600 border-blue-300 text-sm">
-                        {appointment.services?.duration_minutes} min
-                      </Badge>
-                    </div>
-                  </div>
+            {/* Serviço e Horário */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-purple-50 rounded-lg p-3">
+                <h4 className="font-medium text-purple-700 mb-1">{appointment.services?.name}</h4>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-green-100 text-green-800 text-xs">
+                    {formatCurrency(appointment.services?.price || 0)}
+                  </Badge>
+                  <span className="text-xs text-gray-500">{appointment.services?.duration_minutes}min</span>
                 </div>
               </div>
-            </div>
 
-            {/* Date and Time Card */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-blue-200">
-              <div className="flex items-center space-x-4">
-                <div className="bg-gradient-to-r from-blue-500 to-green-500 rounded-full p-3">
-                  <Calendar className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-lg font-semibold text-gray-900 mb-2">
+              <div className="bg-blue-50 rounded-lg p-3">
+                <div className="flex items-center mb-1">
+                  <Calendar className="h-3 w-3 mr-1 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-700">
                     {formatDate(appointment.appointment_date)}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <span className="text-2xl font-bold text-blue-600">
-                      {formatTime(appointment.appointment_time)}
-                    </span>
-                  </div>
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1 text-blue-600" />
+                  <span className="text-lg font-bold text-blue-600">
+                    {formatTime(appointment.appointment_time)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Notes Section */}
+            {/* Observações */}
             {appointment.notes && (
-              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                <h4 className="font-semibold text-gray-700 mb-2 flex items-center">
-                  <span className="mr-2">💭</span> Observações do cliente:
-                </h4>
-                <p className="text-gray-600 italic bg-white p-3 rounded-lg border-l-4 border-blue-400">
-                  "{appointment.notes}"
+              <div className="bg-yellow-50 rounded-lg p-3 border-l-4 border-yellow-400">
+                <p className="text-sm text-gray-700">
+                  <strong>Obs:</strong> {appointment.notes}
                 </p>
               </div>
             )}
 
-            {/* Alert Section */}
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-2xl p-4">
-              <div className="flex items-center space-x-3">
-                <div className="bg-yellow-400 rounded-full p-2">
-                  <Sparkles className="h-5 w-5 text-white" />
-                </div>
-                <p className="text-yellow-800 font-medium">
-                  <strong>Atenção:</strong> Esta solicitação precisa da sua aprovação para ser confirmada.
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-center space-x-4 pt-4">
+            {/* Botões de Ação */}
+            <div className="flex space-x-3 pt-2">
               <Button 
                 onClick={onReject}
                 variant="outline"
-                size="lg"
-                className="flex items-center space-x-2 border-red-300 text-red-700 hover:bg-red-50 px-8 py-3 rounded-xl font-semibold"
+                size="sm"
+                className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
               >
-                <X className="h-5 w-5" />
-                <span>Recusar</span>
+                <X className="h-4 w-4 mr-1" />
+                Recusar
               </Button>
               <Button 
                 onClick={onAccept}
-                size="lg"
-                className="flex items-center space-x-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg px-8 py-3 rounded-xl font-semibold"
+                size="sm"
+                className="flex-1 bg-green-600 hover:bg-green-700"
               >
-                <Check className="h-5 w-5" />
-                <span>Aprovar Agendamento</span>
+                <Check className="h-4 w-4 mr-1" />
+                Aprovar
               </Button>
             </div>
           </div>
