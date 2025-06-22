@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Clock, Calendar as CalendarIcon, DollarSign } fr
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from '@/hooks/useSupabaseData';
+import TimeSlotGrid from '../TimeSlotGrid';
 
 interface DateTimeSelectionStepProps {
   selectedService: Service | null;
@@ -33,6 +34,13 @@ const DateTimeSelectionStep = ({
   onContinue
 }: DateTimeSelectionStepProps) => {
   const canContinue = selectedDate && selectedTime;
+
+  console.log('DateTimeSelectionStep - Rendering with:', {
+    selectedDate: selectedDate?.toDateString(),
+    selectedTime,
+    availableTimesCount: availableTimes?.length || 0,
+    availableTimes
+  });
 
   return (
     <div className="space-y-6">
@@ -108,34 +116,12 @@ const DateTimeSelectionStep = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!selectedDate ? (
-              <div className="text-center py-8 text-gray-500">
-                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Selecione uma data primeiro</p>
-              </div>
-            ) : availableTimes.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>Nenhum horário disponível para esta data</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
-                {availableTimes.map((time) => (
-                  <Button
-                    key={time}
-                    variant={selectedTime === time ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => onTimeSelect(time)}
-                    className={`h-10 ${
-                      selectedTime === time 
-                        ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" 
-                        : ""
-                    }`}
-                  >
-                    {time}
-                  </Button>
-                ))}
-              </div>
-            )}
+            <TimeSlotGrid
+              availableTimes={availableTimes}
+              selectedTime={selectedTime}
+              onTimeSelect={onTimeSelect}
+              selectedDate={selectedDate}
+            />
           </CardContent>
         </Card>
       </div>

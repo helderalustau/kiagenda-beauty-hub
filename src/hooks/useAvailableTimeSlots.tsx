@@ -14,12 +14,17 @@ export const useAvailableTimeSlots = () => {
 
   const generateTimeSlots = (openTime: string, closeTime: string, intervalMinutes: number = 30): string[] => {
     const slots: string[] = [];
+    
+    // Parse opening and closing times
     const [openHour, openMinute] = openTime.split(':').map(Number);
     const [closeHour, closeMinute] = closeTime.split(':').map(Number);
     
     const openTimeInMinutes = openHour * 60 + openMinute;
     const closeTimeInMinutes = closeHour * 60 + closeMinute;
     
+    console.log('Generating slots from', openTime, 'to', closeTime);
+    
+    // Generate slots every intervalMinutes
     for (let time = openTimeInMinutes; time < closeTimeInMinutes; time += intervalMinutes) {
       const hour = Math.floor(time / 60);
       const minute = time % 60;
@@ -27,11 +32,14 @@ export const useAvailableTimeSlots = () => {
       slots.push(timeString);
     }
     
+    console.log('Generated slots:', slots);
     return slots;
   };
 
   const getBookedSlots = async (salonId: string, date: string): Promise<string[]> => {
     try {
+      console.log('Fetching booked slots for salon:', salonId, 'date:', date);
+      
       const { data, error } = await supabase
         .from('appointments')
         .select('appointment_time')
@@ -44,7 +52,9 @@ export const useAvailableTimeSlots = () => {
         return [];
       }
 
-      return data?.map(appointment => appointment.appointment_time) || [];
+      const bookedTimes = data?.map(appointment => appointment.appointment_time) || [];
+      console.log('Booked slots found:', bookedTimes);
+      return bookedTimes;
     } catch (error) {
       console.error('Error in getBookedSlots:', error);
       return [];
@@ -58,6 +68,7 @@ export const useAvailableTimeSlots = () => {
 
   const fetchAvailableSlots = async (salon: Salon, selectedDate: Date) => {
     if (!salon || !selectedDate) {
+      console.log('Missing salon or date:', { salon: !!salon, date: !!selectedDate });
       setAvailableSlots([]);
       return;
     }
@@ -65,15 +76,35 @@ export const useAvailableTimeSlots = () => {
     setLoading(true);
     
     try {
-      console.log('Fetching available slots for:', { salon: salon.name, date: selectedDate });
+      console.log('Fetching available slots for:', { 
+        salon: salon.name, 
+        salonId: salon.id,
+        date: selectedDate.toDateString(),
+        openingHours: salon.opening_hours 
+      });
       
       const dayOfWeek = getDayOfWeek(selectedDate);
-      const daySchedule = salon.opening_hours?.[dayOfWeek];
+      console.log('Day of week:', dayOfWeek);
       
-      console.log('Day schedule:', { dayOfWeek, schedule: daySchedule });
+      // Verificar se salon.opening_hours existe e é um objeto válido
+      if (!salon.opening_hours || typeof salon.opening_hours !== 'object') {
+        console.error('Invalid opening hours structure:', salon.opening_hours);
+        setAvailableSlots([]);
+        return;
+      }
       
-      if (!daySchedule || daySchedule.closed) {
+      const daySchedule = salon.opening_hours[dayOfWeek];
+      console.log('Day schedule:', daySchedule);
+      
+      if (!daySchedule || daySchedule.closed === true) {
         console.log('Salon is closed on this day');
+        setAvailableSlots([]);
+        return;
+      }
+
+      // Verificar se tem horários de abertura e fechamento válidos
+      if (!daySchedule.open || !daySchedule.close) {
+        console.error('Missing open/close times:', daySchedule);
         setAvailableSlots([]);
         return;
       }
@@ -81,6 +112,12 @@ export const useAvailableTimeSlots = () => {
       // Gerar todos os horários possíveis
       const allSlots = generateTimeSlots(daySchedule.open, daySchedule.close, 30);
       console.log('All possible slots:', allSlots);
+      
+      if (allSlots.length === 0) {
+        console.log('No slots generated');
+        setAvailableSlots([]);
+        return;
+      }
       
       // Buscar horários já ocupados
       const dateString = selectedDate.toISOString().split('T')[0];
@@ -94,6 +131,7 @@ export const useAvailableTimeSlots = () => {
       const availableSlots = allSlots.filter(slot => {
         // Se o horário já está reservado, não disponibilizar
         if (bookedSlots.includes(slot)) {
+          console.log('Slot already booked:', slot);
           return false;
         }
         
@@ -103,7 +141,11 @@ export const useAvailableTimeSlots = () => {
           const slotTime = new Date();
           slotTime.setHours(hour, minute, 0, 0);
           
-          if (slotTime <= currentTime) {
+          // Adicionar 1 hora de margem para agendamentos
+          const currentTimePlusMargin = new Date(currentTime.getTime() + 60 * 60 * 1000);
+          
+          if (slotTime <= currentTimePlusMargin) {
+            console.log('Slot already passed:', slot);
             return false;
           }
         }
@@ -111,7 +153,7 @@ export const useAvailableTimeSlots = () => {
         return true;
       });
       
-      console.log('Available slots:', availableSlots);
+      console.log('Final available slots:', availableSlots);
       setAvailableSlots(availableSlots);
       
     } catch (error) {

@@ -10,10 +10,22 @@ interface TimeSlotGridProps {
   selectedTime: string;
   onTimeSelect: (time: string) => void;
   selectedDate?: Date;
+  loading?: boolean;
 }
 
-const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate }: TimeSlotGridProps) => {
-  console.log('TimeSlotGrid - Props:', { availableTimes, selectedTime, selectedDate });
+const TimeSlotGrid = ({ 
+  availableTimes, 
+  selectedTime, 
+  onTimeSelect, 
+  selectedDate,
+  loading = false 
+}: TimeSlotGridProps) => {
+  console.log('TimeSlotGrid - Rendering with props:', { 
+    availableTimes: availableTimes?.length || 0, 
+    selectedTime, 
+    selectedDate: selectedDate?.toDateString(),
+    loading 
+  });
 
   if (!selectedDate) {
     return (
@@ -24,16 +36,30 @@ const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate
     );
   }
 
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Carregando horários disponíveis...</p>
+      </div>
+    );
+  }
+
   if (!availableTimes || availableTimes.length === 0) {
     return (
       <div className="text-center py-8">
         <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600">
-          Nenhum horário disponível para {format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
-        </p>
-        <p className="text-sm text-gray-500 mt-2">
-          Este estabelecimento pode estar fechado neste dia. Tente selecionar outra data.
-        </p>
+        <div className="space-y-2">
+          <p className="text-gray-600 font-medium">
+            Nenhum horário disponível para {format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
+          </p>
+          <p className="text-sm text-gray-500">
+            Este estabelecimento pode estar fechado neste dia ou todos os horários já estão ocupados.
+          </p>
+          <p className="text-sm text-blue-600">
+            Tente selecionar outra data.
+          </p>
+        </div>
       </div>
     );
   }
@@ -95,6 +121,10 @@ const TimeSlotGrid = ({ availableTimes, selectedTime, onTimeSelect, selectedDate
         <p className="text-sm text-gray-600">
           {format(selectedDate, "EEEE, dd/MM/yyyy", { locale: ptBR })}
         </p>
+      </div>
+
+      <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded-lg mb-4">
+        {availableTimes.length} horário{availableTimes.length !== 1 ? 's' : ''} disponível{availableTimes.length !== 1 ? 'eis' : ''}
       </div>
 
       <TimeSlotSection title="Manhã" slots={morningSlots} />
