@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useClientData } from '@/hooks/useClientData';
 
 interface ClientData {
   name: string;
@@ -14,19 +15,39 @@ export const useBookingClientData = (
   setClientData: (data: ClientData) => void
 ) => {
   const { user } = useAuth();
+  const { getClientByPhone } = useClientData();
 
   // Auto-preencher dados do cliente logado
   useEffect(() => {
-    if (user) {
-      console.log('Auto-filling client data from logged user:', user);
-      setClientData({
-        name: user.name || '',
-        phone: user.id || '', // Use ID as fallback since phone doesn't exist on AuthUser
-        email: '',
-        notes: clientData.notes || ''
-      });
-    }
-  }, [user, setClientData]);
+    const loadClientData = async () => {
+      if (user) {
+        console.log('Auto-filling client data from logged user:', user);
+        
+        // Tentar buscar dados reais do cliente baseado no ID do usuário
+        const clientResult = await getClientByPhone(user.id);
+        
+        if (clientResult.success && clientResult.client) {
+          // Usar dados reais do cliente
+          setClientData({
+            name: clientResult.client.name || user.name || '',
+            phone: clientResult.client.phone || '',
+            email: clientResult.client.email || '',
+            notes: clientData.notes || ''
+          });
+        } else {
+          // Fallback para dados básicos do usuário
+          setClientData({
+            name: user.name || '',
+            phone: '', // Deixar vazio para o usuário preencher
+            email: '',
+            notes: clientData.notes || ''
+          });
+        }
+      }
+    };
+
+    loadClientData();
+  }, [user, setClientData, getClientByPhone]);
 
   return { user };
 };

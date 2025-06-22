@@ -1,253 +1,199 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings, Users, Bell, Palette, Shield, Info } from "lucide-react";
+import SalonConfigurationForm from '@/components/settings/SalonConfigurationForm';
+import SalonUsersManager from '@/components/settings/SalonUsersManager';
 import { Salon } from '@/hooks/useSupabaseData';
-import { supabase } from '@/integrations/supabase/client';
-import { Settings, Save, Upload, Volume2 } from "lucide-react";
 
 interface SettingsPageProps {
-  salon: Salon | null;
+  salon: Salon;
   onRefresh: () => Promise<void>;
 }
 
 const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    phone: '',
-    contact_phone: '',
-    is_open: false,
-    notification_sound: 'default',
-    banner_image_url: ''
-  });
-
-  useEffect(() => {
-    if (salon) {
-      setFormData({
-        name: salon.name || '',
-        address: salon.address || '',
-        phone: salon.phone || '',
-        contact_phone: salon.contact_phone || '',
-        is_open: salon.is_open || false,
-        notification_sound: salon.notification_sound || 'default',
-        banner_image_url: salon.banner_image_url || ''
-      });
-    }
-  }, [salon]);
-
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSave = async () => {
-    if (!salon) {
-      toast({
-        title: "Erro",
-        description: "Nenhum estabelecimento encontrado",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('salons')
-        .update({
-          name: formData.name,
-          address: formData.address,
-          phone: formData.phone,
-          contact_phone: formData.contact_phone,
-          is_open: formData.is_open,
-          notification_sound: formData.notification_sound,
-          banner_image_url: formData.banner_image_url,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', salon.id);
-
-      if (error) {
-        console.error('Erro ao salvar configurações:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao salvar configurações",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Sucesso!",
-        description: "Configurações salvas com sucesso!",
-      });
-
-      // Refresh data to get updated values
-      await onRefresh();
-    } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao salvar configurações",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!salon) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando configurações...</p>
-        </div>
-      </div>
-    );
-  }
+  const [activeTab, setActiveTab] = useState('general');
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 flex items-center">
-          <Settings className="h-6 w-6 mr-2" />
-          Configurações do Estabelecimento
-        </h2>
-        <p className="text-gray-600 text-sm sm:text-base">
-          Gerencie as configurações do seu estabelecimento
-        </p>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 shadow-xl">
+        <div className="flex items-center space-x-4">
+          <div className="bg-white/20 rounded-full p-3">
+            <Settings className="h-8 w-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold">Configurações</h1>
+            <p className="text-blue-100 text-lg">Gerencie as configurações do seu estabelecimento</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações Básicas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome do Estabelecimento</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Nome do seu estabelecimento"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Textarea
-                id="address"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="Endereço completo"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone Principal</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contact_phone">Telefone de Contato</Label>
-              <Input
-                id="contact_phone"
-                value={formData.contact_phone}
-                onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                placeholder="(11) 88888-8888"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Configurações Operacionais</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="is_open">Estabelecimento Aberto</Label>
-                <p className="text-sm text-gray-500">
-                  Controla se o estabelecimento está aceitando agendamentos
-                </p>
-              </div>
-              <Switch
-                id="is_open"
-                checked={formData.is_open}
-                onCheckedChange={(checked) => handleInputChange('is_open', checked)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notification_sound">Som de Notificação</Label>
-              <Select
-                value={formData.notification_sound}
-                onValueChange={(value) => handleInputChange('notification_sound', value)}
+      {/* Tabs de Configuração */}
+      <Card className="shadow-xl border-0">
+        <CardContent className="p-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-xl h-auto">
+              <TabsTrigger 
+                value="general" 
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o som" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">Padrão</SelectItem>
-                  <SelectItem value="bell">Sino</SelectItem>
-                  <SelectItem value="chime">Carrilhão</SelectItem>
-                  <SelectItem value="alert">Alerta</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-gray-500">
-                Som que será reproduzido quando chegarem novos agendamentos
-              </p>
-            </div>
+                <div className="flex flex-col items-center space-y-1">
+                  <Settings className="h-5 w-5" />
+                  <span className="text-sm font-medium">Geral</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="users"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3"
+              >
+                <div className="flex flex-col items-center space-y-1">
+                  <Users className="h-5 w-5" />
+                  <span className="text-sm font-medium">Usuários</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="notifications"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3"
+              >
+                <div className="flex flex-col items-center space-y-1">
+                  <Bell className="h-5 w-5" />
+                  <span className="text-sm font-medium">Notificações</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="appearance"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3"
+              >
+                <div className="flex flex-col items-center space-y-1">
+                  <Palette className="h-5 w-5" />
+                  <span className="text-sm font-medium">Aparência</span>
+                </div>
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="banner_image_url">URL da Imagem de Banner</Label>
-              <Input
-                id="banner_image_url"
-                value={formData.banner_image_url}
-                onChange={(e) => handleInputChange('banner_image_url', e.target.value)}
-                placeholder="https://exemplo.com/imagem.jpg"
-              />
-              <p className="text-sm text-gray-500">
-                Imagem que aparecerá na página pública do estabelecimento
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            {/* Tab: Configurações Gerais */}
+            <TabsContent value="general" className="space-y-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Settings className="h-6 w-6 text-blue-600" />
+                    <span>Informações do Estabelecimento</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <SalonConfigurationForm salon={salon} onRefresh={onRefresh} />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleSave}
-          disabled={loading}
-          size="lg"
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
-          <Save className="h-5 w-5 mr-2" />
-          {loading ? 'Salvando...' : 'Salvar Configurações'}
-        </Button>
-      </div>
+            {/* Tab: Usuários */}
+            <TabsContent value="users" className="space-y-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Users className="h-6 w-6 text-green-600" />
+                    <span>Gerenciar Usuários</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <SalonUsersManager salon={salon} onRefresh={onRefresh} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Tab: Notificações */}
+            <TabsContent value="notifications" className="space-y-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Bell className="h-6 w-6 text-orange-600" />
+                    <span>Configurações de Notificação</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Info className="h-5 w-5 text-blue-600" />
+                        <h3 className="font-semibold text-blue-800">Notificações em Tempo Real</h3>
+                      </div>
+                      <p className="text-blue-700 text-sm">
+                        As notificações são enviadas automaticamente quando um novo agendamento é solicitado.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white border rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Som Atual</h4>
+                        <div className="flex items-center space-x-2">
+                          <div className="bg-blue-100 rounded-full p-2">
+                            <Bell className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <span className="text-gray-700 capitalize">{salon.notification_sound || 'Padrão'}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white border rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Status</h4>
+                        <div className="flex items-center space-x-2">
+                          <div className="bg-green-100 rounded-full p-2">
+                            <Shield className="h-4 w-4 text-green-600" />
+                          </div>
+                          <span className="text-green-700">Ativo</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Tab: Aparência */}
+            <TabsContent value="appearance" className="space-y-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Palette className="h-6 w-6 text-purple-600" />
+                    <span>Personalização Visual</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Info className="h-5 w-5 text-purple-600" />
+                        <h3 className="font-semibold text-purple-800">Tema Personalizado</h3>
+                      </div>
+                      <p className="text-purple-700 text-sm">
+                        Personalize a aparência do seu painel administrativo.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                        <h4 className="font-medium mb-2">Tema Azul</h4>
+                        <p className="text-blue-100 text-sm">Tema padrão profissional</p>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                        <h4 className="font-medium mb-2">Tema Roxo</h4>
+                        <p className="text-purple-100 text-sm">Tema elegante</p>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
+                        <h4 className="font-medium mb-2">Tema Verde</h4>
+                        <p className="text-green-100 text-sm">Tema natural</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

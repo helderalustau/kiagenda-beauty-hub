@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service, Salon } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
+import { useClientData } from '@/hooks/useClientData';
 
 interface ClientDataStepProps {
   salon: Salon;
@@ -40,26 +41,44 @@ const ClientDataStep = ({
   onSubmit
 }: ClientDataStepProps) => {
   const { user } = useAuth();
+  const { getClientByPhone } = useClientData();
 
   // Auto-preencher com dados do cliente logado
   useEffect(() => {
-    if (user) {
-      console.log('ClientDataStep - Auto-filling client data from logged user:', user);
-      onClientDataChange({
-        name: user.name || '',
-        phone: user.id || '', // Use ID as fallback since phone doesn't exist on AuthUser
-        email: '', // Email removido como solicitado
-        notes: clientData.notes || ''
-      });
-    }
-  }, [user, onClientDataChange]);
+    const loadClientData = async () => {
+      if (user) {
+        console.log('ClientDataStep - Auto-filling client data from logged user:', user);
+        
+        // Tentar buscar dados reais do cliente
+        const clientResult = await getClientByPhone(user.id);
+        
+        if (clientResult.success && clientResult.client) {
+          // Usar dados reais do cliente
+          onClientDataChange({
+            name: clientResult.client.name || user.name || '',
+            phone: clientResult.client.phone || '',
+            email: clientResult.client.email || '',
+            notes: clientData.notes || ''
+          });
+        } else {
+          // Dados básicos apenas
+          onClientDataChange({
+            name: user.name || '',
+            phone: '', // Deixar vazio para preenchimento manual
+            email: '',
+            notes: clientData.notes || ''
+          });
+        }
+      }
+    };
+
+    loadClientData();
+  }, [user, onClientDataChange, getClientByPhone]);
 
   // Função para formatar telefone brasileiro
   const formatPhoneNumber = (value: string) => {
-    // Remove tudo que não é número
     const numbers = value.replace(/\D/g, '');
     
-    // Aplica a máscara (11) 99999-9999
     if (numbers.length <= 11) {
       return numbers
         .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
