@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Appointment } from '@/types/supabase-entities';
-import { Calendar, Clock, User, Phone, CheckCircle, X, AlertCircle, MapPin, TrendingUp, CalendarDays, Eye, Filter } from "lucide-react";
+import { Calendar, Clock, User, Phone, CheckCircle, X, AlertCircle, MapPin, TrendingUp, CalendarDays, Eye } from "lucide-react";
 import { format, isToday, isThisWeek, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAppointmentData } from '@/hooks/useAppointmentData';
@@ -71,27 +70,43 @@ const AdminCalendarView = ({ appointments, onRefresh, salonId }: AdminCalendarVi
     }
   };
 
-  // Filtrar agendamentos
+  // Filtrar agendamentos - com verificação de segurança
   const today = new Date();
   const todayAppointments = appointments.filter(apt => {
-    const appointmentDate = parseISO(apt.appointment_date);
-    return isToday(appointmentDate) && apt.status !== 'cancelled';
+    try {
+      const appointmentDate = parseISO(apt.appointment_date);
+      return isToday(appointmentDate) && apt.status !== 'cancelled';
+    } catch (error) {
+      console.error('Error parsing appointment date:', error);
+      return false;
+    }
   });
 
   const upcomingAppointments = appointments.filter(apt => {
-    const appointmentDate = parseISO(apt.appointment_date);
-    return appointmentDate > today && apt.status !== 'cancelled';
+    try {
+      const appointmentDate = parseISO(apt.appointment_date);
+      return appointmentDate > today && apt.status !== 'cancelled';
+    } catch (error) {
+      console.error('Error parsing appointment date:', error);
+      return false;
+    }
   });
 
   const thisWeekAppointments = appointments.filter(apt => {
-    const appointmentDate = parseISO(apt.appointment_date);
-    return isThisWeek(appointmentDate) && apt.status !== 'cancelled';
+    try {
+      const appointmentDate = parseISO(apt.appointment_date);
+      return isThisWeek(appointmentDate) && apt.status !== 'cancelled';
+    } catch (error) {
+      console.error('Error parsing appointment date:', error);
+      return false;
+    }
   });
 
   const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
   const completedAppointments = appointments.filter(apt => apt.status === 'completed');
   const totalRevenue = completedAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
 
+  // Cards de Estatísticas
   const renderAppointmentCard = (appointment: Appointment) => (
     <Card 
       key={appointment.id} 
