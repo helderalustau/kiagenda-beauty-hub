@@ -47,7 +47,7 @@ const ClientDataStep = ({
       console.log('ClientDataStep - Auto-filling client data from logged user:', user);
       onClientDataChange({
         name: user.name || '',
-        phone: user.phone || user.id || '', // Usar phone se disponível, senão usar ID
+        phone: user.id || '', // Use ID as fallback since phone doesn't exist on AuthUser
         email: '', // Email removido como solicitado
         notes: clientData.notes || ''
       });

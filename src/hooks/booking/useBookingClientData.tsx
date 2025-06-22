@@ -21,7 +21,7 @@ export const useBookingClientData = (
       console.log('Auto-filling client data from logged user:', user);
       setClientData({
         name: user.name || '',
-        phone: user.phone || user.id || '', // Usar phone se disponível, senão ID
+        phone: user.id || '', // Use ID as fallback since phone doesn't exist on AuthUser
         email: '',
         notes: clientData.notes || ''
       });
