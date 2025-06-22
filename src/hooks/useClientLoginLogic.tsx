@@ -9,13 +9,15 @@ export const useClientLoginLogic = () => {
   const navigate = useNavigate();
   const { authenticateClient, registerClient, loading } = useAuthData();
 
-  // Check if already logged in as client
+  // Check if already logged in as client with better validation
   useEffect(() => {
     const clientAuth = localStorage.getItem('clientAuth');
     if (clientAuth) {
       try {
         const userData = JSON.parse(clientAuth);
-        if (userData.id && userData.name) {
+        // More robust validation
+        if (userData.id && userData.name && !userData.role) {
+          console.log('Client already authenticated, redirecting to dashboard');
           navigate('/client-dashboard');
         }
       } catch (error) {
@@ -36,11 +38,20 @@ export const useClientLoginLogic = () => {
           description: "Login realizado com sucesso!"
         });
         
-        // Store client auth and redirect
-        localStorage.setItem('clientAuth', JSON.stringify({
+        // Clear any admin auth to prevent conflicts
+        localStorage.removeItem('adminAuth');
+        localStorage.removeItem('selectedSalonId');
+        
+        // Store client auth with consistent format
+        const clientData = {
           id: result.client.id,
-          name: result.client.name
-        }));
+          name: result.client.name,
+          phone: result.client.phone,
+          email: result.client.email || null,
+          loginTime: new Date().toISOString()
+        };
+        
+        localStorage.setItem('clientAuth', JSON.stringify(clientData));
         
         navigate('/client-dashboard');
       } else {
@@ -74,10 +85,19 @@ export const useClientLoginLogic = () => {
         setTimeout(async () => {
           const loginResult = await authenticateClient(username, password);
           if (loginResult.success) {
-            localStorage.setItem('clientAuth', JSON.stringify({
+            // Clear any admin auth to prevent conflicts
+            localStorage.removeItem('adminAuth');
+            localStorage.removeItem('selectedSalonId');
+            
+            const clientData = {
               id: loginResult.client.id,
-              name: loginResult.client.name
-            }));
+              name: loginResult.client.name,
+              phone: loginResult.client.phone,
+              email: loginResult.client.email || null,
+              loginTime: new Date().toISOString()
+            };
+            
+            localStorage.setItem('clientAuth', JSON.stringify(clientData));
             navigate('/client-dashboard');
           }
         }, 1000);

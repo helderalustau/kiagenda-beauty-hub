@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Salon } from '@/hooks/useSupabaseData';
 import { MapPin, Clock, Phone, Star, Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import PlanUpgradeCard from './PlanUpgradeCard';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
@@ -30,7 +30,7 @@ const ClientDashboardContent = ({
   return (
     <div className="space-y-8">
       {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -54,6 +54,9 @@ const ClientDashboardContent = ({
             </div>
           </CardContent>
         </Card>
+
+        {/* Plan Upgrade Card */}
+        <PlanUpgradeCard currentPlan="bronze" />
       </div>
 
       {/* Agendamentos Pendentes */}
@@ -91,7 +94,7 @@ const ClientDashboardContent = ({
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Estabelecimentos Disponíveis</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {salons.map((salon) => (
-            <Card key={salon.id} className="hover:shadow-lg transition-shadow">
+            <Card key={salon.id} className="hover:shadow-lg transition-shadow bg-white/80 backdrop-blur-sm border-0">
               <div className="h-48 bg-gradient-to-br from-blue-100 to-purple-100 rounded-t-lg flex items-center justify-center">
                 {salon.banner_image_url ? (
                   <img 
@@ -141,7 +144,7 @@ const ClientDashboardContent = ({
                   <Button 
                     onClick={() => onBookService(salon)}
                     disabled={!salon.is_open}
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     <Calendar className="h-4 w-4 mr-2" />
                     {salon.is_open ? "Agendar Serviço" : "Indisponível"}

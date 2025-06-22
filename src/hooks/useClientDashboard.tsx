@@ -24,14 +24,43 @@ export const useClientDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredSalons, setFilteredSalons] = useState(salons);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [clientUser, setClientUser] = useState<any>(null);
 
+  // Improved client authentication check
   useEffect(() => {
-    if (!user) {
+    const clientAuth = localStorage.getItem('clientAuth');
+    const adminAuth = localStorage.getItem('adminAuth');
+    
+    // Prevent conflicts between client and admin auth
+    if (adminAuth && clientAuth) {
+      console.log('Conflicting auth detected, clearing admin auth for client session');
+      localStorage.removeItem('adminAuth');
+      localStorage.removeItem('selectedSalonId');
+    }
+    
+    if (!clientAuth) {
+      console.log('No client authentication found, redirecting to login');
       navigate('/client-login');
       return;
     }
-    loadData();
-  }, [user, navigate]);
+
+    try {
+      const userData = JSON.parse(clientAuth);
+      if (!userData.id || !userData.name || userData.role) {
+        console.log('Invalid client auth data, redirecting to login');
+        localStorage.removeItem('clientAuth');
+        navigate('/client-login');
+        return;
+      }
+      
+      setClientUser(userData);
+      loadData();
+    } catch (error) {
+      console.error('Error parsing client auth:', error);
+      localStorage.removeItem('clientAuth');
+      navigate('/client-login');
+    }
+  }, [navigate]);
 
   // Filter salons based on search term
   useEffect(() => {
@@ -63,8 +92,8 @@ export const useClientDashboard = () => {
       await fetchAllSalons();
       
       // Load client data and appointments
-      if (user?.id) {
-        const clientResult = await getClientByPhone(user.id);
+      if (clientUser?.phone) {
+        const clientResult = await getClientByPhone(clientUser.phone);
         if (clientResult.success && clientResult.client) {
           setClientId(clientResult.client.id);
         }
@@ -105,7 +134,14 @@ export const useClientDashboard = () => {
   };
 
   const handleLogout = () => {
-    logout();
+    // Clear client-specific auth data
+    localStorage.removeItem('clientAuth');
+    setClientUser(null);
+    setClientId(null);
+    
+    // Clear any cached data
+    localStorage.removeItem('selectedSalonForBooking');
+    
     navigate('/');
   };
 
@@ -123,7 +159,7 @@ export const useClientDashboard = () => {
 
   return {
     // State
-    user,
+    user: clientUser,
     salons: filteredSalons,
     appointments,
     loading,
