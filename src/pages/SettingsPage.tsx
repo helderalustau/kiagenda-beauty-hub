@@ -15,6 +15,29 @@ interface SettingsPageProps {
 const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
   const [activeTab, setActiveTab] = useState('general');
 
+  // Handle salon changes and refresh
+  const handleSalonChange = async (updatedSalon: Salon) => {
+    // Here you would typically update the salon data
+    // For now, we'll just trigger a refresh
+    await onRefresh();
+  };
+
+  // Handle plan upgrade
+  const handleUpgrade = () => {
+    console.log('Upgrade plan requested');
+    // Add upgrade logic here
+  };
+
+  // Get max users based on plan
+  const getMaxUsers = () => {
+    const planLimits = {
+      bronze: 3,
+      silver: 10,
+      gold: 25
+    };
+    return planLimits[salon.plan as keyof typeof planLimits] || 3;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -83,7 +106,7 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <SalonConfigurationForm salon={salon} onRefresh={onRefresh} />
+                  <SalonConfigurationForm salon={salon} onSalonChange={handleSalonChange} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -98,7 +121,11 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <SalonUsersManager salon={salon} onRefresh={onRefresh} />
+                  <SalonUsersManager 
+                    salonId={salon.id} 
+                    maxUsers={getMaxUsers()} 
+                    onUpgrade={handleUpgrade} 
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
