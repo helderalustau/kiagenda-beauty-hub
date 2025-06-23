@@ -2,9 +2,10 @@
 import { useState, useCallback } from 'react';
 import { Service } from '@/hooks/useSupabaseData';
 
-interface BookingData {
+interface ClientData {
   name: string;
   phone: string;
+  email: string;
   notes: string;
 }
 
@@ -13,9 +14,10 @@ export const useBookingState = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState('');
-  const [bookingData, setBookingData] = useState<BookingData>({
+  const [clientData, setClientData] = useState<ClientData>({
     name: '',
     phone: '',
+    email: '',
     notes: ''
   });
 
@@ -41,7 +43,7 @@ export const useBookingState = () => {
     setSelectedService(null);
     setSelectedDate(undefined);
     setSelectedTime('');
-    setBookingData({ name: '', phone: '', notes: '' });
+    setClientData({ name: '', phone: '', email: '', notes: '' });
   }, []);
 
   const formatCurrency = useCallback((value: number) => {
@@ -57,10 +59,10 @@ export const useBookingState = () => {
     selectedService,
     selectedDate,
     selectedTime,
-    bookingData,
+    clientData,
     
-    // Compatibility aliases for existing modal hooks
-    clientData: bookingData,
+    // Legacy compatibility aliases
+    bookingData: clientData,
     isSubmitting: false, // This will be overridden by submission hooks
     
     // Actions
@@ -68,10 +70,10 @@ export const useBookingState = () => {
     setSelectedService,
     setSelectedDate,
     setSelectedTime,
-    setBookingData,
+    setClientData,
     
-    // Compatibility aliases
-    setClientData: setBookingData,
+    // Legacy compatibility aliases
+    setBookingData: setClientData,
     setIsSubmitting: () => {}, // This will be overridden by submission hooks
     
     // Handlers

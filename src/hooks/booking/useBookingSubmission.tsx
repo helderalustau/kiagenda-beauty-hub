@@ -5,9 +5,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Service } from '@/hooks/useSupabaseData';
 
-interface BookingData {
+interface ClientData {
   name: string;
   phone: string;
+  email: string;
   notes: string;
 }
 
@@ -54,9 +55,9 @@ export const useBookingSubmission = (salonId: string) => {
     selectedService: Service | null,
     selectedDate: Date | undefined,
     selectedTime: string,
-    bookingData: BookingData
+    clientData: ClientData
   ) => {
-    if (!selectedService || !selectedDate || !selectedTime || !bookingData.name || !bookingData.phone || !user?.id) {
+    if (!selectedService || !selectedDate || !selectedTime || !clientData.name || !clientData.phone || !user?.id) {
       toast({
         title: "Dados incompletos",
         description: "Preencha todos os campos obrigatórios",
@@ -67,7 +68,7 @@ export const useBookingSubmission = (salonId: string) => {
 
     setIsSubmitting(true);
     try {
-      const clientId = await findOrCreateClient(bookingData.name, bookingData.phone);
+      const clientId = await findOrCreateClient(clientData.name, clientData.phone);
 
       const { error } = await supabase
         .from('appointments')
@@ -79,7 +80,7 @@ export const useBookingSubmission = (salonId: string) => {
           appointment_date: selectedDate.toISOString().split('T')[0],
           appointment_time: selectedTime,
           status: 'pending',
-          notes: bookingData.notes || null
+          notes: clientData.notes || null
         });
 
       if (error) throw error;

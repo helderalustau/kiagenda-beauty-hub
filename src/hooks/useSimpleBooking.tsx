@@ -40,7 +40,7 @@ export const useSimpleBooking = (salon: Salon) => {
       bookingState.selectedService,
       bookingState.selectedDate,
       bookingState.selectedTime,
-      bookingState.bookingData
+      bookingState.clientData
     );
     
     if (success) {
