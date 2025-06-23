@@ -1,56 +1,43 @@
 
-import { useEffect, useCallback } from 'react';
-import { useServiceData } from '@/hooks/useServiceData';
-import { useToast } from "@/components/ui/use-toast";
-import { Salon } from '@/hooks/useSupabaseData';
+import { useState, useCallback } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { Service } from '@/hooks/useSupabaseData';
 
-export const useBookingServices = (salon: Salon) => {
+export const useBookingServices = (salonId: string) => {
   const { toast } = useToast();
-  const { services, fetchSalonServices, loading: servicesLoading } = useServiceData();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(false);
 
-  const loadSalonServices = useCallback(async () => {
-    if (!salon?.id) {
-      console.error('No salon ID provided');
-      return;
-    }
+  const loadServices = useCallback(async () => {
+    if (!salonId) return;
     
+    setLoadingServices(true);
     try {
-      console.log('Loading services for salon:', salon.id);
-      const salonServices = await fetchSalonServices(salon.id);
-      console.log('Services loaded:', salonServices?.length || 0, 'services');
-      
-      if (!salonServices || salonServices.length === 0) {
-        console.warn('No services found for salon:', salon.id);
-        toast({
-          title: "Aviso",
-          description: "Este estabelecimento ainda não possui serviços cadastrados.",
-          variant: "default"
-        });
-      } else {
-        const activeServices = salonServices.filter(service => service.active === true);
-        console.log('Active services:', activeServices);
-        
-        if (activeServices.length === 0) {
-          toast({
-            title: "Aviso",
-            description: "Este estabelecimento não possui serviços ativos no momento.",
-            variant: "default"
-          });
-        }
-      }
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('salon_id', salonId)
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+      setServices(data || []);
     } catch (error) {
-      console.error('Error loading salon services:', error);
+      console.error('Erro ao carregar serviços:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar serviços do estabelecimento",
+        description: "Erro ao carregar serviços",
         variant: "destructive"
       });
+    } finally {
+      setLoadingServices(false);
     }
-  }, [salon?.id, fetchSalonServices, toast]);
+  }, [salonId, toast]);
 
   return {
     services,
-    loadingServices: servicesLoading,
-    loadSalonServices
+    loadingServices,
+    loadServices
   };
 };
