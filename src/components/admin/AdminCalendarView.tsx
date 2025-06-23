@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, ChevronLeft, ChevronRight, Clock, User, Phone, Search, Filter, RefreshCw } from "lucide-react";
 import { useAppointmentData } from '@/hooks/useAppointmentData';
+import { Appointment } from '@/types/supabase-entities';
 
 interface AdminCalendarViewProps {
   salonId: string;
@@ -16,7 +16,7 @@ interface AdminCalendarViewProps {
 type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
-  const { appointments, fetchSalonAppointments, updateAppointmentStatus } = useAppointmentData();
+  const { appointments, fetchAllAppointments, updateAppointmentStatus } = useAppointmentData();
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -31,7 +31,7 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
   const loadAppointments = async () => {
     setLoading(true);
     try {
-      await fetchSalonAppointments(salonId);
+      await fetchAllAppointments(salonId);
     } catch (error) {
       console.error('Error loading appointments:', error);
     } finally {

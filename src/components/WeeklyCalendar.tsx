@@ -116,7 +116,6 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   return (
     <>
       <AdminCalendarView 
-        appointments={appointments}
         onRefresh={onRefresh}
         salonId={salon?.id || ''}
       />
