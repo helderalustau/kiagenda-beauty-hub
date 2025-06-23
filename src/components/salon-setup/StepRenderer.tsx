@@ -53,7 +53,13 @@ export const StepRenderer = ({
     case 3:
       return <ContactStep formData={formData} updateFormData={updateFormData} />;
     case 4:
-      return <HoursStep formData={formData} updateFormData={updateFormData} />;
+      return (
+        <HoursStep 
+          formData={formData} 
+          updateFormData={updateFormData} 
+          salonId={salon?.id}
+        />
+      );
     case 5:
       return (
         <ServicesStep

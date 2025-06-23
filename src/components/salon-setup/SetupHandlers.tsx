@@ -1,4 +1,3 @@
-
 import { useToast } from "@/components/ui/use-toast";
 
 interface SetupHandlersProps {
@@ -106,8 +105,15 @@ export const useSetupHandlers = ({
       return;
     }
     
-    // Update salon data only if there are changes and we have a salon
-    if (salon && currentStep > 0) {
+    // Para o passo de horários (4), não salvar automaticamente - deixar que o próprio componente gerencie
+    if (currentStep === 4) {
+      console.log('Setup - Passo de horários, não salvando automaticamente');
+      setCurrentStep(currentStep + 1);
+      return;
+    }
+    
+    // Update salon data only if there are changes and we have a salon (exceto horários)
+    if (salon && currentStep > 0 && currentStep !== 4) {
       console.log('Setup - Verificando se há mudanças para salvar...');
       
       const hasChanges = (
@@ -115,8 +121,7 @@ export const useSetupHandlers = ({
         salon.street_number !== formData.street_number ||
         salon.city !== formData.city ||
         salon.state !== formData.state ||
-        salon.contact_phone !== formData.contact_phone ||
-        JSON.stringify(salon.opening_hours) !== JSON.stringify(formData.opening_hours)
+        salon.contact_phone !== formData.contact_phone
       );
       
       if (hasChanges) {
@@ -129,7 +134,6 @@ export const useSetupHandlers = ({
           city: formData.city,
           state: formData.state,
           contact_phone: formData.contact_phone,
-          opening_hours: formData.opening_hours,
           address: `${formData.street_number}, ${formData.city}, ${formData.state}`
         };
         

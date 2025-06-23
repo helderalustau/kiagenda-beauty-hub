@@ -2,6 +2,9 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { useOpeningHours } from '@/hooks/useOpeningHours';
+import { Loader2, Save, RotateCcw } from 'lucide-react';
 
 interface FormData {
   salon_name: string;
@@ -15,16 +18,26 @@ interface FormData {
 interface HoursStepProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
+  salonId?: string;
 }
 
-const HoursStep = ({ formData, updateFormData }: HoursStepProps) => {
+const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
+  const {
+    openingHours,
+    hasChanges,
+    saving,
+    updateDaySchedule,
+    saveOpeningHours,
+    resetChanges
+  } = useOpeningHours(salonId || '', formData.opening_hours);
+
   const getDayName = (day: string) => {
     const names: { [key: string]: string } = {
-      'monday': 'Segunda',
-      'tuesday': 'Terça',
-      'wednesday': 'Quarta',
-      'thursday': 'Quinta',
-      'friday': 'Sexta',
+      'monday': 'Segunda-feira',
+      'tuesday': 'Terça-feira',
+      'wednesday': 'Quarta-feira',
+      'thursday': 'Quinta-feira',
+      'friday': 'Sexta-feira',
       'saturday': 'Sábado',
       'sunday': 'Domingo'
     };
@@ -34,8 +47,21 @@ const HoursStep = ({ formData, updateFormData }: HoursStepProps) => {
   // Ordem correta dos dias da semana
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
+  const handleSave = async () => {
+    const result = await saveOpeningHours();
+    if (result.success) {
+      // Atualizar o formData com os novos horários
+      updateFormData({ opening_hours: openingHours });
+    }
+  };
+
+  const handleReset = () => {
+    resetChanges();
+    updateFormData({ opening_hours: formData.opening_hours });
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="text-center py-4 mb-6">
         <h3 className="text-xl font-semibold text-gray-800 mb-4">
           Horários de Funcionamento
@@ -45,61 +71,100 @@ const HoursStep = ({ formData, updateFormData }: HoursStepProps) => {
         </p>
       </div>
 
-      {dayOrder.map((day) => {
-        const hours = formData.opening_hours[day];
-        return (
-          <div key={day} className="flex items-center space-x-4 p-3 border rounded-lg">
-            <div className="w-20">
-              <span className="font-medium">
-                {getDayName(day)}
-              </span>
+      <div className="space-y-4">
+        {dayOrder.map((day) => {
+          const hours = openingHours[day as keyof typeof openingHours];
+          return (
+            <div key={day} className="flex items-center space-x-4 p-4 border rounded-lg bg-white shadow-sm">
+              <div className="w-24 flex-shrink-0">
+                <span className="font-medium text-gray-700">
+                  {getDayName(day)}
+                </span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={!hours.closed}
+                  onCheckedChange={(checked) => {
+                    updateDaySchedule(day as keyof typeof openingHours, 'closed', !checked);
+                  }}
+                />
+                <span className="text-sm text-gray-600">Aberto</span>
+              </div>
+              
+              {!hours.closed && (
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Das:</span>
+                    <Input
+                      type="time"
+                      value={hours.open}
+                      onChange={(e) => {
+                        updateDaySchedule(day as keyof typeof openingHours, 'open', e.target.value);
+                      }}
+                      className="w-24"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Às:</span>
+                    <Input
+                      type="time"
+                      value={hours.close}
+                      onChange={(e) => {
+                        updateDaySchedule(day as keyof typeof openingHours, 'close', e.target.value);
+                      }}
+                      className="w-24"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <Checkbox
-              checked={!hours.closed}
-              onCheckedChange={(checked) => {
-                updateFormData({
-                  opening_hours: {
-                    ...formData.opening_hours,
-                    [day]: { ...hours, closed: !checked }
-                  }
-                });
-              }}
-            />
-            <span className="text-sm">Aberto</span>
-            {!hours.closed && (
-              <>
-                <Input
-                  type="time"
-                  value={hours.open}
-                  onChange={(e) => {
-                    updateFormData({
-                      opening_hours: {
-                        ...formData.opening_hours,
-                        [day]: { ...hours, open: e.target.value }
-                      }
-                    });
-                  }}
-                  className="w-32"
-                />
-                <span>às</span>
-                <Input
-                  type="time"
-                  value={hours.close}
-                  onChange={(e) => {
-                    updateFormData({
-                      opening_hours: {
-                        ...formData.opening_hours,
-                        [day]: { ...hours, close: e.target.value }
-                      }
-                    });
-                  }}
-                  className="w-32"
-                />
-              </>
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+
+      {/* Botões de ação */}
+      <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex space-x-2">
+          {hasChanges && (
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              disabled={saving}
+              className="flex items-center space-x-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span>Cancelar Alterações</span>
+            </Button>
+          )}
+        </div>
+
+        <Button
+          onClick={handleSave}
+          disabled={!hasChanges || saving}
+          className="flex items-center space-x-2"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Salvando...</span>
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              <span>Salvar Horários</span>
+            </>
+          )}
+        </Button>
+      </div>
+
+      {hasChanges && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <p className="text-sm text-yellow-800">
+            ⚠️ Você possui alterações não salvas nos horários de funcionamento.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
