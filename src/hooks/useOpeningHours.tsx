@@ -9,7 +9,9 @@ interface DaySchedule {
   closed: boolean;
 }
 
+// Modificado para ser compatível com Json do Supabase
 interface OpeningHours {
+  [key: string]: DaySchedule;
   monday: DaySchedule;
   tuesday: DaySchedule;
   wednesday: DaySchedule;
@@ -56,7 +58,7 @@ export const useOpeningHours = (salonId: string, initialHours?: OpeningHours) =>
       const { error } = await supabase
         .from('salons')
         .update({ 
-          opening_hours: openingHours,
+          opening_hours: openingHours as any, // Cast explícito para Json
           updated_at: new Date().toISOString()
         })
         .eq('id', salonId);
