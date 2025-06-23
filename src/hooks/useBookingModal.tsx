@@ -10,7 +10,7 @@ import { useBookingTimeSlots } from './booking/useBookingTimeSlots';
 export const useBookingModal = (salon: Salon) => {
   const bookingState = useBookingState();
   const { services, loadingServices, loadSalonServices } = useBookingServices(salon.id);
-  const { availableTimes } = useBookingTimeSlots(salon, bookingState.selectedDate);
+  const { availableTimes } = useBookingTimeSlots(salon);
   const { handleSubmit: submitAppointment } = useBookingAppointment();
 
   // Use client data hook for auto-filling
