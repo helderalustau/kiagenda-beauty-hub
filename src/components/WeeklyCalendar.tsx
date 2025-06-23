@@ -6,7 +6,7 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useToast } from "@/components/ui/use-toast";
 import AppointmentNotification from './AppointmentNotification';
-import AdminCalendarView from './admin/AdminCalendarView';
+import OptimizedAdminCalendarView from './admin/OptimizedAdminCalendarView';
 import { Appointment } from '@/types/supabase-entities';
 
 interface WeeklyCalendarProps {
@@ -22,7 +22,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   const [showNotification, setShowNotification] = useState(false);
   const [currentNotification, setCurrentNotification] = useState<Appointment | null>(null);
 
-  // Setup realtime notifications
+  // Setup realtime notifications otimizadas
   const { notifications, clearNotification } = useRealtimeNotifications({
     salonId: salon?.id || '',
     onNewAppointment: (appointment) => {
@@ -30,7 +30,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
       setCurrentNotification(appointment);
       setShowNotification(true);
       
-      // Mostrar toast também
+      // Toast otimizado
       toast({
         title: "🔔 Novo Agendamento!",
         description: `${appointment.client?.name} solicitou agendamento para ${appointment.service?.name}`,
@@ -69,7 +69,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
           });
         }
       } catch (error) {
-        console.error('Error accepting appointment:', error);
+        console.error('❌ Error accepting appointment:', error);
         toast({
           title: "Erro",
           description: "Erro ao aprovar agendamento",
@@ -102,7 +102,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
           });
         }
       } catch (error) {
-        console.error('Error rejecting appointment:', error);
+        console.error('❌ Error rejecting appointment:', error);
         toast({
           title: "Erro",
           description: "Erro ao recusar agendamento",
@@ -112,15 +112,15 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
     }
   };
 
-  // Sempre renderizar a agenda, mesmo sem salon
+  // Sempre renderizar a agenda otimizada
   return (
     <>
-      <AdminCalendarView 
+      <OptimizedAdminCalendarView 
         onRefresh={onRefresh}
         salonId={salon?.id || ''}
       />
 
-      {/* Notification Modal */}
+      {/* Notification Modal Otimizada */}
       <AppointmentNotification
         isOpen={showNotification}
         appointment={currentNotification}
