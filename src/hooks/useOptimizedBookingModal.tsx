@@ -72,6 +72,25 @@ export const useOptimizedBookingModal = (salon: Salon) => {
     }).format(value);
   }, []);
 
+  // Validação melhorada para cada etapa
+  const canProceedToStep2 = useCallback(() => {
+    return selectedService !== null && !loadingServices;
+  }, [selectedService, loadingServices]);
+
+  const canProceedToStep3 = useCallback(() => {
+    return selectedDate !== undefined && selectedTime !== '' && !slotsLoading;
+  }, [selectedDate, selectedTime, slotsLoading]);
+
+  const canSubmit = useCallback(() => {
+    return selectedService !== null && 
+           selectedDate !== undefined && 
+           selectedTime !== '' && 
+           clientData.name.trim() !== '' && 
+           clientData.phone.trim() !== '' &&
+           !isSubmitting && 
+           !isProcessing;
+  }, [selectedService, selectedDate, selectedTime, clientData, isSubmitting, isProcessing]);
+
   return {
     // State
     currentStep,
@@ -94,6 +113,11 @@ export const useOptimizedBookingModal = (salon: Salon) => {
     handleReset,
     formatCurrency,
     setClientData,
-    setCurrentStep
+    setCurrentStep,
+    
+    // Validation helpers
+    canProceedToStep2,
+    canProceedToStep3,
+    canSubmit
   };
 };

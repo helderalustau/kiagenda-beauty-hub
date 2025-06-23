@@ -37,7 +37,10 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
     handleReset,
     formatCurrency,
     setClientData,
-    setCurrentStep
+    setCurrentStep,
+    canProceedToStep2,
+    canProceedToStep3,
+    canSubmit
   } = useOptimizedBookingModal(salon);
 
   // Carrega serviços quando o modal abre
@@ -58,6 +61,11 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
     e.preventDefault();
     console.log('📋 Submitting optimized booking request');
     
+    if (!canSubmit()) {
+      console.log('❌ Cannot submit - validation failed');
+      return;
+    }
+    
     const result = await handleSubmit(e);
     if (result?.success) {
       console.log('✅ Booking successful, closing modal');
@@ -68,19 +76,17 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
   };
 
   const handleNextStep = () => {
-    if (currentStep === 1 && selectedService) {
+    console.log('➡️ Moving to next step from:', currentStep);
+    
+    if (currentStep === 1 && canProceedToStep2()) {
       console.log('➡️ Moving to step 2 (date/time selection)');
       setCurrentStep(2);
-    } else if (currentStep === 2 && selectedDate && selectedTime) {
+    } else if (currentStep === 2 && canProceedToStep3()) {
       console.log('➡️ Moving to step 3 (client data)');
       setCurrentStep(3);
+    } else {
+      console.log('❌ Cannot proceed - validation failed for step:', currentStep);
     }
-  };
-
-  const canProceedToNext = () => {
-    if (currentStep === 1) return selectedService !== null;
-    if (currentStep === 2) return selectedDate !== undefined && selectedTime !== '';
-    return false;
   };
 
   const renderStepContent = () => {
@@ -195,7 +201,7 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
               </Button>
 
               <Button
-                disabled={!canProceedToNext() || isSubmitting}
+                disabled={!canProceedToStep2() || isSubmitting}
                 onClick={handleNextStep}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center"
               >
@@ -211,28 +217,7 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
             </div>
           )}
 
-          {/* Submit button for final step */}
-          {currentStep === 3 && (
-            <div className="flex justify-center mt-8 pt-6 border-t">
-              <Button
-                onClick={handleFormSubmit}
-                disabled={isSubmitting}
-                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 flex items-center px-8"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    Confirmar Agendamento
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
+          {/* Submit button for final step - Hidden, handled by ClientDataStep */}
         </div>
       </DialogContent>
     </Dialog>
