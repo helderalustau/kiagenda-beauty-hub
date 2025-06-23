@@ -58,14 +58,20 @@ export const useSimpleBooking = (salon: Salon) => {
     }
   }, [salon?.id, toast]);
 
-  // Gerar horários disponíveis
+  // Gerar horários disponíveis - função simplificada e estável
   const generateTimeSlots = useCallback((date: Date) => {
-    if (!salon?.opening_hours || !date) return [];
+    if (!salon?.opening_hours || !date) {
+      console.log('Missing salon opening hours or date');
+      return [];
+    }
 
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
     const daySchedule = salon.opening_hours[dayOfWeek];
     
+    console.log('Generating slots for:', { dayOfWeek, daySchedule });
+    
     if (!daySchedule || daySchedule.closed === true || !daySchedule.open || !daySchedule.close) {
+      console.log('Salon closed on this day');
       return [];
     }
 
@@ -83,16 +89,33 @@ export const useSimpleBooking = (salon: Salon) => {
       slots.push(timeString);
     }
     
+    console.log('Generated slots:', slots);
     return slots;
   }, [salon?.opening_hours]);
 
-  // Carregar horários disponíveis
+  // Carregar horários disponíveis - função simplificada
   const loadAvailableTimes = useCallback(async (date: Date) => {
-    if (!salon?.id || !date) return;
+    if (!salon?.id || !date) {
+      console.log('Missing salon ID or date');
+      setAvailableTimes([]);
+      return;
+    }
 
+    console.log('Loading available times for:', date.toDateString());
     setLoadingTimes(true);
+    
     try {
       const dateString = date.toISOString().split('T')[0];
+      
+      // Gerar todos os slots possíveis primeiro
+      const allSlots = generateTimeSlots(date);
+      console.log('All possible slots:', allSlots);
+      
+      if (allSlots.length === 0) {
+        console.log('No slots generated for this day');
+        setAvailableTimes([]);
+        return;
+      }
       
       // Buscar agendamentos já existentes
       const { data: appointments, error } = await supabase
@@ -102,38 +125,54 @@ export const useSimpleBooking = (salon: Salon) => {
         .eq('appointment_date', dateString)
         .in('status', ['pending', 'confirmed']);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        throw error;
+      }
 
       const bookedTimes = appointments?.map(apt => apt.appointment_time) || [];
-      const allSlots = generateTimeSlots(date);
+      console.log('Booked times:', bookedTimes);
       
       // Filtrar horários disponíveis
       const currentTime = new Date();
       const isToday = date.toDateString() === currentTime.toDateString();
       
       const availableSlots = allSlots.filter(slot => {
-        if (bookedTimes.includes(slot)) return false;
+        // Se já está ocupado, não mostrar
+        if (bookedTimes.includes(slot)) {
+          return false;
+        }
         
+        // Se é hoje, não mostrar horários que já passaram (com margem de 1 hora)
         if (isToday) {
           const [hour, minute] = slot.split(':').map(Number);
           const slotTime = new Date();
           slotTime.setHours(hour, minute, 0, 0);
           
           const currentTimePlusMargin = new Date(currentTime.getTime() + 60 * 60 * 1000);
-          if (slotTime <= currentTimePlusMargin) return false;
+          if (slotTime <= currentTimePlusMargin) {
+            return false;
+          }
         }
         
         return true;
       });
 
+      console.log('Final available slots:', availableSlots);
       setAvailableTimes(availableSlots);
+      
     } catch (error) {
       console.error('Erro ao carregar horários:', error);
       setAvailableTimes([]);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar horários disponíveis",
+        variant: "destructive"
+      });
     } finally {
       setLoadingTimes(false);
     }
-  }, [salon?.id, generateTimeSlots]);
+  }, [salon?.id, generateTimeSlots, toast]);
 
   // Buscar ou criar cliente
   const findOrCreateClient = useCallback(async (name: string, phone: string) => {

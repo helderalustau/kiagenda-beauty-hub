@@ -46,24 +46,34 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
     formatCurrency
   } = useSimpleBooking(salon);
 
+  // Carregar serviços quando o modal abre
   useEffect(() => {
     if (isOpen && salon?.id) {
+      console.log('Modal opened, loading services for salon:', salon.name);
       loadServices();
     }
   }, [isOpen, salon?.id, loadServices]);
 
+  // Carregar horários quando data é selecionada - com debounce para evitar loops
   useEffect(() => {
-    if (selectedDate) {
-      loadAvailableTimes(selectedDate);
+    if (selectedDate && !loadingTimes) {
+      console.log('Date selected, loading times:', selectedDate.toDateString());
+      const timeoutId = setTimeout(() => {
+        loadAvailableTimes(selectedDate);
+      }, 300);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [selectedDate, loadAvailableTimes]);
+  }, [selectedDate, loadAvailableTimes, loadingTimes]);
 
   const handleClose = () => {
+    console.log('Closing modal and resetting state');
     resetBooking();
     onClose();
   };
 
   const handleSubmit = async () => {
+    console.log('Submitting booking');
     const success = await submitBooking();
     if (success) {
       onBookingSuccess();
@@ -81,6 +91,11 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
         .replace(/(\d{2})/, '($1');
     }
     return value;
+  };
+
+  const handleTimeSelect = (time: string) => {
+    console.log('Time selected:', time);
+    setSelectedTime(time);
   };
 
   if (!salon?.is_open) {
@@ -228,7 +243,11 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      onSelect={(date) => {
+                        console.log('Calendar date selected:', date?.toDateString());
+                        setSelectedDate(date);
+                        setSelectedTime(''); // Limpar horário selecionado quando data muda
+                      }}
                       disabled={(date) => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
@@ -256,10 +275,11 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
                     ) : loadingTimes ? (
                       <div className="text-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                        <p className="text-sm text-gray-600 mt-2">Carregando horários...</p>
                       </div>
                     ) : availableTimes.length === 0 ? (
                       <p className="text-gray-500 text-center py-8">
-                        Nenhum horário disponível
+                        Nenhum horário disponível para esta data
                       </p>
                     ) : (
                       <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
@@ -268,7 +288,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
                             key={time}
                             variant={selectedTime === time ? "default" : "outline"}
                             size="sm"
-                            onClick={() => setSelectedTime(time)}
+                            onClick={() => handleTimeSelect(time)}
                             className="text-sm"
                           >
                             {time}
@@ -298,7 +318,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
 
               <div className="flex justify-end">
                 <Button
-                  disabled={!selectedDate || !selectedTime}
+                  disabled={!selectedDate || !selectedTime || loadingTimes}
                   onClick={() => setCurrentStep(3)}
                   className="flex items-center"
                 >
