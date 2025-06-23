@@ -8,45 +8,23 @@ import { useOptimizedBookingFlow } from './booking/useOptimizedBookingFlow';
 import { useOptimizedTimeSlots } from './booking/useOptimizedTimeSlots';
 
 export const useOptimizedBookingModal = (salon: Salon) => {
-  const {
-    currentStep,
-    setCurrentStep,
-    selectedService,
-    selectedDate,
-    selectedTime,
-    clientData,
-    setClientData,
-    isSubmitting,
-    setIsSubmitting,
-    handleServiceSelect,
-    handleDateSelect,
-    handleTimeSelect,
-    handleReset: resetState
-  } = useBookingState();
-
-  const {
-    services,
-    loadingServices,
-    loadSalonServices
-  } = useBookingServices(salon);
-
-  const { availableSlots, loading: slotsLoading } = useOptimizedTimeSlots(salon, selectedDate);
-
-  useBookingClientData(clientData, setClientData);
-
+  const bookingState = useBookingState();
+  const { services, loadingServices, loadSalonServices } = useBookingServices(salon.id);
+  const { availableSlots, loading: slotsLoading } = useOptimizedTimeSlots(salon, bookingState.selectedDate);
   const { submitOptimizedBooking, isProcessing } = useOptimizedBookingFlow();
+
+  useBookingClientData(bookingState.clientData, bookingState.setClientData);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('🚀 Starting booking submission process');
-    setIsSubmitting(true);
     
     try {
       const result = await submitOptimizedBooking(
-        selectedService,
-        selectedDate,
-        selectedTime,
-        clientData,
+        bookingState.selectedService,
+        bookingState.selectedDate,
+        bookingState.selectedTime,
+        bookingState.clientData,
         salon
       );
       
@@ -55,15 +33,13 @@ export const useOptimizedBookingModal = (salon: Salon) => {
     } catch (error) {
       console.error('❌ Error in booking submission:', error);
       return { success: false };
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleReset = useCallback(() => {
     console.log('🔄 Resetting booking modal state');
-    resetState();
-  }, [resetState]);
+    bookingState.resetBooking();
+  }, [bookingState]);
 
   const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -74,46 +50,40 @@ export const useOptimizedBookingModal = (salon: Salon) => {
 
   // Validação melhorada para cada etapa
   const canProceedToStep2 = useCallback(() => {
-    return selectedService !== null && !loadingServices;
-  }, [selectedService, loadingServices]);
+    return bookingState.selectedService !== null && !loadingServices;
+  }, [bookingState.selectedService, loadingServices]);
 
   const canProceedToStep3 = useCallback(() => {
-    return selectedDate !== undefined && selectedTime !== '' && !slotsLoading;
-  }, [selectedDate, selectedTime, slotsLoading]);
+    return bookingState.selectedDate !== undefined && bookingState.selectedTime !== '' && !slotsLoading;
+  }, [bookingState.selectedDate, bookingState.selectedTime, slotsLoading]);
 
   const canSubmit = useCallback(() => {
-    return selectedService !== null && 
-           selectedDate !== undefined && 
-           selectedTime !== '' && 
-           clientData.name.trim() !== '' && 
-           clientData.phone.trim() !== '' &&
-           !isSubmitting && 
+    return bookingState.selectedService !== null && 
+           bookingState.selectedDate !== undefined && 
+           bookingState.selectedTime !== '' && 
+           bookingState.clientData.name.trim() !== '' && 
+           bookingState.clientData.phone.trim() !== '' &&
            !isProcessing;
-  }, [selectedService, selectedDate, selectedTime, clientData, isSubmitting, isProcessing]);
+  }, [bookingState.selectedService, bookingState.selectedDate, bookingState.selectedTime, bookingState.clientData, isProcessing]);
 
   return {
-    // State
-    currentStep,
+    // State - spread all booking state properties
+    ...bookingState,
+    
+    // Services and slots
     services,
     loadingServices,
-    selectedService,
-    selectedDate,
-    selectedTime,
     availableSlots,
     slotsLoading,
-    clientData,
-    isSubmitting: isSubmitting || isProcessing,
+    
+    // Submission state
+    isSubmitting: isProcessing,
     
     // Actions
     loadSalonServices,
-    handleServiceSelect,
-    handleDateSelect,
-    handleTimeSelect,
     handleSubmit,
     handleReset,
     formatCurrency,
-    setClientData,
-    setCurrentStep,
     
     // Validation helpers
     canProceedToStep2,

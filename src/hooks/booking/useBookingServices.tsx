@@ -35,9 +35,13 @@ export const useBookingServices = (salonId: string) => {
     }
   }, [salonId, toast]);
 
+  // Compatibility alias for existing modal hooks
+  const loadSalonServices = loadServices;
+
   return {
     services,
     loadingServices,
-    loadServices
+    loadServices,
+    loadSalonServices // Compatibility alias
   };
 };

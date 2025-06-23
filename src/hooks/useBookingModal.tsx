@@ -8,49 +8,29 @@ import { useBookingAppointment } from './booking/useBookingAppointment';
 import { useBookingTimeSlots } from './booking/useBookingTimeSlots';
 
 export const useBookingModal = (salon: Salon) => {
-  const {
-    currentStep,
-    setCurrentStep,
-    selectedService,
-    selectedDate,
-    selectedTime,
-    clientData,
-    setClientData,
-    isSubmitting,
-    setIsSubmitting,
-    handleServiceSelect,
-    handleDateSelect,
-    handleTimeSelect,
-    handleReset: resetState
-  } = useBookingState();
-
-  const {
-    services,
-    loadingServices,
-    loadSalonServices
-  } = useBookingServices(salon);
-
-  const { availableTimes } = useBookingTimeSlots(salon, selectedDate);
-
-  useBookingClientData(clientData, setClientData);
-
+  const bookingState = useBookingState();
+  const { services, loadingServices, loadSalonServices } = useBookingServices(salon.id);
+  const { availableTimes } = useBookingTimeSlots(salon, bookingState.selectedDate);
   const { handleSubmit: submitAppointment } = useBookingAppointment();
+
+  // Use client data hook for auto-filling
+  useBookingClientData(bookingState.clientData, bookingState.setClientData);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     return await submitAppointment(
-      selectedService,
-      selectedDate,
-      selectedTime,
-      clientData,
+      bookingState.selectedService,
+      bookingState.selectedDate,
+      bookingState.selectedTime,
+      bookingState.clientData,
       salon,
-      setIsSubmitting
+      () => {} // setIsSubmitting placeholder
     );
   };
 
   const handleReset = useCallback(() => {
-    resetState();
-  }, [resetState]);
+    bookingState.resetBooking();
+  }, [bookingState]);
 
   const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -60,26 +40,18 @@ export const useBookingModal = (salon: Salon) => {
   }, []);
 
   return {
-    // State
-    currentStep,
+    // State - spread all booking state properties
+    ...bookingState,
+    
+    // Services
     services,
     loadingServices,
-    selectedService,
-    selectedDate,
-    selectedTime,
     availableTimes,
-    clientData,
-    isSubmitting,
     
     // Actions
     loadSalonServices,
-    handleServiceSelect,
-    handleDateSelect,
-    handleTimeSelect,
     handleSubmit,
     handleReset,
-    formatCurrency,
-    setClientData,
-    setCurrentStep
+    formatCurrency
   };
 };
