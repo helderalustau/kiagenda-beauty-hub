@@ -38,6 +38,7 @@ export const useOptimizedBookingModal = (salon: Salon) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🚀 Starting booking submission process');
     setIsSubmitting(true);
     
     try {
@@ -48,13 +49,19 @@ export const useOptimizedBookingModal = (salon: Salon) => {
         clientData,
         salon
       );
+      
+      console.log('📊 Booking submission result:', result);
       return result;
+    } catch (error) {
+      console.error('❌ Error in booking submission:', error);
+      return { success: false };
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleReset = useCallback(() => {
+    console.log('🔄 Resetting booking modal state');
     resetState();
   }, [resetState]);
 

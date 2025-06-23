@@ -40,23 +40,27 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
     setCurrentStep
   } = useOptimizedBookingModal(salon);
 
-  // Carrega serviços apenas uma vez quando o modal abre
+  // Carrega serviços quando o modal abre
   useEffect(() => {
-    if (isOpen && salon?.id && services.length === 0 && !loadingServices) {
+    if (isOpen && salon?.id) {
       console.log('🔄 Loading services for salon:', salon.name);
       loadSalonServices();
     }
-  }, [isOpen, salon?.id, loadSalonServices, services.length, loadingServices]);
+  }, [isOpen, salon?.id, loadSalonServices]);
 
   const handleClose = () => {
+    console.log('🚪 Closing booking modal');
     handleReset();
     onClose();
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     console.log('📋 Submitting optimized booking request');
+    
     const result = await handleSubmit(e);
     if (result?.success) {
+      console.log('✅ Booking successful, closing modal');
       handleReset();
       onBookingSuccess();
       onClose();
@@ -65,8 +69,10 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
 
   const handleNextStep = () => {
     if (currentStep === 1 && selectedService) {
+      console.log('➡️ Moving to step 2 (date/time selection)');
       setCurrentStep(2);
     } else if (currentStep === 2 && selectedDate && selectedTime) {
+      console.log('➡️ Moving to step 3 (client data)');
       setCurrentStep(3);
     }
   };
@@ -166,10 +172,10 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
         <div className="p-6">
           <BookingProgressIndicator currentStep={currentStep} />
           
-          <div className="mb-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>⚡ Processo Otimizado:</strong> Sua solicitação será processada rapidamente e enviada para análise do establishment. 
-              Você receberá uma resposta em breve sobre a aprovação do seu agendamento.
+          <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-800">
+              <strong>⚡ Processo Rápido:</strong> Sua solicitação será enviada diretamente para o estabelecimento. 
+              Você receberá uma confirmação em breve!
             </p>
           </div>
           
@@ -216,11 +222,11 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processando Solicitação...
+                    Enviando...
                   </>
                 ) : (
                   <>
-                    Enviar Solicitação
+                    Confirmar Agendamento
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}

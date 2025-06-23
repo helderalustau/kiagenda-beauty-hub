@@ -20,37 +20,46 @@ export const useOptimizedBookingFlow = () => {
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Otimizada: buscar ou criar cliente
+  // Buscar ou criar cliente
   const findOrCreateClient = useCallback(async (name: string, phone: string) => {
     try {
-      // Primeiro, tentar encontrar cliente existente
+      console.log('🔍 Finding or creating client:', { name, phone });
+      
+      // Primeiro, tentar encontrar cliente existente pelo telefone
       const { data: existingClient, error: searchError } = await supabase
         .from('clients')
         .select('id')
         .eq('phone', phone)
         .maybeSingle();
 
-      if (searchError && searchError.code !== 'PGRST116') {
+      if (searchError) {
+        console.error('❌ Error searching client:', searchError);
         throw searchError;
       }
 
       if (existingClient) {
+        console.log('✅ Found existing client:', existingClient.id);
         return existingClient.id;
       }
 
       // Se não existe, criar novo cliente
+      console.log('➕ Creating new client');
       const { data: newClient, error: createError } = await supabase
         .from('clients')
         .insert({
-          name,
-          phone,
+          name: name.trim(),
+          phone: phone.trim(),
           email: null
         })
         .select('id')
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        console.error('❌ Error creating client:', createError);
+        throw createError;
+      }
 
+      console.log('✅ New client created:', newClient.id);
       return newClient.id;
     } catch (error) {
       console.error('❌ Error in findOrCreateClient:', error);
@@ -58,21 +67,21 @@ export const useOptimizedBookingFlow = () => {
     }
   }, []);
 
-  // Otimizada: criação de agendamento
+  // Criar agendamento otimizado
   const createOptimizedAppointment = useCallback(async (appointmentData: OptimizedBookingData) => {
     if (!user?.id) {
-      throw new Error('Cliente não está logado');
+      throw new Error('Usuário não está logado');
     }
 
     setIsProcessing(true);
     
     try {
-      console.log('🚀 Starting optimized appointment creation');
+      console.log('🚀 Starting optimized appointment creation:', appointmentData);
       
       // Buscar ou criar cliente
       const clientId = await findOrCreateClient(appointmentData.clientName, appointmentData.clientPhone);
 
-      // Criar agendamento
+      // Criar agendamento diretamente no banco
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
         .insert({
@@ -112,7 +121,7 @@ export const useOptimizedBookingFlow = () => {
     }
   }, [user?.id, findOrCreateClient]);
 
-  // Otimizada: validação prévia dos dados
+  // Validação dos dados de agendamento
   const validateBookingData = useCallback((
     selectedService: Service | null,
     selectedDate: Date | undefined,
@@ -127,10 +136,10 @@ export const useOptimizedBookingFlow = () => {
     if (!clientData.name.trim()) errors.push('Nome é obrigatório');
     if (!clientData.phone.trim()) errors.push('Telefone é obrigatório');
     
-    // Validação de formato do telefone
-    const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
-    if (clientData.phone && !phoneRegex.test(clientData.phone)) {
-      errors.push('Formato de telefone inválido');
+    // Validação básica do telefone (números e parênteses)
+    const phoneClean = clientData.phone.replace(/\D/g, '');
+    if (phoneClean.length < 10 || phoneClean.length > 11) {
+      errors.push('Telefone deve ter 10 ou 11 dígitos');
     }
 
     return {
@@ -139,7 +148,7 @@ export const useOptimizedBookingFlow = () => {
     };
   }, []);
 
-  // Otimizada: submissão do agendamento
+  // Submissão otimizada do agendamento
   const submitOptimizedBooking = useCallback(async (
     selectedService: Service | null,
     selectedDate: Date | undefined,
@@ -185,8 +194,8 @@ export const useOptimizedBookingFlow = () => {
       }
 
       toast({
-        title: "✅ Solicitação Enviada!",
-        description: "Sua solicitação foi enviada com sucesso. Você receberá uma resposta em breve.",
+        title: "✅ Agendamento Criado!",
+        description: "Sua solicitação foi enviada com sucesso. Aguarde a confirmação do estabelecimento.",
         duration: 6000
       });
 
