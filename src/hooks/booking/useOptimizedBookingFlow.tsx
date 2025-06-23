@@ -126,7 +126,7 @@ export const useOptimizedBookingFlow = () => {
     selectedService: Service | null,
     selectedDate: Date | undefined,
     selectedTime: string,
-    clientData: { name: string; phone: string; notes: string }
+    clientData: { name: string; phone: string; email: string; notes: string }
   ) => {
     const errors: string[] = [];
 
@@ -153,7 +153,7 @@ export const useOptimizedBookingFlow = () => {
     selectedService: Service | null,
     selectedDate: Date | undefined,
     selectedTime: string,
-    clientData: { name: string; phone: string; notes: string },
+    clientData: { name: string; phone: string; email: string; notes: string },
     salon: Salon
   ) => {
     console.log('🎯 Starting optimized booking submission');

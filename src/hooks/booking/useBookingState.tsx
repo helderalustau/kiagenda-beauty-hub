@@ -5,6 +5,7 @@ import { Service } from '@/hooks/useSupabaseData';
 interface ClientData {
   name: string;
   phone: string;
+  email: string;
   notes: string;
 }
 
@@ -16,6 +17,7 @@ export const useBookingState = () => {
   const [clientData, setClientData] = useState<ClientData>({
     name: '',
     phone: '',
+    email: '',
     notes: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,6 +51,7 @@ export const useBookingState = () => {
     setClientData({
       name: '',
       phone: '',
+      email: '',
       notes: ''
     });
     setIsSubmitting(false);
