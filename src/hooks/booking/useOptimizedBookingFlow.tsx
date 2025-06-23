@@ -1,6 +1,6 @@
 
-import { useState, useCallback, useMemo } from 'react';
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useCallback } from 'react';
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Salon, Service } from '@/hooks/useSupabaseData';
@@ -20,7 +20,45 @@ export const useOptimizedBookingFlow = () => {
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Otimizada: criação de agendamento em uma única transação
+  // Otimizada: buscar ou criar cliente
+  const findOrCreateClient = useCallback(async (name: string, phone: string) => {
+    try {
+      // Primeiro, tentar encontrar cliente existente
+      const { data: existingClient, error: searchError } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (searchError && searchError.code !== 'PGRST116') {
+        throw searchError;
+      }
+
+      if (existingClient) {
+        return existingClient.id;
+      }
+
+      // Se não existe, criar novo cliente
+      const { data: newClient, error: createError } = await supabase
+        .from('clients')
+        .insert({
+          name,
+          phone,
+          email: null
+        })
+        .select('id')
+        .single();
+
+      if (createError) throw createError;
+
+      return newClient.id;
+    } catch (error) {
+      console.error('❌ Error in findOrCreateClient:', error);
+      throw error;
+    }
+  }, []);
+
+  // Otimizada: criação de agendamento
   const createOptimizedAppointment = useCallback(async (appointmentData: OptimizedBookingData) => {
     if (!user?.id) {
       throw new Error('Cliente não está logado');
@@ -31,28 +69,35 @@ export const useOptimizedBookingFlow = () => {
     try {
       console.log('🚀 Starting optimized appointment creation');
       
-      // Transação otimizada: buscar/criar cliente e criar agendamento em uma única operação
-      const { data: result, error } = await supabase.rpc('create_appointment_optimized', {
-        p_salon_id: appointmentData.salon_id,
-        p_service_id: appointmentData.service_id,
-        p_appointment_date: appointmentData.appointment_date,
-        p_appointment_time: appointmentData.appointment_time,
-        p_client_name: appointmentData.clientName,
-        p_client_phone: appointmentData.clientPhone,
-        p_client_user_id: user.id,
-        p_notes: appointmentData.notes || null
-      });
+      // Buscar ou criar cliente
+      const clientId = await findOrCreateClient(appointmentData.clientName, appointmentData.clientPhone);
 
-      if (error) {
-        console.error('❌ Optimized appointment creation failed:', error);
-        throw error;
+      // Criar agendamento
+      const { data: appointment, error: appointmentError } = await supabase
+        .from('appointments')
+        .insert({
+          salon_id: appointmentData.salon_id,
+          service_id: appointmentData.service_id,
+          client_id: clientId,
+          user_id: user.id,
+          appointment_date: appointmentData.appointment_date,
+          appointment_time: appointmentData.appointment_time,
+          status: 'pending',
+          notes: appointmentData.notes || null
+        })
+        .select('*')
+        .single();
+
+      if (appointmentError) {
+        console.error('❌ Appointment creation failed:', appointmentError);
+        throw appointmentError;
       }
 
-      console.log('✅ Optimized appointment created successfully:', result);
+      console.log('✅ Optimized appointment created successfully:', appointment);
       
       return { 
         success: true, 
-        appointment: result,
+        appointment,
         message: 'Agendamento criado com sucesso!'
       };
 
@@ -65,7 +110,7 @@ export const useOptimizedBookingFlow = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [user?.id]);
+  }, [user?.id, findOrCreateClient]);
 
   // Otimizada: validação prévia dos dados
   const validateBookingData = useCallback((

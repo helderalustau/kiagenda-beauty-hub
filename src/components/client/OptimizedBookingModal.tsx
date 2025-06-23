@@ -6,7 +6,7 @@ import { ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 import { useOptimizedBookingModal } from '@/hooks/useOptimizedBookingModal';
 import ServiceSelectionStep from './booking/ServiceSelectionStep';
-import DateTimeSelectionStep from './booking/DateTimeSelectionStep';
+import OptimizedDateTimeStep from './booking/OptimizedDateTimeStep';
 import ClientDataStep from './booking/ClientDataStep';
 import BookingProgressIndicator from './booking/BookingProgressIndicator';
 
@@ -91,17 +91,17 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
 
       case 2:
         return (
-          <DateTimeSelectionStep
+          <OptimizedDateTimeStep
             selectedService={selectedService}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
             availableTimes={availableSlots}
+            loading={slotsLoading}
             onDateSelect={handleDateSelect}
             onTimeSelect={handleTimeSelect}
             onBack={() => setCurrentStep(1)}
             formatCurrency={formatCurrency}
             onContinue={handleNextStep}
-            loading={slotsLoading}
           />
         );
 
@@ -168,7 +168,7 @@ const OptimizedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Opt
           
           <div className="mb-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
             <p className="text-sm text-yellow-800">
-              <strong>⚡ Processo Otimizado:</strong> Sua solicitação será processada rapidamente e enviada para análise do estabelecimento. 
+              <strong>⚡ Processo Otimizado:</strong> Sua solicitação será processada rapidamente e enviada para análise do establishment. 
               Você receberá uma resposta em breve sobre a aprovação do seu agendamento.
             </p>
           </div>
