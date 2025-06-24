@@ -1,41 +1,36 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Salon } from '@/hooks/useSupabaseData';
 import { useBookingState } from '@/hooks/booking/useBookingState';
 import { useBookingServices } from '@/hooks/booking/useBookingServices';
-import { useBookingTimeSlots } from '@/hooks/booking/useBookingTimeSlots';
 import { useBookingSubmission } from '@/hooks/booking/useBookingSubmission';
+import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
 
 export const useSimpleBooking = (salon: Salon) => {
-  // Usar os hooks especializados
   const bookingState = useBookingState();
   const { services, loadingServices, loadServices } = useBookingServices(salon.id);
-  const { availableTimes, loadingTimes, loadAvailableTimes, setAvailableTimes } = useBookingTimeSlots(salon);
+  const { availableSlots, loading: loadingTimes, fetchAvailableSlots } = useAvailableTimeSlots();
   const { isSubmitting, submitBooking } = useBookingSubmission(salon.id);
 
   // Carregar serviços quando o hook é inicializado
   useEffect(() => {
     if (salon?.id) {
-      console.log('Loading services for salon:', salon.name);
+      console.log('🔄 Loading services for salon:', salon.name);
       loadServices();
     }
   }, [salon?.id, loadServices]);
 
-  // Carregar horários quando data é selecionada - com debounce para evitar loops
+  // Carregar horários quando data é selecionada
   useEffect(() => {
-    if (bookingState.selectedDate && !loadingTimes) {
-      console.log('Date selected, loading times:', bookingState.selectedDate.toDateString());
-      const timeoutId = setTimeout(() => {
-        loadAvailableTimes(bookingState.selectedDate!);
-      }, 300);
-      
-      return () => clearTimeout(timeoutId);
+    if (bookingState.selectedDate && salon) {
+      console.log('📅 Date selected, fetching available slots for:', bookingState.selectedDate.toDateString());
+      fetchAvailableSlots(salon, bookingState.selectedDate);
     }
-  }, [bookingState.selectedDate, loadAvailableTimes, loadingTimes]);
+  }, [bookingState.selectedDate, salon, fetchAvailableSlots]);
 
   // Submeter agendamento
   const handleSubmitBooking = async () => {
-    console.log('Submitting booking');
+    console.log('📋 Submitting booking');
     const success = await submitBooking(
       bookingState.selectedService,
       bookingState.selectedDate,
@@ -45,7 +40,6 @@ export const useSimpleBooking = (salon: Salon) => {
     
     if (success) {
       bookingState.resetBooking();
-      setAvailableTimes([]);
     }
     
     return success;
@@ -60,10 +54,9 @@ export const useSimpleBooking = (salon: Salon) => {
     loadingServices,
     loadServices,
     
-    // Horários
-    availableTimes,
+    // Horários - usando availableSlots em vez de availableTimes
+    availableTimes: availableSlots,
     loadingTimes,
-    loadAvailableTimes,
     
     // Submissão
     isSubmitting,

@@ -34,41 +34,19 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
     setSelectedDate,
     setSelectedTime,
     setClientData,
-    loadServices,
-    loadAvailableTimes,
     submitBooking,
     resetBooking,
     formatCurrency
   } = useSimpleBooking(salon);
 
-  // Carregar serviços quando o modal abre
-  useEffect(() => {
-    if (isOpen && salon?.id) {
-      console.log('Modal opened, loading services for salon:', salon.name);
-      loadServices();
-    }
-  }, [isOpen, salon?.id, loadServices]);
-
-  // Carregar horários quando data é selecionada - com debounce para evitar loops
-  useEffect(() => {
-    if (selectedDate && !loadingTimes) {
-      console.log('Date selected, loading times:', selectedDate.toDateString());
-      const timeoutId = setTimeout(() => {
-        loadAvailableTimes(selectedDate);
-      }, 300);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedDate, loadAvailableTimes, loadingTimes]);
-
   const handleClose = () => {
-    console.log('Closing modal and resetting state');
+    console.log('🚪 Closing modal and resetting state');
     resetBooking();
     onClose();
   };
 
   const handleSubmit = async () => {
-    console.log('Submitting booking');
+    console.log('📋 Submitting booking');
     const success = await submitBooking();
     if (success) {
       onBookingSuccess();
@@ -77,12 +55,12 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   };
 
   const handleTimeSelect = (time: string) => {
-    console.log('Time selected:', time);
+    console.log('⏰ Time selected:', time);
     setSelectedTime(time);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
-    console.log('Calendar date selected:', date?.toDateString());
+    console.log('📅 Calendar date selected:', date?.toDateString());
     setSelectedDate(date);
     setSelectedTime(''); // Limpar horário selecionado quando data muda
   };
@@ -116,10 +94,8 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Indicador de progresso */}
           <SimpleBookingProgressIndicator currentStep={currentStep} />
 
-          {/* Etapa 1: Selecionar Serviço */}
           {currentStep === 1 && (
             <SimpleServiceSelectionStep
               services={services}
@@ -131,7 +107,6 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
             />
           )}
 
-          {/* Etapa 2: Selecionar Data e Horário */}
           {currentStep === 2 && (
             <SimpleDateTimeSelectionStep
               selectedService={selectedService}
@@ -147,7 +122,6 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
             />
           )}
 
-          {/* Etapa 3: Dados do Cliente */}
           {currentStep === 3 && (
             <SimpleClientDataStep
               selectedService={selectedService}
