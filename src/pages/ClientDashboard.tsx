@@ -26,9 +26,15 @@ const ClientDashboard = () => {
     clearSearch
   } = useClientDashboard();
 
-  // Filter appointments by status
-  const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
+  // Filter appointments by status - cliente vê agendamentos ativos (pending e confirmed)
+  const activeAppointments = appointments.filter(apt => 
+    apt.status === 'pending' || apt.status === 'confirmed'
+  );
   const completedAppointments = appointments.filter(apt => apt.status === 'completed');
+
+  console.log('ClientDashboard - All appointments:', appointments);
+  console.log('ClientDashboard - Active appointments:', activeAppointments);
+  console.log('ClientDashboard - Completed appointments:', completedAppointments);
 
   if (loading && !isRefreshing) {
     return <ClientDashboardLoading />;
@@ -66,7 +72,7 @@ const ClientDashboard = () => {
           <ClientDashboardContent
             salons={salons}
             onBookService={handleBookService}
-            pendingAppointments={pendingAppointments}
+            activeAppointments={activeAppointments}
             completedAppointments={completedAppointments}
           />
         )}

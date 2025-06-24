@@ -4,20 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Salon } from '@/hooks/useSupabaseData';
-import { MapPin, Clock, Phone, Star, Calendar, CheckCircle, AlertCircle } from "lucide-react";
-import PendingAppointmentCard from './PendingAppointmentCard';
+import { MapPin, Clock, Phone, Star, Calendar, CheckCircle, AlertCircle, Clock4 } from "lucide-react";
+import ActiveAppointmentCard from './ActiveAppointmentCard';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
   onBookService: (salon: Salon) => void;
-  pendingAppointments: any[];
+  activeAppointments: any[];
   completedAppointments: any[];
 }
 
 const ClientDashboardContent = ({ 
   salons, 
   onBookService, 
-  pendingAppointments, 
+  activeAppointments, 
   completedAppointments 
 }: ClientDashboardContentProps) => {
   
@@ -28,18 +28,34 @@ const ClientDashboardContent = ({
     }).format(value);
   };
 
+  // Separar agendamentos ativos por status
+  const pendingAppointments = activeAppointments.filter(apt => apt.status === 'pending');
+  const confirmedAppointments = activeAppointments.filter(apt => apt.status === 'confirmed');
+
   return (
     <div className="space-y-8">
       {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-orange-600">Agendamentos Pendentes</p>
+                <p className="text-sm font-medium text-orange-600">Aguardando Aprovação</p>
                 <p className="text-2xl font-bold text-orange-900">{pendingAppointments.length}</p>
               </div>
-              <AlertCircle className="h-8 w-8 text-orange-600" />
+              <Clock4 className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600">Agendamentos Confirmados</p>
+                <p className="text-2xl font-bold text-blue-900">{confirmedAppointments.length}</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
@@ -48,7 +64,7 @@ const ClientDashboardContent = ({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600">Agendamentos Concluídos</p>
+                <p className="text-sm font-medium text-green-600">Atendimentos Concluídos</p>
                 <p className="text-2xl font-bold text-green-900">{completedAppointments.length}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -57,16 +73,16 @@ const ClientDashboardContent = ({
         </Card>
       </div>
 
-      {/* Agendamentos Pendentes com Cards Detalhados */}
-      {pendingAppointments.length > 0 && (
+      {/* Agendamentos Ativos */}
+      {activeAppointments.length > 0 && (
         <div>
           <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <AlertCircle className="h-5 w-5 mr-2 text-orange-500" />
-            Suas Solicitações de Agendamento
+            <Calendar className="h-5 w-5 mr-2 text-blue-500" />
+            Seus Agendamentos Ativos
           </h3>
           <div className="space-y-4">
-            {pendingAppointments.map((appointment) => (
-              <PendingAppointmentCard key={appointment.id} appointment={appointment} />
+            {activeAppointments.map((appointment) => (
+              <ActiveAppointmentCard key={appointment.id} appointment={appointment} />
             ))}
           </div>
         </div>
@@ -144,7 +160,7 @@ const ClientDashboardContent = ({
         <div>
           <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-            Histórico de Agendamentos
+            Histórico de Atendimentos
           </h3>
           <div className="space-y-3">
             {completedAppointments.map((appointment) => (

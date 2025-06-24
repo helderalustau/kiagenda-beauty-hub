@@ -54,7 +54,7 @@ export const useClientDashboard = () => {
       }
       
       setClientUser(userData);
-      loadData();
+      loadData(userData);
     } catch (error) {
       console.error('Error parsing client auth:', error);
       localStorage.removeItem('clientAuth');
@@ -75,28 +75,19 @@ export const useClientDashboard = () => {
     }
   }, [salons, searchTerm]);
 
-  // Load client appointments when clientId is available
-  useEffect(() => {
-    if (clientId) {
-      fetchClientAppointments(clientId);
-    }
-  }, [clientId, fetchClientAppointments]);
-
-  const loadData = async () => {
+  const loadData = async (userData = clientUser) => {
     try {
-      console.log('ClientDashboard - Loading data...');
+      console.log('ClientDashboard - Loading data for user:', userData);
       setHasError(false);
       setIsRefreshing(true);
       
       // Load salons
       await fetchAllSalons();
       
-      // Load client data and appointments
-      if (clientUser?.phone) {
-        const clientResult = await getClientByPhone(clientUser.phone);
-        if (clientResult.success && clientResult.client) {
-          setClientId(clientResult.client.id);
-        }
+      // Load client appointments directly using the authenticated user ID
+      if (userData?.id) {
+        console.log('Loading appointments for client ID:', userData.id);
+        await fetchClientAppointments(userData.id);
       }
       
       console.log('ClientDashboard - Data loaded successfully');
@@ -166,7 +157,7 @@ export const useClientDashboard = () => {
     hasError,
     isRefreshing,
     searchTerm,
-    clientId,
+    clientId: clientUser?.id,
     
     // Actions
     setSearchTerm,

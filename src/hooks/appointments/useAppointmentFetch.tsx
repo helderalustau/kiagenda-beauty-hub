@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Appointment } from '@/types/supabase-entities';
+import { Appointment } codeImport '@/types/supabase-entities';
 import { useAppointmentTypes } from './useAppointmentTypes';
 
 export const useAppointmentFetch = () => {
@@ -51,6 +51,8 @@ export const useAppointmentFetch = () => {
   const fetchClientAppointments = async (clientId: string) => {
     try {
       setLoading(true);
+      console.log('Fetching appointments for client ID:', clientId);
+      
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -60,6 +62,7 @@ export const useAppointmentFetch = () => {
           client:client_auth(id, username, name, phone, email)
         `)
         .eq('client_auth_id', clientId)
+        .is('deleted_at', null)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
@@ -68,8 +71,12 @@ export const useAppointmentFetch = () => {
         return { success: false, data: [] };
       }
 
+      console.log('Raw client appointments data:', data);
+
       // Normalize the appointments data
       const normalizedAppointments: Appointment[] = (data || []).map(normalizeAppointment);
+      console.log('Normalized client appointments:', normalizedAppointments);
+      
       return { success: true, data: normalizedAppointments };
     } catch (error) {
       console.error('Error fetching client appointments:', error);
