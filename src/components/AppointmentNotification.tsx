@@ -1,28 +1,16 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React, { useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, Phone, Check, X, Sparkles } from "lucide-react";
-import NotificationSounds from './NotificationSounds';
+import { X, Calendar, Clock, User, Phone, MapPin, Star } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Appointment } from '@/types/supabase-entities';
 
 interface AppointmentNotificationProps {
   isOpen: boolean;
-  appointment: {
-    id: string;
-    appointment_date: string;
-    appointment_time: string;
-    notes?: string;
-    clients?: {
-      name: string;
-      phone: string;
-    };
-    services?: {
-      name: string;
-      price: number;
-      duration_minutes: number;
-    };
-  } | null;
+  appointment: Appointment | null;
   soundType: 'default' | 'bell' | 'chime' | 'alert';
   onAccept: () => void;
   onReject: () => void;
@@ -31,23 +19,31 @@ interface AppointmentNotificationProps {
 const AppointmentNotification = ({ 
   isOpen, 
   appointment, 
-  soundType, 
+  soundType = 'default',
   onAccept, 
   onReject 
 }: AppointmentNotificationProps) => {
-  if (!appointment) return null;
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      weekday: 'short',
-      day: '2-digit',
-      month: '2-digit'
-    });
-  };
-
-  const formatTime = (timeString: string) => {
-    return timeString.substring(0, 5);
-  };
+  useEffect(() => {
+    if (isOpen && appointment) {
+      // Play notification sound based on type
+      const audio = new Audio();
+      switch (soundType) {
+        case 'bell':
+          audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYfCEWm5fK/bS...';
+          break;
+        case 'chime':
+          audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYfCEWm5fK/bS...';
+          break;
+        case 'alert':
+          audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYfCEWm5fK/bS...';
+          break;
+        default:
+          audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYfCEWm5fK/bS...';
+      }
+      audio.volume = 0.3;
+      audio.play().catch(e => console.log('Não foi possível reproduzir o som:', e));
+    }
+  }, [isOpen, appointment, soundType]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -56,103 +52,126 @@ const AppointmentNotification = ({
     }).format(value);
   };
 
+  if (!isOpen || !appointment) return null;
+
   return (
-    <>
-      <NotificationSounds 
-        soundType={soundType}
-        isPlaying={isOpen}
-        onStop={() => {}}
-      />
-      
-      <Dialog open={isOpen} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md bg-white shadow-xl border-2 border-orange-200">
-          <DialogHeader className="text-center pb-2">
-            <DialogTitle className="flex items-center justify-center space-x-2 text-lg text-orange-800">
-              <div className="bg-orange-500 rounded-full p-2 animate-pulse">
-                <Sparkles className="h-5 w-5 text-white" />
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md bg-white shadow-2xl border-2 border-blue-200 animate-in fade-in-0 zoom-in-95 duration-300">
+        <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-6 w-6 text-yellow-300" />
+              Novo Agendamento!
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReject}
+              className="text-white hover:bg-blue-600"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="p-6 space-y-4">
+          {/* Informações do Cliente */}
+          <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <User className="h-4 w-4 text-blue-500" />
+              Informações do Cliente
+            </h3>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <User className="h-3 w-3 text-gray-500" />
+                <span className="font-medium text-gray-900">
+                  {appointment.client?.name || appointment.client?.username || 'Cliente'}
+                </span>
               </div>
-              <span className="font-bold">Nova Solicitação!</span>
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Informações do Cliente */}
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center space-x-3">
-                <div className="bg-blue-500 rounded-full p-2">
-                  <User className="h-4 w-4 text-white" />
+              
+              {appointment.client?.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3 w-3 text-gray-500" />
+                  <span className="text-gray-700">{appointment.client.phone}</span>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{appointment.clients?.name}</h3>
-                  <div className="flex items-center text-gray-600 text-sm">
-                    <Phone className="h-3 w-3 mr-1" />
-                    <span>{appointment.clients?.phone}</span>
-                  </div>
+              )}
+              
+              {appointment.client?.email && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3 w-3 text-gray-500" />
+                  <span className="text-gray-700">{appointment.client.email}</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Serviço e Horário */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-purple-50 rounded-lg p-3">
-                <h4 className="font-medium text-purple-700 mb-1">{appointment.services?.name}</h4>
-                <div className="flex items-center justify-between">
-                  <Badge className="bg-green-100 text-green-800 text-xs">
-                    {formatCurrency(appointment.services?.price || 0)}
-                  </Badge>
-                  <span className="text-xs text-gray-500">{appointment.services?.duration_minutes}min</span>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 rounded-lg p-3">
-                <div className="flex items-center mb-1">
-                  <Calendar className="h-3 w-3 mr-1 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-700">
-                    {formatDate(appointment.appointment_date)}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1 text-blue-600" />
-                  <span className="text-lg font-bold text-blue-600">
-                    {formatTime(appointment.appointment_time)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Observações */}
-            {appointment.notes && (
-              <div className="bg-yellow-50 rounded-lg p-3 border-l-4 border-yellow-400">
-                <p className="text-sm text-gray-700">
-                  <strong>Obs:</strong> {appointment.notes}
-                </p>
-              </div>
-            )}
-
-            {/* Botões de Ação */}
-            <div className="flex space-x-3 pt-2">
-              <Button 
-                onClick={onReject}
-                variant="outline"
-                size="sm"
-                className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Recusar
-              </Button>
-              <Button 
-                onClick={onAccept}
-                size="sm"
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                <Check className="h-4 w-4 mr-1" />
-                Aprovar
-              </Button>
+              )}
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+
+          {/* Detalhes do Agendamento */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-700">Serviço:</span>
+              <span className="font-semibold text-gray-900">{appointment.service?.name}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-700">Valor:</span>
+              <span className="font-semibold text-green-600">
+                {formatCurrency(appointment.service?.price || 0)}
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-700">Duração:</span>
+              <span className="text-gray-900">{appointment.service?.duration_minutes} min</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <span className="text-gray-700">
+                {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <span className="text-gray-700">{appointment.appointment_time}</span>
+            </div>
+            
+            {appointment.notes && (
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <span className="font-medium text-gray-700">Observações:</span>
+                <p className="text-gray-900 mt-1">{appointment.notes}</p>
+              </div>
+            )}
+          </div>
+
+          <Badge variant="secondary" className="w-full justify-center bg-yellow-100 text-yellow-800">
+            Aguardando sua aprovação
+          </Badge>
+
+          {/* Botões de Ação */}
+          <div className="flex gap-3 pt-4">
+            <Button 
+              onClick={onReject}
+              variant="outline" 
+              className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+            >
+              Recusar
+            </Button>
+            <Button 
+              onClick={onAccept}
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+            >
+              Aceitar Agendamento
+            </Button>
+          </div>
+          
+          <p className="text-xs text-gray-500 text-center pt-2">
+            Solicitado em {format(new Date(appointment.created_at || ''), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

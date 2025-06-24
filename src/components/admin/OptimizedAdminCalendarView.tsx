@@ -81,15 +81,22 @@ const OptimizedAdminCalendarView = ({ salonId, onRefresh }: OptimizedAdminCalend
   }, [currentWeek]);
 
   const filteredAppointments = useMemo(() => {
-    return appointments.filter(apt => {
-      const matchesSearch = !searchTerm || 
-        apt.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.service?.name.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
+    return appointments
+      .filter(apt => {
+        const matchesSearch = !searchTerm || 
+          apt.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          apt.service?.name.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => {
+        // Ordenar por data de criação (mais recentes primeiro)
+        const dateA = new Date(a.created_at || '').getTime();
+        const dateB = new Date(b.created_at || '').getTime();
+        return dateB - dateA;
+      });
   }, [appointments, searchTerm, statusFilter]);
 
   const getStatusColor = useCallback((status: string) => {
@@ -114,13 +121,13 @@ const OptimizedAdminCalendarView = ({ salonId, onRefresh }: OptimizedAdminCalend
 
   return (
     <div className="space-y-6">
-      {/* Header Controls Otimizado */}
+      {/* Header Controls */}
       <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-600" />
-              Agenda Semanal
+              Agenda Semanal - Todos os Agendamentos
               {loading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
             </CardTitle>
             <Button onClick={() => { loadAppointments(); onRefresh(); }} size="sm" variant="outline" disabled={loading}>
@@ -130,7 +137,7 @@ const OptimizedAdminCalendarView = ({ salonId, onRefresh }: OptimizedAdminCalend
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Week Navigation Otimizada */}
+          {/* Week Navigation */}
           <div className="flex items-center justify-between">
             <Button onClick={() => navigateWeek('prev')} variant="outline" size="sm" disabled={loading}>
               <ChevronLeft className="h-4 w-4" />
@@ -144,7 +151,7 @@ const OptimizedAdminCalendarView = ({ salonId, onRefresh }: OptimizedAdminCalend
             </Button>
           </div>
 
-          {/* Filters Otimizados */}
+          {/* Filters */}
           <div className="flex gap-4 items-center">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -171,7 +178,7 @@ const OptimizedAdminCalendarView = ({ salonId, onRefresh }: OptimizedAdminCalend
             </Select>
           </div>
 
-          {/* Estatísticas Rápidas */}
+          {/* Quick Stats */}
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center p-2 bg-yellow-50 rounded-lg">
               <div className="text-lg font-bold text-yellow-600">
@@ -201,13 +208,15 @@ const OptimizedAdminCalendarView = ({ salonId, onRefresh }: OptimizedAdminCalend
         </CardContent>
       </Card>
 
-      {/* Weekly Calendar Grid Otimizada */}
+      {/* Weekly Calendar Grid */}
       <div className="grid grid-cols-7 gap-4">
         {weekDays.map((day, index) => {
-          const dayAppointments = filteredAppointments.filter(apt => {
-            const aptDate = new Date(apt.appointment_date);
-            return aptDate.toDateString() === day.toDateString();
-          });
+          const dayAppointments = filteredAppointments
+            .filter(apt => {
+              const aptDate = new Date(apt.appointment_date);
+              return aptDate.toDateString() === day.toDateString();
+            })
+            .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
 
           return (
             <Card key={day.toISOString()} className="bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow">
@@ -226,87 +235,97 @@ const OptimizedAdminCalendarView = ({ salonId, onRefresh }: OptimizedAdminCalend
                 {dayAppointments.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-4">Nenhum agendamento</p>
                 ) : (
-                  dayAppointments
-                    .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
-                    .map((appointment) => {
-                      const isUpdating = updatingAppointments.has(appointment.id);
-                      
-                      return (
-                        <div key={appointment.id} className="bg-gray-50 rounded-lg p-3 space-y-2 transition-all hover:bg-gray-100">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-3 w-3 text-gray-500" />
-                              <span className="text-sm font-medium">{appointment.appointment_time}</span>
-                            </div>
-                            <Badge className={`${getStatusColor(appointment.status)} border`} variant="secondary">
-                              {appointment.status === 'pending' && 'Pendente'}
-                              {appointment.status === 'confirmed' && 'Confirmado'}
-                              {appointment.status === 'completed' && 'Concluído'}
-                              {appointment.status === 'cancelled' && 'Cancelado'}
-                            </Badge>
+                  dayAppointments.map((appointment) => {
+                    const isUpdating = updatingAppointments.has(appointment.id);
+                    
+                    return (
+                      <div key={appointment.id} className="bg-gray-50 rounded-lg p-3 space-y-2 transition-all hover:bg-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-gray-500" />
+                            <span className="text-sm font-medium">{appointment.appointment_time}</span>
                           </div>
-                          
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <User className="h-3 w-3 text-gray-500" />
-                              <span className="text-sm font-medium">{appointment.client?.name}</span>
-                            </div>
+                          <Badge className={`${getStatusColor(appointment.status)} border`} variant="secondary">
+                            {appointment.status === 'pending' && 'Pendente'}
+                            {appointment.status === 'confirmed' && 'Confirmado'}
+                            {appointment.status === 'completed' && 'Concluído'}
+                            {appointment.status === 'cancelled' && 'Cancelado'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <User className="h-3 w-3 text-gray-500" />
+                            <span className="text-sm font-medium">{appointment.client?.name || appointment.client?.username}</span>
+                          </div>
+                          {appointment.client?.phone && (
                             <div className="flex items-center gap-2">
                               <Phone className="h-3 w-3 text-gray-500" />
-                              <span className="text-xs text-gray-600">{appointment.client?.phone}</span>
+                              <span className="text-xs text-gray-600">{appointment.client.phone}</span>
                             </div>
-                          </div>
-
-                          <div className="pt-2 border-t border-gray-200">
-                            <p className="text-sm font-medium">{appointment.service?.name}</p>
-                            <p className="text-xs text-gray-600">{appointment.service?.duration_minutes}min</p>
-                            <p className="text-sm font-bold text-green-600">
-                              {formatCurrency(appointment.service?.price || 0)}
-                            </p>
-                          </div>
-
-                          {isUpdating && (
-                            <div className="flex items-center justify-center py-2">
-                              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                              <span className="text-xs text-gray-600 ml-2">Atualizando...</span>
-                            </div>
-                          )}
-
-                          {!isUpdating && appointment.status === 'pending' && (
-                            <div className="flex gap-2 pt-2">
-                              <Button 
-                                size="sm" 
-                                onClick={() => handleStatusChange(appointment.id, 'confirmed')}
-                                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                                disabled={loading}
-                              >
-                                Confirmar
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleStatusChange(appointment.id, 'cancelled')}
-                                className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                                disabled={loading}
-                              >
-                                Cancelar
-                              </Button>
-                            </div>
-                          )}
-
-                          {!isUpdating && appointment.status === 'confirmed' && (
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleStatusChange(appointment.id, 'completed')}
-                              className="w-full bg-green-600 hover:bg-green-700"
-                              disabled={loading}
-                            >
-                              Marcar como Concluído
-                            </Button>
                           )}
                         </div>
-                      );
-                    })
+
+                        <div className="pt-2 border-t border-gray-200">
+                          <p className="text-sm font-medium">{appointment.service?.name}</p>
+                          <p className="text-xs text-gray-600">{appointment.service?.duration_minutes}min</p>
+                          <p className="text-sm font-bold text-green-600">
+                            {formatCurrency(appointment.service?.price || 0)}
+                          </p>
+                        </div>
+
+                        {appointment.notes && (
+                          <div className="bg-blue-50 p-2 rounded text-xs">
+                            <strong>Obs:</strong> {appointment.notes}
+                          </div>
+                        )}
+
+                        {isUpdating && (
+                          <div className="flex items-center justify-center py-2">
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                            <span className="text-xs text-gray-600 ml-2">Atualizando...</span>
+                          </div>
+                        )}
+
+                        {!isUpdating && appointment.status === 'pending' && (
+                          <div className="flex gap-2 pt-2">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleStatusChange(appointment.id, 'confirmed')}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700"
+                              disabled={loading}
+                            >
+                              Confirmar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleStatusChange(appointment.id, 'cancelled')}
+                              className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                              disabled={loading}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        )}
+
+                        {!isUpdating && appointment.status === 'confirmed' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleStatusChange(appointment.id, 'completed')}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            disabled={loading}
+                          >
+                            Marcar como Concluído
+                          </Button>
+                        )}
+
+                        <div className="text-xs text-gray-400 pt-1">
+                          Criado: {new Date(appointment.created_at || '').toLocaleString('pt-BR')}
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </CardContent>
             </Card>
