@@ -40,12 +40,24 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   } = useSimpleBooking(salon);
 
   const handleClose = () => {
+    // Não permitir fechar durante submissão
+    if (isSubmitting) {
+      console.log('⚠️ Cannot close modal during submission');
+      return;
+    }
+    
     console.log('🚪 Closing modal and resetting state');
     resetBooking();
     onClose();
   };
 
   const handleSubmit = async () => {
+    // Prevenir múltiplos cliques
+    if (isSubmitting) {
+      console.log('⚠️ Submit already in progress, ignoring click');
+      return;
+    }
+
     console.log('📋 Modal submitting booking');
     
     try {

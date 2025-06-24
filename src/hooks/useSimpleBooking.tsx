@@ -10,7 +10,7 @@ export const useSimpleBooking = (salon: Salon) => {
   const bookingState = useBookingState();
   const { services, loadingServices, loadServices } = useBookingServices(salon.id);
   const { availableSlots, loading: loadingTimes, fetchAvailableSlots } = useAvailableTimeSlots();
-  const { isSubmitting, submitBooking } = useBookingSubmission(salon.id);
+  const { isSubmitting, submitBooking: submitBookingBase } = useBookingSubmission(salon.id);
 
   // Memoizar salon.id para evitar re-renders desnecessários
   const salonId = useMemo(() => salon?.id, [salon?.id]);
@@ -38,12 +38,18 @@ export const useSimpleBooking = (salon: Salon) => {
     }
   }, [bookingState.selectedDate, handleDateChange]);
 
-  // Submeter agendamento - versão corrigida
+  // Submeter agendamento com controle mais rigoroso
   const handleSubmitBooking = useCallback(async () => {
+    // Prevenir múltiplas submissões
+    if (isSubmitting) {
+      console.log('⚠️ Submission already in progress, ignoring duplicate request');
+      return false;
+    }
+
     console.log('📋 Starting booking submission');
     
     try {
-      const success = await submitBooking(
+      const success = await submitBookingBase(
         bookingState.selectedService,
         bookingState.selectedDate,
         bookingState.selectedTime,
@@ -62,7 +68,7 @@ export const useSimpleBooking = (salon: Salon) => {
       console.error('❌ Error in booking submission:', error);
       return false;
     }
-  }, [submitBooking, bookingState]);
+  }, [submitBookingBase, bookingState, isSubmitting]);
 
   return {
     // Estados do booking

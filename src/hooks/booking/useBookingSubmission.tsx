@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +16,7 @@ export const useBookingSubmission = (salonId: string) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionInProgress = useRef(false);
 
   // Buscar ou criar cliente
   const findOrCreateClient = useCallback(async (name: string, phone: string) => {
@@ -90,11 +91,14 @@ export const useBookingSubmission = (salonId: string) => {
       return false;
     }
 
-    if (isSubmitting) {
-      console.log('⚠️ Already submitting, ignoring duplicate request');
+    // Verificar se já há uma submissão em andamento
+    if (submissionInProgress.current || isSubmitting) {
+      console.log('⚠️ Submission already in progress, blocking duplicate request');
       return false;
     }
 
+    // Marcar submissão como em andamento
+    submissionInProgress.current = true;
     setIsSubmitting(true);
     console.log('🚀 Starting booking submission process');
 
@@ -159,6 +163,8 @@ export const useBookingSubmission = (salonId: string) => {
       
       return false;
     } finally {
+      // Sempre liberar os locks
+      submissionInProgress.current = false;
       setIsSubmitting(false);
       console.log('🏁 Booking submission process completed');
     }
