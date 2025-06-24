@@ -23,6 +23,7 @@ export const useBookingSubmission = (salonId: string) => {
     try {
       console.log('🔍 Searching for existing client with phone:', phone);
       
+      // Buscar cliente existente
       const { data: existingClient, error: searchError } = await supabase
         .from('clients')
         .select('id')
@@ -39,6 +40,7 @@ export const useBookingSubmission = (salonId: string) => {
         return existingClient.id;
       }
 
+      // Criar novo cliente
       console.log('➕ Creating new client');
       const { data: newClient, error: createError } = await supabase
         .from('clients')
@@ -70,9 +72,16 @@ export const useBookingSubmission = (salonId: string) => {
     selectedTime: string,
     clientData: ClientData
   ) => {
-    // Validação inicial
-    if (!selectedService || !selectedDate || !selectedTime || !clientData.name || !clientData.phone) {
-      console.log('❌ Missing required data for booking');
+    // Validação inicial rigorosa
+    if (!selectedService || !selectedDate || !selectedTime || !clientData.name.trim() || !clientData.phone.trim()) {
+      console.log('❌ Missing required data for booking:', {
+        service: !!selectedService,
+        date: !!selectedDate,
+        time: !!selectedTime,
+        name: !!clientData.name.trim(),
+        phone: !!clientData.phone.trim()
+      });
+      
       toast({
         title: "Dados incompletos",
         description: "Preencha todos os campos obrigatórios",
@@ -91,7 +100,7 @@ export const useBookingSubmission = (salonId: string) => {
       return false;
     }
 
-    // Verificar se já há uma submissão em andamento
+    // Verificar se já há uma submissão em andamento (controle duplo)
     if (submissionInProgress.current || isSubmitting) {
       console.log('⚠️ Submission already in progress, blocking duplicate request');
       return false;
@@ -106,24 +115,30 @@ export const useBookingSubmission = (salonId: string) => {
       // 1. Buscar ou criar cliente
       const clientId = await findOrCreateClient(clientData.name, clientData.phone);
 
-      // 2. Criar agendamento
-      console.log('📝 Creating appointment');
-      const appointmentData = {
+      // 2. Criar agendamento com status pendente
+      console.log('📝 Creating appointment with data:', {
         salon_id: salonId,
         service_id: selectedService.id,
         client_id: clientId,
         user_id: user.id,
         appointment_date: selectedDate.toISOString().split('T')[0],
         appointment_time: selectedTime,
-        status: 'pending' as const,
+        status: 'pending',
         notes: clientData.notes || null
-      };
-
-      console.log('📋 Appointment data:', appointmentData);
+      });
 
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
-        .insert(appointmentData)
+        .insert({
+          salon_id: salonId,
+          service_id: selectedService.id,
+          client_id: clientId,
+          user_id: user.id,
+          appointment_date: selectedDate.toISOString().split('T')[0],
+          appointment_time: selectedTime,
+          status: 'pending',
+          notes: clientData.notes || null
+        })
         .select(`
           *,
           salon:salons(id, name, address, phone),
@@ -134,14 +149,15 @@ export const useBookingSubmission = (salonId: string) => {
 
       if (appointmentError) {
         console.error('❌ Error creating appointment:', appointmentError);
-        throw appointmentError;
+        throw new Error(`Erro ao criar agendamento: ${appointmentError.message}`);
       }
 
       console.log('✅ Appointment created successfully:', appointment);
 
+      // Toast de sucesso específico para agendamento pendente
       toast({
-        title: "✅ Agendamento Enviado!",
-        description: "Sua solicitação foi enviada com sucesso! O estabelecimento será notificado e você receberá uma confirmação em breve.",
+        title: "✅ Solicitação Enviada!",
+        description: "Seu agendamento foi enviado e está aguardando aprovação do estabelecimento. Você receberá uma notificação quando for confirmado.",
         duration: 6000
       });
 
@@ -150,13 +166,13 @@ export const useBookingSubmission = (salonId: string) => {
     } catch (error) {
       console.error('❌ Error in booking submission:', error);
       
-      let errorMessage = "Erro ao enviar agendamento";
+      let errorMessage = "Erro ao enviar solicitação de agendamento";
       if (error instanceof Error) {
         errorMessage = error.message;
       }
       
       toast({
-        title: "Erro",
+        title: "Erro no Agendamento",
         description: errorMessage,
         variant: "destructive"
       });

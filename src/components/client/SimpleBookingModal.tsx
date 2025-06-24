@@ -52,7 +52,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   };
 
   const handleSubmit = async () => {
-    // Prevenir múltiplos cliques
+    // Prevenir múltiplos cliques e verificar se não está submetendo
     if (isSubmitting) {
       console.log('⚠️ Submit already in progress, ignoring click');
       return;
@@ -64,9 +64,12 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
       const success = await submitBooking();
       
       if (success) {
-        console.log('✅ Booking successful, calling success callback');
+        console.log('✅ Booking successful, calling success callback and closing modal');
         onBookingSuccess();
-        handleClose();
+        // Aguardar um pequeno delay antes de fechar para garantir que o toast seja exibido
+        setTimeout(() => {
+          handleClose();
+        }, 500);
       }
     } catch (error) {
       console.error('❌ Error in modal submit:', error);
@@ -108,7 +111,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
         <DialogHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 -m-6 mb-6">
           <DialogTitle className="text-xl font-bold flex items-center">
             {isSubmitting && <Loader2 className="h-5 w-5 mr-2 animate-spin" />}
-            Agendar Serviço - {salon.name}
+            {isSubmitting ? 'Enviando Solicitação...' : `Agendar Serviço - ${salon.name}`}
           </DialogTitle>
         </DialogHeader>
 

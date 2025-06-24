@@ -46,7 +46,12 @@ export const useSimpleBooking = (salon: Salon) => {
       return false;
     }
 
-    console.log('📋 Starting booking submission');
+    console.log('📋 Starting booking submission with data:', {
+      service: bookingState.selectedService?.name,
+      date: bookingState.selectedDate?.toDateString(),
+      time: bookingState.selectedTime,
+      clientName: bookingState.clientData.name
+    });
     
     try {
       const success = await submitBookingBase(

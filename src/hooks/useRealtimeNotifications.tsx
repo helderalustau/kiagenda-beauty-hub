@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Appointment } from '@/types/supabase-entities';
 
 interface UseRealtimeNotificationsProps {
@@ -19,13 +19,16 @@ export const useRealtimeNotifications = ({
   const [notifications, setNotifications] = useState<Appointment[]>([]);
 
   useEffect(() => {
-    if (!salonId) return;
+    if (!salonId) {
+      console.log('⚠️ No salon ID provided for realtime notifications');
+      return;
+    }
 
-    console.log('Setting up realtime notifications for salon:', salonId);
+    console.log('🔔 Setting up realtime notifications for salon:', salonId);
 
     // Setup realtime subscription for appointments
     const channel = supabase
-      .channel('appointment-changes')
+      .channel(`appointment-changes-${salonId}`)
       .on(
         'postgres_changes',
         {
@@ -35,40 +38,46 @@ export const useRealtimeNotifications = ({
           filter: `salon_id=eq.${salonId}`
         },
         async (payload) => {
-          console.log('New appointment received:', payload);
+          console.log('🔔 New appointment received via realtime:', payload);
           
-          // Fetch complete appointment data with relations
-          const { data: appointment, error } = await supabase
-            .from('appointments')
-            .select(`
-              *,
-              salon:salons(id, name, address, phone),
-              service:services(id, name, price, duration_minutes),
-              client:clients(id, name, phone, email)
-            `)
-            .eq('id', payload.new.id)
-            .single();
+          try {
+            // Fetch complete appointment data with relations
+            const { data: appointment, error } = await supabase
+              .from('appointments')
+              .select(`
+                *,
+                salon:salons(id, name, address, phone),
+                service:services(id, name, price, duration_minutes),
+                client:clients(id, name, phone, email)
+              `)
+              .eq('id', payload.new.id)
+              .single();
 
-          if (error) {
-            console.error('Error fetching appointment details:', error);
-            return;
-          }
-
-          if (appointment) {
-            // Add to notifications list
-            setNotifications(prev => [appointment as Appointment, ...prev]);
-            
-            // Show toast notification
-            toast({
-              title: "🔔 Novo Agendamento!",
-              description: `${appointment.client?.name} solicitou um agendamento para ${appointment.service?.name}`,
-              duration: 10000,
-            });
-
-            // Call callback if provided
-            if (onNewAppointment) {
-              onNewAppointment(appointment as Appointment);
+            if (error) {
+              console.error('❌ Error fetching appointment details:', error);
+              return;
             }
+
+            if (appointment && appointment.status === 'pending') {
+              console.log('✅ Processing new pending appointment:', appointment);
+              
+              // Add to notifications list
+              setNotifications(prev => [appointment as Appointment, ...prev]);
+              
+              // Show toast notification for admin
+              toast({
+                title: "🔔 Novo Agendamento Solicitado!",
+                description: `${appointment.client?.name} solicitou agendamento para ${appointment.service?.name}`,
+                duration: 10000,
+              });
+
+              // Call callback if provided
+              if (onNewAppointment) {
+                onNewAppointment(appointment as Appointment);
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error processing new appointment notification:', error);
           }
         }
       )
@@ -81,34 +90,41 @@ export const useRealtimeNotifications = ({
           filter: `salon_id=eq.${salonId}`
         },
         async (payload) => {
-          console.log('Appointment updated:', payload);
+          console.log('📝 Appointment updated via realtime:', payload);
           
-          // Fetch complete appointment data with relations
-          const { data: appointment, error } = await supabase
-            .from('appointments')
-            .select(`
-              *,
-              salon:salons(id, name, address, phone),
-              service:services(id, name, price, duration_minutes),
-              client:clients(id, name, phone, email)
-            `)
-            .eq('id', payload.new.id)
-            .single();
+          try {
+            // Fetch complete appointment data with relations
+            const { data: appointment, error } = await supabase
+              .from('appointments')
+              .select(`
+                *,
+                salon:salons(id, name, address, phone),
+                service:services(id, name, price, duration_minutes),
+                client:clients(id, name, phone, email)
+              `)
+              .eq('id', payload.new.id)
+              .single();
 
-          if (error) {
-            console.error('Error fetching updated appointment:', error);
-            return;
-          }
+            if (error) {
+              console.error('❌ Error fetching updated appointment:', error);
+              return;
+            }
 
-          if (appointment && onAppointmentUpdate) {
-            onAppointmentUpdate(appointment as Appointment);
+            if (appointment && onAppointmentUpdate) {
+              console.log('✅ Processing updated appointment:', appointment);
+              onAppointmentUpdate(appointment as Appointment);
+            }
+          } catch (error) {
+            console.error('❌ Error processing appointment update notification:', error);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔌 Realtime subscription status:', status);
+      });
 
     return () => {
-      console.log('Cleaning up realtime subscription');
+      console.log('🔌 Cleaning up realtime subscription for salon:', salonId);
       supabase.removeChannel(channel);
     };
   }, [salonId, onNewAppointment, onAppointmentUpdate, toast]);
