@@ -50,7 +50,7 @@ const ClientDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
+    <div className="min-h-screen bg-gray-50">
       <ClientDashboardHeader
         user={user}
         searchTerm={searchTerm}
@@ -62,7 +62,7 @@ const ClientDashboard = () => {
         onLogout={handleLogout}
       />
 
-      <div className="container mx-auto px-4">
+      <div className="min-h-screen">
         {isRefreshing ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
