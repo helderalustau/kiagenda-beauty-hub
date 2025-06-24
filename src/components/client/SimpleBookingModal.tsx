@@ -40,7 +40,6 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   } = useSimpleBooking(salon);
 
   const handleClose = () => {
-    // Não permitir fechar durante submissão
     if (isSubmitting) {
       console.log('⚠️ Cannot close modal during submission');
       return;
@@ -52,7 +51,6 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   };
 
   const handleSubmit = async () => {
-    // Prevenir múltiplos cliques e verificar se não está submetendo
     if (isSubmitting) {
       console.log('⚠️ Submit already in progress, ignoring click');
       return;
@@ -64,12 +62,11 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
       const success = await submitBooking();
       
       if (success) {
-        console.log('✅ Booking successful, calling success callback and closing modal');
+        console.log('✅ Booking successful, calling success callback');
         onBookingSuccess();
-        // Aguardar um pequeno delay antes de fechar para garantir que o toast seja exibido
         setTimeout(() => {
           handleClose();
-        }, 500);
+        }, 1000);
       }
     } catch (error) {
       console.error('❌ Error in modal submit:', error);
@@ -84,7 +81,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   const handleDateSelect = (date: Date | undefined) => {
     console.log('📅 Calendar date selected:', date?.toDateString());
     setSelectedDate(date);
-    setSelectedTime(''); // Limpar horário selecionado quando data muda
+    setSelectedTime('');
   };
 
   if (!salon?.is_open) {

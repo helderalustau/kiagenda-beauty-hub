@@ -23,7 +23,7 @@ export const useBookingSubmission = (salonId: string) => {
     try {
       console.log('🔍 Searching for existing client with phone:', phone);
       
-      // Buscar cliente existente
+      // Buscar cliente existente pelo telefone
       const { data: existingClient, error: searchError } = await supabase
         .from('clients')
         .select('id')
@@ -72,15 +72,9 @@ export const useBookingSubmission = (salonId: string) => {
     selectedTime: string,
     clientData: ClientData
   ) => {
-    // Validação inicial rigorosa
+    // Validação inicial
     if (!selectedService || !selectedDate || !selectedTime || !clientData.name.trim() || !clientData.phone.trim()) {
-      console.log('❌ Missing required data for booking:', {
-        service: !!selectedService,
-        date: !!selectedDate,
-        time: !!selectedTime,
-        name: !!clientData.name.trim(),
-        phone: !!clientData.phone.trim()
-      });
+      console.log('❌ Missing required data for booking');
       
       toast({
         title: "Dados incompletos",
@@ -100,9 +94,9 @@ export const useBookingSubmission = (salonId: string) => {
       return false;
     }
 
-    // Verificar se já há uma submissão em andamento (controle duplo)
+    // Verificar se já há uma submissão em andamento
     if (submissionInProgress.current || isSubmitting) {
-      console.log('⚠️ Submission already in progress, blocking duplicate request');
+      console.log('⚠️ Submission already in progress');
       return false;
     }
 
@@ -115,7 +109,7 @@ export const useBookingSubmission = (salonId: string) => {
       // 1. Buscar ou criar cliente
       const clientId = await findOrCreateClient(clientData.name, clientData.phone);
 
-      // 2. Criar agendamento com status pendente
+      // 2. Criar agendamento
       console.log('📝 Creating appointment with data:', {
         salon_id: salonId,
         service_id: selectedService.id,
@@ -139,12 +133,7 @@ export const useBookingSubmission = (salonId: string) => {
           status: 'pending',
           notes: clientData.notes || null
         })
-        .select(`
-          *,
-          salon:salons(id, name, address, phone),
-          service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
-        `)
+        .select()
         .single();
 
       if (appointmentError) {
@@ -154,11 +143,10 @@ export const useBookingSubmission = (salonId: string) => {
 
       console.log('✅ Appointment created successfully:', appointment);
 
-      // Toast de sucesso específico para agendamento pendente
       toast({
         title: "✅ Solicitação Enviada!",
-        description: "Seu agendamento foi enviado e está aguardando aprovação do estabelecimento. Você receberá uma notificação quando for confirmado.",
-        duration: 6000
+        description: "Seu agendamento foi enviado e está aguardando aprovação do estabelecimento.",
+        duration: 5000
       });
 
       return true;
@@ -184,7 +172,7 @@ export const useBookingSubmission = (salonId: string) => {
       setIsSubmitting(false);
       console.log('🏁 Booking submission process completed');
     }
-  }, [salonId, findOrCreateClient, user?.id, toast, isSubmitting]);
+  }, [salonId, findOrCreateClient, user?.id, toast]);
 
   return {
     isSubmitting,
