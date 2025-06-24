@@ -8,24 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, Clock, User, Phone, MapPin, Search, Filter, CheckCircle2, XCircle, Calendar as CalendarIcon, TrendingUp } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-interface Appointment {
-  id: string;
-  appointment_date: string;
-  appointment_time: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  notes?: string;
-  client_auth: {
-    name: string;
-    phone?: string;
-    email?: string;
-  };
-  services: {
-    name: string;
-    price: number;
-    duration_minutes: number;
-  };
-}
+import { Appointment } from '@/types/supabase-entities';
 
 interface OptimizedAdminCalendarViewProps {
   appointments: Appointment[];
@@ -57,16 +40,19 @@ const OptimizedAdminCalendarView = ({
       todayTotal: todayAppointments.length,
       todayRevenue: todayAppointments
         .filter(apt => apt.status === 'completed')
-        .reduce((sum, apt) => sum + apt.services.price, 0)
+        .reduce((sum, apt) => sum + (apt.service?.price || 0), 0)
     };
   }, [appointments]);
 
   // Filtrar agendamentos
   const filteredAppointments = useMemo(() => {
     return appointments.filter(appointment => {
+      const clientName = appointment.client?.name || appointment.client?.username || '';
+      const serviceName = appointment.service?.name || '';
+      
       const matchesSearch = searchTerm === '' || 
-        appointment.client_auth.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        appointment.services.name.toLowerCase().includes(searchTerm.toLowerCase());
+        clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        serviceName.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || appointment.status === statusFilter;
       
@@ -135,7 +121,7 @@ const OptimizedAdminCalendarView = ({
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-semibold text-gray-900 flex items-center">
                 <User className="h-4 w-4 mr-2 text-blue-500" />
-                {appointment.client_auth.name}
+                {appointment.client?.name || appointment.client?.username || 'Cliente'}
               </h4>
               <Badge className={`text-xs ${getStatusColor(appointment.status)}`}>
                 {getStatusLabel(appointment.status)}
@@ -145,20 +131,20 @@ const OptimizedAdminCalendarView = ({
             <div className="space-y-1 text-sm text-gray-600">
               <div className="flex items-center">
                 <Clock className="h-3 w-3 mr-2" />
-                <span>{appointment.appointment_time} - {appointment.services.name}</span>
+                <span>{appointment.appointment_time} - {appointment.service?.name || 'Serviço'}</span>
               </div>
               
-              {appointment.client_auth.phone && (
+              {appointment.client?.phone && (
                 <div className="flex items-center">
                   <Phone className="h-3 w-3 mr-2" />
-                  <span>{appointment.client_auth.phone}</span>
+                  <span>{appointment.client.phone}</span>
                 </div>
               )}
               
               <div className="flex items-center font-medium text-green-600">
                 <span className="mr-2">💰</span>
-                <span>{formatCurrency(appointment.services.price)}</span>
-                <span className="text-gray-500 ml-2">({appointment.services.duration_minutes}min)</span>
+                <span>{formatCurrency(appointment.service?.price || 0)}</span>
+                <span className="text-gray-500 ml-2">({appointment.service?.duration_minutes || 0}min)</span>
               </div>
             </div>
           </div>
