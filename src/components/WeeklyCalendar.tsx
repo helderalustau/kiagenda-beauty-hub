@@ -21,6 +21,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   const { toast } = useToast();
   const [showNotification, setShowNotification] = useState(false);
   const [currentNotification, setCurrentNotification] = useState<Appointment | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Setup realtime notifications otimizadas para admin
   const { notifications, clearNotification } = useRealtimeNotifications({
@@ -52,75 +53,55 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
     }
   });
 
-  const handleAcceptAppointment = async () => {
-    if (currentNotification) {
-      try {
-        console.log('✅ Accepting appointment:', currentNotification.id);
-        
-        const result = await updateAppointmentStatus(currentNotification.id, 'confirmed');
-        
-        if (result.success) {
-          toast({
-            title: "✅ Agendamento Aprovado!",
-            description: `Agendamento de ${currentNotification.client?.name || currentNotification.client?.username} foi confirmado.`,
-          });
-          
-          setShowNotification(false);
-          setCurrentNotification(null);
-          clearNotification(currentNotification.id);
-          onRefresh();
-        } else {
-          console.error('❌ Failed to accept appointment:', result.message);
-          toast({
-            title: "Erro ao Aprovar",
-            description: result.message || "Erro ao aprovar agendamento",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error('❌ Error accepting appointment:', error);
+  const handleUpdateAppointment = async (appointmentId: string, updates: { status: string; notes?: string }) => {
+    setIsUpdating(true);
+    try {
+      console.log('🔄 Updating appointment:', appointmentId, updates);
+      
+      const result = await updateAppointmentStatus(appointmentId, updates.status as any);
+      
+      if (result.success) {
         toast({
-          title: "Erro",
-          description: "Erro interno ao aprovar agendamento",
+          title: "✅ Agendamento Atualizado!",
+          description: `Status alterado para ${updates.status}`,
+        });
+        
+        onRefresh();
+      } else {
+        console.error('❌ Failed to update appointment:', result.message);
+        toast({
+          title: "Erro ao Atualizar",
+          description: result.message || "Erro ao atualizar agendamento",
           variant: "destructive"
         });
       }
+    } catch (error) {
+      console.error('❌ Error updating appointment:', error);
+      toast({
+        title: "Erro",
+        description: "Erro interno ao atualizar agendamento",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleAcceptAppointment = async () => {
+    if (currentNotification) {
+      await handleUpdateAppointment(currentNotification.id, { status: 'confirmed' });
+      setShowNotification(false);
+      setCurrentNotification(null);
+      clearNotification(currentNotification.id);
     }
   };
 
   const handleRejectAppointment = async () => {
     if (currentNotification) {
-      try {
-        console.log('❌ Rejecting appointment:', currentNotification.id);
-        
-        const result = await updateAppointmentStatus(currentNotification.id, 'cancelled');
-        
-        if (result.success) {
-          toast({
-            title: "❌ Agendamento Recusado",
-            description: `Agendamento de ${currentNotification.client?.name || currentNotification.client?.username} foi cancelado.`,
-          });
-          
-          setShowNotification(false);
-          setCurrentNotification(null);
-          clearNotification(currentNotification.id);
-          onRefresh();
-        } else {
-          console.error('❌ Failed to reject appointment:', result.message);
-          toast({
-            title: "Erro ao Recusar",
-            description: result.message || "Erro ao recusar agendamento",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error('❌ Error rejecting appointment:', error);
-        toast({
-          title: "Erro",
-          description: "Erro interno ao recusar agendamento",
-          variant: "destructive"
-        });
-      }
+      await handleUpdateAppointment(currentNotification.id, { status: 'cancelled' });
+      setShowNotification(false);
+      setCurrentNotification(null);
+      clearNotification(currentNotification.id);
     }
   };
 
@@ -128,8 +109,9 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   return (
     <>
       <OptimizedAdminCalendarView 
-        onRefresh={onRefresh}
-        salonId={salon?.id || ''}
+        appointments={appointments}
+        onUpdateAppointment={handleUpdateAppointment}
+        isUpdating={isUpdating}
       />
 
       {/* Notification Modal Otimizada com som */}
