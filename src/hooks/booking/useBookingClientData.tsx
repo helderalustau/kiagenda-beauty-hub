@@ -27,7 +27,7 @@ export const useBookingClientData = (
           // Buscar dados do cliente na tabela client_auth pelo ID do usuário logado
           const { data: clientAuthData, error } = await supabase
             .from('client_auth')
-            .select('name, phone, email')
+            .select('username, name, phone, email')
             .eq('id', user.id)
             .single();
 
@@ -37,30 +37,30 @@ export const useBookingClientData = (
             hasAutoFilled.current = true;
             
             setClientData({
-              name: clientAuthData.name || '',
+              name: clientAuthData.username || clientAuthData.name || '',
               phone: clientAuthData.phone || '',
               email: clientAuthData.email || '',
               notes: clientData.notes || ''
             });
           } else {
-            console.log('No client auth data found for user ID, trying by name');
+            console.log('No client auth data found for user ID, trying by username');
             
-            // Fallback: buscar pelo nome como antes
-            const { data: clientAuthByName, error: nameError } = await supabase
+            // Fallback: buscar pelo username como antes
+            const { data: clientAuthByUsername, error: usernameError } = await supabase
               .from('client_auth')
-              .select('name, phone, email')
-              .eq('name', user.name)
+              .select('username, name, phone, email')
+              .eq('username', user.name)
               .single();
 
-            if (!nameError && clientAuthByName) {
-              console.log('Found client auth data by name:', clientAuthByName);
+            if (!usernameError && clientAuthByUsername) {
+              console.log('Found client auth data by username:', clientAuthByUsername);
               
               hasAutoFilled.current = true;
               
               setClientData({
-                name: clientAuthByName.name || '',
-                phone: clientAuthByName.phone || '',
-                email: clientAuthByName.email || '',
+                name: clientAuthByUsername.username || clientAuthByUsername.name || '',
+                phone: clientAuthByUsername.phone || '',
+                email: clientAuthByUsername.email || '',
                 notes: clientData.notes || ''
               });
             } else {

@@ -24,11 +24,11 @@ export const useClientAuth = () => {
         return { success: false, message: 'Senha deve ter pelo menos 6 caracteres' };
       }
 
-      // Get client record with password hash
+      // Get client record with password hash using username
       const { data: clientRecord, error: fetchError } = await supabase
         .from('client_auth')
         .select('*')
-        .eq('name', usernameValidation.value)
+        .eq('username', usernameValidation.value)
         .single();
 
       if (fetchError || !clientRecord) {
@@ -58,7 +58,10 @@ export const useClientAuth = () => {
 
       localStorage.setItem('clientAuth', JSON.stringify({
         id: clientRecord.id,
-        name: clientRecord.name
+        name: clientRecord.username,
+        username: clientRecord.username,
+        phone: clientRecord.phone,
+        email: clientRecord.email
       }));
       
       return { success: true, client: clientRecord };
@@ -82,14 +85,14 @@ export const useClientAuth = () => {
   };
 
   // Register client with secure password hashing and phone formatting
-  const registerClient = async (name: string, password: string, phone: string, email?: string) => {
+  const registerClient = async (username: string, password: string, phone: string, email?: string) => {
     try {
       setLoading(true);
       
       // Validate inputs
-      const nameValidation = sanitizeAndValidate(name, 'name');
-      if (!nameValidation.isValid) {
-        return { success: false, message: nameValidation.error || 'Nome inválido' };
+      const usernameValidation = sanitizeAndValidate(username, 'name');
+      if (!usernameValidation.isValid) {
+        return { success: false, message: usernameValidation.error || 'Nome de usuário inválido' };
       }
 
       // Format phone to only digits
@@ -100,14 +103,25 @@ export const useClientAuth = () => {
         return { success: false, message: 'Telefone deve ter 10 ou 11 dígitos' };
       }
 
-      // Check if phone already exists
+      // Check if username already exists
       const { data: existingClient, error: checkError } = await supabase
+        .from('client_auth')
+        .select('id')
+        .eq('username', usernameValidation.value)
+        .single();
+
+      if (existingClient) {
+        return { success: false, message: 'Este nome de usuário já está em uso' };
+      }
+
+      // Check if phone already exists
+      const { data: existingPhone, error: phoneCheckError } = await supabase
         .from('client_auth')
         .select('id')
         .eq('phone', formattedPhone)
         .single();
 
-      if (existingClient) {
+      if (existingPhone) {
         return { success: false, message: 'Este telefone já está cadastrado' };
       }
 
@@ -134,7 +148,8 @@ export const useClientAuth = () => {
       const { data, error } = await supabase
         .from('client_auth')
         .insert({
-          name: nameValidation.value,
+          username: usernameValidation.value,
+          name: usernameValidation.value, // Manter compatibilidade
           password: 'temp', // Temporary value to satisfy required field
           password_hash: hashedPassword,
           phone: formattedPhone, // Store only digits
@@ -146,7 +161,7 @@ export const useClientAuth = () => {
       if (error) {
         console.error('Error registering client:', error);
         if (error.code === '23505') { // Unique constraint violation
-          return { success: false, message: 'Este telefone ou email já está cadastrado' };
+          return { success: false, message: 'Este nome de usuário ou telefone já está cadastrado' };
         }
         return { success: false, message: 'Erro ao registrar cliente' };
       }

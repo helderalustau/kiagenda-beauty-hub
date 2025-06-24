@@ -123,7 +123,7 @@ export type Database = {
         Row: {
           appointment_date: string
           appointment_time: string
-          client_id: string
+          client_auth_id: string
           created_at: string
           deleted_at: string | null
           id: string
@@ -137,7 +137,7 @@ export type Database = {
         Insert: {
           appointment_date: string
           appointment_time: string
-          client_id: string
+          client_auth_id: string
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -151,7 +151,7 @@ export type Database = {
         Update: {
           appointment_date?: string
           appointment_time?: string
-          client_id?: string
+          client_auth_id?: string
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -164,10 +164,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "appointments_client_id_fkey"
-            columns: ["client_id"]
+            foreignKeyName: "appointments_client_auth_id_fkey"
+            columns: ["client_auth_id"]
             isOneToOne: false
-            referencedRelation: "clients"
+            referencedRelation: "client_auth"
             referencedColumns: ["id"]
           },
           {
@@ -234,78 +234,60 @@ export type Database = {
       }
       client_auth: {
         Row: {
-          created_at: string
-          email: string | null
-          id: string
-          name: string
-          password: string
-          password_hash: string | null
-          phone: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          name: string
-          password: string
-          password_hash?: string | null
-          phone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          name?: string
-          password?: string
-          password_hash?: string | null
-          phone?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      clients: {
-        Row: {
+          address: string | null
           city: string | null
           created_at: string
           email: string | null
+          full_name: string | null
           house_number: string | null
           id: string
           name: string
           neighborhood: string | null
-          phone: string
+          password: string
+          password_hash: string | null
+          phone: string | null
           state: string | null
           street_address: string | null
           updated_at: string
+          username: string
           zip_code: string | null
         }
         Insert: {
+          address?: string | null
           city?: string | null
           created_at?: string
           email?: string | null
+          full_name?: string | null
           house_number?: string | null
           id?: string
           name: string
           neighborhood?: string | null
-          phone: string
+          password: string
+          password_hash?: string | null
+          phone?: string | null
           state?: string | null
           street_address?: string | null
           updated_at?: string
+          username: string
           zip_code?: string | null
         }
         Update: {
+          address?: string | null
           city?: string | null
           created_at?: string
           email?: string | null
+          full_name?: string | null
           house_number?: string | null
           id?: string
           name?: string
           neighborhood?: string | null
-          phone?: string
+          password?: string
+          password_hash?: string | null
+          phone?: string | null
           state?: string | null
           street_address?: string | null
           updated_at?: string
+          username?: string
           zip_code?: string | null
         }
         Relationships: []

@@ -82,7 +82,7 @@ export const ClientAuthForm: React.FC<ClientAuthFormProps> = ({
     if (!formData.username.trim()) {
       toast({
         title: "Erro",
-        description: "Nome é obrigatório",
+        description: "Nome de usuário é obrigatório",
         variant: "destructive"
       });
       return;
@@ -135,15 +135,20 @@ export const ClientAuthForm: React.FC<ClientAuthFormProps> = ({
           <CardContent>
             <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="username">Nome {isRegistering ? 'Completo' : 'de Usuário'}</Label>
+                <Label htmlFor="username">Nome de Usuário</Label>
                 <Input
                   id="username"
                   type="text"
-                  placeholder={isRegistering ? "Digite seu nome completo" : "Digite seu nome de usuário"}
+                  placeholder="Digite seu nome de usuário"
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value)}
                   required
                 />
+                {isRegistering && (
+                  <p className="text-sm text-gray-500">
+                    Escolha um nome de usuário único para sua conta
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
