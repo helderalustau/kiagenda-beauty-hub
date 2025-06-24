@@ -38,7 +38,7 @@ export const useBookingClientData = (
           // Fallback para dados básicos do usuário
           setClientData({
             name: user.name || '',
-            phone: '', // Deixar vazio para o usuário preencher
+            phone: user.id || '', // Usar o ID como telefone temporariamente
             email: '',
             notes: clientData.notes || ''
           });

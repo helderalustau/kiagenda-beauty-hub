@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, User, Phone, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { Service } from '@/hooks/useSupabaseData';
+import { useBookingClientData } from '@/hooks/booking/useBookingClientData';
 
 interface ClientData {
   name: string;
@@ -42,6 +43,9 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
+  // Auto-preencher dados do usuário logado
+  const { user } = useBookingClientData(clientData, onClientDataChange);
+
   const formatPhoneNumber = (value: string) => {
     const numbers = value.replace(/\D/g, '');
     if (numbers.length <= 11) {
@@ -99,6 +103,9 @@ const SimpleClientDataStep = ({
               required
             />
           </div>
+          {user?.name && clientData.name === user.name && (
+            <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente</p>
+          )}
         </div>
 
         <div>
@@ -116,6 +123,9 @@ const SimpleClientDataStep = ({
               maxLength={15}
             />
           </div>
+          {user && clientData.phone && (
+            <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente</p>
+          )}
         </div>
       </div>
 
