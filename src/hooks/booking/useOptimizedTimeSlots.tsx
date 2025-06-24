@@ -58,6 +58,7 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
 
       if (error) {
         console.error('❌ Error fetching booked slots:', error);
+        // Retornar array vazio para não bloquear agendamentos
         return [];
       }
 
@@ -104,8 +105,15 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
 
   // Buscar slots disponíveis
   const fetchAvailableSlots = useCallback(async () => {
-    if (!salon?.id || !selectedDate || generateTimeSlots.length === 0) {
+    if (!salon?.id || !selectedDate) {
       console.log('❌ Missing required data for fetching slots');
+      setAvailableSlots([]);
+      return;
+    }
+
+    // Se não há slots gerados, mostrar erro mais claro
+    if (generateTimeSlots.length === 0) {
+      console.log('❌ No time slots generated - salon might be closed');
       setAvailableSlots([]);
       return;
     }
@@ -123,7 +131,8 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
       
     } catch (error) {
       console.error('❌ Error fetching available slots:', error);
-      setAvailableSlots([]);
+      // Em caso de erro, mostrar todos os slots gerados
+      setAvailableSlots(generateTimeSlots);
     } finally {
       setLoading(false);
     }
