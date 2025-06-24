@@ -23,20 +23,31 @@ export const useSimpleBooking = (salon: Salon) => {
     }
   }, [salonId, services.length, loadingServices, loadServices, salon.name]);
 
-  // Carregar horários quando data mudar
+  // Carregar horários quando data mudar - com debounce
   const handleDateChange = useCallback((date: Date | undefined) => {
     if (date && salon) {
       console.log('📅 Date changed, fetching slots for:', date.toDateString());
+      // Limpar horário selecionado quando data muda
+      bookingState.setSelectedTime('');
       fetchAvailableSlots(salon, date);
+    } else {
+      // Se não há data, limpar slots
+      console.log('📅 No date selected, clearing slots');
     }
-  }, [salon, fetchAvailableSlots]);
+  }, [salon, fetchAvailableSlots, bookingState]);
 
-  // Monitorar mudanças de data (sem loop)
+  // Monitorar mudanças de data
   useEffect(() => {
     if (bookingState.selectedDate) {
       handleDateChange(bookingState.selectedDate);
     }
   }, [bookingState.selectedDate, handleDateChange]);
+
+  // Handler melhorado para seleção de horário
+  const handleTimeSelect = useCallback((time: string) => {
+    console.log('🕒 Time selected:', time);
+    bookingState.setSelectedTime(time);
+  }, [bookingState]);
 
   // Submeter agendamento
   const handleSubmitBooking = useCallback(async () => {
@@ -76,6 +87,10 @@ export const useSimpleBooking = (salon: Salon) => {
     // Horários
     availableTimes: availableSlots,
     loadingTimes,
+    
+    // Handlers melhorados
+    handleDateSelect: bookingState.handleDateSelect,
+    handleTimeSelect,
     
     // Submissão
     isSubmitting,

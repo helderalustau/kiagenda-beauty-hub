@@ -20,11 +20,12 @@ const TimeSlotGrid = ({
   selectedDate,
   loading = false 
 }: TimeSlotGridProps) => {
-  console.log('TimeSlotGrid - Rendering with props:', { 
-    availableTimes: availableTimes?.length || 0, 
+  console.log('TimeSlotGrid - Props:', { 
+    availableTimesCount: availableTimes?.length || 0, 
     selectedTime, 
     selectedDate: selectedDate?.toDateString(),
-    loading 
+    loading,
+    availableTimes
   });
 
   if (!selectedDate) {
@@ -64,9 +65,10 @@ const TimeSlotGrid = ({
     );
   }
 
+  // Organizar horários por período
   const morningSlots = availableTimes.filter(time => {
     const hour = parseInt(time.split(':')[0]);
-    return hour < 12;
+    return hour >= 6 && hour < 12;
   });
 
   const afternoonSlots = availableTimes.filter(time => {
@@ -76,32 +78,32 @@ const TimeSlotGrid = ({
 
   const eveningSlots = availableTimes.filter(time => {
     const hour = parseInt(time.split(':')[0]);
-    return hour >= 18;
+    return hour >= 18 && hour <= 23;
   });
 
-  const TimeSlotSection = ({ title, slots }: { title: string; slots: string[] }) => {
+  const TimeSlotSection = ({ title, slots, icon }: { title: string; slots: string[]; icon?: string }) => {
     if (slots.length === 0) return null;
 
     return (
       <div className="mb-6">
         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
           <Clock className="h-4 w-4 mr-2" />
-          {title}
+          {title} ({slots.length} {slots.length === 1 ? 'horário' : 'horários'})
         </h4>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {slots.map((time) => (
             <Button
               key={time}
               variant={selectedTime === time ? "default" : "outline"}
               size="sm"
               onClick={() => {
-                console.log('TimeSlotGrid - Time selected:', time);
+                console.log('TimeSlotGrid - Selecting time:', time);
                 onTimeSelect(time);
               }}
               className={`text-sm transition-all ${
                 selectedTime === time
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
-                  : 'hover:bg-blue-50 hover:border-blue-300'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md scale-105'
+                  : 'hover:bg-blue-50 hover:border-blue-300 hover:scale-102'
               }`}
             >
               {time}
@@ -123,7 +125,8 @@ const TimeSlotGrid = ({
         </p>
       </div>
 
-      <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded-lg mb-4">
+      <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg mb-4 flex items-center">
+        <Clock className="h-4 w-4 mr-2" />
         {availableTimes.length} horário{availableTimes.length !== 1 ? 's' : ''} disponível{availableTimes.length !== 1 ? 'eis' : ''}
       </div>
 

@@ -35,6 +35,7 @@ export const useAvailableTimeSlots = () => {
         slots.push(timeString);
       }
       
+      console.log(`✅ Generated ${slots.length} time slots from ${openTime} to ${closeTime}:`, slots);
       return slots;
     } catch (error) {
       console.error('❌ Error generating time slots:', error);
@@ -44,6 +45,8 @@ export const useAvailableTimeSlots = () => {
 
   const getBookedSlots = useCallback(async (salonId: string, date: string): Promise<string[]> => {
     try {
+      console.log(`🔍 Fetching booked slots for salon ${salonId} on ${date}`);
+      
       const { data, error } = await supabase
         .from('appointments')
         .select('appointment_time')
@@ -56,7 +59,9 @@ export const useAvailableTimeSlots = () => {
         return [];
       }
 
-      return data?.map(appointment => appointment.appointment_time) || [];
+      const bookedTimes = data?.map(appointment => appointment.appointment_time) || [];
+      console.log(`📅 Found ${bookedTimes.length} booked slots:`, bookedTimes);
+      return bookedTimes;
     } catch (error) {
       console.error('❌ Error in getBookedSlots:', error);
       return [];
@@ -92,16 +97,24 @@ export const useAvailableTimeSlots = () => {
       });
       
       const dayOfWeek = getDayOfWeek(selectedDate);
+      console.log('📅 Day of week:', dayOfWeek);
       
       // Verificar se salon.opening_hours existe
       if (!salon.opening_hours || typeof salon.opening_hours !== 'object') {
         console.log('⚠️ No opening hours found, using default schedule (09:00-18:00)');
         const defaultSlots = generateTimeSlots('09:00', '18:00', 30);
-        setAvailableSlots(defaultSlots);
+        
+        // Ainda filtrar por horários ocupados mesmo com horário padrão
+        const dateString = selectedDate.toISOString().split('T')[0];
+        const bookedSlots = await getBookedSlots(salon.id, dateString);
+        const availableSlots = defaultSlots.filter(slot => !bookedSlots.includes(slot));
+        
+        setAvailableSlots(availableSlots);
         return;
       }
       
       const daySchedule = salon.opening_hours[dayOfWeek];
+      console.log('🏪 Day schedule:', daySchedule);
       
       if (!daySchedule || daySchedule.closed === true) {
         console.log('🚫 Salon is closed on this day');
@@ -111,6 +124,7 @@ export const useAvailableTimeSlots = () => {
 
       const openTime = daySchedule.open || '09:00';
       const closeTime = daySchedule.close || '18:00';
+      console.log('🕒 Working hours:', openTime, 'to', closeTime);
 
       // Gerar todos os horários possíveis
       const allSlots = generateTimeSlots(openTime, closeTime, 30);
@@ -130,10 +144,13 @@ export const useAvailableTimeSlots = () => {
       const isToday = selectedDate.toDateString() === currentTime.toDateString();
       
       const availableSlots = allSlots.filter(slot => {
+        // Se já está ocupado, não mostrar
         if (bookedSlots.includes(slot)) {
+          console.log(`❌ Slot ${slot} already booked`);
           return false;
         }
         
+        // Se é hoje, não mostrar horários que já passaram (com margem de 1 hora)
         if (isToday) {
           const [hour, minute] = slot.split(':').map(Number);
           const slotTime = new Date();
@@ -142,6 +159,7 @@ export const useAvailableTimeSlots = () => {
           const currentTimePlusMargin = new Date(currentTime.getTime() + 60 * 60 * 1000);
           
           if (slotTime <= currentTimePlusMargin) {
+            console.log(`❌ Slot ${slot} already passed`);
             return false;
           }
         }
@@ -149,11 +167,12 @@ export const useAvailableTimeSlots = () => {
         return true;
       });
       
-      console.log('✅ Final available slots:', availableSlots.length, 'slots');
+      console.log(`✅ Final available slots (${availableSlots.length}):`, availableSlots);
       setAvailableSlots(availableSlots);
       
     } catch (error) {
       console.error('❌ Error fetching available slots:', error);
+      // Em caso de erro, gerar pelo menos os horários básicos
       const fallbackSlots = generateTimeSlots('09:00', '18:00', 30);
       setAvailableSlots(fallbackSlots);
     } finally {
