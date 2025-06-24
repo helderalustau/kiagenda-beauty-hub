@@ -11,6 +11,8 @@ export const useAppointmentUpdate = () => {
   const updateAppointmentStatus = async (appointmentId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled', reason?: string) => {
     try {
       setLoading(true);
+      console.log('🔄 Updating appointment status:', { appointmentId, status, reason });
+      
       const updateData: any = { status };
       if (reason) {
         updateData.notes = reason;
@@ -24,20 +26,22 @@ export const useAppointmentUpdate = () => {
           *,
           salon:salons(id, name, address, phone),
           service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
+          client:client_auth(id, username, name, phone, email)
         `)
         .single();
 
       if (error) {
-        console.error('Error updating appointment status:', error);
+        console.error('❌ Error updating appointment status:', error);
         return { success: false, message: error.message };
       }
+
+      console.log('✅ Appointment status updated successfully:', data);
 
       // Return normalized data
       const normalizedAppointment = normalizeAppointment(data);
       return { success: true, appointment: normalizedAppointment };
     } catch (error) {
-      console.error('Error updating appointment status:', error);
+      console.error('❌ Error updating appointment status:', error);
       return { success: false, message: 'Erro ao atualizar o status do agendamento' };
     } finally {
       setLoading(false);
@@ -56,7 +60,7 @@ export const useAppointmentUpdate = () => {
           *,
           salon:salons(id, name, address, phone),
           service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
+          client:client_auth(id, username, name, phone, email)
         `)
         .single();
 

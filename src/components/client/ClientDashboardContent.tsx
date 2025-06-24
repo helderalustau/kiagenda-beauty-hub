@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Salon } from '@/hooks/useSupabaseData';
 import { MapPin, Clock, Phone, Star, Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import PendingAppointmentCard from './PendingAppointmentCard';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
@@ -56,31 +57,16 @@ const ClientDashboardContent = ({
         </Card>
       </div>
 
-      {/* Agendamentos Pendentes */}
+      {/* Agendamentos Pendentes com Cards Detalhados */}
       {pendingAppointments.length > 0 && (
         <div>
           <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <AlertCircle className="h-5 w-5 mr-2 text-orange-500" />
-            Agendamentos Pendentes
+            Suas Solicitações de Agendamento
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {pendingAppointments.map((appointment) => (
-              <Card key={appointment.id} className="border-orange-200 bg-orange-50/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{appointment.salon?.name}</h4>
-                      <p className="text-sm text-gray-600">{appointment.service?.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')} às {appointment.appointment_time}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                      Aguardando Aprovação
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
+              <PendingAppointmentCard key={appointment.id} appointment={appointment} />
             ))}
           </div>
         </div>

@@ -33,7 +33,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
       // Toast otimizado
       toast({
         title: "🔔 Novo Agendamento!",
-        description: `${appointment.client?.name} solicitou agendamento para ${appointment.service?.name}`,
+        description: `${appointment.client?.name || appointment.client?.username} solicitou agendamento para ${appointment.service?.name}`,
         duration: 8000,
       });
       
@@ -49,12 +49,14 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   const handleAcceptAppointment = async () => {
     if (currentNotification) {
       try {
+        console.log('✅ Accepting appointment:', currentNotification.id);
+        
         const result = await updateAppointmentStatus(currentNotification.id, 'confirmed');
         
         if (result.success) {
           toast({
             title: "✅ Agendamento Aprovado!",
-            description: `Agendamento de ${currentNotification.client?.name} foi confirmado.`,
+            description: `Agendamento de ${currentNotification.client?.name || currentNotification.client?.username} foi confirmado.`,
           });
           
           setShowNotification(false);
@@ -62,8 +64,9 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
           clearNotification(currentNotification.id);
           onRefresh();
         } else {
+          console.error('❌ Failed to accept appointment:', result.message);
           toast({
-            title: "Erro",
+            title: "Erro ao Aprovar",
             description: result.message || "Erro ao aprovar agendamento",
             variant: "destructive"
           });
@@ -72,7 +75,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
         console.error('❌ Error accepting appointment:', error);
         toast({
           title: "Erro",
-          description: "Erro ao aprovar agendamento",
+          description: "Erro interno ao aprovar agendamento",
           variant: "destructive"
         });
       }
@@ -82,12 +85,14 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   const handleRejectAppointment = async () => {
     if (currentNotification) {
       try {
+        console.log('❌ Rejecting appointment:', currentNotification.id);
+        
         const result = await updateAppointmentStatus(currentNotification.id, 'cancelled');
         
         if (result.success) {
           toast({
             title: "❌ Agendamento Recusado",
-            description: `Agendamento de ${currentNotification.client?.name} foi cancelado.`,
+            description: `Agendamento de ${currentNotification.client?.name || currentNotification.client?.username} foi cancelado.`,
           });
           
           setShowNotification(false);
@@ -95,8 +100,9 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
           clearNotification(currentNotification.id);
           onRefresh();
         } else {
+          console.error('❌ Failed to reject appointment:', result.message);
           toast({
-            title: "Erro",
+            title: "Erro ao Recusar",
             description: result.message || "Erro ao recusar agendamento",
             variant: "destructive"
           });
@@ -105,7 +111,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
         console.error('❌ Error rejecting appointment:', error);
         toast({
           title: "Erro",
-          description: "Erro ao recusar agendamento",
+          description: "Erro interno ao recusar agendamento",
           variant: "destructive"
         });
       }
