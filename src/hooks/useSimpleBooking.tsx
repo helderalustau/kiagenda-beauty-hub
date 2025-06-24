@@ -38,21 +38,30 @@ export const useSimpleBooking = (salon: Salon) => {
     }
   }, [bookingState.selectedDate, handleDateChange]);
 
-  // Submeter agendamento
+  // Submeter agendamento - versão corrigida
   const handleSubmitBooking = useCallback(async () => {
-    console.log('📋 Submitting booking');
-    const success = await submitBooking(
-      bookingState.selectedService,
-      bookingState.selectedDate,
-      bookingState.selectedTime,
-      bookingState.clientData
-    );
+    console.log('📋 Starting booking submission');
     
-    if (success) {
-      bookingState.resetBooking();
+    try {
+      const success = await submitBooking(
+        bookingState.selectedService,
+        bookingState.selectedDate,
+        bookingState.selectedTime,
+        bookingState.clientData
+      );
+      
+      if (success) {
+        console.log('✅ Booking submitted successfully, resetting state');
+        bookingState.resetBooking();
+        return true;
+      } else {
+        console.log('❌ Booking submission failed');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error in booking submission:', error);
+      return false;
     }
-    
-    return success;
   }, [submitBooking, bookingState]);
 
   return {

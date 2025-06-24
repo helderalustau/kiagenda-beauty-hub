@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -46,11 +46,18 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   };
 
   const handleSubmit = async () => {
-    console.log('📋 Submitting booking');
-    const success = await submitBooking();
-    if (success) {
-      onBookingSuccess();
-      onClose();
+    console.log('📋 Modal submitting booking');
+    
+    try {
+      const success = await submitBooking();
+      
+      if (success) {
+        console.log('✅ Booking successful, calling success callback');
+        onBookingSuccess();
+        handleClose();
+      }
+    } catch (error) {
+      console.error('❌ Error in modal submit:', error);
     }
   };
 

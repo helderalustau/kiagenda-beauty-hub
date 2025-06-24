@@ -20,18 +20,25 @@ export const useBookingSubmission = (salonId: string) => {
   // Buscar ou criar cliente
   const findOrCreateClient = useCallback(async (name: string, phone: string) => {
     try {
+      console.log('🔍 Searching for existing client with phone:', phone);
+      
       const { data: existingClient, error: searchError } = await supabase
         .from('clients')
         .select('id')
         .eq('phone', phone)
         .maybeSingle();
 
-      if (searchError) throw searchError;
+      if (searchError) {
+        console.error('❌ Error searching for client:', searchError);
+        throw searchError;
+      }
 
       if (existingClient) {
+        console.log('✅ Found existing client:', existingClient.id);
         return existingClient.id;
       }
 
+      console.log('➕ Creating new client');
       const { data: newClient, error: createError } = await supabase
         .from('clients')
         .insert({
@@ -42,10 +49,15 @@ export const useBookingSubmission = (salonId: string) => {
         .select('id')
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        console.error('❌ Error creating client:', createError);
+        throw createError;
+      }
+      
+      console.log('✅ Created new client:', newClient.id);
       return newClient.id;
     } catch (error) {
-      console.error('Erro ao gerenciar cliente:', error);
+      console.error('❌ Error in findOrCreateClient:', error);
       throw error;
     }
   }, []);
@@ -57,7 +69,9 @@ export const useBookingSubmission = (salonId: string) => {
     selectedTime: string,
     clientData: ClientData
   ) => {
-    if (!selectedService || !selectedDate || !selectedTime || !clientData.name || !clientData.phone || !user?.id) {
+    // Validação inicial
+    if (!selectedService || !selectedDate || !selectedTime || !clientData.name || !clientData.phone) {
+      console.log('❌ Missing required data for booking');
       toast({
         title: "Dados incompletos",
         description: "Preencha todos os campos obrigatórios",
@@ -66,44 +80,89 @@ export const useBookingSubmission = (salonId: string) => {
       return false;
     }
 
-    setIsSubmitting(true);
-    try {
-      const clientId = await findOrCreateClient(clientData.name, clientData.phone);
-
-      const { error } = await supabase
-        .from('appointments')
-        .insert({
-          salon_id: salonId,
-          service_id: selectedService.id,
-          client_id: clientId,
-          user_id: user.id,
-          appointment_date: selectedDate.toISOString().split('T')[0],
-          appointment_time: selectedTime,
-          status: 'pending',
-          notes: clientData.notes || null
-        });
-
-      if (error) throw error;
-
+    if (!user?.id) {
+      console.log('❌ User not authenticated');
       toast({
-        title: "Sucesso!",
-        description: "Agendamento enviado com sucesso!",
-        duration: 5000
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Erro ao criar agendamento:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao enviar agendamento",
+        title: "Erro de autenticação",
+        description: "Você precisa estar logado para fazer um agendamento",
         variant: "destructive"
       });
       return false;
+    }
+
+    if (isSubmitting) {
+      console.log('⚠️ Already submitting, ignoring duplicate request');
+      return false;
+    }
+
+    setIsSubmitting(true);
+    console.log('🚀 Starting booking submission process');
+
+    try {
+      // 1. Buscar ou criar cliente
+      const clientId = await findOrCreateClient(clientData.name, clientData.phone);
+
+      // 2. Criar agendamento
+      console.log('📝 Creating appointment');
+      const appointmentData = {
+        salon_id: salonId,
+        service_id: selectedService.id,
+        client_id: clientId,
+        user_id: user.id,
+        appointment_date: selectedDate.toISOString().split('T')[0],
+        appointment_time: selectedTime,
+        status: 'pending' as const,
+        notes: clientData.notes || null
+      };
+
+      console.log('📋 Appointment data:', appointmentData);
+
+      const { data: appointment, error: appointmentError } = await supabase
+        .from('appointments')
+        .insert(appointmentData)
+        .select(`
+          *,
+          salon:salons(id, name, address, phone),
+          service:services(id, name, price, duration_minutes),
+          client:clients(id, name, phone, email)
+        `)
+        .single();
+
+      if (appointmentError) {
+        console.error('❌ Error creating appointment:', appointmentError);
+        throw appointmentError;
+      }
+
+      console.log('✅ Appointment created successfully:', appointment);
+
+      toast({
+        title: "✅ Agendamento Enviado!",
+        description: "Sua solicitação foi enviada com sucesso! O estabelecimento será notificado e você receberá uma confirmação em breve.",
+        duration: 6000
+      });
+
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error in booking submission:', error);
+      
+      let errorMessage = "Erro ao enviar agendamento";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      return false;
     } finally {
       setIsSubmitting(false);
+      console.log('🏁 Booking submission process completed');
     }
-  }, [salonId, findOrCreateClient, user?.id, toast]);
+  }, [salonId, findOrCreateClient, user?.id, toast, isSubmitting]);
 
   return {
     isSubmitting,
