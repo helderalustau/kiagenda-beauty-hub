@@ -2,7 +2,6 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useClientManagement } from './useClientManagement';
 
 interface AppointmentData {
   salon_id: string;
@@ -16,7 +15,6 @@ interface AppointmentData {
 
 export const useAppointmentCreation = () => {
   const { user } = useAuth();
-  const { findOrCreateClient } = useClientManagement();
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Criar agendamento otimizado
@@ -41,14 +39,13 @@ export const useAppointmentCreation = () => {
         throw new Error('Cliente não encontrado');
       }
 
-      // Criar agendamento diretamente no banco
+      // Criar agendamento diretamente no banco (sem user_id)
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
         .insert({
           salon_id: appointmentData.salon_id,
           service_id: appointmentData.service_id,
-          client_auth_id: clientAuth.id, // Usar client_auth_id
-          user_id: user.id,
+          client_auth_id: clientAuth.id,
           appointment_date: appointmentData.appointment_date,
           appointment_time: appointmentData.appointment_time,
           status: 'pending',

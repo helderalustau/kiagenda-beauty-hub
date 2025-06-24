@@ -18,48 +18,6 @@ export const useBookingSubmission = (salonId: string) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionInProgress = useRef(false);
 
-  // Buscar ou criar cliente na tabela client_auth
-  const findOrCreateClient = useCallback(async (name: string, phone: string) => {
-    try {
-      console.log('🔍 Searching for existing client with phone:', phone);
-      
-      // Limpar telefone (remover formatação)
-      const cleanPhone = phone.replace(/\D/g, '');
-      
-      if (cleanPhone.length < 10) {
-        throw new Error('Telefone deve ter pelo menos 10 dígitos');
-      }
-      
-      // Buscar cliente existente pelo telefone limpo na tabela client_auth
-      const { data: existingClient, error: searchError } = await supabase
-        .from('client_auth')
-        .select('id')
-        .eq('phone', cleanPhone)
-        .maybeSingle();
-
-      if (searchError) {
-        console.error('❌ Error searching for client:', searchError);
-        throw searchError;
-      }
-
-      if (existingClient) {
-        console.log('✅ Found existing client:', existingClient.id);
-        return existingClient.id;
-      }
-
-      // Se não encontrou, usar o ID do usuário logado (que já existe na client_auth)
-      if (user?.id) {
-        console.log('✅ Using logged user client ID:', user.id);
-        return user.id;
-      }
-
-      throw new Error('Usuário não encontrado');
-    } catch (error) {
-      console.error('❌ Error in findOrCreateClient:', error);
-      throw error;
-    }
-  }, [user?.id]);
-
   // Submeter agendamento
   const submitBooking = useCallback(async (
     selectedService: Service | null,
@@ -140,15 +98,11 @@ export const useBookingSubmission = (salonId: string) => {
     setIsSubmitting(true);
 
     try {
-      // 1. Buscar ou usar cliente logado
-      const clientId = await findOrCreateClient(clientData.name, clientData.phone);
-
-      // 2. Criar agendamento
+      // Criar agendamento diretamente (sem user_id)
       const appointmentData = {
         salon_id: salonId,
         service_id: selectedService.id,
-        client_auth_id: clientId, // Usar a nova coluna
-        user_id: user.id,
+        client_auth_id: user.id, // Usar diretamente o ID do usuário logado
         appointment_date: selectedDate.toISOString().split('T')[0],
         appointment_time: selectedTime,
         status: 'pending',
@@ -208,7 +162,7 @@ export const useBookingSubmission = (salonId: string) => {
       setIsSubmitting(false);
       console.log('🏁 Booking submission process completed');
     }
-  }, [salonId, findOrCreateClient, user?.id, toast]);
+  }, [salonId, user?.id, toast]);
 
   return {
     isSubmitting,

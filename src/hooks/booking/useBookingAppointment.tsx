@@ -39,12 +39,13 @@ export const useBookingAppointment = () => {
 
       console.log('Using client auth data:', clientAuth);
 
+      // Criar agendamento sem user_id
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
         .insert({
           salon_id: appointmentData.salon_id,
           service_id: appointmentData.service_id,
-          client_auth_id: clientAuth.id, // Usar client_auth_id
+          client_auth_id: clientAuth.id,
           appointment_date: appointmentData.appointment_date,
           appointment_time: appointmentData.appointment_time,
           status: 'pending',
