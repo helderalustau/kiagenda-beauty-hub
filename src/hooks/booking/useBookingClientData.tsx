@@ -19,22 +19,22 @@ export const useBookingClientData = (
   // Auto-preencher dados do cliente logado apenas uma vez
   useEffect(() => {
     const loadClientData = () => {
-      if (user && !hasAutoFilled.current && !clientData.name && !clientData.phone) {
+      if (user && !hasAutoFilled.current && !clientData.name) {
         console.log('Auto-filling client data from logged user (once):', user);
         
         hasAutoFilled.current = true;
         
         setClientData({
           name: user.name || '',
-          phone: user.phone || '',
-          email: user.email || '',
+          phone: clientData.phone || '', // Manter o valor atual do phone
+          email: clientData.email || '', // Manter o valor atual do email
           notes: clientData.notes || ''
         });
       }
     };
 
     loadClientData();
-  }, [user]); // Remover dependências que causam loops
+  }, [user, clientData.name, clientData.phone, clientData.email, clientData.notes, setClientData]);
 
   // Reset do flag quando o modal for fechado (clientData limpo)
   useEffect(() => {
