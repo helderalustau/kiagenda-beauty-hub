@@ -64,9 +64,10 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
       if (success) {
         console.log('✅ Booking successful, calling success callback');
         onBookingSuccess();
+        // Fechar modal após sucesso
         setTimeout(() => {
           handleClose();
-        }, 1000);
+        }, 2000);
       }
     } catch (error) {
       console.error('❌ Error in modal submit:', error);
@@ -81,7 +82,10 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   const handleDateSelect = (date: Date | undefined) => {
     console.log('📅 Calendar date selected:', date?.toDateString());
     setSelectedDate(date);
-    setSelectedTime('');
+    // Limpar horário quando data mudar
+    if (selectedTime) {
+      setSelectedTime('');
+    }
   };
 
   if (!salon?.is_open) {
@@ -103,7 +107,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={!isSubmitting ? handleClose : undefined}>
       <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 -m-6 mb-6">
           <DialogTitle className="text-xl font-bold flex items-center">

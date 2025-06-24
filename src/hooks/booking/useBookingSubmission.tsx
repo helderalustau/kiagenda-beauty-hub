@@ -23,11 +23,18 @@ export const useBookingSubmission = (salonId: string) => {
     try {
       console.log('🔍 Searching for existing client with phone:', phone);
       
-      // Buscar cliente existente pelo telefone
+      // Limpar telefone (remover formatação)
+      const cleanPhone = phone.replace(/\D/g, '');
+      
+      if (cleanPhone.length < 10) {
+        throw new Error('Telefone deve ter pelo menos 10 dígitos');
+      }
+      
+      // Buscar cliente existente pelo telefone limpo
       const { data: existingClient, error: searchError } = await supabase
         .from('clients')
         .select('id')
-        .eq('phone', phone)
+        .eq('phone', cleanPhone)
         .maybeSingle();
 
       if (searchError) {
@@ -41,12 +48,12 @@ export const useBookingSubmission = (salonId: string) => {
       }
 
       // Criar novo cliente
-      console.log('➕ Creating new client');
+      console.log('➕ Creating new client with clean phone:', cleanPhone);
       const { data: newClient, error: createError } = await supabase
         .from('clients')
         .insert({
           name: name.trim(),
-          phone: phone.trim(),
+          phone: cleanPhone,
           email: null
         })
         .select('id')
@@ -72,20 +79,60 @@ export const useBookingSubmission = (salonId: string) => {
     selectedTime: string,
     clientData: ClientData
   ) => {
-    // Validação inicial
-    if (!selectedService || !selectedDate || !selectedTime || !clientData.name.trim() || !clientData.phone.trim()) {
-      console.log('❌ Missing required data for booking');
-      
+    console.log('🚀 Starting booking submission with data:', {
+      service: selectedService?.name,
+      date: selectedDate?.toDateString(),
+      time: selectedTime,
+      client: { name: clientData.name, phone: clientData.phone }
+    });
+
+    // Validação completa inicial
+    if (!selectedService) {
       toast({
-        title: "Dados incompletos",
-        description: "Preencha todos os campos obrigatórios",
+        title: "Serviço não selecionado",
+        description: "Selecione um serviço para continuar",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!selectedDate) {
+      toast({
+        title: "Data não selecionada",
+        description: "Selecione uma data para o agendamento",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!selectedTime) {
+      toast({
+        title: "Horário não selecionado",
+        description: "Selecione um horário para o agendamento",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!clientData.name.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Preencha seu nome completo",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!clientData.phone.trim()) {
+      toast({
+        title: "Telefone obrigatório",
+        description: "Preencha seu telefone",
         variant: "destructive"
       });
       return false;
     }
 
     if (!user?.id) {
-      console.log('❌ User not authenticated');
       toast({
         title: "Erro de autenticação",
         description: "Você precisa estar logado para fazer um agendamento",
@@ -96,21 +143,20 @@ export const useBookingSubmission = (salonId: string) => {
 
     // Verificar se já há uma submissão em andamento
     if (submissionInProgress.current || isSubmitting) {
-      console.log('⚠️ Submission already in progress');
+      console.log('⚠️ Submission already in progress, blocking duplicate');
       return false;
     }
 
     // Marcar submissão como em andamento
     submissionInProgress.current = true;
     setIsSubmitting(true);
-    console.log('🚀 Starting booking submission process');
 
     try {
       // 1. Buscar ou criar cliente
       const clientId = await findOrCreateClient(clientData.name, clientData.phone);
 
       // 2. Criar agendamento
-      console.log('📝 Creating appointment with data:', {
+      const appointmentData = {
         salon_id: salonId,
         service_id: selectedService.id,
         client_id: clientId,
@@ -118,30 +164,31 @@ export const useBookingSubmission = (salonId: string) => {
         appointment_date: selectedDate.toISOString().split('T')[0],
         appointment_time: selectedTime,
         status: 'pending',
-        notes: clientData.notes || null
-      });
+        notes: clientData.notes?.trim() || null
+      };
+
+      console.log('📝 Creating appointment with data:', appointmentData);
 
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
-        .insert({
-          salon_id: salonId,
-          service_id: selectedService.id,
-          client_id: clientId,
-          user_id: user.id,
-          appointment_date: selectedDate.toISOString().split('T')[0],
-          appointment_time: selectedTime,
-          status: 'pending',
-          notes: clientData.notes || null
-        })
+        .insert(appointmentData)
         .select()
         .single();
 
       if (appointmentError) {
         console.error('❌ Error creating appointment:', appointmentError);
-        throw new Error(`Erro ao criar agendamento: ${appointmentError.message}`);
+        
+        let errorMessage = "Erro ao criar agendamento";
+        if (appointmentError.message.includes('duplicate')) {
+          errorMessage = "Já existe um agendamento para este horário";
+        } else if (appointmentError.message.includes('foreign key')) {
+          errorMessage = "Dados inválidos. Tente novamente";
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      console.log('✅ Appointment created successfully:', appointment);
+      console.log('✅ Appointment created successfully:', appointment.id);
 
       toast({
         title: "✅ Solicitação Enviada!",
@@ -162,7 +209,8 @@ export const useBookingSubmission = (salonId: string) => {
       toast({
         title: "Erro no Agendamento",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
+        duration: 7000
       });
       
       return false;

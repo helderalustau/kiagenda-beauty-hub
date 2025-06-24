@@ -1,7 +1,6 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useClientData } from '@/hooks/useClientData';
 
 interface ClientData {
   name: string;
@@ -15,39 +14,34 @@ export const useBookingClientData = (
   setClientData: (data: ClientData) => void
 ) => {
   const { user } = useAuth();
-  const { getClientByPhone } = useClientData();
+  const hasAutoFilled = useRef(false);
 
-  // Auto-preencher dados do cliente logado
+  // Auto-preencher dados do cliente logado apenas uma vez
   useEffect(() => {
-    const loadClientData = async () => {
-      if (user) {
-        console.log('Auto-filling client data from logged user:', user);
+    const loadClientData = () => {
+      if (user && !hasAutoFilled.current && !clientData.name && !clientData.phone) {
+        console.log('Auto-filling client data from logged user (once):', user);
         
-        // Tentar buscar dados reais do cliente baseado no ID do usuário
-        const clientResult = await getClientByPhone(user.id);
+        hasAutoFilled.current = true;
         
-        if (clientResult.success && clientResult.client) {
-          // Usar dados reais do cliente
-          setClientData({
-            name: clientResult.client.name || user.name || '',
-            phone: clientResult.client.phone || '',
-            email: clientResult.client.email || '',
-            notes: clientData.notes || ''
-          });
-        } else {
-          // Fallback para dados básicos do usuário
-          setClientData({
-            name: user.name || '',
-            phone: user.id || '', // Usar o ID como telefone temporariamente
-            email: '',
-            notes: clientData.notes || ''
-          });
-        }
+        setClientData({
+          name: user.name || '',
+          phone: user.phone || '',
+          email: user.email || '',
+          notes: clientData.notes || ''
+        });
       }
     };
 
     loadClientData();
-  }, [user, setClientData, getClientByPhone]);
+  }, [user]); // Remover dependências que causam loops
+
+  // Reset do flag quando o modal for fechado (clientData limpo)
+  useEffect(() => {
+    if (!clientData.name && !clientData.phone && hasAutoFilled.current) {
+      hasAutoFilled.current = false;
+    }
+  }, [clientData.name, clientData.phone]);
 
   return { user };
 };

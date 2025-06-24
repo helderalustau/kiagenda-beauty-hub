@@ -17,13 +17,13 @@ export const useSimpleBooking = (salon: Salon) => {
 
   // Carregar serviços apenas quando necessário
   useEffect(() => {
-    if (salonId) {
+    if (salonId && !services.length && !loadingServices) {
       console.log('🔄 Loading services for salon:', salon.name);
       loadServices();
     }
-  }, [salonId, loadServices]);
+  }, [salonId, services.length, loadingServices, loadServices, salon.name]);
 
-  // Carregar horários com debounce implícito
+  // Carregar horários quando data mudar
   const handleDateChange = useCallback((date: Date | undefined) => {
     if (date && salon) {
       console.log('📅 Date changed, fetching slots for:', date.toDateString());
@@ -31,7 +31,7 @@ export const useSimpleBooking = (salon: Salon) => {
     }
   }, [salon, fetchAvailableSlots]);
 
-  // Monitorar mudanças de data
+  // Monitorar mudanças de data (sem loop)
   useEffect(() => {
     if (bookingState.selectedDate) {
       handleDateChange(bookingState.selectedDate);
@@ -45,7 +45,7 @@ export const useSimpleBooking = (salon: Salon) => {
       return false;
     }
 
-    console.log('📋 Starting booking submission');
+    console.log('📋 Starting booking submission from hook');
     
     const success = await submitBookingBase(
       bookingState.selectedService,
@@ -56,7 +56,10 @@ export const useSimpleBooking = (salon: Salon) => {
     
     if (success) {
       console.log('✅ Booking submitted successfully, resetting state');
-      bookingState.resetBooking();
+      // Resetar estado após sucesso
+      setTimeout(() => {
+        bookingState.resetBooking();
+      }, 1000);
     }
     
     return success;
