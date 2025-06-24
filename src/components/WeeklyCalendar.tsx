@@ -22,7 +22,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   const [showNotification, setShowNotification] = useState(false);
   const [currentNotification, setCurrentNotification] = useState<Appointment | null>(null);
 
-  // Setup realtime notifications otimizadas
+  // Setup realtime notifications otimizadas para admin
   const { notifications, clearNotification } = useRealtimeNotifications({
     salonId: salon?.id || '',
     onNewAppointment: (appointment) => {
@@ -30,18 +30,24 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
       setCurrentNotification(appointment);
       setShowNotification(true);
       
-      // Toast otimizado
+      // Toast otimizado para admin
       toast({
         title: "🔔 Novo Agendamento!",
         description: `${appointment.client?.name || appointment.client?.username} solicitou agendamento para ${appointment.service?.name}`,
         duration: 8000,
       });
       
-      // Atualizar lista imediatamente
+      // Atualizar lista imediatamente sem recarregar
       onRefresh();
     },
     onAppointmentUpdate: (appointment) => {
       console.log('📝 Appointment updated:', appointment);
+      // Atualizar calendário em tempo real
+      onRefresh();
+    },
+    onAppointmentStatusChange: (appointment) => {
+      console.log('🔄 Appointment status changed:', appointment);
+      // Atualizar calendário quando status mudar
       onRefresh();
     }
   });
@@ -126,7 +132,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
         salonId={salon?.id || ''}
       />
 
-      {/* Notification Modal Otimizada */}
+      {/* Notification Modal Otimizada com som */}
       <AppointmentNotification
         isOpen={showNotification}
         appointment={currentNotification}

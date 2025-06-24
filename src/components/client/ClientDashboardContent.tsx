@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Salon } from '@/hooks/useSupabaseData';
-import { MapPin, Clock, Phone, Star, Calendar, CheckCircle, AlertCircle, Clock4 } from "lucide-react";
+import { MapPin, Phone, Star, Calendar, CheckCircle, Clock } from "lucide-react";
 import ActiveAppointmentCard from './ActiveAppointmentCard';
+import CompletedAppointmentCard from './CompletedAppointmentCard';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
@@ -21,72 +22,68 @@ const ClientDashboardContent = ({
   completedAppointments 
 }: ClientDashboardContentProps) => {
   
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  // Separar agendamentos ativos por status
-  const pendingAppointments = activeAppointments.filter(apt => apt.status === 'pending');
-  const confirmedAppointments = activeAppointments.filter(apt => apt.status === 'confirmed');
-
   return (
     <div className="space-y-8">
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-600">Aguardando Aprovação</p>
-                <p className="text-2xl font-bold text-orange-900">{pendingAppointments.length}</p>
-              </div>
-              <Clock4 className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600">Agendamentos Confirmados</p>
-                <p className="text-2xl font-bold text-blue-900">{confirmedAppointments.length}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600">Atendimentos Concluídos</p>
-                <p className="text-2xl font-bold text-green-900">{completedAppointments.length}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Agendamentos Ativos */}
-      {activeAppointments.length > 0 && (
+      {/* Seção Principal: Agendamentos vs Histórico */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Coluna 1: Agendamentos Ativos */}
         <div>
           <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <Calendar className="h-5 w-5 mr-2 text-blue-500" />
-            Seus Agendamentos Ativos
+            <Clock className="h-5 w-5 mr-2 text-blue-500" />
+            Agendamentos de Serviços Ativos
+            {activeAppointments.length > 0 && (
+              <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800">
+                {activeAppointments.length}
+              </Badge>
+            )}
           </h3>
-          <div className="space-y-4">
-            {activeAppointments.map((appointment) => (
-              <ActiveAppointmentCard key={appointment.id} appointment={appointment} />
-            ))}
-          </div>
+          
+          {activeAppointments.length > 0 ? (
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {activeAppointments.map((appointment) => (
+                <ActiveAppointmentCard key={appointment.id} appointment={appointment} />
+              ))}
+            </div>
+          ) : (
+            <Card className="bg-gray-50/50">
+              <CardContent className="p-8 text-center">
+                <Clock className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-gray-500 mb-2">Nenhum agendamento ativo</h4>
+                <p className="text-gray-400">Agende um serviço para ver seus agendamentos aqui</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
-      )}
+
+        {/* Coluna 2: Histórico de Atendimentos */}
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+            Histórico de Atendimentos Concluídos
+            {completedAppointments.length > 0 && (
+              <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
+                {completedAppointments.length}
+              </Badge>
+            )}
+          </h3>
+          
+          {completedAppointments.length > 0 ? (
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {completedAppointments.map((appointment) => (
+                <CompletedAppointmentCard key={appointment.id} appointment={appointment} />
+              ))}
+            </div>
+          ) : (
+            <Card className="bg-gray-50/50">
+              <CardContent className="p-8 text-center">
+                <CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-gray-500 mb-2">Nenhum histórico ainda</h4>
+                <p className="text-gray-400">Seus atendimentos concluídos aparecerão aqui</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
 
       {/* Estabelecimentos Disponíveis */}
       <div>
@@ -154,45 +151,6 @@ const ClientDashboardContent = ({
           ))}
         </div>
       </div>
-
-      {/* Histórico de Agendamentos Concluídos */}
-      {completedAppointments.length > 0 && (
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-            Histórico de Atendimentos
-          </h3>
-          <div className="space-y-3">
-            {completedAppointments.map((appointment) => (
-              <Card key={appointment.id} className="border-green-200 bg-green-50/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{appointment.salon?.name}</h4>
-                      <p className="text-sm text-gray-600">{appointment.service?.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')} às {appointment.appointment_time}
-                      </p>
-                      <p className="text-sm font-medium text-green-600">
-                        {formatCurrency(appointment.service?.price || 0)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant="default" className="bg-green-100 text-green-800 mb-2">
-                        Concluído
-                      </Badge>
-                      <Button variant="outline" size="sm" className="block">
-                        <Star className="h-4 w-4 mr-1" />
-                        Avaliar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

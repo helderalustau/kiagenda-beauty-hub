@@ -8,12 +8,14 @@ interface UseRealtimeNotificationsProps {
   salonId: string;
   onNewAppointment?: (appointment: Appointment) => void;
   onAppointmentUpdate?: (appointment: Appointment) => void;
+  onAppointmentStatusChange?: (appointment: Appointment) => void;
 }
 
 export const useRealtimeNotifications = ({ 
   salonId, 
   onNewAppointment, 
-  onAppointmentUpdate 
+  onAppointmentUpdate,
+  onAppointmentStatusChange
 }: UseRealtimeNotificationsProps) => {
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Appointment[]>([]);
@@ -110,9 +112,32 @@ export const useRealtimeNotifications = ({
               return;
             }
 
-            if (appointment && onAppointmentUpdate) {
+            if (appointment) {
               console.log('✅ Processing updated appointment:', appointment);
-              onAppointmentUpdate(appointment as Appointment);
+              
+              // Call both callbacks for updates
+              if (onAppointmentUpdate) {
+                onAppointmentUpdate(appointment as Appointment);
+              }
+              
+              if (onAppointmentStatusChange) {
+                onAppointmentStatusChange(appointment as Appointment);
+              }
+
+              // Show status change notifications
+              if (appointment.status === 'confirmed') {
+                toast({
+                  title: "✅ Agendamento Confirmado",
+                  description: `Agendamento confirmado para ${appointment.client?.name || appointment.client?.username}`,
+                  duration: 5000,
+                });
+              } else if (appointment.status === 'completed') {
+                toast({
+                  title: "🎉 Atendimento Concluído",
+                  description: `Atendimento finalizado para ${appointment.client?.name || appointment.client?.username}`,
+                  duration: 5000,
+                });
+              }
             }
           } catch (error) {
             console.error('❌ Error processing appointment update notification:', error);
@@ -127,7 +152,7 @@ export const useRealtimeNotifications = ({
       console.log('🔌 Cleaning up realtime subscription for salon:', salonId);
       supabase.removeChannel(channel);
     };
-  }, [salonId, onNewAppointment, onAppointmentUpdate, toast]);
+  }, [salonId, onNewAppointment, onAppointmentUpdate, onAppointmentStatusChange, toast]);
 
   const clearNotification = (appointmentId: string) => {
     setNotifications(prev => prev.filter(n => n.id !== appointmentId));
