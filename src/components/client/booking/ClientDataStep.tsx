@@ -88,25 +88,6 @@ const ClientDataStep = ({
     loadClientData();
   }, [user, onClientDataChange]);
 
-  // Função para formatar telefone brasileiro
-  const formatPhoneNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    
-    if (numbers.length <= 11) {
-      return numbers
-        .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
-        .replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
-        .replace(/(\d{2})(\d{1,5})/, '($1) $2')
-        .replace(/(\d{2})/, '($1');
-    }
-    return value;
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    onClientDataChange({ ...clientData, phone: formatted });
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -119,8 +100,8 @@ const ClientDataStep = ({
           Voltar ao Horário
         </Button>
         <div className="text-center">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Seus Dados</h3>
-          <p className="text-gray-600">Confirme seus dados para finalizar o agendamento</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Confirmar Agendamento</h3>
+          <p className="text-gray-600">Revise os dados e adicione observações se necessário</p>
         </div>
         <div></div>
       </div>
@@ -150,56 +131,90 @@ const ClientDataStep = ({
         </CardContent>
       </Card>
 
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="clientName">Nome de Usuário *</Label>
-            <div className="relative">
-              <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="clientName"
-                type="text"
-                placeholder="Seu nome de usuário"
-                value={clientData.name}
-                onChange={(e) => onClientDataChange({ ...clientData, name: e.target.value })}
-                className="pl-10"
-                required
-                readOnly={!!user?.name}
-              />
+      {/* Dados do Cliente - Somente Leitura */}
+      <Card className="bg-green-50 border-green-200">
+        <CardContent className="p-4">
+          <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <User className="h-4 w-4 mr-2 text-green-600" />
+            Seus Dados (Preenchidos Automaticamente)
+          </h4>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="clientName" className="text-sm text-gray-600">Nome de Usuário</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="clientName"
+                    type="text"
+                    value={clientData.name}
+                    className="pl-10 bg-gray-50 text-gray-600"
+                    readOnly
+                  />
+                </div>
+                <p className="text-xs text-green-600 mt-1">✓ Dados do seu perfil</p>
+              </div>
+
+              <div>
+                <Label htmlFor="clientPhone" className="text-sm text-gray-600">Telefone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="clientPhone"
+                    type="tel"
+                    value={clientData.phone || 'Não informado'}
+                    className="pl-10 bg-gray-50 text-gray-600"
+                    readOnly
+                  />
+                </div>
+                {clientData.phone ? (
+                  <p className="text-xs text-green-600 mt-1">✓ Dados do seu perfil</p>
+                ) : (
+                  <p className="text-xs text-orange-600 mt-1">⚠ Telefone não cadastrado no perfil</p>
+                )}
+              </div>
             </div>
-            {user?.name && (
-              <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente</p>
+
+            {clientData.email && (
+              <div>
+                <Label htmlFor="clientEmail" className="text-sm text-gray-600">Email</Label>
+                <Input
+                  id="clientEmail"
+                  type="email"
+                  value={clientData.email}
+                  className="bg-gray-50 text-gray-600"
+                  readOnly
+                />
+                <p className="text-xs text-green-600 mt-1">✓ Dados do seu perfil</p>
+              </div>
             )}
           </div>
+        </CardContent>
+      </Card>
 
-          <div>
-            <Label htmlFor="clientPhone">Telefone *</Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="clientPhone"
-                type="tel"
-                placeholder="(11) 99999-9999"
-                value={clientData.phone}
-                onChange={handlePhoneChange}
-                className="pl-10"
-                required
-                maxLength={15}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">Formato: (11) 99999-9999</p>
-          </div>
-        </div>
-
+      <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <Label htmlFor="notes">Observações</Label>
+          <Label htmlFor="notes">Observações (Opcional)</Label>
           <Textarea
             id="notes"
-            placeholder="Alguma observação adicional?"
+            placeholder="Alguma observação adicional sobre o agendamento?"
             value={clientData.notes}
             onChange={(e) => onClientDataChange({ ...clientData, notes: e.target.value })}
             rows={3}
+            className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Ex: Preferência de horário, necessidades especiais, etc.
+          </p>
+        </div>
+
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-800 mb-2">
+            <strong>Importante:</strong> Seus dados pessoais são preenchidos automaticamente com base no seu perfil de usuário.
+          </p>
+          <p className="text-xs text-blue-600">
+            Para alterar seus dados pessoais, acesse a seção "Meu Perfil" no painel principal.
+          </p>
         </div>
       </form>
     </div>
