@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { User, Edit } from "lucide-react";
-import { Client, useSupabaseData } from '@/hooks/useSupabaseData';
+import { Client } from '@/types/supabase-entities';
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClientProfileProps {
   client: Client;
@@ -17,23 +18,44 @@ interface ClientProfileProps {
 const ClientProfile = ({ client, onUpdate }: ClientProfileProps) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingClient, setEditingClient] = useState(client);
-  const { updateClientProfile } = useSupabaseData();
   const { toast } = useToast();
 
   const handleSave = async () => {
-    const result = await updateClientProfile(client.id, editingClient);
-    
-    if (result.success) {
+    try {
+      const { data, error } = await supabase
+        .from('client_auth')
+        .update({
+          username: editingClient.username,
+          name: editingClient.name,
+          phone: editingClient.phone,
+          email: editingClient.email,
+          full_name: editingClient.full_name,
+          street_address: editingClient.street_address,
+          house_number: editingClient.house_number,
+          neighborhood: editingClient.neighborhood,
+          city: editingClient.city,
+          state: editingClient.state,
+          zip_code: editingClient.zip_code
+        })
+        .eq('id', client.id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Sucesso",
         description: "Perfil atualizado com sucesso!"
       });
-      onUpdate(result.client);
+      onUpdate(data);
       setShowEditDialog(false);
-    } else {
+    } catch (error) {
+      console.error('Error updating profile:', error);
       toast({
         title: "Erro",
-        description: result.message,
+        description: "Erro ao atualizar perfil",
         variant: "destructive"
       });
     }
@@ -64,12 +86,16 @@ const ClientProfile = ({ client, onUpdate }: ClientProfileProps) => {
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium text-gray-600">Nome</Label>
-              <p className="text-gray-900">{client.name}</p>
+              <Label className="text-sm font-medium text-gray-600">Nome de Usuário</Label>
+              <p className="text-gray-900">{client.username}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-600">Nome Completo</Label>
+              <p className="text-gray-900">{client.full_name || client.name}</p>
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-600">Telefone</Label>
-              <p className="text-gray-900">{client.phone}</p>
+              <p className="text-gray-900">{client.phone || 'Não informado'}</p>
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-600">E-mail</Label>
@@ -108,19 +134,28 @@ const ClientProfile = ({ client, onUpdate }: ClientProfileProps) => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Nome *</Label>
+              <Label htmlFor="username">Nome de Usuário *</Label>
               <Input
-                id="name"
-                value={editingClient.name}
-                onChange={(e) => setEditingClient({...editingClient, name: e.target.value})}
+                id="username"
+                value={editingClient.username}
+                onChange={(e) => setEditingClient({...editingClient, username: e.target.value})}
+                placeholder="Nome de usuário"
+              />
+            </div>
+            <div>
+              <Label htmlFor="full_name">Nome Completo</Label>
+              <Input
+                id="full_name"
+                value={editingClient.full_name || ''}
+                onChange={(e) => setEditingClient({...editingClient, full_name: e.target.value})}
                 placeholder="Nome completo"
               />
             </div>
             <div>
-              <Label htmlFor="phone">Telefone *</Label>
+              <Label htmlFor="phone">Telefone</Label>
               <Input
                 id="phone"
-                value={editingClient.phone}
+                value={editingClient.phone || ''}
                 onChange={(e) => setEditingClient({...editingClient, phone: e.target.value})}
                 placeholder="(11) 99999-9999"
               />

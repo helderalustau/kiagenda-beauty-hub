@@ -1,6 +1,5 @@
 
 import { useToast } from "@/components/ui/use-toast";
-import { useClientData } from '@/hooks/useClientData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Service, Salon } from '@/hooks/useSupabaseData';
@@ -18,7 +17,6 @@ interface CreateAppointmentData {
 export const useBookingAppointment = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { getClientByPhone } = useClientData();
 
   const createAppointmentWithLoggedClient = async (appointmentData: CreateAppointmentData) => {
     try {
@@ -28,39 +26,25 @@ export const useBookingAppointment = () => {
         throw new Error('Cliente não está logado');
       }
 
-      const clientResult = await getClientByPhone(user.id);
-      let clientId = null;
+      // Buscar dados do cliente na tabela client_auth usando o ID do usuário logado
+      const { data: clientAuth, error: clientError } = await supabase
+        .from('client_auth')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-      if (clientResult.success && clientResult.client) {
-        clientId = clientResult.client.id;
-        console.log('Using existing client:', clientResult.client);
-      } else {
-        console.log('Creating new client for logged user');
-        const { data: newClient, error: clientError } = await supabase
-          .from('clients')
-          .insert({
-            name: user.name || appointmentData.clientName,
-            phone: user.id,
-            email: null
-          })
-          .select()
-          .single();
-
-        if (clientError) {
-          console.error('Error creating client:', clientError);
-          throw new Error('Erro ao criar dados do cliente');
-        }
-
-        clientId = newClient.id;
-        console.log('New client created:', newClient);
+      if (clientError || !clientAuth) {
+        throw new Error('Dados do cliente não encontrados');
       }
+
+      console.log('Using client auth data:', clientAuth);
 
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
         .insert({
           salon_id: appointmentData.salon_id,
           service_id: appointmentData.service_id,
-          client_id: clientId,
+          client_auth_id: clientAuth.id, // Usar client_auth_id
           appointment_date: appointmentData.appointment_date,
           appointment_time: appointmentData.appointment_time,
           status: 'pending',
@@ -70,7 +54,7 @@ export const useBookingAppointment = () => {
           *,
           salon:salons(id, name, address, phone),
           service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
+          client:client_auth(id, username, name, phone, email)
         `)
         .single();
 

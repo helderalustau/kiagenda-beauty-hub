@@ -30,8 +30,16 @@ export const useAppointmentCreation = () => {
     try {
       console.log('🚀 Starting optimized appointment creation:', appointmentData);
       
-      // Buscar ou criar cliente
-      const clientId = await findOrCreateClient(appointmentData.clientName, appointmentData.clientPhone);
+      // Buscar cliente na tabela client_auth
+      const { data: clientAuth, error: clientError } = await supabase
+        .from('client_auth')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (clientError || !clientAuth) {
+        throw new Error('Cliente não encontrado');
+      }
 
       // Criar agendamento diretamente no banco
       const { data: appointment, error: appointmentError } = await supabase
@@ -39,7 +47,7 @@ export const useAppointmentCreation = () => {
         .insert({
           salon_id: appointmentData.salon_id,
           service_id: appointmentData.service_id,
-          client_id: clientId,
+          client_auth_id: clientAuth.id, // Usar client_auth_id
           user_id: user.id,
           appointment_date: appointmentData.appointment_date,
           appointment_time: appointmentData.appointment_time,
@@ -71,7 +79,7 @@ export const useAppointmentCreation = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [user?.id, findOrCreateClient]);
+  }, [user?.id]);
 
   return {
     createOptimizedAppointment,

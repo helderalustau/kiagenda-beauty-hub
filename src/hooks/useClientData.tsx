@@ -1,16 +1,16 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Client } from './useSupabaseData';
+import { Client } from '@/types/supabase-entities';
 
 export const useClientData = () => {
   const [loading, setLoading] = useState(false);
 
-  const updateClientProfile = async (clientId: string, profileData: { name: string; email?: string; phone: string }) => {
+  const updateClientProfile = async (clientId: string, profileData: { username: string; email?: string; phone?: string }) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('clients')
+        .from('client_auth')
         .update(profileData)
         .eq('id', clientId)
         .select()
@@ -30,15 +30,15 @@ export const useClientData = () => {
     }
   };
 
-  const getClientByPhone = async (phone: string) => {
+  const getClientByPhone = async (userId: string) => {
     try {
       setLoading(true);
       
-      // Buscar cliente usando o phone (que corresponde ao ID do usuário logado)
+      // Buscar cliente na tabela client_auth usando o ID do usuário
       const { data: clientData, error: clientError } = await supabase
-        .from('clients')
+        .from('client_auth')
         .select('*')
-        .eq('phone', phone)
+        .eq('id', userId)
         .single();
 
       if (clientError && clientError.code !== 'PGRST116') {
@@ -49,40 +49,6 @@ export const useClientData = () => {
       if (clientData) {
         console.log('getClientByPhone - Client found:', clientData);
         return { success: true, client: clientData };
-      }
-
-      // Se não encontrou, buscar na tabela client_auth para verificar dados
-      const { data: authData, error: authError } = await supabase
-        .from('client_auth')
-        .select('*')
-        .eq('name', phone)
-        .single();
-
-      if (authError && authError.code !== 'PGRST116') {
-        console.error('Error finding client auth:', authError);
-      }
-
-      if (authData) {
-        // Criar registro na tabela clients baseado nos dados de auth
-        const newClientData = {
-          name: authData.name,
-          phone: authData.phone || authData.name,
-          email: authData.email || null
-        };
-
-        const { data: createdClient, error: createError } = await supabase
-          .from('clients')
-          .insert(newClientData)
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating client:', createError);
-          return { success: false, message: 'Erro ao criar dados do cliente' };
-        }
-
-        console.log('getClientByPhone - Client created from auth data:', createdClient);
-        return { success: true, client: createdClient };
       }
 
       return { success: false, message: 'Cliente não encontrado' };
@@ -98,9 +64,9 @@ export const useClientData = () => {
     try {
       setLoading(true);
       
-      // Primeiro, tentar encontrar cliente existente pelo phone
+      // Primeiro, tentar encontrar cliente existente pelo phone na tabela client_auth
       const { data: existingClient, error: findError } = await supabase
-        .from('clients')
+        .from('client_auth')
         .select('*')
         .eq('phone', clientData.phone)
         .single();
@@ -110,24 +76,9 @@ export const useClientData = () => {
         return { success: true, client: existingClient };
       }
 
-      // Se não encontrou, criar novo cliente
-      const { data: newClient, error: createError } = await supabase
-        .from('clients')
-        .insert({
-          name: clientData.name,
-          phone: clientData.phone,
-          email: clientData.email || null
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('Error creating client:', createError);
-        return { success: false, message: 'Erro ao criar cliente' };
-      }
-
-      console.log('getOrCreateClient - New client created:', newClient);
-      return { success: true, client: newClient };
+      // Se não encontrou, verificar se é um usuário logado e usar seus dados
+      // Não criamos novos registros automaticamente na client_auth
+      return { success: false, message: 'Cliente não encontrado' };
     } catch (error) {
       console.error('Error in getOrCreateClient:', error);
       return { success: false, message: 'Erro ao processar dados do cliente' };

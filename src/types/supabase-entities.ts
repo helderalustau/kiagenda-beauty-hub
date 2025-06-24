@@ -1,3 +1,4 @@
+
 // Centralized type definitions for Supabase entities
 export interface Salon {
   id: string;
@@ -32,23 +33,31 @@ export interface Service {
   active: boolean;
 }
 
+// Agora Client representa os dados da tabela client_auth unificada
 export interface Client {
   id: string;
+  username: string;
   name: string;
-  phone: string;
+  phone?: string;
   email?: string;
+  password?: string;
+  password_hash?: string;
+  full_name?: string;
+  address?: string;
   street_address?: string;
   house_number?: string;
   neighborhood?: string;
   city?: string;
   state?: string;
   zip_code?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Appointment {
   id: string;
   salon_id: string;
-  client_id: string;
+  client_auth_id: string; // Atualizado para usar client_auth_id
   service_id: string;
   user_id?: string;
   appointment_date: string;
@@ -73,8 +82,9 @@ export interface Appointment {
   };
   client?: {
     id: string;
+    username: string;
     name: string;
-    phone: string;
+    phone?: string;
     email?: string;
   };
 }

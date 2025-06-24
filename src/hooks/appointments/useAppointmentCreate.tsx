@@ -1,12 +1,10 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useClientData } from '@/hooks/useClientData';
 import { useAppointmentTypes } from './useAppointmentTypes';
 
 export const useAppointmentCreate = () => {
   const [loading, setLoading] = useState(false);
-  const { getOrCreateClient } = useClientData();
   const { normalizeAppointment } = useAppointmentTypes();
 
   // Create appointment - VERSÃO CORRIGIDA
@@ -35,28 +33,27 @@ export const useAppointmentCreate = () => {
         throw new Error('Formato de horário inválido. Use HH:MM');
       }
 
-      // Buscar ou criar cliente
-      console.log('Getting or creating client...');
-      const clientResult = await getOrCreateClient({
-        name: appointmentData.clientName,
-        phone: appointmentData.clientPhone,
-        email: appointmentData.clientEmail
-      });
+      // Buscar cliente existente na tabela client_auth
+      console.log('Getting client from client_auth...');
+      const { data: clientAuth, error: clientError } = await supabase
+        .from('client_auth')
+        .select('*')
+        .eq('phone', appointmentData.clientPhone.replace(/\D/g, ''))
+        .single();
       
-      if (!clientResult.success || !clientResult.client) {
-        throw new Error(clientResult.message || 'Erro ao processar dados do cliente');
+      if (clientError || !clientAuth) {
+        throw new Error('Cliente não encontrado. Faça login primeiro.');
       }
 
-      const client = clientResult.client;
-      console.log('Client processed:', client);
+      console.log('Client processed:', clientAuth);
 
       // Preparar dados do agendamento
       const insertData = {
         salon_id: appointmentData.salon_id,
-        client_id: client.id,
+        client_auth_id: clientAuth.id, // Usar client_auth_id
         service_id: appointmentData.service_id,
         appointment_date: appointmentData.appointment_date,
-        appointment_time: appointmentData.appointment_time, // Inserir horário diretamente
+        appointment_time: appointmentData.appointment_time,
         status: 'pending' as const,
         notes: appointmentData.notes || null,
         user_id: appointmentData.user_id || null
@@ -72,7 +69,7 @@ export const useAppointmentCreate = () => {
           *,
           salon:salons(id, name, address, phone),
           service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
+          client:client_auth(id, username, name, phone, email)
         `)
         .single();
 
