@@ -24,11 +24,11 @@ export const useBookingClientData = (
         console.log('Auto-filling client data from logged user (once):', user);
         
         try {
-          // Buscar dados do cliente na tabela client_auth pelo nome (que é usado como ID)
+          // Buscar dados do cliente na tabela client_auth pelo ID do usuário logado
           const { data: clientAuthData, error } = await supabase
             .from('client_auth')
             .select('name, phone, email')
-            .eq('name', user.name)
+            .eq('id', user.id)
             .single();
 
           if (!error && clientAuthData) {
@@ -43,16 +43,38 @@ export const useBookingClientData = (
               notes: clientData.notes || ''
             });
           } else {
-            console.log('No client auth data found, using only name from user');
+            console.log('No client auth data found for user ID, trying by name');
             
-            hasAutoFilled.current = true;
-            
-            setClientData({
-              name: user.name || '',
-              phone: clientData.phone || '',
-              email: clientData.email || '',
-              notes: clientData.notes || ''
-            });
+            // Fallback: buscar pelo nome como antes
+            const { data: clientAuthByName, error: nameError } = await supabase
+              .from('client_auth')
+              .select('name, phone, email')
+              .eq('name', user.name)
+              .single();
+
+            if (!nameError && clientAuthByName) {
+              console.log('Found client auth data by name:', clientAuthByName);
+              
+              hasAutoFilled.current = true;
+              
+              setClientData({
+                name: clientAuthByName.name || '',
+                phone: clientAuthByName.phone || '',
+                email: clientAuthByName.email || '',
+                notes: clientData.notes || ''
+              });
+            } else {
+              console.log('No client auth data found, using only name from user');
+              
+              hasAutoFilled.current = true;
+              
+              setClientData({
+                name: user.name || '',
+                phone: '',
+                email: '',
+                notes: clientData.notes || ''
+              });
+            }
           }
         } catch (error) {
           console.error('Error loading client auth data:', error);
@@ -62,8 +84,8 @@ export const useBookingClientData = (
           
           setClientData({
             name: user.name || '',
-            phone: clientData.phone || '',
-            email: clientData.email || '',
+            phone: '',
+            email: '',
             notes: clientData.notes || ''
           });
         }
