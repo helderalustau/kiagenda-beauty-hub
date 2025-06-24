@@ -10,7 +10,7 @@ export const useClientManagement = () => {
       
       // Primeiro, tentar encontrar cliente existente pelo telefone
       const { data: existingClient, error: searchError } = await supabase
-        .from('clients')
+        .from('client_auth')
         .select('id')
         .eq('phone', phone)
         .maybeSingle();
@@ -28,10 +28,12 @@ export const useClientManagement = () => {
       // Se não existe, criar novo cliente
       console.log('➕ Creating new client');
       const { data: newClient, error: createError } = await supabase
-        .from('clients')
+        .from('client_auth')
         .insert({
+          username: name.trim(),
           name: name.trim(),
           phone: phone.trim(),
+          password: 'temp_password_' + Date.now(), // Temporary password
           email: null
         })
         .select('id')

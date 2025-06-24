@@ -18,7 +18,7 @@ export const useAppointmentFetch = () => {
           *,
           salon:salons(id, name, address, phone),
           service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
+          client:client_auth(id, username, name, phone, email)
         `)
         .eq('salon_id', salonId)
         .order('appointment_date', { ascending: false })
@@ -38,7 +38,7 @@ export const useAppointmentFetch = () => {
       }
 
       // Normalize the appointments data
-      const normalizedAppointments = (data || []).map(normalizeAppointment);
+      const normalizedAppointments: Appointment[] = (data || []).map(normalizeAppointment);
       return { success: true, data: normalizedAppointments };
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -57,9 +57,9 @@ export const useAppointmentFetch = () => {
           *,
           salon:salons(id, name, address, phone),
           service:services(id, name, price, duration_minutes),
-          client:clients(id, name, phone, email)
+          client:client_auth(id, username, name, phone, email)
         `)
-        .eq('client_id', clientId)
+        .eq('client_auth_id', clientId)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
@@ -69,7 +69,7 @@ export const useAppointmentFetch = () => {
       }
 
       // Normalize the appointments data
-      const normalizedAppointments = (data || []).map(normalizeAppointment);
+      const normalizedAppointments: Appointment[] = (data || []).map(normalizeAppointment);
       return { success: true, data: normalizedAppointments };
     } catch (error) {
       console.error('Error fetching client appointments:', error);

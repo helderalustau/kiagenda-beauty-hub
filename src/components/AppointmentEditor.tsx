@@ -34,7 +34,7 @@ const AppointmentEditor = ({
   );
   const [notes, setNotes] = useState(appointment?.notes || '');
   const [appointmentData, setAppointmentData] = useState({
-    client_id: appointment?.client_id || '',
+    client_auth_id: appointment?.client_auth_id || '',
     service_id: appointment?.service_id || '',
     appointment_date: appointment?.appointment_date || '',
     appointment_time: appointment?.appointment_time || ''
@@ -47,7 +47,7 @@ const AppointmentEditor = ({
       setStatus((appointment.status as 'pending' | 'confirmed' | 'completed' | 'cancelled') || 'pending');
       setNotes(appointment.notes || '');
       setAppointmentData({
-        client_id: appointment.client_id,
+        client_auth_id: appointment.client_auth_id,
         service_id: appointment.service_id,
         appointment_date: appointment.appointment_date,
         appointment_time: appointment.appointment_time
@@ -61,7 +61,7 @@ const AppointmentEditor = ({
     } else if (mode === 'create') {
       const result = await createAppointment({
         salon_id: salonId,
-        client_id: appointmentData.client_id,
+        client_auth_id: appointmentData.client_auth_id,
         service_id: appointmentData.service_id,
         appointment_date: appointmentData.appointment_date,
         appointment_time: appointmentData.appointment_time,
@@ -86,7 +86,7 @@ const AppointmentEditor = ({
     { value: 'cancelled', label: 'Cancelado', color: 'text-red-600' }
   ];
 
-  const selectedClient = clients.find(c => c.id === appointmentData.client_id);
+  const selectedClient = clients.find(c => c.id === appointmentData.client_auth_id);
   const selectedService = services.find(s => s.id === appointmentData.service_id);
 
   return (
@@ -100,7 +100,7 @@ const AppointmentEditor = ({
         <div className="space-y-4">
           {mode === 'edit' && appointment ? (
             <div className="bg-gray-50 p-3 rounded-lg">
-              <h4 className="font-medium">{appointment.client?.name}</h4>
+              <h4 className="font-medium">{appointment.client?.username || appointment.client?.name}</h4>
               <p className="text-sm text-gray-600">{appointment.service?.name}</p>
               <p className="text-sm text-gray-600">
                 {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')} às {appointment.appointment_time}
@@ -111,8 +111,8 @@ const AppointmentEditor = ({
               <div>
                 <Label>Cliente</Label>
                 <Select 
-                  value={appointmentData.client_id} 
-                  onValueChange={(value) => setAppointmentData({...appointmentData, client_id: value})}
+                  value={appointmentData.client_auth_id} 
+                  onValueChange={(value) => setAppointmentData({...appointmentData, client_auth_id: value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o cliente" />
@@ -120,7 +120,7 @@ const AppointmentEditor = ({
                   <SelectContent>
                     {clients.map(client => (
                       <SelectItem key={client.id} value={client.id}>
-                        {client.name}
+                        {client.username || client.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

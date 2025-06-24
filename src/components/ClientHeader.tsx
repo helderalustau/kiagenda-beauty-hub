@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User, Settings } from "lucide-react";
-import { Client } from '@/hooks/useSupabaseData';
+import { Client } from '@/types/supabase-entities';
 import ClientProfileModal from './ClientProfileModal';
 
 interface ClientHeaderProps {
@@ -24,7 +24,7 @@ const ClientHeader = ({ client, onUpdate, onLogout }: ClientHeaderProps) => {
       .slice(0, 2);
   };
 
-  const handleProfileUpdate = (updatedData: { name: string; email: string; phone: string }) => {
+  const handleProfileUpdate = (updatedData: { name: string; email?: string; phone?: string }) => {
     const updatedClient = { ...client, ...updatedData };
     onUpdate(updatedClient);
   };
@@ -52,13 +52,13 @@ const ClientHeader = ({ client, onUpdate, onLogout }: ClientHeaderProps) => {
                 onClick={() => setShowProfileModal(true)}
               >
                 <Avatar className="h-10 w-10 border-2 border-blue-200 hover:border-blue-300 transition-colors">
-                  <AvatarImage src={client.email ? `https://api.dicebear.com/7.x/initials/svg?seed=${client.name}` : undefined} />
+                  <AvatarImage src={client.email ? `https://api.dicebear.com/7.x/initials/svg?seed=${client.username || client.name}` : undefined} />
                   <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
-                    {getInitials(client.name)}
+                    {getInitials(client.username || client.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-left">
-                  <p className="font-medium text-gray-900">{client.name}</p>
+                  <p className="font-medium text-gray-900">{client.username || client.name}</p>
                   <p className="text-sm text-gray-500 flex items-center">
                     <Settings className="h-3 w-3 mr-1" />
                     Editar perfil
@@ -83,7 +83,12 @@ const ClientHeader = ({ client, onUpdate, onLogout }: ClientHeaderProps) => {
       <ClientProfileModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
-        clientData={client}
+        clientData={{
+          id: client.id,
+          name: client.username || client.name,
+          email: client.email || '',
+          phone: client.phone || ''
+        }}
         onSave={handleProfileUpdate}
       />
     </>

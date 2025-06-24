@@ -48,7 +48,7 @@ export const useRealtimeNotifications = ({
                 *,
                 salon:salons(id, name, address, phone),
                 service:services(id, name, price, duration_minutes),
-                client:clients(id, name, phone, email)
+                client:client_auth(id, username, name, phone, email)
               `)
               .eq('id', payload.new.id)
               .single();
@@ -67,7 +67,7 @@ export const useRealtimeNotifications = ({
               // Show toast notification for admin
               toast({
                 title: "🔔 Novo Agendamento Solicitado!",
-                description: `${appointment.client?.name} solicitou agendamento para ${appointment.service?.name}`,
+                description: `${appointment.client?.username || appointment.client?.name} solicitou agendamento para ${appointment.service?.name}`,
                 duration: 10000,
               });
 
@@ -100,7 +100,7 @@ export const useRealtimeNotifications = ({
                 *,
                 salon:salons(id, name, address, phone),
                 service:services(id, name, price, duration_minutes),
-                client:clients(id, name, phone, email)
+                client:client_auth(id, username, name, phone, email)
               `)
               .eq('id', payload.new.id)
               .single();
