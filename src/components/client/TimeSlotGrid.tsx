@@ -20,7 +20,7 @@ const TimeSlotGrid = ({
   selectedDate,
   loading = false 
 }: TimeSlotGridProps) => {
-  console.log('TimeSlotGrid - Props:', { 
+  console.log('TimeSlotGrid - Rendering with:', { 
     availableTimesCount: availableTimes?.length || 0, 
     selectedTime, 
     selectedDate: selectedDate?.toDateString(),
@@ -81,7 +81,7 @@ const TimeSlotGrid = ({
     return hour >= 18 && hour <= 23;
   });
 
-  const TimeSlotSection = ({ title, slots, icon }: { title: string; slots: string[]; icon?: string }) => {
+  const TimeSlotSection = ({ title, slots }: { title: string; slots: string[] }) => {
     if (slots.length === 0) return null;
 
     return (
@@ -97,10 +97,10 @@ const TimeSlotGrid = ({
               variant={selectedTime === time ? "default" : "outline"}
               size="sm"
               onClick={() => {
-                console.log('TimeSlotGrid - Selecting time:', time);
+                console.log('TimeSlotGrid - Time selected:', time);
                 onTimeSelect(time);
               }}
-              className={`text-sm transition-all ${
+              className={`text-sm transition-all duration-200 ${
                 selectedTime === time
                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md scale-105'
                   : 'hover:bg-blue-50 hover:border-blue-300 hover:scale-102'

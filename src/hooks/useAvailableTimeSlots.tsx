@@ -35,7 +35,7 @@ export const useAvailableTimeSlots = () => {
         slots.push(timeString);
       }
       
-      console.log(`✅ Generated ${slots.length} time slots from ${openTime} to ${closeTime}:`, slots);
+      console.log(`✅ Generated ${slots.length} time slots from ${openTime} to ${closeTime}`);
       return slots;
     } catch (error) {
       console.error('❌ Error generating time slots:', error);
@@ -82,7 +82,7 @@ export const useAvailableTimeSlots = () => {
 
     // Criar uma chave única para evitar chamadas duplicadas
     const fetchKey = `${salon.id}-${selectedDate.toDateString()}`;
-    if (lastFetchRef.current === fetchKey && !loading) {
+    if (lastFetchRef.current === fetchKey) {
       console.log('🔄 Skipping duplicate fetch for:', fetchKey);
       return;
     }
@@ -99,12 +99,12 @@ export const useAvailableTimeSlots = () => {
       const dayOfWeek = getDayOfWeek(selectedDate);
       console.log('📅 Day of week:', dayOfWeek);
       
-      // Verificar se salon.opening_hours existe
+      // Verificar se salon.opening_hours existe e tem estrutura válida
       if (!salon.opening_hours || typeof salon.opening_hours !== 'object') {
         console.log('⚠️ No opening hours found, using default schedule (09:00-18:00)');
         const defaultSlots = generateTimeSlots('09:00', '18:00', 30);
         
-        // Ainda filtrar por horários ocupados mesmo com horário padrão
+        // Filtrar por horários ocupados
         const dateString = selectedDate.toISOString().split('T')[0];
         const bookedSlots = await getBookedSlots(salon.id, dateString);
         const availableSlots = defaultSlots.filter(slot => !bookedSlots.includes(slot));
@@ -146,7 +146,6 @@ export const useAvailableTimeSlots = () => {
       const availableSlots = allSlots.filter(slot => {
         // Se já está ocupado, não mostrar
         if (bookedSlots.includes(slot)) {
-          console.log(`❌ Slot ${slot} already booked`);
           return false;
         }
         
@@ -159,7 +158,6 @@ export const useAvailableTimeSlots = () => {
           const currentTimePlusMargin = new Date(currentTime.getTime() + 60 * 60 * 1000);
           
           if (slotTime <= currentTimePlusMargin) {
-            console.log(`❌ Slot ${slot} already passed`);
             return false;
           }
         }
@@ -178,7 +176,7 @@ export const useAvailableTimeSlots = () => {
     } finally {
       setLoading(false);
     }
-  }, [generateTimeSlots, getBookedSlots, getDayOfWeek, loading]);
+  }, [generateTimeSlots, getBookedSlots, getDayOfWeek]);
 
   return {
     availableSlots,
