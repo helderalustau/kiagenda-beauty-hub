@@ -35,7 +35,7 @@ export const useSimpleBooking = (salon: Salon) => {
 
   // Handler melhorado para seleção de data
   const handleDateSelect = useCallback((date: Date | undefined) => {
-    console.log('📅 Date selected:', date?.toDateString());
+    console.log('📅 useSimpleBooking - Date selected:', date?.toDateString());
     
     if (date) {
       // Verificar se a data não é no passado
@@ -49,8 +49,9 @@ export const useSimpleBooking = (salon: Salon) => {
       
       console.log('✅ Valid date selected, updating state');
       bookingState.setSelectedDate(date);
-      bookingState.setSelectedTime(''); // Reset time when date changes
+      // Reset time será feito automaticamente pelo useEffect acima
     } else {
+      console.log('📅 Clearing date selection');
       bookingState.setSelectedDate(undefined);
       bookingState.setSelectedTime('');
     }
@@ -58,7 +59,7 @@ export const useSimpleBooking = (salon: Salon) => {
 
   // Handler melhorado para seleção de horário
   const handleTimeSelect = useCallback((time: string) => {
-    console.log('🕒 Time selected:', time);
+    console.log('🕒 useSimpleBooking - Time selected:', time);
     bookingState.setSelectedTime(time);
   }, [bookingState]);
 

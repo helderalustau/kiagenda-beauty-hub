@@ -37,13 +37,35 @@ const OptimizedDateTimeStep = ({
 }: OptimizedDateTimeStepProps) => {
   const canContinue = selectedDate && selectedTime && !loading;
 
-  const handleDateSelect = (date: Date | undefined) => {
-    console.log('📅 OptimizedDateTimeStep - Date selection:', date?.toDateString());
+  const handleDateSelect = React.useCallback((date: Date | undefined) => {
+    console.log('📅 Date selected in OptimizedDateTimeStep:', date?.toDateString());
+    
+    if (date) {
+      // Verificar se a data não é no passado
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (date < today) {
+        console.log('❌ Cannot select past date');
+        return;
+      }
+    }
+    
     onDateSelect(date);
-  };
+  }, [onDateSelect]);
+
+  const handleTimeSelect = React.useCallback((time: string) => {
+    console.log('🕒 Time selected in OptimizedDateTimeStep:', time);
+    onTimeSelect(time);
+  }, [onTimeSelect]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  // Função para verificar se uma data deve ser desabilitada
+  const isDateDisabled = React.useCallback((date: Date) => {
+    return date < today;
+  }, [today]);
 
   return (
     <div className="space-y-6">
@@ -99,33 +121,34 @@ const OptimizedDateTimeStep = ({
           <CardContent className="p-4">
             <div className="bg-blue-50 p-3 rounded-lg mb-4">
               <p className="text-sm text-blue-700">
-                📅 Selecione uma data para continuar
+                📅 Clique em uma data para selecioná-la
               </p>
             </div>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateSelect}
-              disabled={(date) => {
-                return date < today;
-              }}
-              locale={ptBR}
-              className="rounded-md border w-full pointer-events-auto"
-              classNames={{
-                months: "flex w-full",
-                month: "w-full",
-                table: "w-full",
-                head_row: "flex w-full",
-                head_cell: "flex-1 text-center",
-                row: "flex w-full mt-2",
-                cell: "flex-1 h-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-                day: "h-9 w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground cursor-pointer"
-              }}
-            />
+            
+            <div className="border rounded-lg p-3 bg-white">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                disabled={isDateDisabled}
+                locale={ptBR}
+                className="w-full"
+                modifiers={{
+                  today: new Date()
+                }}
+                modifiersStyles={{
+                  today: { 
+                    fontWeight: 'bold',
+                    color: '#2563eb'
+                  }
+                }}
+              />
+            </div>
+            
             {selectedDate && (
-              <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                <p className="text-sm text-green-700">
-                  ✅ Data selecionada: {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-green-700 font-medium">
+                  ✅ Data selecionada: {format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 </p>
               </div>
             )}
@@ -144,7 +167,7 @@ const OptimizedDateTimeStep = ({
             <OptimizedTimeSlotGrid
               availableTimes={availableTimes}
               selectedTime={selectedTime}
-              onTimeSelect={onTimeSelect}
+              onTimeSelect={handleTimeSelect}
               selectedDate={selectedDate}
               loading={loading}
             />

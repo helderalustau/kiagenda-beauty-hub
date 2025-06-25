@@ -20,6 +20,14 @@ const OptimizedTimeSlotGrid = ({
   selectedDate,
   loading = false 
 }: OptimizedTimeSlotGridProps) => {
+  console.log('OptimizedTimeSlotGrid - Rendering with:', { 
+    availableTimesCount: availableTimes?.length || 0, 
+    selectedTime, 
+    selectedDate: selectedDate?.toDateString(),
+    loading,
+    availableTimes
+  });
+
   if (!selectedDate) {
     return (
       <div className="text-center py-8">
@@ -32,9 +40,7 @@ const OptimizedTimeSlotGrid = ({
   if (loading) {
     return (
       <div className="text-center py-8">
-        <div className="flex items-center justify-center mb-4">
-          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
         <p className="text-gray-600">Carregando horários disponíveis...</p>
       </div>
     );
@@ -59,9 +65,10 @@ const OptimizedTimeSlotGrid = ({
     );
   }
 
+  // Organizar horários por período
   const morningSlots = availableTimes.filter(time => {
     const hour = parseInt(time.split(':')[0]);
-    return hour < 12;
+    return hour >= 6 && hour < 12;
   });
 
   const afternoonSlots = availableTimes.filter(time => {
@@ -71,29 +78,32 @@ const OptimizedTimeSlotGrid = ({
 
   const eveningSlots = availableTimes.filter(time => {
     const hour = parseInt(time.split(':')[0]);
-    return hour >= 18;
+    return hour >= 18 && hour <= 23;
   });
 
-  const TimeSlotSection = ({ title, slots, icon }: { title: string; slots: string[]; icon: React.ReactNode }) => {
+  const TimeSlotSection = ({ title, slots }: { title: string; slots: string[] }) => {
     if (slots.length === 0) return null;
 
     return (
       <div className="mb-6">
         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-          {icon}
-          {title}
+          <Clock className="h-4 w-4 mr-2" />
+          {title} ({slots.length} {slots.length === 1 ? 'horário' : 'horários'})
         </h4>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {slots.map((time) => (
             <Button
               key={time}
               variant={selectedTime === time ? "default" : "outline"}
               size="sm"
-              onClick={() => onTimeSelect(time)}
+              onClick={() => {
+                console.log('OptimizedTimeSlotGrid - Time selected:', time);
+                onTimeSelect(time);
+              }}
               className={`text-sm transition-all duration-200 ${
                 selectedTime === time
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg transform scale-105'
-                  : 'hover:bg-blue-50 hover:border-blue-300 hover:scale-105'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md scale-105'
+                  : 'hover:bg-blue-50 hover:border-blue-300 hover:scale-102'
               }`}
             >
               {time}
@@ -115,14 +125,14 @@ const OptimizedTimeSlotGrid = ({
         </p>
       </div>
 
-      <div className="text-xs text-green-600 bg-green-50 p-3 rounded-lg mb-4 flex items-center">
+      <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg mb-4 flex items-center">
         <Clock className="h-4 w-4 mr-2" />
         {availableTimes.length} horário{availableTimes.length !== 1 ? 's' : ''} disponível{availableTimes.length !== 1 ? 'eis' : ''}
       </div>
 
-      <TimeSlotSection title="Manhã" slots={morningSlots} icon={<Clock className="h-4 w-4 mr-2 text-orange-500" />} />
-      <TimeSlotSection title="Tarde" slots={afternoonSlots} icon={<Clock className="h-4 w-4 mr-2 text-blue-500" />} />
-      <TimeSlotSection title="Noite" slots={eveningSlots} icon={<Clock className="h-4 w-4 mr-2 text-purple-500" />} />
+      <TimeSlotSection title="Manhã" slots={morningSlots} />
+      <TimeSlotSection title="Tarde" slots={afternoonSlots} />
+      <TimeSlotSection title="Noite" slots={eveningSlots} />
     </div>
   );
 };
