@@ -37,6 +37,14 @@ const OptimizedDateTimeStep = ({
 }: OptimizedDateTimeStepProps) => {
   const canContinue = selectedDate && selectedTime && !loading;
 
+  const handleDateSelect = (date: Date | undefined) => {
+    console.log('📅 OptimizedDateTimeStep - Date selection:', date?.toDateString());
+    onDateSelect(date);
+  };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -88,19 +96,39 @@ const OptimizedDateTimeStep = ({
               Escolha a Data
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
+            <div className="bg-blue-50 p-3 rounded-lg mb-4">
+              <p className="text-sm text-blue-700">
+                📅 Selecione uma data para continuar
+              </p>
+            </div>
             <Calendar
               mode="single"
               selected={selectedDate}
-              onSelect={onDateSelect}
+              onSelect={handleDateSelect}
               disabled={(date) => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
                 return date < today;
               }}
               locale={ptBR}
-              className="rounded-md border w-full"
+              className="rounded-md border w-full pointer-events-auto"
+              classNames={{
+                months: "flex w-full",
+                month: "w-full",
+                table: "w-full",
+                head_row: "flex w-full",
+                head_cell: "flex-1 text-center",
+                row: "flex w-full mt-2",
+                cell: "flex-1 h-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                day: "h-9 w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              }}
             />
+            {selectedDate && (
+              <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-700">
+                  ✅ Data selecionada: {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

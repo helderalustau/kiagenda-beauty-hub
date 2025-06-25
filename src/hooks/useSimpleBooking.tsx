@@ -33,6 +33,29 @@ export const useSimpleBooking = (salon: Salon) => {
     }
   }, [bookingState.selectedDate, salon, fetchAvailableSlots, bookingState]);
 
+  // Handler melhorado para seleção de data
+  const handleDateSelect = useCallback((date: Date | undefined) => {
+    console.log('📅 Date selected:', date?.toDateString());
+    
+    if (date) {
+      // Verificar se a data não é no passado
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (date < today) {
+        console.log('❌ Cannot select past date');
+        return;
+      }
+      
+      console.log('✅ Valid date selected, updating state');
+      bookingState.setSelectedDate(date);
+      bookingState.setSelectedTime(''); // Reset time when date changes
+    } else {
+      bookingState.setSelectedDate(undefined);
+      bookingState.setSelectedTime('');
+    }
+  }, [bookingState]);
+
   // Handler melhorado para seleção de horário
   const handleTimeSelect = useCallback((time: string) => {
     console.log('🕒 Time selected:', time);
@@ -79,7 +102,7 @@ export const useSimpleBooking = (salon: Salon) => {
     loadingTimes,
     
     // Handlers melhorados
-    handleDateSelect: bookingState.handleDateSelect,
+    handleDateSelect,
     handleTimeSelect,
     
     // Submissão
