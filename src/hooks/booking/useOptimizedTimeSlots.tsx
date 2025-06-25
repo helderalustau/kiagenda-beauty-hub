@@ -8,42 +8,42 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
   const [loading, setLoading] = useState(false);
 
   // Geração otimizada de slots de tempo
-  const generateTimeSlots = useMemo(() => {
-    if (!salon?.opening_hours || !selectedDate) {
-      console.log('❌ Missing salon opening hours or selected date');
+  const generateTimeSlots = useCallback((openTime: string, closeTime: string): string[] => {
+    try {
+      const slots: string[] = [];
+      const [openHour, openMinute] = openTime.split(':').map(Number);
+      const [closeHour, closeMinute] = closeTime.split(':').map(Number);
+      
+      if (isNaN(openHour) || isNaN(openMinute) || isNaN(closeHour) || isNaN(closeMinute)) {
+        console.error('❌ Invalid time format:', { openTime, closeTime });
+        return [];
+      }
+      
+      const openTimeInMinutes = openHour * 60 + openMinute;
+      const closeTimeInMinutes = closeHour * 60 + closeMinute;
+      
+      if (openTimeInMinutes >= closeTimeInMinutes) {
+        console.error('❌ Opening time is not before closing time');
+        return [];
+      }
+      
+      // Gerar slots a cada 30 minutos
+      for (let time = openTimeInMinutes; time < closeTimeInMinutes; time += 30) {
+        const hour = Math.floor(time / 60);
+        const minute = time % 60;
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(timeString);
+      }
+      
+      console.log(`✅ Generated ${slots.length} time slots from ${openTime} to ${closeTime}`);
+      return slots;
+    } catch (error) {
+      console.error('❌ Error generating time slots:', error);
       return [];
     }
+  }, []);
 
-    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
-    const daySchedule = salon.opening_hours[dayOfWeek];
-    
-    if (!daySchedule || daySchedule.closed === true || !daySchedule.open || !daySchedule.close) {
-      console.log(`❌ Salon closed on ${dayOfWeek}`);
-      return [];
-    }
-
-    const slots: string[] = [];
-    const [openHour, openMinute] = daySchedule.open.split(':').map(Number);
-    const [closeHour, closeMinute] = daySchedule.close.split(':').map(Number);
-    
-    const openTimeInMinutes = openHour * 60 + openMinute;
-    const closeTimeInMinutes = closeHour * 60 + closeMinute;
-    
-    console.log(`⏰ Generating slots from ${daySchedule.open} to ${daySchedule.close}`);
-    
-    // Gerar slots a cada 30 minutos
-    for (let time = openTimeInMinutes; time < closeTimeInMinutes; time += 30) {
-      const hour = Math.floor(time / 60);
-      const minute = time % 60;
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      slots.push(timeString);
-    }
-    
-    console.log(`✅ Generated ${slots.length} time slots:`, slots);
-    return slots;
-  }, [salon?.opening_hours, selectedDate]);
-
-  // Buscar slots ocupados otimizado
+  // Buscar slots ocupados
   const fetchBookedSlots = useCallback(async (salonId: string, date: string): Promise<string[]> => {
     try {
       console.log(`🔍 Fetching booked slots for salon ${salonId} on ${date}`);
@@ -58,7 +58,6 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
 
       if (error) {
         console.error('❌ Error fetching booked slots:', error);
-        // Retornar array vazio para não bloquear agendamentos
         return [];
       }
 
@@ -76,10 +75,9 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
     const currentTime = new Date();
     const isToday = date.toDateString() === currentTime.toDateString();
     
-    const availableSlots = allSlots.filter(slot => {
+    return allSlots.filter(slot => {
       // Se já está reservado, não disponibilizar
       if (bookedSlots.includes(slot)) {
-        console.log(`❌ Slot ${slot} already booked`);
         return false;
       }
       
@@ -91,29 +89,31 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
         
         const currentTimePlusMargin = new Date(currentTime.getTime() + 60 * 60 * 1000);
         if (slotTime <= currentTimePlusMargin) {
-          console.log(`❌ Slot ${slot} already passed`);
           return false;
         }
       }
       
       return true;
     });
-
-    console.log(`✅ Filtered to ${availableSlots.length} available slots:`, availableSlots);
-    return availableSlots;
   }, []);
 
-  // Buscar slots disponíveis
+  // Buscar slots disponíveis - função principal
   const fetchAvailableSlots = useCallback(async () => {
-    if (!salon?.id || !selectedDate) {
-      console.log('❌ Missing required data for fetching slots');
+    // Validações iniciais
+    if (!salon?.id) {
+      console.log('❌ No salon ID provided');
       setAvailableSlots([]);
       return;
     }
 
-    // Se não há slots gerados, mostrar erro mais claro
-    if (generateTimeSlots.length === 0) {
-      console.log('❌ No time slots generated - salon might be closed');
+    if (!selectedDate) {
+      console.log('❌ No date selected');
+      setAvailableSlots([]);
+      return;
+    }
+
+    if (!salon.opening_hours || typeof salon.opening_hours !== 'object') {
+      console.log('❌ No opening hours found in salon data');
       setAvailableSlots([]);
       return;
     }
@@ -121,24 +121,53 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
     setLoading(true);
     
     try {
+      const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
+      const daySchedule = salon.opening_hours[dayOfWeek];
+      
+      console.log(`📅 Checking schedule for ${dayOfWeek}:`, daySchedule);
+      
+      if (!daySchedule || daySchedule.closed === true || !daySchedule.open || !daySchedule.close) {
+        console.log(`🚫 Salon closed on ${dayOfWeek}`);
+        setAvailableSlots([]);
+        return;
+      }
+
+      // Gerar todos os slots possíveis
+      const allSlots = generateTimeSlots(daySchedule.open, daySchedule.close);
+      
+      if (allSlots.length === 0) {
+        console.log('❌ No slots generated');
+        setAvailableSlots([]);
+        return;
+      }
+      
+      // Buscar slots ocupados
       const dateString = selectedDate.toISOString().split('T')[0];
-      console.log(`🚀 Fetching available slots for ${dateString}`);
-      
       const bookedSlots = await fetchBookedSlots(salon.id, dateString);
-      const availableSlots = filterAvailableSlots(generateTimeSlots, bookedSlots, selectedDate);
       
+      // Filtrar slots disponíveis
+      const availableSlots = filterAvailableSlots(allSlots, bookedSlots, selectedDate);
+      
+      console.log(`✅ Final available slots (${availableSlots.length}):`, availableSlots);
       setAvailableSlots(availableSlots);
       
     } catch (error) {
       console.error('❌ Error fetching available slots:', error);
-      // Em caso de erro, mostrar todos os slots gerados
-      setAvailableSlots(generateTimeSlots);
+      setAvailableSlots([]);
     } finally {
       setLoading(false);
     }
-  }, [salon?.id, selectedDate, generateTimeSlots, fetchBookedSlots, filterAvailableSlots]);
+  }, [salon?.id, salon?.opening_hours, selectedDate, generateTimeSlots, fetchBookedSlots, filterAvailableSlots]);
 
+  // Effect para buscar slots quando data ou salon mudar
   useEffect(() => {
+    console.log('🔄 useOptimizedTimeSlots effect triggered:', {
+      hasSalon: !!salon?.id,
+      hasDate: !!selectedDate,
+      salonName: salon?.name,
+      date: selectedDate?.toDateString()
+    });
+    
     fetchAvailableSlots();
   }, [fetchAvailableSlots]);
 

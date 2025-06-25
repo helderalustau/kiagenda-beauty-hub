@@ -4,12 +4,12 @@ import { Salon } from '@/hooks/useSupabaseData';
 import { useBookingState } from '@/hooks/booking/useBookingState';
 import { useBookingServices } from '@/hooks/booking/useBookingServices';
 import { useBookingSubmission } from '@/hooks/booking/useBookingSubmission';
-import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
+import { useOptimizedTimeSlots } from '@/hooks/booking/useOptimizedTimeSlots';
 
 export const useSimpleBooking = (salon: Salon) => {
   const bookingState = useBookingState();
   const { services, loadingServices, loadServices } = useBookingServices(salon.id);
-  const { availableSlots, loading: loadingTimes, fetchAvailableSlots } = useAvailableTimeSlots();
+  const { availableSlots, loading: loadingTimes } = useOptimizedTimeSlots(salon, bookingState.selectedDate);
   const { isSubmitting, submitBooking: submitBookingBase } = useBookingSubmission(salon.id);
 
   // Memoizar salon.id para evitar re-renders desnecessários
@@ -22,16 +22,6 @@ export const useSimpleBooking = (salon: Salon) => {
       loadServices();
     }
   }, [salonId, services.length, loadingServices, loadServices, salon.name]);
-
-  // Carregar horários quando data mudar
-  useEffect(() => {
-    if (bookingState.selectedDate && salon) {
-      console.log('📅 Date changed, fetching slots for:', bookingState.selectedDate.toDateString());
-      // Limpar horário selecionado quando data muda
-      bookingState.setSelectedTime('');
-      fetchAvailableSlots(salon, bookingState.selectedDate);
-    }
-  }, [bookingState.selectedDate, salon, fetchAvailableSlots, bookingState]);
 
   // Handler melhorado para seleção de data
   const handleDateSelect = useCallback((date: Date | undefined) => {
@@ -49,7 +39,8 @@ export const useSimpleBooking = (salon: Salon) => {
       
       console.log('✅ Valid date selected, updating state');
       bookingState.setSelectedDate(date);
-      // Reset time será feito automaticamente pelo useEffect acima
+      // Reset time when date changes
+      bookingState.setSelectedTime('');
     } else {
       console.log('📅 Clearing date selection');
       bookingState.setSelectedDate(undefined);
@@ -98,7 +89,7 @@ export const useSimpleBooking = (salon: Salon) => {
     services,
     loadingServices,
     
-    // Horários
+    // Horários consolidados
     availableTimes: availableSlots,
     loadingTimes,
     

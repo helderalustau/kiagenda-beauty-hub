@@ -20,12 +20,11 @@ const OptimizedTimeSlotGrid = ({
   selectedDate,
   loading = false 
 }: OptimizedTimeSlotGridProps) => {
-  console.log('OptimizedTimeSlotGrid - Rendering with:', { 
+  console.log('🎯 OptimizedTimeSlotGrid render:', { 
     availableTimesCount: availableTimes?.length || 0, 
     selectedTime, 
     selectedDate: selectedDate?.toDateString(),
-    loading,
-    availableTimes
+    loading
   });
 
   if (!selectedDate) {
@@ -97,7 +96,7 @@ const OptimizedTimeSlotGrid = ({
               variant={selectedTime === time ? "default" : "outline"}
               size="sm"
               onClick={() => {
-                console.log('OptimizedTimeSlotGrid - Time selected:', time);
+                console.log('🕒 Time slot clicked:', time);
                 onTimeSelect(time);
               }}
               className={`text-sm transition-all duration-200 ${
