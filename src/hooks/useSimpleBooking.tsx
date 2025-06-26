@@ -1,5 +1,5 @@
 
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Salon } from '@/hooks/useSupabaseData';
 import { useBookingState } from '@/hooks/booking/useBookingState';
 import { useBookingServices } from '@/hooks/booking/useBookingServices';
