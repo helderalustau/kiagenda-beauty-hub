@@ -11,10 +11,11 @@ export const useSimpleBooking = (salon: Salon) => {
   const { services, loadingServices, loadServices } = useBookingServices(salon.id);
   const { isSubmitting, submitBooking: submitBookingBase } = useBookingSubmission(salon.id);
   
-  // Usar o hook simplificado para buscar horários
+  // Usar o hook com service_id para considerar duração do serviço
   const { availableSlots, loading: loadingTimes, error: timeSlotsError } = useAvailableTimeSlots(
     salon?.id, 
-    bookingState.selectedDate
+    bookingState.selectedDate,
+    bookingState.selectedService?.id // Passar o ID do serviço selecionado
   );
 
   // Memoizar salon.id para evitar re-renders desnecessários
@@ -59,6 +60,16 @@ export const useSimpleBooking = (salon: Salon) => {
     bookingState.setSelectedTime(time);
   }, [bookingState]);
 
+  // Handler para seleção de serviço - limpar horário quando mudar serviço
+  const handleServiceSelect = useCallback((service: any) => {
+    console.log('🛍️ Service selected:', service?.name);
+    bookingState.setSelectedService(service);
+    // Limpar horário selecionado quando mudar de serviço
+    if (bookingState.selectedTime) {
+      bookingState.setSelectedTime('');
+    }
+  }, [bookingState]);
+
   // Submeter agendamento
   const handleSubmitBooking = useCallback(async () => {
     if (isSubmitting) {
@@ -94,7 +105,7 @@ export const useSimpleBooking = (salon: Salon) => {
     services,
     loadingServices,
     
-    // Horários simplificados
+    // Horários que consideram duração do serviço
     availableTimes: availableSlots,
     loadingTimes,
     timeSlotsError,
@@ -102,6 +113,7 @@ export const useSimpleBooking = (salon: Salon) => {
     // Handlers melhorados
     handleDateSelect,
     handleTimeSelect,
+    handleServiceSelect, // Novo handler para serviços
     
     // Submissão
     isSubmitting,

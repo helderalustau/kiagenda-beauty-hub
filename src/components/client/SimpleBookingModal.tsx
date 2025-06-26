@@ -29,14 +29,17 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
     isSubmitting,
     loadingServices,
     loadingTimes,
+    timeSlotsError,
     setCurrentStep,
-    setSelectedService,
+    handleServiceSelect, // Usar o novo handler
     setSelectedDate,
     setSelectedTime,
     setClientData,
     submitBooking,
     resetBooking,
-    formatCurrency
+    formatCurrency,
+    handleDateSelect,
+    handleTimeSelect
   } = useSimpleBooking(salon);
 
   const handleClose = () => {
@@ -71,20 +74,6 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
       }
     } catch (error) {
       console.error('❌ Error in modal submit:', error);
-    }
-  };
-
-  const handleTimeSelect = (time: string) => {
-    console.log('⏰ Time selected:', time);
-    setSelectedTime(time);
-  };
-
-  const handleDateSelect = (date: Date | undefined) => {
-    console.log('📅 Calendar date selected:', date?.toDateString());
-    setSelectedDate(date);
-    // Limpar horário quando data mudar
-    if (selectedTime) {
-      setSelectedTime('');
     }
   };
 
@@ -124,7 +113,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
               services={services}
               selectedService={selectedService}
               loadingServices={loadingServices}
-              onServiceSelect={setSelectedService}
+              onServiceSelect={handleServiceSelect} // Usar o novo handler
               onNext={() => setCurrentStep(2)}
               onCancel={handleClose}
             />
@@ -137,6 +126,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
               selectedTime={selectedTime}
               availableTimes={availableTimes}
               loadingTimes={loadingTimes}
+              timeSlotsError={timeSlotsError}
               onDateSelect={handleDateSelect}
               onTimeSelect={handleTimeSelect}
               onNext={() => setCurrentStep(3)}

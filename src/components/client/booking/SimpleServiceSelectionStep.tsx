@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, X, Clock, DollarSign, Loader2 } from "lucide-react";
 import { Service } from '@/hooks/useSupabaseData';
-import ServiceCard from '../ServiceCard';
 
 interface SimpleServiceSelectionStepProps {
   services: Service[];
@@ -22,43 +23,117 @@ const SimpleServiceSelectionStep = ({
   onNext,
   onCancel
 }: SimpleServiceSelectionStepProps) => {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  if (loadingServices) {
+    return (
+      <div className="text-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+        <p className="text-gray-600">Carregando serviços disponíveis...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <h3 className="text-xl font-semibold">Escolha um Serviço</h3>
-        <p className="text-gray-600">Selecione o serviço desejado</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Button
+          variant="outline"
+          onClick={onCancel}
+          className="flex items-center"
+        >
+          <X className="h-4 w-4 mr-2" />
+          Cancelar
+        </Button>
+        
+        <Badge variant="outline" className="text-sm">
+          Passo 1 de 3
+        </Badge>
       </div>
 
-      {loadingServices ? (
+      <div>
+        <h3 className="text-2xl font-bold text-center mb-2">Escolha o Serviço</h3>
+        <p className="text-gray-600 text-center mb-6">
+          Selecione o serviço que deseja agendar
+        </p>
+      </div>
+
+      {services.length === 0 ? (
         <div className="text-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Carregando serviços...</p>
-        </div>
-      ) : services.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-600">Nenhum serviço disponível</p>
+          <p className="text-gray-600">Nenhum serviço disponível no momento.</p>
         </div>
       ) : (
-        <div className="grid gap-3 max-h-96 overflow-y-auto">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
           {services.map((service) => (
-            <ServiceCard
+            <Card
               key={service.id}
-              service={service}
-              onSelect={onServiceSelect}
-              isSelected={selectedService?.id === service.id}
-            />
+              className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                selectedService?.id === service.id
+                  ? 'ring-2 ring-blue-500 bg-blue-50'
+                  : 'hover:bg-gray-50'
+              }`}
+              onClick={() => onServiceSelect(service)}
+            >
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <span className="text-lg font-semibold">{service.name}</span>
+                  {selectedService?.id === service.id && (
+                    <Badge className="bg-blue-600">
+                      Selecionado
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center text-green-600">
+                      <DollarSign className="h-4 w-4 mr-1" />
+                      <span className="font-semibold">{formatCurrency(service.price)}</span>
+                    </div>
+                    <div className="flex items-center text-blue-600">
+                      <Clock className="h-4 w-4 mr-1" />
+                      <span>{service.duration_minutes} min</span>
+                    </div>
+                  </div>
+                </div>
+                {service.description && (
+                  <p className="text-sm text-gray-600 mt-3">
+                    {service.description}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
+      {selectedService && (
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardContent className="pt-4">
+            <div className="text-center">
+              <h4 className="font-semibold text-green-900 mb-2">Serviço Selecionado</h4>
+              <p className="text-green-800">
+                <strong>{selectedService.name}</strong> - {formatCurrency(selectedService.price)}
+              </p>
+              <p className="text-sm text-green-700">
+                Duração: {selectedService.duration_minutes} minutos
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex justify-end">
         <Button
           disabled={!selectedService}
           onClick={onNext}
-          className="flex items-center"
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center px-8"
         >
           Continuar
           <ArrowRight className="h-4 w-4 ml-2" />

@@ -2,7 +2,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useAvailableTimeSlots = (salonId: string | undefined, selectedDate: Date | undefined) => {
+export const useAvailableTimeSlots = (
+  salonId: string | undefined, 
+  selectedDate: Date | undefined,
+  serviceId: string | undefined = undefined
+) => {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,13 +22,16 @@ export const useAvailableTimeSlots = (salonId: string | undefined, selectedDate:
     setError(null);
 
     try {
-      console.log('🔍 Fetching available slots from database function');
+      console.log('🔍 Fetching available slots with service duration consideration');
+      console.log('📋 Parameters:', { salonId, selectedDate: selectedDate.toDateString(), serviceId });
       
       const dateString = selectedDate.toISOString().split('T')[0];
       
+      // Chamar a função atualizada com service_id
       const { data, error } = await supabase.rpc('get_available_time_slots', {
         p_salon_id: salonId,
-        p_date: dateString
+        p_date: dateString,
+        p_service_id: serviceId || null
       });
 
       if (error) {
@@ -33,7 +40,7 @@ export const useAvailableTimeSlots = (salonId: string | undefined, selectedDate:
         setAvailableSlots([]);
       } else {
         const slots = data?.map((slot: { time_slot: string }) => slot.time_slot) || [];
-        console.log('✅ Available slots from database:', slots);
+        console.log('✅ Available slots considering service duration:', slots);
         setAvailableSlots(slots);
       }
     } catch (err) {
@@ -43,7 +50,7 @@ export const useAvailableTimeSlots = (salonId: string | undefined, selectedDate:
     } finally {
       setLoading(false);
     }
-  }, [salonId, selectedDate]);
+  }, [salonId, selectedDate, serviceId]);
 
   useEffect(() => {
     fetchAvailableSlots();

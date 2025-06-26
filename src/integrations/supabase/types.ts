@@ -587,7 +587,7 @@ export type Database = {
         Returns: string
       }
       get_available_time_slots: {
-        Args: { p_salon_id: string; p_date: string }
+        Args: { p_salon_id: string; p_date: string; p_service_id?: string }
         Returns: {
           time_slot: string
         }[]
