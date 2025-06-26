@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Clock, Loader2 } from "lucide-react";
+import { Clock, Loader2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -11,6 +11,7 @@ interface OptimizedTimeSlotGridProps {
   onTimeSelect: (time: string) => void;
   selectedDate?: Date;
   loading?: boolean;
+  error?: string | null;
 }
 
 const OptimizedTimeSlotGrid = ({ 
@@ -18,13 +19,15 @@ const OptimizedTimeSlotGrid = ({
   selectedTime, 
   onTimeSelect, 
   selectedDate,
-  loading = false 
+  loading = false,
+  error = null
 }: OptimizedTimeSlotGridProps) => {
   console.log('🎯 OptimizedTimeSlotGrid render:', { 
     availableTimesCount: availableTimes?.length || 0, 
     selectedTime, 
     selectedDate: selectedDate?.toDateString(),
-    loading
+    loading,
+    error
   });
 
   if (!selectedDate) {
@@ -41,6 +44,18 @@ const OptimizedTimeSlotGrid = ({
       <div className="text-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
         <p className="text-gray-600">Carregando horários disponíveis...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+        <div className="space-y-2">
+          <p className="text-red-600 font-medium">Erro ao carregar horários</p>
+          <p className="text-sm text-red-500">{error}</p>
+        </div>
       </div>
     );
   }

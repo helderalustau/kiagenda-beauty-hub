@@ -586,6 +586,12 @@ export type Database = {
         Args: { salon_name: string }
         Returns: string
       }
+      get_available_time_slots: {
+        Args: { p_salon_id: string; p_date: string }
+        Returns: {
+          time_slot: string
+        }[]
+      }
       hash_password: {
         Args: { password: string }
         Returns: string

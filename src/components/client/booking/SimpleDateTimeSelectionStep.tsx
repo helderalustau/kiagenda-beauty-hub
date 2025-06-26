@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { Loader2, Clock, DollarSign, Calendar as CalendarIcon, ArrowLeft, ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, ArrowRight, Clock, Calendar as CalendarIcon, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from '@/hooks/useSupabaseData';
+import OptimizedTimeSlotGrid from './OptimizedTimeSlotGrid';
 
 interface SimpleDateTimeSelectionStepProps {
   selectedService: Service | null;
@@ -15,6 +16,7 @@ interface SimpleDateTimeSelectionStepProps {
   selectedTime: string;
   availableTimes: string[];
   loadingTimes: boolean;
+  timeSlotsError?: string | null;
   onDateSelect: (date: Date | undefined) => void;
   onTimeSelect: (time: string) => void;
   onNext: () => void;
@@ -28,12 +30,23 @@ const SimpleDateTimeSelectionStep = ({
   selectedTime,
   availableTimes,
   loadingTimes,
+  timeSlotsError,
   onDateSelect,
   onTimeSelect,
   onNext,
   onBack,
   formatCurrency
 }: SimpleDateTimeSelectionStepProps) => {
+  const canContinue = selectedDate && selectedTime && !loadingTimes;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Função para verificar se uma data deve ser desabilitada
+  const isDateDisabled = React.useCallback((date: Date) => {
+    return date < today;
+  }, [today]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -41,15 +54,19 @@ const SimpleDateTimeSelectionStep = ({
           variant="outline"
           onClick={onBack}
           className="flex items-center"
+          disabled={loadingTimes}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
         </Button>
-        <Badge variant="outline">Passo 2 de 3</Badge>
+        
+        <Badge variant="outline" className="text-sm">
+          Passo 2 de 3
+        </Badge>
       </div>
 
       {selectedService && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg text-blue-900">Serviço Selecionado</CardTitle>
           </CardHeader>
@@ -81,22 +98,40 @@ const SimpleDateTimeSelectionStep = ({
               Escolha a Data
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => {
-                console.log('Calendar date selected:', date?.toDateString());
-                onDateSelect(date);
-              }}
-              disabled={(date) => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return date < today;
-              }}
-              locale={ptBR}
-              className="rounded-md border w-full"
-            />
+          <CardContent className="p-4">
+            <div className="bg-blue-50 p-3 rounded-lg mb-4">
+              <p className="text-sm text-blue-700">
+                📅 Clique em uma data para selecioná-la
+              </p>
+            </div>
+            
+            <div className="border rounded-lg p-3 bg-white">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={onDateSelect}
+                disabled={isDateDisabled}
+                locale={ptBR}
+                className="w-full"
+                modifiers={{
+                  today: new Date()
+                }}
+                modifiersStyles={{
+                  today: { 
+                    fontWeight: 'bold',
+                    color: '#2563eb'
+                  }
+                }}
+              />
+            </div>
+            
+            {selectedDate && (
+              <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-green-700 font-medium">
+                  ✅ Data selecionada: {format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -105,47 +140,29 @@ const SimpleDateTimeSelectionStep = ({
             <CardTitle className="flex items-center">
               <Clock className="h-5 w-5 mr-2" />
               Escolha o Horário
-              {loadingTimes && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!selectedDate ? (
-              <p className="text-gray-500 text-center py-8">
-                Selecione uma data primeiro
-              </p>
-            ) : loadingTimes ? (
-              <div className="text-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                <p className="text-sm text-gray-600 mt-2">Carregando horários...</p>
-              </div>
-            ) : availableTimes.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                Nenhum horário disponível para esta data
-              </p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
-                {availableTimes.map((time) => (
-                  <Button
-                    key={time}
-                    variant={selectedTime === time ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => onTimeSelect(time)}
-                    className="text-sm"
-                  >
-                    {time}
-                  </Button>
-                ))}
-              </div>
-            )}
+            <OptimizedTimeSlotGrid
+              availableTimes={availableTimes}
+              selectedTime={selectedTime}
+              onTimeSelect={onTimeSelect}
+              selectedDate={selectedDate}
+              loading={loadingTimes}
+              error={timeSlotsError}
+            />
           </CardContent>
         </Card>
       </div>
 
       {selectedDate && selectedTime && (
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
           <CardContent className="pt-4">
             <div className="text-center">
-              <h4 className="font-semibold text-green-900 mb-2">Resumo</h4>
+              <h4 className="font-semibold text-green-900 mb-2 flex items-center justify-center">
+                <Clock className="h-4 w-4 mr-2" />
+                Resumo do Agendamento
+              </h4>
               <p className="text-green-800">
                 <strong>Data:</strong> {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
@@ -159,9 +176,9 @@ const SimpleDateTimeSelectionStep = ({
 
       <div className="flex justify-end">
         <Button
-          disabled={!selectedDate || !selectedTime || loadingTimes}
+          disabled={!canContinue}
           onClick={onNext}
-          className="flex items-center"
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center px-8"
         >
           Continuar
           <ArrowRight className="h-4 w-4 ml-2" />
