@@ -47,6 +47,17 @@ const SimpleDateTimeSelectionStep = ({
     return date < today;
   }, [today]);
 
+  // Debug: Log props received
+  React.useEffect(() => {
+    console.log('📊 SimpleDateTimeSelectionStep received:', {
+      selectedDate: selectedDate?.toDateString(),
+      availableTimesCount: availableTimes?.length || 0,
+      loadingTimes,
+      timeSlotsError,
+      availableTimes: availableTimes?.slice(0, 3) // primeiros 3 para debug
+    });
+  }, [selectedDate, availableTimes, loadingTimes, timeSlotsError]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -109,10 +120,13 @@ const SimpleDateTimeSelectionStep = ({
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={onDateSelect}
+                onSelect={(date) => {
+                  console.log('📅 Calendar date selected:', date?.toDateString());
+                  onDateSelect(date);
+                }}
                 disabled={isDateDisabled}
                 locale={ptBR}
-                className="w-full"
+                className="w-full pointer-events-auto"
                 modifiers={{
                   today: new Date()
                 }}
@@ -144,9 +158,12 @@ const SimpleDateTimeSelectionStep = ({
           </CardHeader>
           <CardContent>
             <OptimizedTimeSlotGrid
-              availableTimes={availableTimes}
+              availableTimes={availableTimes || []}
               selectedTime={selectedTime}
-              onTimeSelect={onTimeSelect}
+              onTimeSelect={(time) => {
+                console.log('🕒 Time selected in step:', time);
+                onTimeSelect(time);
+              }}
               selectedDate={selectedDate}
               loading={loadingTimes}
               error={timeSlotsError}

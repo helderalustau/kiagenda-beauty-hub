@@ -12,7 +12,14 @@ export const useAvailableTimeSlots = (
   const [error, setError] = useState<string | null>(null);
 
   const fetchAvailableSlots = useCallback(async () => {
+    console.log('🔍 fetchAvailableSlots called with:', { 
+      salonId, 
+      selectedDate: selectedDate?.toDateString(), 
+      serviceId 
+    });
+
     if (!salonId || !selectedDate) {
+      console.log('❌ Missing required parameters');
       setAvailableSlots([]);
       setLoading(false);
       return;
@@ -22,10 +29,12 @@ export const useAvailableTimeSlots = (
     setError(null);
 
     try {
-      console.log('🔍 Fetching available slots');
-      console.log('📋 Parameters:', { salonId, selectedDate: selectedDate.toDateString(), serviceId });
-      
       const dateString = selectedDate.toISOString().split('T')[0];
+      console.log('📋 Calling RPC with parameters:', { 
+        p_salon_id: salonId, 
+        p_date: dateString, 
+        p_service_id: serviceId || null 
+      });
       
       // Chamar a função corrigida
       const { data, error } = await supabase.rpc('get_available_time_slots', {
@@ -40,7 +49,7 @@ export const useAvailableTimeSlots = (
         setAvailableSlots([]);
       } else {
         const slots = data?.map((slot: { time_slot: string }) => slot.time_slot) || [];
-        console.log('✅ Available slots:', slots);
+        console.log('✅ Available slots received:', slots);
         setAvailableSlots(slots);
       }
     } catch (err) {
@@ -53,6 +62,7 @@ export const useAvailableTimeSlots = (
   }, [salonId, selectedDate, serviceId]);
 
   useEffect(() => {
+    console.log('📡 useAvailableTimeSlots useEffect triggered');
     fetchAvailableSlots();
   }, [fetchAvailableSlots]);
 
