@@ -15,7 +15,7 @@ export const useSimpleBooking = (salon: Salon) => {
   const { availableSlots, loading: loadingTimes, error: timeSlotsError } = useAvailableTimeSlots(
     salon?.id, 
     bookingState.selectedDate,
-    bookingState.selectedService?.id // Passar o ID do serviço selecionado
+    bookingState.selectedService?.id
   );
 
   // Memoizar salon.id para evitar re-renders desnecessários
@@ -31,10 +31,9 @@ export const useSimpleBooking = (salon: Salon) => {
 
   // Handler melhorado para seleção de data
   const handleDateSelect = useCallback((date: Date | undefined) => {
-    console.log('📅 useSimpleBooking - Date selected:', date?.toDateString());
+    console.log('📅 Date selected:', date?.toDateString());
     
     if (date) {
-      // Verificar se a data não é no passado
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
@@ -43,12 +42,9 @@ export const useSimpleBooking = (salon: Salon) => {
         return;
       }
       
-      console.log('✅ Valid date selected, updating state');
       bookingState.setSelectedDate(date);
-      // Reset time when date changes
       bookingState.setSelectedTime('');
     } else {
-      console.log('📅 Clearing date selection');
       bookingState.setSelectedDate(undefined);
       bookingState.setSelectedTime('');
     }
@@ -56,15 +52,14 @@ export const useSimpleBooking = (salon: Salon) => {
 
   // Handler melhorado para seleção de horário
   const handleTimeSelect = useCallback((time: string) => {
-    console.log('🕒 useSimpleBooking - Time selected:', time);
+    console.log('🕒 Time selected:', time);
     bookingState.setSelectedTime(time);
   }, [bookingState]);
 
-  // Handler para seleção de serviço - limpar horário quando mudar serviço
+  // Handler para seleção de serviço
   const handleServiceSelect = useCallback((service: any) => {
     console.log('🛍️ Service selected:', service?.name);
     bookingState.setSelectedService(service);
-    // Limpar horário selecionado quando mudar de serviço
     if (bookingState.selectedTime) {
       bookingState.setSelectedTime('');
     }
@@ -73,7 +68,7 @@ export const useSimpleBooking = (salon: Salon) => {
   // Submeter agendamento
   const handleSubmitBooking = useCallback(async () => {
     if (isSubmitting) {
-      console.log('⚠️ Submission already in progress, ignoring duplicate request');
+      console.log('⚠️ Submission already in progress');
       return false;
     }
 
@@ -88,7 +83,6 @@ export const useSimpleBooking = (salon: Salon) => {
     
     if (success) {
       console.log('✅ Booking submitted successfully, resetting state');
-      // Resetar estado após sucesso
       setTimeout(() => {
         bookingState.resetBooking();
       }, 1000);
@@ -105,15 +99,15 @@ export const useSimpleBooking = (salon: Salon) => {
     services,
     loadingServices,
     
-    // Horários que consideram duração do serviço
+    // Horários disponíveis
     availableTimes: availableSlots,
     loadingTimes,
     timeSlotsError,
     
-    // Handlers melhorados
+    // Handlers
     handleDateSelect,
     handleTimeSelect,
-    handleServiceSelect, // Novo handler para serviços
+    handleServiceSelect,
     
     // Submissão
     isSubmitting,

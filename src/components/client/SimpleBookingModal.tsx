@@ -31,7 +31,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
     loadingTimes,
     timeSlotsError,
     setCurrentStep,
-    handleServiceSelect, // Usar o novo handler
+    handleServiceSelect,
     setSelectedDate,
     setSelectedTime,
     setClientData,
@@ -113,7 +113,7 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
               services={services}
               selectedService={selectedService}
               loadingServices={loadingServices}
-              onServiceSelect={handleServiceSelect} // Usar o novo handler
+              onServiceSelect={handleServiceSelect}
               onNext={() => setCurrentStep(2)}
               onCancel={handleClose}
             />
