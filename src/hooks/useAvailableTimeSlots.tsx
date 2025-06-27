@@ -70,7 +70,7 @@ export const useAvailableTimeSlots = (
         p_service_id: serviceId || null 
       });
       
-      // Call the corrected function
+      // Call the improved function that considers service duration properly
       const { data, error: rpcError } = await supabase.rpc('get_available_time_slots', {
         p_salon_id: salonId,
         p_date: dateString,
@@ -90,6 +90,7 @@ export const useAvailableTimeSlots = (
       } else {
         const slots = data?.map((slot: { time_slot: string }) => slot.time_slot) || [];
         console.log('✅ Available slots received:', slots);
+        console.log('📊 Total available slots:', slots.length);
         setAvailableSlots(slots);
       }
     } catch (err: any) {
