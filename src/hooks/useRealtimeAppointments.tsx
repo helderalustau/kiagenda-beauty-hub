@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Appointment } from '@/hooks/useSupabaseData';
 import { useToast } from '@/hooks/use-toast';
+import { useAppointmentTypes } from '@/hooks/appointments/useAppointmentTypes';
 
 export const useRealtimeAppointments = (salonId: string | undefined) => {
   const { toast } = useToast();
+  const { normalizeAppointment } = useAppointmentTypes();
   const [newAppointments, setNewAppointments] = useState<Appointment[]>([]);
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export const useRealtimeAppointments = (salonId: string | undefined) => {
         (payload) => {
           console.log('🆕 New appointment received:', payload);
           
-          const newAppointment = payload.new as Appointment;
+          const newAppointment = payload.new as any;
           
           if (newAppointment.status === 'pending') {
             // Buscar dados completos do agendamento
@@ -47,7 +49,10 @@ export const useRealtimeAppointments = (salonId: string | undefined) => {
                 }
 
                 if (data) {
-                  setNewAppointments(prev => [data, ...prev]);
+                  // Normalizar o appointment para garantir tipagem correta
+                  const normalizedAppointment = normalizeAppointment(data);
+                  
+                  setNewAppointments(prev => [normalizedAppointment, ...prev]);
                   
                   // Mostrar notificação
                   toast({
@@ -81,7 +86,7 @@ export const useRealtimeAppointments = (salonId: string | undefined) => {
         (payload) => {
           console.log('📝 Appointment updated:', payload);
           
-          const updatedAppointment = payload.new as Appointment;
+          const updatedAppointment = payload.new as any;
           
           // Remover da lista de novos agendamentos se o status mudou
           if (updatedAppointment.status !== 'pending') {
@@ -97,7 +102,7 @@ export const useRealtimeAppointments = (salonId: string | undefined) => {
       console.log('🔌 Unsubscribing from realtime appointments');
       supabase.removeChannel(channel);
     };
-  }, [salonId, toast]);
+  }, [salonId, toast, normalizeAppointment]);
 
   const clearNewAppointment = (appointmentId: string) => {
     setNewAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
