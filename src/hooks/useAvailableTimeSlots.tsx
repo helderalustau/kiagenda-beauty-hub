@@ -11,127 +11,78 @@ export const useAvailableTimeSlots = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Use refs to track last fetch parameters and prevent duplicate calls
-  const lastFetchParams = useRef<{
-    salonId?: string;
-    date?: string;
-    serviceId?: string;
-  }>({});
-  const fetchController = useRef<AbortController | null>(null);
+  // Use ref to prevent duplicate calls
+  const lastFetchParams = useRef<string>('');
 
   const fetchAvailableSlots = useCallback(async () => {
-    console.log('🔍 fetchAvailableSlots called with:', { 
-      salonId, 
-      selectedDate: selectedDate?.toDateString(), 
-      serviceId 
-    });
-
+    // Early validation
     if (!salonId || !selectedDate) {
-      console.log('❌ Missing required parameters');
+      console.log('❌ Missing required parameters for time slots');
       setAvailableSlots([]);
       setLoading(false);
       return;
     }
 
     const dateString = selectedDate.toISOString().split('T')[0];
-    const currentParams = {
-      salonId,
-      date: dateString,
-      serviceId: serviceId || undefined
-    };
-
-    // Check if we're fetching the same data
-    const lastParams = lastFetchParams.current;
-    if (
-      lastParams.salonId === currentParams.salonId &&
-      lastParams.date === currentParams.date &&
-      lastParams.serviceId === currentParams.serviceId
-    ) {
-      console.log('⚠️ Skipping duplicate fetch with same parameters');
+    const currentParams = `${salonId}-${dateString}-${serviceId || 'no-service'}`;
+    
+    // Prevent duplicate calls
+    if (lastFetchParams.current === currentParams) {
+      console.log('⚠️ Skipping duplicate time slots fetch');
       return;
     }
 
-    // Cancel previous fetch if still running
-    if (fetchController.current) {
-      fetchController.current.abort();
-    }
-
-    // Create new abort controller for this fetch
-    fetchController.current = new AbortController();
     lastFetchParams.current = currentParams;
-
     setLoading(true);
     setError(null);
 
     try {
-      console.log('📋 Calling RPC with parameters:', { 
-        p_salon_id: salonId, 
-        p_date: dateString, 
-        p_service_id: serviceId || null 
+      console.log('📋 Fetching time slots for:', {
+        salon: salonId,
+        date: dateString,
+        service: serviceId
       });
       
-      // Call the improved function that considers service duration properly
       const { data, error: rpcError } = await supabase.rpc('get_available_time_slots', {
         p_salon_id: salonId,
         p_date: dateString,
         p_service_id: serviceId || null
       });
 
-      // Check if request was aborted
-      if (fetchController.current?.signal.aborted) {
-        console.log('🚫 Request was aborted');
-        return;
-      }
-
       if (rpcError) {
-        console.error('❌ Error fetching available slots:', rpcError);
+        console.error('❌ Error fetching time slots:', rpcError);
         setError(rpcError.message);
         setAvailableSlots([]);
       } else {
         const slots = data?.map((slot: { time_slot: string }) => slot.time_slot) || [];
-        console.log('✅ Available slots received:', slots);
-        console.log('📊 Total available slots:', slots.length);
+        console.log('✅ Time slots received:', slots);
         setAvailableSlots(slots);
       }
     } catch (err: any) {
-      // Don't log error if request was aborted
-      if (err.name !== 'AbortError') {
-        console.error('❌ Exception fetching available slots:', err);
-        setError('Erro ao buscar horários disponíveis');
-        setAvailableSlots([]);
-      }
+      console.error('❌ Exception fetching time slots:', err);
+      setError('Erro ao buscar horários disponíveis');
+      setAvailableSlots([]);
     } finally {
-      if (!fetchController.current?.signal.aborted) {
-        setLoading(false);
-      }
-      fetchController.current = null;
+      setLoading(false);
     }
   }, [salonId, selectedDate, serviceId]);
 
+  // Single useEffect with proper dependency management
   useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log('📡 useAvailableTimeSlots useEffect triggered');
-      fetchAvailableSlots();
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      // Cancel any ongoing fetch when dependencies change
-      if (fetchController.current) {
-        fetchController.current.abort();
-        fetchController.current = null;
-      }
-    };
-  }, [fetchAvailableSlots]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (fetchController.current) {
-        fetchController.current.abort();
-      }
-    };
-  }, []);
+    // Only fetch if we have required params
+    if (salonId && selectedDate) {
+      console.log('🔄 Time slots effect triggered');
+      
+      // Small delay to prevent rapid successive calls
+      const timer = setTimeout(fetchAvailableSlots, 200);
+      return () => clearTimeout(timer);
+    } else {
+      // Clear slots if params are missing
+      setAvailableSlots([]);
+      setLoading(false);
+      lastFetchParams.current = '';
+    }
+  }, [salonId, selectedDate, serviceId, fetchAvailableSlots]);
 
   return {
     availableSlots,

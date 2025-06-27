@@ -11,21 +11,17 @@ export const useSimpleBooking = (salon: Salon) => {
   const { services, loadingServices, loadServices } = useBookingServices(salon.id);
   const { isSubmitting, submitBooking: submitBookingBase } = useBookingSubmission(salon.id);
   
-  // Use refs to prevent infinite loops
-  const lastFetchedDate = useRef<string | null>(null);
-  const lastFetchedServiceId = useRef<string | null>(null);
+  // Prevent unnecessary re-renders with stable salon ID
+  const salonId = useMemo(() => salon?.id, [salon?.id]);
   
-  // Usar o hook com service_id para considerar duração do serviço
+  // Use time slots hook with proper dependencies
   const { availableSlots, loading: loadingTimes, error: timeSlotsError, refetch: refetchSlots } = useAvailableTimeSlots(
-    salon?.id, 
+    salonId, 
     bookingState.selectedDate,
     bookingState.selectedService?.id
   );
 
-  // Memoizar salon.id para evitar re-renders desnecessários
-  const salonId = useMemo(() => salon?.id, [salon?.id]);
-
-  // Carregar serviços apenas quando necessário
+  // Load services when salon changes
   React.useEffect(() => {
     if (salonId && !services.length && !loadingServices) {
       console.log('🔄 Loading services for salon:', salon.name);
@@ -33,9 +29,9 @@ export const useSimpleBooking = (salon: Salon) => {
     }
   }, [salonId, services.length, loadingServices, loadServices, salon.name]);
 
-  // Handler melhorado para seleção de data - evitar loops
+  // Handle date selection with validation
   const handleDateSelect = useCallback((date: Date | undefined) => {
-    console.log('📅 Date selected in useSimpleBooking:', date?.toDateString());
+    console.log('📅 Date selected:', date?.toDateString());
     
     if (date) {
       const today = new Date();
@@ -45,68 +41,37 @@ export const useSimpleBooking = (salon: Salon) => {
         console.log('❌ Cannot select past date');
         return;
       }
-      
-      const dateString = date.toDateString();
-      
-      // Apenas recarregar se a data realmente mudou
-      if (lastFetchedDate.current !== dateString) {
-        bookingState.setSelectedDate(date);
-        bookingState.setSelectedTime('');
-        
-        lastFetchedDate.current = dateString;
-        
-        // Usar timeout para evitar chamadas simultâneas
-        setTimeout(() => {
-          console.log('🔄 Triggering time slots refetch for new date');
-          refetchSlots();
-        }, 150);
-      }
-    } else {
-      bookingState.setSelectedDate(undefined);
-      bookingState.setSelectedTime('');
-      lastFetchedDate.current = null;
     }
-  }, [bookingState, refetchSlots]);
+    
+    bookingState.setSelectedDate(date);
+    bookingState.setSelectedTime(''); // Reset time when date changes
+  }, [bookingState]);
 
-  // Handler melhorado para seleção de horário
+  // Handle time selection
   const handleTimeSelect = useCallback((time: string) => {
-    console.log('🕒 Time selected in useSimpleBooking:', time);
+    console.log('🕒 Time selected:', time);
     bookingState.setSelectedTime(time);
   }, [bookingState]);
 
-  // Handler para seleção de serviço - evitar loops
+  // Handle service selection
   const handleServiceSelect = useCallback((service: any) => {
-    console.log('🛍️ Service selected in useSimpleBooking:', service?.name);
+    console.log('🛍️ Service selected:', service?.name);
+    bookingState.setSelectedService(service);
     
-    const serviceId = service?.id || null;
-    
-    // Apenas recarregar se o serviço realmente mudou
-    if (lastFetchedServiceId.current !== serviceId) {
-      bookingState.setSelectedService(service);
-      if (bookingState.selectedTime) {
-        bookingState.setSelectedTime('');
-      }
-      
-      lastFetchedServiceId.current = serviceId;
-      
-      // Recarregar horários quando o serviço muda
-      if (bookingState.selectedDate) {
-        setTimeout(() => {
-          console.log('🔄 Triggering time slots refetch for new service');
-          refetchSlots();
-        }, 150);
-      }
+    // Reset time when service changes (different services may have different availability)
+    if (bookingState.selectedTime) {
+      bookingState.setSelectedTime('');
     }
-  }, [bookingState, refetchSlots]);
+  }, [bookingState]);
 
-  // Submeter agendamento
+  // Submit booking
   const handleSubmitBooking = useCallback(async () => {
     if (isSubmitting) {
       console.log('⚠️ Submission already in progress');
       return false;
     }
 
-    console.log('📋 Starting booking submission from hook');
+    console.log('📋 Starting booking submission');
     
     const success = await submitBookingBase(
       bookingState.selectedService,
@@ -116,11 +81,7 @@ export const useSimpleBooking = (salon: Salon) => {
     );
     
     if (success) {
-      console.log('✅ Booking submitted successfully, resetting state');
-      // Reset refs
-      lastFetchedDate.current = null;
-      lastFetchedServiceId.current = null;
-      
+      console.log('✅ Booking submitted successfully');
       setTimeout(() => {
         bookingState.resetBooking();
       }, 1000);
@@ -129,30 +90,15 @@ export const useSimpleBooking = (salon: Salon) => {
     return success;
   }, [submitBookingBase, bookingState, isSubmitting]);
 
-  // Debug: Log current state (reduzido para evitar spam)
-  React.useEffect(() => {
-    const debugTimer = setTimeout(() => {
-      console.log('🔍 useSimpleBooking state:', {
-        selectedDate: bookingState.selectedDate?.toDateString(),
-        selectedService: bookingState.selectedService?.name,
-        availableSlotsCount: availableSlots?.length || 0,
-        loadingTimes,
-        timeSlotsError: timeSlotsError ? 'Error present' : 'No error'
-      });
-    }, 500);
-
-    return () => clearTimeout(debugTimer);
-  }, [bookingState.selectedDate, bookingState.selectedService, availableSlots?.length, loadingTimes, timeSlotsError]);
-
   return {
-    // Estados do booking
+    // States
     ...bookingState,
     
-    // Serviços
+    // Services
     services,
     loadingServices,
     
-    // Horários disponíveis - usar availableSlots do hook
+    // Time slots
     availableTimes: availableSlots || [],
     loadingTimes,
     timeSlotsError,
@@ -162,7 +108,7 @@ export const useSimpleBooking = (salon: Salon) => {
     handleTimeSelect,
     handleServiceSelect,
     
-    // Submissão
+    // Submission
     isSubmitting,
     submitBooking: handleSubmitBooking
   };
