@@ -70,8 +70,8 @@ export const useAvailableTimeSlots = (
         p_service_id: serviceId || null 
       });
       
-      // Chamar a função corrigida
-      const { data, error: rpcError, signal } = await supabase.rpc('get_available_time_slots', {
+      // Call the corrected function
+      const { data, error: rpcError } = await supabase.rpc('get_available_time_slots', {
         p_salon_id: salonId,
         p_date: dateString,
         p_service_id: serviceId || null
