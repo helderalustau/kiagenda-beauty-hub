@@ -47,16 +47,31 @@ const SimpleDateTimeSelectionStep = ({
     return date < today;
   }, [today]);
 
-  // Debug: Log props received
+  // Memoize the calendar select handler to prevent unnecessary re-renders
+  const handleCalendarSelect = React.useCallback((date: Date | undefined) => {
+    console.log('📅 Calendar date selected:', date?.toDateString());
+    onDateSelect(date);
+  }, [onDateSelect]);
+
+  // Memoize the time select handler
+  const handleTimeSelect = React.useCallback((time: string) => {
+    console.log('🕒 Time selected in step:', time);
+    onTimeSelect(time);
+  }, [onTimeSelect]);
+
+  // Debug: Log props received (throttled to prevent spam)
   React.useEffect(() => {
-    console.log('📊 SimpleDateTimeSelectionStep received:', {
-      selectedDate: selectedDate?.toDateString(),
-      availableTimesCount: availableTimes?.length || 0,
-      loadingTimes,
-      timeSlotsError,
-      availableTimes: availableTimes?.slice(0, 3) // primeiros 3 para debug
-    });
-  }, [selectedDate, availableTimes, loadingTimes, timeSlotsError]);
+    const debugTimer = setTimeout(() => {
+      console.log('📊 SimpleDateTimeSelectionStep received:', {
+        selectedDate: selectedDate?.toDateString(),
+        availableTimesCount: availableTimes?.length || 0,
+        loadingTimes,
+        timeSlotsError: timeSlotsError ? 'Error present' : 'No error'
+      });
+    }, 300);
+
+    return () => clearTimeout(debugTimer);
+  }, [selectedDate, availableTimes?.length, loadingTimes, timeSlotsError]);
 
   return (
     <div className="space-y-6">
@@ -120,10 +135,7 @@ const SimpleDateTimeSelectionStep = ({
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={(date) => {
-                  console.log('📅 Calendar date selected:', date?.toDateString());
-                  onDateSelect(date);
-                }}
+                onSelect={handleCalendarSelect}
                 disabled={isDateDisabled}
                 locale={ptBR}
                 className="w-full pointer-events-auto"
@@ -160,10 +172,7 @@ const SimpleDateTimeSelectionStep = ({
             <OptimizedTimeSlotGrid
               availableTimes={availableTimes || []}
               selectedTime={selectedTime}
-              onTimeSelect={(time) => {
-                console.log('🕒 Time selected in step:', time);
-                onTimeSelect(time);
-              }}
+              onTimeSelect={handleTimeSelect}
               selectedDate={selectedDate}
               loading={loadingTimes}
               error={timeSlotsError}

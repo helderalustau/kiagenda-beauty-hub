@@ -1,5 +1,5 @@
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Salon } from '@/hooks/useSupabaseData';
 import { useBookingState } from '@/hooks/booking/useBookingState';
 import { useBookingServices } from '@/hooks/booking/useBookingServices';
@@ -10,6 +10,10 @@ export const useSimpleBooking = (salon: Salon) => {
   const bookingState = useBookingState();
   const { services, loadingServices, loadServices } = useBookingServices(salon.id);
   const { isSubmitting, submitBooking: submitBookingBase } = useBookingSubmission(salon.id);
+  
+  // Use refs to prevent infinite loops
+  const lastFetchedDate = useRef<string | null>(null);
+  const lastFetchedServiceId = useRef<string | null>(null);
   
   // Usar o hook com service_id para considerar duração do serviço
   const { availableSlots, loading: loadingTimes, error: timeSlotsError, refetch: refetchSlots } = useAvailableTimeSlots(
@@ -29,7 +33,7 @@ export const useSimpleBooking = (salon: Salon) => {
     }
   }, [salonId, services.length, loadingServices, loadServices, salon.name]);
 
-  // Handler melhorado para seleção de data
+  // Handler melhorado para seleção de data - evitar loops
   const handleDateSelect = useCallback((date: Date | undefined) => {
     console.log('📅 Date selected in useSimpleBooking:', date?.toDateString());
     
@@ -42,17 +46,25 @@ export const useSimpleBooking = (salon: Salon) => {
         return;
       }
       
-      bookingState.setSelectedDate(date);
-      bookingState.setSelectedTime('');
+      const dateString = date.toDateString();
       
-      // Forçar recarga dos horários após definir a data
-      console.log('🔄 Triggering time slots refetch for new date');
-      setTimeout(() => {
-        refetchSlots();
-      }, 100);
+      // Apenas recarregar se a data realmente mudou
+      if (lastFetchedDate.current !== dateString) {
+        bookingState.setSelectedDate(date);
+        bookingState.setSelectedTime('');
+        
+        lastFetchedDate.current = dateString;
+        
+        // Usar timeout para evitar chamadas simultâneas
+        setTimeout(() => {
+          console.log('🔄 Triggering time slots refetch for new date');
+          refetchSlots();
+        }, 150);
+      }
     } else {
       bookingState.setSelectedDate(undefined);
       bookingState.setSelectedTime('');
+      lastFetchedDate.current = null;
     }
   }, [bookingState, refetchSlots]);
 
@@ -62,20 +74,28 @@ export const useSimpleBooking = (salon: Salon) => {
     bookingState.setSelectedTime(time);
   }, [bookingState]);
 
-  // Handler para seleção de serviço
+  // Handler para seleção de serviço - evitar loops
   const handleServiceSelect = useCallback((service: any) => {
     console.log('🛍️ Service selected in useSimpleBooking:', service?.name);
-    bookingState.setSelectedService(service);
-    if (bookingState.selectedTime) {
-      bookingState.setSelectedTime('');
-    }
     
-    // Recarregar horários quando o serviço muda
-    if (bookingState.selectedDate) {
-      console.log('🔄 Triggering time slots refetch for new service');
-      setTimeout(() => {
-        refetchSlots();
-      }, 100);
+    const serviceId = service?.id || null;
+    
+    // Apenas recarregar se o serviço realmente mudou
+    if (lastFetchedServiceId.current !== serviceId) {
+      bookingState.setSelectedService(service);
+      if (bookingState.selectedTime) {
+        bookingState.setSelectedTime('');
+      }
+      
+      lastFetchedServiceId.current = serviceId;
+      
+      // Recarregar horários quando o serviço muda
+      if (bookingState.selectedDate) {
+        setTimeout(() => {
+          console.log('🔄 Triggering time slots refetch for new service');
+          refetchSlots();
+        }, 150);
+      }
     }
   }, [bookingState, refetchSlots]);
 
@@ -97,6 +117,10 @@ export const useSimpleBooking = (salon: Salon) => {
     
     if (success) {
       console.log('✅ Booking submitted successfully, resetting state');
+      // Reset refs
+      lastFetchedDate.current = null;
+      lastFetchedServiceId.current = null;
+      
       setTimeout(() => {
         bookingState.resetBooking();
       }, 1000);
@@ -105,17 +129,20 @@ export const useSimpleBooking = (salon: Salon) => {
     return success;
   }, [submitBookingBase, bookingState, isSubmitting]);
 
-  // Debug: Log current state
+  // Debug: Log current state (reduzido para evitar spam)
   React.useEffect(() => {
-    console.log('🔍 useSimpleBooking state:', {
-      selectedDate: bookingState.selectedDate?.toDateString(),
-      selectedService: bookingState.selectedService?.name,
-      availableSlotsCount: availableSlots?.length || 0,
-      loadingTimes,
-      timeSlotsError,
-      availableSlots: availableSlots?.slice(0, 5) // primeiros 5 slots para debug
-    });
-  }, [bookingState.selectedDate, bookingState.selectedService, availableSlots, loadingTimes, timeSlotsError]);
+    const debugTimer = setTimeout(() => {
+      console.log('🔍 useSimpleBooking state:', {
+        selectedDate: bookingState.selectedDate?.toDateString(),
+        selectedService: bookingState.selectedService?.name,
+        availableSlotsCount: availableSlots?.length || 0,
+        loadingTimes,
+        timeSlotsError: timeSlotsError ? 'Error present' : 'No error'
+      });
+    }, 500);
+
+    return () => clearTimeout(debugTimer);
+  }, [bookingState.selectedDate, bookingState.selectedService, availableSlots?.length, loadingTimes, timeSlotsError]);
 
   return {
     // Estados do booking
