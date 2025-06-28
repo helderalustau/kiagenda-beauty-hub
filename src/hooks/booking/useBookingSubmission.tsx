@@ -24,10 +24,18 @@ export const useBookingSubmission = (salonId: string) => {
     selectedTime: string,
     clientData: ClientData
   ) => {
-    console.log('🚀 Starting booking submission');
+    console.log('🚀 Starting booking submission with params:', {
+      service: selectedService?.name,
+      date: selectedDate?.toDateString(),
+      time: selectedTime,
+      clientName: clientData.name,
+      clientPhone: clientData.phone,
+      userId: user?.id
+    });
 
     // Validações básicas
     if (!selectedService || !selectedDate || !selectedTime || !clientData.name.trim() || !clientData.phone.trim()) {
+      console.error('❌ Missing required fields for booking submission');
       toast({
         title: "Dados incompletos",
         description: "Preencha todos os campos obrigatórios",
@@ -37,6 +45,7 @@ export const useBookingSubmission = (salonId: string) => {
     }
 
     if (!user?.id) {
+      console.error('❌ User not authenticated');
       toast({
         title: "Erro de autenticação",
         description: "Você precisa estar logado para fazer um agendamento",
@@ -58,6 +67,8 @@ export const useBookingSubmission = (salonId: string) => {
       // Verificar se o horário ainda está disponível
       const dateString = selectedDate.toISOString().split('T')[0];
       
+      console.log('🔍 Checking availability for:', { salonId, dateString, selectedTime });
+      
       const { data: conflictCheck, error: conflictError } = await supabase
         .from('appointments')
         .select('id')
@@ -68,10 +79,12 @@ export const useBookingSubmission = (salonId: string) => {
         .limit(1);
 
       if (conflictError) {
+        console.error('❌ Error checking availability:', conflictError);
         throw new Error('Erro ao verificar disponibilidade do horário');
       }
 
       if (conflictCheck && conflictCheck.length > 0) {
+        console.error('❌ Time slot already taken');
         toast({
           title: "Horário indisponível",
           description: "Este horário foi ocupado por outro cliente. Escolha outro horário.",
@@ -91,7 +104,7 @@ export const useBookingSubmission = (salonId: string) => {
         notes: clientData.notes?.trim() || null
       };
 
-      console.log('📝 Creating appointment:', appointmentData);
+      console.log('📝 Creating appointment with data:', appointmentData);
 
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
@@ -116,18 +129,18 @@ export const useBookingSubmission = (salonId: string) => {
         } else {
           toast({
             title: "Erro no agendamento",
-            description: "Erro ao criar agendamento. Tente novamente.",
+            description: `Erro ao criar agendamento: ${appointmentError.message}`,
             variant: "destructive"
           });
         }
         return false;
       }
 
-      console.log('✅ Appointment created successfully:', appointment.id);
+      console.log('✅ Appointment created successfully:', appointment?.id);
 
       toast({
         title: "✅ Solicitação Enviada!",
-        description: `Seu agendamento para ${selectedService.name} foi enviado e está aguardando aprovação da ${appointment.salon?.name}.`,
+        description: `Seu agendamento para ${selectedService.name} foi enviado e está aguardando aprovação.`,
         duration: 6000
       });
 

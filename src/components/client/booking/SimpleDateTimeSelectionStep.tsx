@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Clock, Calendar as CalendarIcon, DollarSign } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Calendar as CalendarIcon, DollarSign, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from '@/hooks/useSupabaseData';
@@ -22,6 +22,7 @@ interface SimpleDateTimeSelectionStepProps {
   onNext: () => void;
   onBack: () => void;
   formatCurrency: (value: number) => string;
+  refetchSlots?: () => void;
 }
 
 const SimpleDateTimeSelectionStep = ({
@@ -35,7 +36,8 @@ const SimpleDateTimeSelectionStep = ({
   onTimeSelect,
   onNext,
   onBack,
-  formatCurrency
+  formatCurrency,
+  refetchSlots
 }: SimpleDateTimeSelectionStepProps) => {
   const canContinue = selectedDate && selectedTime && !loadingTimes;
 
@@ -49,7 +51,7 @@ const SimpleDateTimeSelectionStep = ({
 
   // Memoize the calendar select handler to prevent unnecessary re-renders
   const handleCalendarSelect = React.useCallback((date: Date | undefined) => {
-    console.log('📅 Calendar date selected:', date?.toDateString());
+    console.log('📅 Calendar date selected in step:', date?.toDateString());
     onDateSelect(date);
   }, [onDateSelect]);
 
@@ -59,19 +61,28 @@ const SimpleDateTimeSelectionStep = ({
     onTimeSelect(time);
   }, [onTimeSelect]);
 
+  // Handle refresh slots
+  const handleRefreshSlots = React.useCallback(() => {
+    console.log('🔄 Refreshing time slots');
+    if (refetchSlots) {
+      refetchSlots();
+    }
+  }, [refetchSlots]);
+
   // Debug: Log props received (throttled to prevent spam)
   React.useEffect(() => {
     const debugTimer = setTimeout(() => {
-      console.log('📊 SimpleDateTimeSelectionStep received:', {
+      console.log('📊 SimpleDateTimeSelectionStep state:', {
         selectedDate: selectedDate?.toDateString(),
         availableTimesCount: availableTimes?.length || 0,
         loadingTimes,
-        timeSlotsError: timeSlotsError ? 'Error present' : 'No error'
+        timeSlotsError: timeSlotsError ? 'Error present' : 'No error',
+        selectedTime
       });
     }, 300);
 
     return () => clearTimeout(debugTimer);
-  }, [selectedDate, availableTimes?.length, loadingTimes, timeSlotsError]);
+  }, [selectedDate, availableTimes?.length, loadingTimes, timeSlotsError, selectedTime]);
 
   return (
     <div className="space-y-6">
@@ -163,9 +174,23 @@ const SimpleDateTimeSelectionStep = ({
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Clock className="h-5 w-5 mr-2" />
-              Escolha o Horário
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Clock className="h-5 w-5 mr-2" />
+                Escolha o Horário
+              </div>
+              {timeSlotsError && refetchSlots && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefreshSlots}
+                  disabled={loadingTimes}
+                  className="flex items-center"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-1 ${loadingTimes ? 'animate-spin' : ''}`} />
+                  Tentar novamente
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
