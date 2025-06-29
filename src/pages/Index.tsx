@@ -54,10 +54,7 @@ const Index = () => {
             Transforme seu Salão com 
             <span className="bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent"> Tecnologia</span>
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Sistema completo de gestão para salões de beleza, barbearias e clínicas estéticas. 
-            Agende, gerencie e cresça seu negócio com nossa plataforma intuitiva.
-          </p>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">Para quem transforma vidas todos os dias, chegou a tecnologia que transforma o seu negócio. Agende, gerencie e evolua com uma plataforma feita para você.</p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button onClick={navigateToAdminRegistration} size="lg" className="bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
@@ -74,9 +71,7 @@ const Index = () => {
                 <Calendar className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-xl">Agendamento Inteligente</CardTitle>
-              <CardDescription>
-                Sistema automatizado de agendamentos com confirmações por WhatsApp e notificações em tempo real.
-              </CardDescription>
+              <CardDescription>Sistema automatizado de agendamentos com confirmações em tempo real.</CardDescription>
             </CardHeader>
           </Card>
 
@@ -158,7 +153,7 @@ const Index = () => {
                 </div>
                 <CardTitle className="text-2xl">Prata</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold text-gray-900">R$ 50</span>
+                  <span className="text-4xl font-bold text-gray-900">R$ XX</span>
                   <span className="text-gray-600">/mês</span>
                 </div>
                 <CardDescription>Perfeito para salões</CardDescription>
@@ -196,7 +191,7 @@ const Index = () => {
                 </div>
                 <CardTitle className="text-2xl">Ouro</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold text-gray-900">R$ 199</span>
+                  <span className="text-4xl font-bold text-gray-900">R$ XX</span>
                   <span className="text-gray-600">/mês</span>
                 </div>
                 <CardDescription>Para grandes estabelecimentos</CardDescription>
