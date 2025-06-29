@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import OptimizedBookingModal from '@/components/client/OptimizedBookingModal';
+import SimplifiedBookingModal from '@/components/client/SimplifiedBookingModal';
 import BookingPageHeader from '@/components/client/booking/BookingPageHeader';
 import SalonBookingCard from '@/components/client/booking/SalonBookingCard';
 import BookingErrorState from '@/components/client/booking/BookingErrorState';
@@ -41,8 +41,8 @@ const ClientBooking = () => {
         </div>
       </div>
 
-      {/* Modal de Agendamento Otimizado */}
-      <OptimizedBookingModal
+      {/* Modal de Agendamento Simplificado */}
+      <SimplifiedBookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
         salon={selectedSalon}
