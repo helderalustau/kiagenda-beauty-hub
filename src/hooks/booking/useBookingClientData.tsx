@@ -1,6 +1,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ClientData {
@@ -15,20 +16,8 @@ export const useBookingClientData = (
   setClientData: (data: ClientData) => void
 ) => {
   const { user } = useAuth();
+  const { formatPhoneNumber } = usePhoneFormatter();
   const hasAutoFilled = useRef(false);
-
-  const formatPhoneNumber = (value: string) => {
-    if (!value) return '';
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 11) {
-      return numbers
-        .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
-        .replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
-        .replace(/(\d{2})(\d{1,5})/, '($1) $2')
-        .replace(/(\d{2})/, '($1');
-    }
-    return value;
-  };
 
   // Auto-preencher dados do cliente logado apenas uma vez
   useEffect(() => {
@@ -106,7 +95,7 @@ export const useBookingClientData = (
     };
 
     loadClientData();
-  }, [user, clientData.name, setClientData]);
+  }, [user, clientData.name, setClientData, formatPhoneNumber]);
 
   // Reset do flag quando o modal for fechado (clientData limpo)
   useEffect(() => {

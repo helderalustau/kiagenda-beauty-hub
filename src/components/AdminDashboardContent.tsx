@@ -43,18 +43,21 @@ const AdminDashboardContent = ({
           </p>
         </div>
         
-        <DashboardStats 
-          appointments={appointments}
-          services={services}
-          salon={salon}
-          adminUsers={adminUsers}
-        />
+        {/* Layout lado a lado para Desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DashboardStats 
+            appointments={appointments}
+            services={services}
+            salon={salon}
+            adminUsers={adminUsers}
+          />
 
-        {/* Lista de Agendamentos Ativos */}
-        <ActiveAppointmentsList 
-          appointments={appointments}
-          onUpdateStatus={handleUpdateAppointmentStatus}
-        />
+          {/* Lista de Agendamentos Ativos */}
+          <ActiveAppointmentsList 
+            appointments={appointments}
+            onUpdateStatus={handleUpdateAppointmentStatus}
+          />
+        </div>
       </TabsContent>
 
       <TabsContent value="calendar" className="space-y-4 sm:space-y-6">

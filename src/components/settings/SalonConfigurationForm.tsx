@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, User, Save, Loader2 } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
+import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
 import OpeningHoursManager from './OpeningHoursManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
@@ -19,6 +20,7 @@ interface SalonConfigurationFormProps {
 
 const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationFormProps) => {
   const { toast } = useToast();
+  const { formatPhoneNumber } = usePhoneFormatter();
   const [formData, setFormData] = useState({
     name: salon?.name || '',
     owner_name: salon?.owner_name || '',
@@ -46,6 +48,11 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
       [field]: value
     }));
     setHasChanges(true);
+  };
+
+  const handlePhoneChange = (field: 'phone' | 'contact_phone', value: string) => {
+    const formattedPhone = formatPhoneNumber(value);
+    handleInputChange(field, formattedPhone);
   };
 
   const handleSave = async () => {
@@ -171,8 +178,9 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
               <Input
                 id="salon-phone"
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                onChange={(e) => handlePhoneChange('phone', e.target.value)}
                 placeholder="(11) 99999-9999"
+                maxLength={15}
               />
             </div>
             <div>
@@ -180,8 +188,9 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
               <Input
                 id="contact-phone"
                 value={formData.contact_phone}
-                onChange={(e) => handleInputChange('contact_phone', e.target.value)}
+                onChange={(e) => handlePhoneChange('contact_phone', e.target.value)}
                 placeholder="(11) 88888-8888"
+                maxLength={15}
               />
             </div>
           </div>

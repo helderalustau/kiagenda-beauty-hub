@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Appointment } from '@/types/supabase-entities';
-import OptimizedAdminCalendarView from './admin/OptimizedAdminCalendarView';
+import { useRealtimeAppointmentUpdates } from '@/hooks/useRealtimeAppointmentUpdates';
+import ModernAdminCalendarView from './admin/ModernAdminCalendarView';
 import RealtimeBookingNotification from './admin/RealtimeBookingNotification';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +31,12 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   };
 
   const salonId = getSalonId();
+
+  // Setup realtime updates for salon appointments
+  useRealtimeAppointmentUpdates({
+    salonId,
+    onAppointmentUpdate: onRefresh
+  });
 
   const handleUpdateAppointment = async (appointmentId: string, updates: { status: string; notes?: string }) => {
     try {
@@ -61,7 +68,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
 
   return (
     <>
-      <OptimizedAdminCalendarView 
+      <ModernAdminCalendarView 
         appointments={appointments}
         onUpdateAppointment={handleUpdateAppointment}
         isUpdating={false}

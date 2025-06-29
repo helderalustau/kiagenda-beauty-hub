@@ -1,11 +1,11 @@
 
 export const usePhoneFormatter = () => {
-  // Format phone number with mask
+  // Format phone number with Brazilian mask
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
     const numbers = value.replace(/\D/g, '');
     
-    // Apply Brazilian phone mask
+    // Apply Brazilian phone mask: (XX) XXXXX-XXXX or (XX) XXXX-XXXX
     if (numbers.length === 0) return '';
     if (numbers.length <= 2) return `(${numbers}`;
     if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
