@@ -39,7 +39,7 @@ const SettingsPage = ({
   };
   return <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 shadow-xl py-[9px]">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 shadow-xl py-[9px] bg-gray-300">
         <div className="flex items-center space-x-4">
           <div className="bg-white/20 rounded-full p-3">
             <Settings className="h-8 w-8 rounded-none" />
