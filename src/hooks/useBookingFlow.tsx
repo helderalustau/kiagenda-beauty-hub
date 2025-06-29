@@ -30,6 +30,15 @@ export const useBookingFlow = (salonId: string) => {
   });
 
   const submitBookingRequest = useCallback(async () => {
+    console.log('🚀 Starting booking submission:', {
+      selectedService: selectedService?.name,
+      selectedDate: selectedDate?.toDateString(),
+      selectedTime,
+      clientData: clientData.name,
+      userId: user?.id,
+      salonId
+    });
+
     if (!selectedService || !selectedDate || !selectedTime || !clientData.name.trim() || !clientData.phone.trim()) {
       toast({
         title: "Dados incompletos",
@@ -64,6 +73,7 @@ export const useBookingFlow = (salonId: string) => {
         .limit(1);
 
       if (conflictError) {
+        console.error('Error checking availability:', conflictError);
         throw new Error('Erro ao verificar disponibilidade do horário');
       }
 
@@ -86,6 +96,8 @@ export const useBookingFlow = (salonId: string) => {
         status: 'pending' as const,
         notes: clientData.notes?.trim() || null
       };
+
+      console.log('📝 Creating appointment with data:', appointmentData);
 
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
@@ -110,12 +122,14 @@ export const useBookingFlow = (salonId: string) => {
         } else {
           toast({
             title: "Erro no agendamento",
-            description: "Erro ao criar agendamento. Tente novamente.",
+            description: `Erro ao criar agendamento: ${appointmentError.message}`,
             variant: "destructive"
           });
         }
         return false;
       }
+
+      console.log('✅ Appointment created successfully:', appointment?.id);
 
       toast({
         title: "✅ Solicitação Enviada!",
@@ -130,7 +144,7 @@ export const useBookingFlow = (salonId: string) => {
       
       toast({
         title: "Erro no Agendamento",
-        description: "Erro inesperado. Tente novamente.",
+        description: error instanceof Error ? error.message : "Erro inesperado. Tente novamente.",
         variant: "destructive",
         duration: 7000
       });

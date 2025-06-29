@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,19 +43,12 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
-  // Auto-preencher dados do usuário logado
-  const { user } = useBookingClientData(clientData, onClientDataChange);
+  // Auto-preencher dados do usuário logado e obter função de formatação
+  const { user, formatPhoneNumber } = useBookingClientData(clientData, onClientDataChange);
 
-  const formatPhoneNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 11) {
-      return numbers
-        .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
-        .replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
-        .replace(/(\d{2})(\d{1,5})/, '($1) $2')
-        .replace(/(\d{2})/, '($1');
-    }
-    return value;
+  const handlePhoneChange = (value: string) => {
+    const formattedPhone = formatPhoneNumber(value);
+    onClientDataChange({ ...clientData, phone: formattedPhone });
   };
 
   return (
@@ -117,7 +110,7 @@ const SimpleClientDataStep = ({
               type="tel"
               placeholder="(11) 99999-9999"
               value={clientData.phone}
-              onChange={(e) => onClientDataChange({ ...clientData, phone: formatPhoneNumber(e.target.value) })}
+              onChange={(e) => handlePhoneChange(e.target.value)}
               className="pl-10"
               required
               maxLength={15}

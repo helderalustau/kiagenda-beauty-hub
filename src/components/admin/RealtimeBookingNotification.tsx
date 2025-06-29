@@ -135,7 +135,7 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate }: RealtimeB
         .from('appointments')
         .update({ 
           status: 'cancelled',
-          notes: 'Agendamento recusado pelo estabelecimento'
+          notes: pendingAppointment.notes ? `${pendingAppointment.notes} | Agendamento recusado pelo estabelecimento` : 'Agendamento recusado pelo estabelecimento'
         })
         .eq('id', pendingAppointment.id);
 

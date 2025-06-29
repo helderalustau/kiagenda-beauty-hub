@@ -17,6 +17,19 @@ export const useBookingClientData = (
   const { user } = useAuth();
   const hasAutoFilled = useRef(false);
 
+  const formatPhoneNumber = (value: string) => {
+    if (!value) return '';
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 11) {
+      return numbers
+        .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+        .replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
+        .replace(/(\d{2})(\d{1,5})/, '($1) $2')
+        .replace(/(\d{2})/, '($1');
+    }
+    return value;
+  };
+
   // Auto-preencher dados do cliente logado apenas uma vez
   useEffect(() => {
     const loadClientData = async () => {
@@ -38,7 +51,7 @@ export const useBookingClientData = (
             
             setClientData({
               name: clientAuthData.username || clientAuthData.name || '',
-              phone: clientAuthData.phone || '',
+              phone: formatPhoneNumber(clientAuthData.phone || ''),
               email: clientAuthData.email || '',
               notes: clientData.notes || ''
             });
@@ -59,7 +72,7 @@ export const useBookingClientData = (
               
               setClientData({
                 name: clientAuthByUsername.username || clientAuthByUsername.name || '',
-                phone: clientAuthByUsername.phone || '',
+                phone: formatPhoneNumber(clientAuthByUsername.phone || ''),
                 email: clientAuthByUsername.email || '',
                 notes: clientData.notes || ''
               });
@@ -102,5 +115,5 @@ export const useBookingClientData = (
     }
   }, [clientData.name, clientData.phone]);
 
-  return { user };
+  return { user, formatPhoneNumber };
 };
