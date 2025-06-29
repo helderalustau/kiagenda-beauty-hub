@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,13 +5,14 @@ import { Settings, Users, Bell, Palette, Shield, Info } from "lucide-react";
 import SalonConfigurationForm from '@/components/settings/SalonConfigurationForm';
 import SalonUsersManager from '@/components/settings/SalonUsersManager';
 import { Salon } from '@/hooks/useSupabaseData';
-
 interface SettingsPageProps {
   salon: Salon;
   onRefresh: () => Promise<void>;
 }
-
-const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
+const SettingsPage = ({
+  salon,
+  onRefresh
+}: SettingsPageProps) => {
   const [activeTab, setActiveTab] = useState('general');
 
   // Handle salon changes and refresh
@@ -37,18 +37,16 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
     };
     return planLimits[salon.plan as keyof typeof planLimits] || 3;
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 shadow-xl">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 shadow-xl py-[9px]">
         <div className="flex items-center space-x-4">
           <div className="bg-white/20 rounded-full p-3">
-            <Settings className="h-8 w-8" />
+            <Settings className="h-8 w-8 rounded-none" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Configurações</h1>
-            <p className="text-blue-100 text-lg">Gerencie as configurações do seu estabelecimento</p>
+            <h1 className="font-bold text-lg">Configurações</h1>
+            <p className="text-blue-100 font-normal text-sm">Gerencie as configurações do seu estabelecimento</p>
           </div>
         </div>
       </div>
@@ -58,37 +56,25 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-xl h-auto">
-              <TabsTrigger 
-                value="general" 
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3"
-              >
+              <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
                 <div className="flex flex-col items-center space-y-1">
                   <Settings className="h-5 w-5" />
                   <span className="text-sm font-medium">Geral</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger 
-                value="users"
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3"
-              >
+              <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
                 <div className="flex flex-col items-center space-y-1">
                   <Users className="h-5 w-5" />
                   <span className="text-sm font-medium">Usuários</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger 
-                value="notifications"
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3"
-              >
+              <TabsTrigger value="notifications" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
                 <div className="flex flex-col items-center space-y-1">
                   <Bell className="h-5 w-5" />
                   <span className="text-sm font-medium">Notificações</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger 
-                value="appearance"
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3"
-              >
+              <TabsTrigger value="appearance" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
                 <div className="flex flex-col items-center space-y-1">
                   <Palette className="h-5 w-5" />
                   <span className="text-sm font-medium">Aparência</span>
@@ -121,11 +107,7 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <SalonUsersManager 
-                    salonId={salon.id} 
-                    maxUsers={getMaxUsers()} 
-                    onUpgrade={handleUpgrade} 
-                  />
+                  <SalonUsersManager salonId={salon.id} maxUsers={getMaxUsers()} onUpgrade={handleUpgrade} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -221,8 +203,6 @@ const SettingsPage = ({ salon, onRefresh }: SettingsPageProps) => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default SettingsPage;
