@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Salon } from '@/hooks/useSupabaseData';
@@ -34,12 +34,20 @@ const SimplifiedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Si
     resetBooking
   } = useBookingFlow(salon?.id);
 
-  const { services, loadingServices } = useBookingServices(salon?.id);
+  const { services, loadingServices, loadServices } = useBookingServices(salon?.id);
   const { availableSlots, loading: loadingTimes, error: timeSlotsError, refetch: refetchSlots } = useAvailableTimeSlots(
     salon?.id, 
     selectedDate,
     selectedService?.id
   );
+
+  // Carregar serviços quando o modal abre
+  useEffect(() => {
+    if (isOpen && salon?.id) {
+      console.log('SimplifiedBookingModal - Loading services for salon:', salon.id);
+      loadServices();
+    }
+  }, [isOpen, salon?.id, loadServices]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

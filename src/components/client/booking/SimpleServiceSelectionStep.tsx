@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, X, Clock, DollarSign, Loader2 } from "lucide-react";
+import { ArrowRight, X, Clock, DollarSign, Loader2, Scissors } from "lucide-react";
 import { Service } from '@/hooks/useSupabaseData';
 
 interface SimpleServiceSelectionStepProps {
@@ -29,6 +29,13 @@ const SimpleServiceSelectionStep = ({
       currency: 'BRL'
     }).format(value);
   };
+
+  console.log('SimpleServiceSelectionStep - Props:', { 
+    servicesCount: services?.length || 0, 
+    loadingServices, 
+    selectedService: selectedService?.name || 'none',
+    allServices: services
+  });
 
   if (loadingServices) {
     return (
@@ -65,7 +72,9 @@ const SimpleServiceSelectionStep = ({
 
       {services.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-600">Nenhum serviço disponível no momento.</p>
+          <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum serviço disponível</h3>
+          <p className="text-gray-600">Este estabelecimento não possui serviços ativos no momento.</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
