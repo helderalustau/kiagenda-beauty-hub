@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,28 +5,25 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Mail, Calendar, Clock, Star, Building2, Scissors, ShieldCheck, Users, Crown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
-
 const Index = () => {
   const navigate = useNavigate();
-
   const navigateToAdminLogin = () => {
     navigate('/admin-login');
   };
-
   const navigateToClientLogin = () => {
     navigate('/client-login');
   };
-
   const navigateToAdminRegistration = () => {
     navigate('/admin-registration');
   };
-
   const navigateToAdminRegistrationWithPlan = (plan: string) => {
-    navigate('/admin-registration', { state: { selectedPlan: plan } });
+    navigate('/admin-registration', {
+      state: {
+        selectedPlan: plan
+      }
+    });
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
+  return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -36,25 +32,14 @@ const Index = () => {
               <div className="bg-gradient-to-r from-blue-600 to-pink-600 rounded-lg p-2">
                 <Scissors className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">
-                BeautyFlow
-              </h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">Kiagenda</h1>
             </div>
             
             <div className="flex items-center space-x-2">
-              <Button 
-                onClick={navigateToAdminLogin}
-                variant="outline" 
-                size="sm"
-                className="hidden md:inline-flex"
-              >
+              <Button onClick={navigateToAdminLogin} variant="outline" size="sm" className="hidden md:inline-flex">
                 Loja
               </Button>
-              <Button 
-                onClick={navigateToClientLogin}
-                variant="outline" 
-                size="sm"
-              >
+              <Button onClick={navigateToClientLogin} variant="outline" size="sm">
                 Cliente
               </Button>
             </div>
@@ -75,11 +60,7 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              onClick={navigateToAdminRegistration}
-              size="lg" 
-              className="bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-            >
+            <Button onClick={navigateToAdminRegistration} size="lg" className="bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
               Começar Agora - Grátis
             </Button>
           </div>
@@ -160,11 +141,7 @@ const Index = () => {
                     <span>Relatórios Básicos</span>
                   </div>
                 </div>
-                <Button 
-                  onClick={() => navigateToAdminRegistrationWithPlan('bronze')}
-                  className="w-full mt-6"
-                  variant="outline"
-                >
+                <Button onClick={() => navigateToAdminRegistrationWithPlan('bronze')} className="w-full mt-6" variant="outline">
                   Escolher Bronze
                 </Button>
               </CardContent>
@@ -205,10 +182,7 @@ const Index = () => {
                     <span>Relatórios Completos</span>
                   </div>
                 </div>
-                <Button 
-                  onClick={() => navigateToAdminRegistrationWithPlan('prata')}
-                  className="w-full mt-6"
-                >
+                <Button onClick={() => navigateToAdminRegistrationWithPlan('prata')} className="w-full mt-6">
                   Escolher Prata
                 </Button>
               </CardContent>
@@ -246,11 +220,7 @@ const Index = () => {
                     <span>Suporte Prioritário</span>
                   </div>
                 </div>
-                <Button 
-                  onClick={() => navigateToAdminRegistrationWithPlan('gold')}
-                  className="w-full mt-6"
-                  variant="outline"
-                >
+                <Button onClick={() => navigateToAdminRegistrationWithPlan('gold')} className="w-full mt-6" variant="outline">
                   Escolher Ouro
                 </Button>
               </CardContent>
@@ -258,8 +228,6 @@ const Index = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
