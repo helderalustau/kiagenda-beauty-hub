@@ -1,57 +1,61 @@
 
 import React from 'react';
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Calendar, Users, Settings } from "lucide-react";
+import { BarChart3, Calendar, Wrench, Settings, DollarSign } from "lucide-react";
 
 const AdminDashboardTabs = () => {
   return (
-    <>
-      <div className="sm:hidden">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overview" className="text-xs">
-            <BarChart3 className="h-3 w-3 mr-1" />
-            Visão
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="text-xs">
-            <Calendar className="h-3 w-3 mr-1" />
-            Agenda
-          </TabsTrigger>
-        </TabsList>
-        <div className="mt-2">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="services" className="text-xs">
-              <Users className="h-3 w-3 mr-1" />
-              Serviços
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="text-xs">
-              <Settings className="h-3 w-3 mr-1" />
-              Config
-            </TabsTrigger>
-          </TabsList>
+    <TabsList className="grid w-full grid-cols-5 bg-white/80 backdrop-blur-sm p-1 rounded-xl h-auto shadow-lg">
+      <TabsTrigger 
+        value="overview" 
+        className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200 py-3"
+      >
+        <div className="flex flex-col items-center space-y-1">
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium hidden sm:inline">Visão Geral</span>
         </div>
-      </div>
-
-      <div className="hidden sm:block">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center space-x-2">
-            <BarChart3 className="h-4 w-4" />
-            <span>Visão Geral</span>
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
-            <span>Agenda</span>
-          </TabsTrigger>
-          <TabsTrigger value="services" className="flex items-center space-x-2">
-            <Users className="h-4 w-4" />
-            <span>Serviços</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <span>Configurações</span>
-          </TabsTrigger>
-        </TabsList>
-      </div>
-    </>
+      </TabsTrigger>
+      
+      <TabsTrigger 
+        value="calendar" 
+        className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200 py-3"
+      >
+        <div className="flex flex-col items-center space-y-1">
+          <Calendar className="h-5 w-5" />
+          <span className="text-sm font-medium hidden sm:inline">Agenda</span>
+        </div>
+      </TabsTrigger>
+      
+      <TabsTrigger 
+        value="financial" 
+        className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200 py-3"
+      >
+        <div className="flex flex-col items-center space-y-1">
+          <DollarSign className="h-5 w-5" />
+          <span className="text-sm font-medium hidden sm:inline">Financeiro</span>
+        </div>
+      </TabsTrigger>
+      
+      <TabsTrigger 
+        value="services" 
+        className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200 py-3"
+      >
+        <div className="flex flex-col items-center space-y-1">
+          <Wrench className="h-5 w-5" />
+          <span className="text-sm font-medium hidden sm:inline">Serviços</span>
+        </div>
+      </TabsTrigger>
+      
+      <TabsTrigger 
+        value="settings" 
+        className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200 py-3"
+      >
+        <div className="flex flex-col items-center space-y-1">
+          <Settings className="h-5 w-5" />
+          <span className="text-sm font-medium hidden sm:inline">Configurações</span>
+        </div>
+      </TabsTrigger>
+    </TabsList>
   );
 };
 

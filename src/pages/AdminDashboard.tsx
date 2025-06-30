@@ -9,6 +9,7 @@ import AdminDashboardHeader from '@/components/AdminDashboardHeader';
 import AdminDashboardTabs from '@/components/AdminDashboardTabs';
 import AdminDashboardContent from '@/components/AdminDashboardContent';
 import AppointmentNotification from '@/components/AppointmentNotification';
+import FloatingSupport from '@/components/admin/FloatingSupport';
 
 const AdminDashboard = () => {
   const {
@@ -101,6 +102,9 @@ const AdminDashboard = () => {
         onAccept={handleAcceptAppointment}
         onReject={handleRejectAppointment}
       />
+
+      {/* Suporte Flutuante */}
+      <FloatingSupport />
     </div>
   );
 };

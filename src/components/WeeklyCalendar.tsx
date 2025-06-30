@@ -2,7 +2,7 @@
 import React from 'react';
 import { Appointment } from '@/types/supabase-entities';
 import { useRealtimeAppointmentUpdates } from '@/hooks/useRealtimeAppointmentUpdates';
-import ModernAdminCalendarView from './admin/ModernAdminCalendarView';
+import WeeklyScheduleView from './admin/WeeklyScheduleView';
 import RealtimeBookingNotification from './admin/RealtimeBookingNotification';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useToast } from "@/hooks/use-toast";
@@ -16,21 +16,21 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   const { updateAppointmentStatus } = useAppointmentData();
   const { toast } = useToast();
 
-  // Pegar salon ID do localStorage
-  const getSalonId = () => {
+  // Pegar salon e admin data do localStorage
+  const getSalonData = () => {
     const adminAuth = localStorage.getItem('adminAuth');
     if (adminAuth) {
       try {
         const admin = JSON.parse(adminAuth);
-        return admin.salon_id;
+        return { salonId: admin.salon_id, salon: admin.salon };
       } catch (error) {
         console.error('Error parsing adminAuth:', error);
       }
     }
-    return null;
+    return { salonId: null, salon: null };
   };
 
-  const salonId = getSalonId();
+  const { salonId, salon } = getSalonData();
 
   // Setup realtime updates for salon appointments
   useRealtimeAppointmentUpdates({
@@ -66,10 +66,19 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
     }
   };
 
+  if (!salon) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">Carregando dados do estabelecimento...</p>
+      </div>
+    );
+  }
+
   return (
     <>
-      <ModernAdminCalendarView 
+      <WeeklyScheduleView 
         appointments={appointments}
+        salon={salon}
         onUpdateAppointment={handleUpdateAppointment}
         isUpdating={false}
       />

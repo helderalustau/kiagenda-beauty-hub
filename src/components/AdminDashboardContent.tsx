@@ -5,6 +5,7 @@ import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData'
 import DashboardStats from '@/components/DashboardStats';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
 import ActiveAppointmentsList from '@/components/admin/ActiveAppointmentsList';
+import FinancialDashboard from '@/components/admin/FinancialDashboard';
 import ServicesPage from '@/pages/ServicesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
@@ -73,6 +74,10 @@ const AdminDashboardContent = ({
           appointments={appointments}
           onRefresh={onRefresh}
         />
+      </TabsContent>
+
+      <TabsContent value="financial" className="space-y-4 sm:space-y-6">
+        <FinancialDashboard appointments={appointments} />
       </TabsContent>
 
       <TabsContent value="services" className="space-y-4 sm:space-y-6">
