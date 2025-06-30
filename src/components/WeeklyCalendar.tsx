@@ -2,7 +2,7 @@
 import React from 'react';
 import { Appointment } from '@/types/supabase-entities';
 import { useRealtimeAppointmentUpdates } from '@/hooks/useRealtimeAppointmentUpdates';
-import WeeklyScheduleView from './admin/WeeklyScheduleView';
+import ModernWeeklySchedule from './admin/calendar/ModernWeeklySchedule';
 import RealtimeBookingNotification from './admin/RealtimeBookingNotification';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useToast } from "@/hooks/use-toast";
@@ -76,7 +76,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
 
   return (
     <>
-      <WeeklyScheduleView 
+      <ModernWeeklySchedule 
         appointments={appointments}
         salon={salon}
         onUpdateAppointment={handleUpdateAppointment}

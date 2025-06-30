@@ -1,112 +1,55 @@
 
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from "@/components/ui/use-toast";
+export const useOpeningHours = () => {
+  const generateTimeSlots = (openingHours: any) => {
+    // Horário padrão se não houver configuração
+    const defaultHours = {
+      start: '08:00',
+      end: '18:00'
+    };
 
-interface DaySchedule {
-  open: string;
-  close: string;
-  closed: boolean;
-}
+    // Extrair horários (assumindo que openingHours tem formato similar)
+    let startTime = defaultHours.start;
+    let endTime = defaultHours.end;
 
-// Modificado para ser compatível com Json do Supabase
-interface OpeningHours {
-  [key: string]: DaySchedule;
-  monday: DaySchedule;
-  tuesday: DaySchedule;
-  wednesday: DaySchedule;
-  thursday: DaySchedule;
-  friday: DaySchedule;
-  saturday: DaySchedule;
-  sunday: DaySchedule;
-}
-
-export const useOpeningHours = (salonId: string, initialHours?: OpeningHours) => {
-  const { toast } = useToast();
-  const [openingHours, setOpeningHours] = useState<OpeningHours>(
-    initialHours || {
-      monday: { open: '09:00', close: '18:00', closed: false },
-      tuesday: { open: '09:00', close: '18:00', closed: false },
-      wednesday: { open: '09:00', close: '18:00', closed: false },
-      thursday: { open: '09:00', close: '18:00', closed: false },
-      friday: { open: '09:00', close: '18:00', closed: false },
-      saturday: { open: '09:00', close: '16:00', closed: false },
-      sunday: { open: '09:00', close: '16:00', closed: true }
-    }
-  );
-  const [hasChanges, setHasChanges] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const updateDaySchedule = useCallback((day: keyof OpeningHours, field: keyof DaySchedule, value: string | boolean) => {
-    setOpeningHours(prev => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [field]: value
+    if (openingHours && typeof openingHours === 'object') {
+      // Tentar extrair horários do primeiro dia disponível
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      for (const day of days) {
+        if (openingHours[day] && !openingHours[day].closed) {
+          startTime = openingHours[day].open || startTime;
+          endTime = openingHours[day].close || endTime;
+          break;
+        }
       }
-    }));
-    setHasChanges(true);
-  }, []);
-
-  const saveOpeningHours = useCallback(async () => {
-    if (!salonId || !hasChanges) return { success: true };
-
-    setSaving(true);
-    try {
-      console.log('Salvando horários de funcionamento:', openingHours);
-
-      const { error } = await supabase
-        .from('salons')
-        .update({ 
-          opening_hours: openingHours as any, // Cast explícito para Json
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', salonId);
-
-      if (error) {
-        console.error('Erro ao salvar horários:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao salvar horários de funcionamento",
-          variant: "destructive"
-        });
-        return { success: false, error };
-      }
-
-      setHasChanges(false);
-      toast({
-        title: "Sucesso",
-        description: "Horários de funcionamento salvos com sucesso",
-      });
-
-      console.log('Horários salvos com sucesso');
-      return { success: true };
-    } catch (error) {
-      console.error('Erro ao salvar horários:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar horários de funcionamento",
-        variant: "destructive"
-      });
-      return { success: false, error };
-    } finally {
-      setSaving(false);
     }
-  }, [salonId, openingHours, hasChanges, toast]);
 
-  const resetChanges = useCallback(() => {
-    if (initialHours) {
-      setOpeningHours(initialHours);
+    const slots: string[] = [];
+    const start = parseTime(startTime);
+    const end = parseTime(endTime);
+
+    let current = start;
+    while (current < end) {
+      slots.push(formatTime(current));
+      current += 30; // Incrementar 30 minutos
     }
-    setHasChanges(false);
-  }, [initialHours]);
+
+    return slots;
+  };
+
+  const parseTime = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const formatTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
 
   return {
-    openingHours,
-    hasChanges,
-    saving,
-    updateDaySchedule,
-    saveOpeningHours,
-    resetChanges
+    generateTimeSlots,
+    parseTime,
+    formatTime
   };
 };
