@@ -43,6 +43,7 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
 
   const [openingHours, setOpeningHours] = useState<OpeningHours>(() => {
     if (initialHours && typeof initialHours === 'object') {
+      console.log('useOpeningHours - Initializing with hours:', initialHours);
       return { ...defaultOpeningHours, ...initialHours };
     }
     return defaultOpeningHours;
@@ -52,6 +53,7 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
 
   useEffect(() => {
     if (initialHours && typeof initialHours === 'object') {
+      console.log('useOpeningHours - Updating hours from props:', initialHours);
       const newHours = { ...defaultOpeningHours, ...initialHours };
       setOpeningHours(newHours);
       setOriginalHours(newHours);
@@ -59,6 +61,7 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
   }, [initialHours]);
 
   const updateDaySchedule = (day: keyof OpeningHours, field: keyof DaySchedule, value: string | boolean) => {
+    console.log('useOpeningHours - Updating day schedule:', day, field, value);
     setOpeningHours(prev => ({
       ...prev,
       [day]: {
@@ -71,10 +74,13 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
 
   const saveOpeningHours = async () => {
     if (!salonId) {
+      console.error('useOpeningHours - No salon ID provided');
       return { success: false, message: 'ID do estabelecimento não fornecido' };
     }
 
+    console.log('useOpeningHours - Saving hours for salon:', salonId);
     setSaving(true);
+    
     try {
       const result = await updateSalon({
         id: salonId,
@@ -84,12 +90,14 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
       if (result.success) {
         setOriginalHours(openingHours);
         setHasChanges(false);
+        console.log('useOpeningHours - Hours saved successfully');
         toast({
           title: "✅ Horários Salvos!",
           description: "Horários de funcionamento atualizados com sucesso!"
         });
         return { success: true };
       } else {
+        console.error('useOpeningHours - Error saving hours:', result.message);
         toast({
           title: "Erro",
           description: result.message || "Erro ao salvar horários",
@@ -98,7 +106,7 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
         return { success: false, message: result.message };
       }
     } catch (error) {
-      console.error('Error saving opening hours:', error);
+      console.error('useOpeningHours - Exception saving hours:', error);
       toast({
         title: "Erro",
         description: "Erro interno ao salvar horários",
@@ -111,12 +119,15 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
   };
 
   const resetChanges = () => {
+    console.log('useOpeningHours - Resetting changes');
     setOpeningHours(originalHours);
     setHasChanges(false);
   };
 
   const generateTimeSlots = (openingHours: any) => {
-    // Horário padrão se não houver configuração
+    console.log('useOpeningHours - Generating time slots for:', openingHours);
+    
+    // Horário padrão se não houver configuração válida
     const defaultHours = {
       start: '08:00',
       end: '18:00'
@@ -133,6 +144,7 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
         if (openingHours[day] && !openingHours[day].closed) {
           startTime = openingHours[day].open || startTime;
           endTime = openingHours[day].close || endTime;
+          console.log(`useOpeningHours - Using ${day} schedule: ${startTime} - ${endTime}`);
           break;
         }
       }
@@ -142,12 +154,15 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
     const start = parseTime(startTime);
     const end = parseTime(endTime);
 
+    console.log(`useOpeningHours - Generating slots from ${startTime} (${start}min) to ${endTime} (${end}min)`);
+
     let current = start;
     while (current < end) {
       slots.push(formatTime(current));
       current += 30; // Incrementar 30 minutos
     }
 
+    console.log(`useOpeningHours - Generated ${slots.length} time slots:`, slots);
     return slots;
   };
 

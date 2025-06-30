@@ -16,13 +16,18 @@ export const useAvailableTimeSlots = (
   const isCurrentlyFetching = useRef(false);
 
   const fetchAvailableSlots = useCallback(async () => {
-    console.log('🔍 fetchAvailableSlots called with:', { salonId, selectedDate: selectedDate?.toDateString(), serviceId });
+    console.log('🔍 fetchAvailableSlots called with:', { 
+      salonId, 
+      selectedDate: selectedDate?.toDateString(), 
+      serviceId 
+    });
 
     // Early validation
     if (!salonId || !selectedDate) {
       console.log('❌ Missing required parameters for time slots');
       setAvailableSlots([]);
       setLoading(false);
+      setError(null);
       return;
     }
 
@@ -55,8 +60,25 @@ export const useAvailableTimeSlots = (
 
       if (rpcError) {
         console.error('❌ RPC Error fetching time slots:', rpcError);
-        setError(rpcError.message || 'Erro ao buscar horários');
-        setAvailableSlots([]);
+        
+        // Fallback: tentar buscar horários básicos do salão
+        console.log('🔄 Attempting fallback time slot generation');
+        
+        const { data: salonData, error: salonError } = await supabase
+          .from('salons')
+          .select('opening_hours')
+          .eq('id', salonId)
+          .single();
+          
+        if (!salonError && salonData?.opening_hours) {
+          const fallbackSlots = generateFallbackTimeSlots(salonData.opening_hours, selectedDate);
+          console.log('✅ Fallback slots generated:', fallbackSlots);
+          setAvailableSlots(fallbackSlots);
+          setError('Horários carregados em modo básico');
+        } else {
+          setError(rpcError.message || 'Erro ao buscar horários');
+          setAvailableSlots([]);
+        }
       } else {
         const slots = data?.map((slot: { time_slot: string }) => slot.time_slot) || [];
         console.log('✅ Time slots received:', slots);
@@ -72,6 +94,45 @@ export const useAvailableTimeSlots = (
       isCurrentlyFetching.current = false;
     }
   }, [salonId, selectedDate, serviceId]);
+
+  // Generate fallback time slots when RPC fails
+  const generateFallbackTimeSlots = (openingHours: any, date: Date) => {
+    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
+    const daySchedule = openingHours[dayOfWeek];
+    
+    if (!daySchedule || daySchedule.closed === true) {
+      return [];
+    }
+    
+    const slots: string[] = [];
+    const [openHour, openMinute] = (daySchedule.open || '08:00').split(':').map(Number);
+    const [closeHour, closeMinute] = (daySchedule.close || '18:00').split(':').map(Number);
+    
+    const openTimeInMinutes = openHour * 60 + openMinute;
+    const closeTimeInMinutes = closeHour * 60 + closeMinute;
+    
+    // Gerar slots a cada 30 minutos
+    for (let time = openTimeInMinutes; time < closeTimeInMinutes; time += 30) {
+      const hour = Math.floor(time / 60);
+      const minute = time % 60;
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      
+      // Se é hoje, só mostrar horários futuros (com margem de 1 hora)
+      if (date.toDateString() === new Date().toDateString()) {
+        const now = new Date();
+        const slotTime = new Date();
+        slotTime.setHours(hour, minute, 0, 0);
+        
+        if (slotTime > new Date(now.getTime() + 60 * 60 * 1000)) {
+          slots.push(timeString);
+        }
+      } else {
+        slots.push(timeString);
+      }
+    }
+    
+    return slots;
+  };
 
   // Single useEffect with proper dependency management
   useEffect(() => {

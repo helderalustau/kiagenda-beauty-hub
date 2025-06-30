@@ -27,19 +27,30 @@ const ModernWeeklySchedule = ({
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const { generateTimeSlots } = useOpeningHours();
 
+  console.log('ModernWeeklySchedule - Rendering with:', {
+    appointmentsCount: appointments.length,
+    salonName: salon.name,
+    openingHours: salon.opening_hours
+  });
+
   // Gerar os dias da semana atual
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 }); // Começa no domingo
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   // Gerar horários disponíveis baseado no horário de funcionamento
   const timeSlots = generateTimeSlots(salon.opening_hours || {});
+  console.log('ModernWeeklySchedule - Generated time slots:', timeSlots);
 
   // Organizar agendamentos por data e horário
   const appointmentsByDateTime = appointments.reduce((acc, appointment) => {
-    const dateKey = format(new Date(appointment.appointment_date), 'yyyy-MM-dd');
-    const timeKey = appointment.appointment_time;
-    const key = `${dateKey}-${timeKey}`;
-    acc[key] = appointment;
+    try {
+      const dateKey = format(new Date(appointment.appointment_date), 'yyyy-MM-dd');
+      const timeKey = appointment.appointment_time;
+      const key = `${dateKey}-${timeKey}`;
+      acc[key] = appointment;
+    } catch (error) {
+      console.error('Error processing appointment:', appointment, error);
+    }
     return acc;
   }, {} as Record<string, Appointment>);
 
@@ -87,17 +98,51 @@ const ModernWeeklySchedule = ({
     }
   };
 
-  // Helper function to get service name from appointment
+  // Helper function to safely get service name from appointment
   const getServiceName = (appointment: Appointment) => {
-    // Try to get from service relation or fallback to a default
-    return (appointment as any).service_name || (appointment as any).services?.name || 'Serviço';
+    // Try different possible paths for service name
+    if ((appointment as any).service?.name) {
+      return (appointment as any).service.name;
+    }
+    if ((appointment as any).services?.name) {
+      return (appointment as any).services.name;
+    }
+    if ((appointment as any).service_name) {
+      return (appointment as any).service_name;
+    }
+    return 'Serviço';
   };
 
-  // Helper function to get client name from appointment
+  // Helper function to safely get client name from appointment
   const getClientName = (appointment: Appointment) => {
-    // Try to get from client relation or fallback to a default
-    return (appointment as any).client_name || (appointment as any).client_auth?.name || 'Cliente';
+    // Try different possible paths for client name
+    if ((appointment as any).client?.name) {
+      return (appointment as any).client.name;
+    }
+    if ((appointment as any).client_auth?.name) {
+      return (appointment as any).client_auth.name;
+    }
+    if ((appointment as any).client_name) {
+      return (appointment as any).client_name;
+    }
+    return 'Cliente';
   };
+
+  // Verificar se temos horários válidos
+  if (timeSlots.length === 0) {
+    console.warn('ModernWeeklySchedule - No time slots generated');
+    return (
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-600">Nenhum horário de funcionamento configurado.</p>
+            <p className="text-gray-500 text-sm mt-2">Configure os horários de funcionamento do estabelecimento.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (viewMode === 'day' && selectedDay) {
     return (
@@ -250,7 +295,7 @@ const ModernWeeklySchedule = ({
                           <div className="space-y-1">
                             <div className="font-medium truncate">{getServiceName(appointment)}</div>
                             <div className="text-gray-600 truncate">{getClientName(appointment)}</div>
-                            <Badge className={getStatusColor(appointment.status)}>
+                            <Badge className={`text-xs ${getStatusColor(appointment.status)}`}>
                               {getStatusText(appointment.status)}
                             </Badge>
                           </div>

@@ -22,6 +22,7 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
     if (adminAuth) {
       try {
         const admin = JSON.parse(adminAuth);
+        console.log('WeeklyCalendar - Admin data:', admin);
         return { salonId: admin.salon_id, salon: admin.salon };
       } catch (error) {
         console.error('Error parsing adminAuth:', error);
@@ -40,6 +41,8 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
 
   const handleUpdateAppointment = async (appointmentId: string, updates: { status: string; notes?: string }) => {
     try {
+      console.log('WeeklyCalendar - Updating appointment:', appointmentId, updates);
+      
       const result = await updateAppointmentStatus(appointmentId, updates.status as any);
       
       if (result.success) {
@@ -66,13 +69,28 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
     }
   };
 
-  if (!salon) {
+  // Verificar se temos dados válidos do salon
+  if (!salonId) {
+    console.error('WeeklyCalendar - No salon ID found');
     return (
       <div className="text-center py-8">
+        <p className="text-red-600">Erro: Dados do estabelecimento não encontrados.</p>
+        <p className="text-gray-600 text-sm mt-2">Faça login novamente no painel administrativo.</p>
+      </div>
+    );
+  }
+
+  if (!salon) {
+    console.log('WeeklyCalendar - No salon data, showing loading state');
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
         <p className="text-gray-600">Carregando dados do estabelecimento...</p>
       </div>
     );
   }
+
+  console.log('WeeklyCalendar - Rendering with salon:', salon.name, 'appointments:', appointments.length);
 
   return (
     <>

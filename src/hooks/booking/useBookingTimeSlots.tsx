@@ -11,7 +11,7 @@ export const useBookingTimeSlots = (salon: Salon) => {
 
   // Gerar horários disponíveis - função melhorada
   const generateTimeSlots = useCallback((date: Date) => {
-    console.log('🕒 Generating time slots for:', date.toDateString());
+    console.log('🕒 Generating time slots for:', date.toDateString(), 'salon:', salon.name);
     
     if (!salon?.opening_hours || !date) {
       console.log('❌ Missing salon opening hours or date');
@@ -47,23 +47,39 @@ export const useBookingTimeSlots = (salon: Salon) => {
     
     console.log(`✅ Generated ${slots.length} time slots:`, slots);
     return slots;
-  }, [salon?.opening_hours]);
+  }, [salon?.opening_hours, salon?.name]);
 
   // Carregar horários disponíveis - função corrigida
   const loadAvailableTimes = useCallback(async (date: Date) => {
     if (!salon?.id || !date) {
-      console.log('❌ Missing salon ID or date');
+      console.log('❌ Missing salon ID or date for loadAvailableTimes');
       setAvailableTimes([]);
       return;
     }
 
-    console.log('🔍 Loading available times for:', date.toDateString());
+    console.log('🔍 Loading available times for:', date.toDateString(), 'salon:', salon.name);
     setLoadingTimes(true);
     
     try {
       const dateString = date.toISOString().split('T')[0];
       
-      // Gerar todos os slots possíveis primeiro
+      // Primeiro, tentar usar a função RPC do Supabase
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_available_time_slots', {
+        p_salon_id: salon.id,
+        p_date: dateString,
+        p_service_id: null
+      });
+
+      if (!rpcError && rpcData) {
+        const slots = rpcData.map((slot: { time_slot: string }) => slot.time_slot);
+        console.log('✅ RPC returned available slots:', slots);
+        setAvailableTimes(slots);
+        return;
+      }
+
+      console.log('⚠️ RPC failed or returned no data, using fallback method');
+      
+      // Fallback: gerar todos os slots possíveis primeiro
       const allSlots = generateTimeSlots(date);
       console.log('📋 All possible slots:', allSlots);
       
@@ -136,7 +152,7 @@ export const useBookingTimeSlots = (salon: Salon) => {
     } finally {
       setLoadingTimes(false);
     }
-  }, [salon?.id, generateTimeSlots, toast]);
+  }, [salon?.id, salon?.name, generateTimeSlots, toast]);
 
   return {
     availableTimes,
