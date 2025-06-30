@@ -90,7 +90,9 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
       const updatedSalon: Salon = {
         ...salon,
         ...updateData,
-        plan: salon.plan as 'bronze' | 'prata' | 'gold' // Garantir que o tipo está correto
+        plan: (salon.plan === 'bronze' || salon.plan === 'prata' || salon.plan === 'gold') 
+          ? salon.plan 
+          : 'bronze' // Default fallback
       };
 
       const result = await updateSalon(updatedSalon);
