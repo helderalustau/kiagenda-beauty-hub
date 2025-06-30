@@ -87,6 +87,18 @@ const ModernWeeklySchedule = ({
     }
   };
 
+  // Helper function to get service name from appointment
+  const getServiceName = (appointment: Appointment) => {
+    // Try to get from service relation or fallback to a default
+    return (appointment as any).service_name || (appointment as any).services?.name || 'Serviço';
+  };
+
+  // Helper function to get client name from appointment
+  const getClientName = (appointment: Appointment) => {
+    // Try to get from client relation or fallback to a default
+    return (appointment as any).client_name || (appointment as any).client_auth?.name || 'Cliente';
+  };
+
   if (viewMode === 'day' && selectedDay) {
     return (
       <Card className="w-full">
@@ -123,8 +135,8 @@ const ModernWeeklySchedule = ({
                   <div className="flex-1 ml-4">
                     {appointment ? (
                       <div className="space-y-1">
-                        <div className="font-medium">{appointment.service_name}</div>
-                        <div className="text-sm text-gray-600">{appointment.client_name}</div>
+                        <div className="font-medium">{getServiceName(appointment)}</div>
+                        <div className="text-sm text-gray-600">{getClientName(appointment)}</div>
                         <div className="flex items-center space-x-2">
                           <Badge className={getStatusColor(appointment.status)}>
                             {getStatusText(appointment.status)}
@@ -236,9 +248,9 @@ const ModernWeeklySchedule = ({
                       >
                         {appointment && (
                           <div className="space-y-1">
-                            <div className="font-medium truncate">{appointment.service_name}</div>
-                            <div className="text-gray-600 truncate">{appointment.client_name}</div>
-                            <Badge size="sm" className={getStatusColor(appointment.status)}>
+                            <div className="font-medium truncate">{getServiceName(appointment)}</div>
+                            <div className="text-gray-600 truncate">{getClientName(appointment)}</div>
+                            <Badge className={getStatusColor(appointment.status)}>
                               {getStatusText(appointment.status)}
                             </Badge>
                           </div>

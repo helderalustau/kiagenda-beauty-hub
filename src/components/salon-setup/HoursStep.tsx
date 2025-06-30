@@ -29,7 +29,7 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
     updateDaySchedule,
     saveOpeningHours,
     resetChanges
-  } = useOpeningHours(salonId || '', formData.opening_hours);
+  } = useOpeningHours(salonId, formData.opening_hours);
 
   const getDayName = (day: string) => {
     const names: { [key: string]: string } = {

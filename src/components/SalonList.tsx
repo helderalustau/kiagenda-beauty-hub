@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Clock, CheckCircle, XCircle, Star } from "lucide-react";
+import { MapPin, Phone, Clock, CheckCircle, XCircle, Star, Calendar } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
 
