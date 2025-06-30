@@ -58,6 +58,7 @@ const ClientDashboard = () => {
   console.log('ClientDashboard - All appointments:', appointments);
   console.log('ClientDashboard - Active appointments:', activeAppointments);
   console.log('ClientDashboard - Completed appointments:', completedAppointments);
+  console.log('ClientDashboard - Available salons:', salons?.length || 0);
 
   if (loading && !isRefreshing) {
     return <ClientDashboardLoading />;
@@ -93,7 +94,7 @@ const ClientDashboard = () => {
           </div>
         ) : (
           <ClientDashboardContent
-            salons={salons}
+            salons={salons || []}
             onBookService={handleBookService}
             activeAppointments={activeAppointments}
             completedAppointments={completedAppointments}

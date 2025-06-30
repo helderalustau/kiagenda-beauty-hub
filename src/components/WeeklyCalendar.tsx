@@ -23,7 +23,17 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
       try {
         const admin = JSON.parse(adminAuth);
         console.log('WeeklyCalendar - Admin data:', admin);
-        return { salonId: admin.salon_id, salon: admin.salon };
+        // Verificar se temos dados mínimos necessários
+        if (admin.salon_id) {
+          return { 
+            salonId: admin.salon_id, 
+            salon: admin.salon || { 
+              id: admin.salon_id, 
+              name: admin.salon_name || 'Meu Estabelecimento',
+              opening_hours: admin.opening_hours || {}
+            }
+          };
+        }
       } catch (error) {
         console.error('Error parsing adminAuth:', error);
       }
@@ -80,17 +90,8 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
     );
   }
 
-  if (!salon) {
-    console.log('WeeklyCalendar - No salon data, showing loading state');
-    return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Carregando dados do estabelecimento...</p>
-      </div>
-    );
-  }
-
-  console.log('WeeklyCalendar - Rendering with salon:', salon.name, 'appointments:', appointments.length);
+  // Sempre renderizar com dados disponíveis, mesmo que salon seja básico
+  console.log('WeeklyCalendar - Rendering with salon:', salon?.name, 'appointments:', appointments.length);
 
   return (
     <>

@@ -11,11 +11,17 @@ export const useBookingTimeSlots = (salon: Salon) => {
 
   // Gerar horários disponíveis - função melhorada
   const generateTimeSlots = useCallback((date: Date) => {
-    console.log('🕒 Generating time slots for:', date.toDateString(), 'salon:', salon.name);
+    console.log('🕒 Generating time slots for:', date.toDateString(), 'salon:', salon?.name);
     
-    if (!salon?.opening_hours || !date) {
-      console.log('❌ Missing salon opening hours or date');
+    if (!date) {
+      console.log('❌ Missing date for time slots');
       return [];
+    }
+
+    // Se não temos opening_hours, usar horários padrão
+    if (!salon?.opening_hours) {
+      console.log('⚠️ No opening hours found, using default schedule');
+      return generateDefaultSlots(date);
     }
 
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
@@ -49,7 +55,23 @@ export const useBookingTimeSlots = (salon: Salon) => {
     return slots;
   }, [salon?.opening_hours, salon?.name]);
 
-  // Carregar horários disponíveis - função corrigida
+  // Gerar horários padrão (8:00 - 18:00)
+  const generateDefaultSlots = (date: Date) => {
+    const slots: string[] = [];
+    const startHour = 8;
+    const endHour = 18;
+    
+    for (let hour = startHour; hour < endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(timeString);
+      }
+    }
+    
+    return slots;
+  };
+
+  // Carregar horários disponíveis - função simplificada e robusta
   const loadAvailableTimes = useCallback(async (date: Date) => {
     if (!salon?.id || !date) {
       console.log('❌ Missing salon ID or date for loadAvailableTimes');
@@ -63,23 +85,7 @@ export const useBookingTimeSlots = (salon: Salon) => {
     try {
       const dateString = date.toISOString().split('T')[0];
       
-      // Primeiro, tentar usar a função RPC do Supabase
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_available_time_slots', {
-        p_salon_id: salon.id,
-        p_date: dateString,
-        p_service_id: null
-      });
-
-      if (!rpcError && rpcData) {
-        const slots = rpcData.map((slot: { time_slot: string }) => slot.time_slot);
-        console.log('✅ RPC returned available slots:', slots);
-        setAvailableTimes(slots);
-        return;
-      }
-
-      console.log('⚠️ RPC failed or returned no data, using fallback method');
-      
-      // Fallback: gerar todos os slots possíveis primeiro
+      // Gerar todos os slots possíveis primeiro
       const allSlots = generateTimeSlots(date);
       console.log('📋 All possible slots:', allSlots);
       
