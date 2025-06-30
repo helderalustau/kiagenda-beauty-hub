@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
-import { Salon } from '@/hooks/useSupabaseData';
+import { Salon } from '@/types/supabase-entities';
 import SalonBannerManager from '@/components/SalonBannerManager';
 
 interface SalonConfigurationFormProps {
@@ -86,7 +86,14 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
         contact_phone: formData.contact_phone ? extractPhoneNumbers(formData.contact_phone) : null
       };
 
-      const result = await updateSalon(salon.id, updateData);
+      // Criar objeto salon atualizado mantendo os campos obrigatórios
+      const updatedSalon: Salon = {
+        ...salon,
+        ...updateData,
+        plan: salon.plan as 'bronze' | 'prata' | 'gold' // Garantir que o tipo está correto
+      };
+
+      const result = await updateSalon(updatedSalon);
       
       if (result.success && result.salon) {
         toast({
