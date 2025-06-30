@@ -86,24 +86,32 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
         contact_phone: formData.contact_phone ? extractPhoneNumbers(formData.contact_phone) : null
       };
 
-      // Criar objeto salon atualizado mantendo os campos obrigatórios
-      const updatedSalon: Salon = {
-        ...salon,
-        ...updateData,
-        plan: (salon.plan === 'bronze' || salon.plan === 'prata' || salon.plan === 'gold') 
-          ? salon.plan 
-          : 'bronze' // Default fallback
+      // Garantir que o plan mantenha o tipo correto
+      const validPlan = (salon.plan === 'bronze' || salon.plan === 'prata' || salon.plan === 'gold') 
+        ? salon.plan 
+        : 'bronze' as const;
+
+      // Criar objeto de atualização sem o plan (mantemos o original)
+      const salonUpdateData = {
+        id: salon.id,
+        ...updateData
       };
 
-      const result = await updateSalon(updatedSalon);
+      const result = await updateSalon(salonUpdateData);
       
       if (result.success && result.salon) {
+        // Criar salon atualizado mantendo o plan correto
+        const updatedSalonWithPlan: Salon = {
+          ...result.salon,
+          plan: validPlan
+        };
+
         toast({
           title: "Sucesso",
           description: "Configurações atualizadas com sucesso!"
         });
         
-        await onSalonChange(result.salon);
+        await onSalonChange(updatedSalonWithPlan);
       } else {
         toast({
           title: "Erro",

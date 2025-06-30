@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Salon } from '@/types/supabase-entities';
 
 export const useSalonUpdate = () => {
-  const updateSalon = async (salonData: any) => {
+  const updateSalon = async (salonData: Partial<Salon> & { id: string }) => {
     try {
       const { data, error } = await supabase
         .from('salons')
