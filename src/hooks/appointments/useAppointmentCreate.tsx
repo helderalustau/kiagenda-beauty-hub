@@ -7,14 +7,14 @@ export const useAppointmentCreate = () => {
   const [loading, setLoading] = useState(false);
   const { normalizeAppointment } = useAppointmentTypes();
 
-  // Create appointment - VERSÃO CORRIGIDA
+  // Create appointment - VERSÃO CORRIGIDA FINAL
   const createAppointment = async (appointmentData: any) => {
     try {
-      console.log('Creating appointment with data:', appointmentData);
+      console.log('🚀 Creating appointment with data:', appointmentData);
       setLoading(true);
       
       // Validação rigorosa dos dados obrigatórios
-      const requiredFields = ['salon_id', 'service_id', 'appointment_date', 'appointment_time', 'clientName', 'clientPhone'];
+      const requiredFields = ['salon_id', 'service_id', 'appointment_date', 'appointment_time'];
       const missingFields = requiredFields.filter(field => !appointmentData[field]);
       
       if (missingFields.length > 0) {
@@ -33,24 +33,63 @@ export const useAppointmentCreate = () => {
         throw new Error('Formato de horário inválido. Use HH:MM');
       }
 
-      // Buscar cliente existente na tabela client_auth
-      console.log('Getting client from client_auth...');
-      const { data: clientAuth, error: clientError } = await supabase
-        .from('client_auth')
-        .select('*')
-        .eq('phone', appointmentData.clientPhone.replace(/\D/g, ''))
-        .single();
+      // Obter client_auth_id diretamente dos dados ou do appointmentData
+      let clientAuthId = appointmentData.client_auth_id;
       
-      if (clientError || !clientAuth) {
-        throw new Error('Cliente não encontrado. Faça login primeiro.');
+      // Se não temos client_auth_id, tentar buscar pelos dados do cliente
+      if (!clientAuthId && (appointmentData.clientPhone || appointmentData.clientName)) {
+        console.log('🔍 Buscando cliente pelos dados fornecidos...');
+        
+        let clientQuery = supabase.from('client_auth').select('*');
+        
+        if (appointmentData.clientPhone) {
+          const cleanPhone = appointmentData.clientPhone.replace(/\D/g, '');
+          clientQuery = clientQuery.eq('phone', cleanPhone);
+        } else if (appointmentData.clientName) {
+          clientQuery = clientQuery.eq('name', appointmentData.clientName);
+        }
+        
+        const { data: clientAuth, error: clientError } = await clientQuery.single();
+        
+        if (clientError || !clientAuth) {
+          throw new Error('Cliente não encontrado. Verifique os dados ou faça login primeiro.');
+        }
+        
+        clientAuthId = clientAuth.id;
+        console.log('✅ Cliente encontrado:', clientAuth);
       }
 
-      console.log('Client processed:', clientAuth);
+      if (!clientAuthId) {
+        throw new Error('ID do cliente não fornecido. Faça login primeiro.');
+      }
 
-      // Preparar dados do agendamento
+      // Verificar se o salão existe
+      const { data: salon, error: salonError } = await supabase
+        .from('salons')
+        .select('id')
+        .eq('id', appointmentData.salon_id)
+        .single();
+
+      if (salonError || !salon) {
+        throw new Error('Estabelecimento não encontrado');
+      }
+
+      // Verificar se o serviço existe
+      const { data: service, error: serviceError } = await supabase
+        .from('services')
+        .select('id')
+        .eq('id', appointmentData.service_id)
+        .eq('salon_id', appointmentData.salon_id)
+        .single();
+
+      if (serviceError || !service) {
+        throw new Error('Serviço não encontrado');
+      }
+
+      // Preparar dados do agendamento com todas as foreign keys válidas
       const insertData = {
         salon_id: appointmentData.salon_id,
-        client_auth_id: clientAuth.id, // Usar client_auth_id
+        client_auth_id: clientAuthId,
         service_id: appointmentData.service_id,
         appointment_date: appointmentData.appointment_date,
         appointment_time: appointmentData.appointment_time,
@@ -59,7 +98,7 @@ export const useAppointmentCreate = () => {
         user_id: appointmentData.user_id || null
       };
 
-      console.log('Inserting appointment data:', insertData);
+      console.log('📝 Inserting appointment data:', insertData);
 
       // Criar agendamento
       const { data, error } = await supabase
@@ -74,11 +113,23 @@ export const useAppointmentCreate = () => {
         .single();
 
       if (error) {
-        console.error('Database error creating appointment:', error);
+        console.error('❌ Database error creating appointment:', error);
+        
+        // Erros específicos mais amigáveis
+        if (error.code === '23503') {
+          if (error.message.includes('salon_id')) {
+            throw new Error('Estabelecimento não encontrado');
+          } else if (error.message.includes('service_id')) {
+            throw new Error('Serviço não encontrado');
+          } else if (error.message.includes('client_auth_id')) {
+            throw new Error('Cliente não encontrado. Faça login primeiro.');
+          }
+        }
+        
         throw error;
       }
 
-      console.log('Appointment created successfully:', data);
+      console.log('✅ Appointment created successfully:', data);
       
       // Normalizar dados do agendamento
       const normalizedAppointment = normalizeAppointment(data);
@@ -89,7 +140,7 @@ export const useAppointmentCreate = () => {
         message: `Agendamento criado para ${appointmentData.appointment_date} às ${appointmentData.appointment_time}`
       };
     } catch (error) {
-      console.error('Error in createAppointment:', error);
+      console.error('❌ Error in createAppointment:', error);
       return { 
         success: false, 
         message: error instanceof Error ? error.message : 'Erro ao criar agendamento'

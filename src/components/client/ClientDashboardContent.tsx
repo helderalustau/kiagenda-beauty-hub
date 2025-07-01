@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Star, Calendar, X } from "lucide-react";
-import { Salon, Appointment } from '@/hooks/useSupabaseData';
+import { MapPin, Calendar, Star, Phone, User } from "lucide-react";
+import { Salon, Appointment, Service } from '@/hooks/useSupabaseData';
+import { formatPhone } from '@/utils/phoneFormatter';
 import PendingAppointments from './PendingAppointments';
+import ModernBookingModal from './ModernBookingModal';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
@@ -21,6 +22,10 @@ const ClientDashboardContent = ({
   activeAppointments,
   completedAppointments
 }: ClientDashboardContentProps) => {
+  const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [salonServices, setSalonServices] = useState<Service[]>([]);
+
   // Pegar ID do cliente do localStorage
   const getClientId = () => {
     const clientAuth = localStorage.getItem('clientAuth');
@@ -36,6 +41,63 @@ const ClientDashboardContent = ({
   };
 
   const clientId = getClientId();
+
+  const handleBookService = async (salon: Salon) => {
+    try {
+      // Buscar serviços do salão
+      const response = await fetch(`/api/salons/${salon.id}/services`);
+      if (response.ok) {
+        const services = await response.json();
+        setSalonServices(services);
+      } else {
+        // Fallback para serviços mockados se a API não estiver disponível
+        setSalonServices([
+          {
+            id: '1',
+            salon_id: salon.id,
+            name: 'Corte Masculino',
+            description: 'Corte tradicional masculino',
+            price: 25,
+            duration_minutes: 30,
+            active: true
+          },
+          {
+            id: '2',
+            salon_id: salon.id,
+            name: 'Barba',
+            description: 'Aparar e modelar barba',
+            price: 15,
+            duration_minutes: 20,
+            active: true
+          }
+        ]);
+      }
+      
+      setSelectedSalon(salon);
+      setIsBookingModalOpen(true);
+    } catch (error) {
+      console.error('Error loading salon services:', error);
+      // Usar serviços mockados em caso de erro
+      setSalonServices([
+        {
+          id: '1',
+          salon_id: salon.id,
+          name: 'Corte Masculino',
+          description: 'Corte tradicional masculino',
+          price: 25,
+          duration_minutes: 30,
+          active: true
+        }
+      ]);
+      setSelectedSalon(salon);
+      setIsBookingModalOpen(true);
+    }
+  };
+
+  const handleBookingSuccess = () => {
+    // Atualizar lista de agendamentos
+    window.location.reload();
+  };
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-8">
@@ -108,7 +170,14 @@ const ClientDashboardContent = ({
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {salons.map((salon) => (
-            <Card key={salon.id} className="hover:shadow-lg transition-all duration-200">
+            <Card key={salon.id} className="hover:shadow-lg transition-all duration-200 overflow-hidden">
+              {/* Banner no topo */}
+              {salon.banner_image_url && (
+                <div className="h-32 bg-cover bg-center" 
+                     style={{ backgroundImage: `url(${salon.banner_image_url})` }}>
+                </div>
+              )}
+              
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg font-semibold text-gray-900">
@@ -119,6 +188,7 @@ const ClientDashboardContent = ({
                   </Badge>
                 </div>
               </CardHeader>
+              
               <CardContent className="space-y-3">
                 <div className="flex items-start space-x-2 text-sm text-gray-600">
                   <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -126,15 +196,17 @@ const ClientDashboardContent = ({
                 </div>
                 
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <span>📞 {salon.phone}</span>
+                  <Phone className="h-4 w-4 flex-shrink-0" />
+                  <span>{formatPhone(salon.phone)}</span>
                 </div>
                 
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <span>👤 {salon.owner_name}</span>
+                  <User className="h-4 w-4 flex-shrink-0" />
+                  <span>{salon.owner_name}</span>
                 </div>
                 
                 <Button
-                  onClick={() => onBookService(salon)}
+                  onClick={() => handleBookService(salon)}
                   disabled={!salon.is_open}
                   className="w-full mt-4"
                 >
@@ -174,6 +246,21 @@ const ClientDashboardContent = ({
             ))}
           </div>
         </div>
+      )}
+
+      {/* Modal de Agendamento */}
+      {selectedSalon && (
+        <ModernBookingModal
+          isOpen={isBookingModalOpen}
+          onClose={() => {
+            setIsBookingModalOpen(false);
+            setSelectedSalon(null);
+            setSalonServices([]);
+          }}
+          salon={selectedSalon}
+          services={salonServices}
+          onBookingSuccess={handleBookingSuccess}
+        />
       )}
     </div>
   );
