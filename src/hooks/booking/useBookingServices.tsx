@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Service } from '@/hooks/useSupabaseData';
@@ -8,22 +8,28 @@ export const useBookingServices = (salonId: string) => {
   const { toast } = useToast();
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Memoizar salon ID para evitar re-renders desnecessários
+  const memoizedSalonId = useMemo(() => salonId, [salonId]);
 
   const loadServices = useCallback(async () => {
-    if (!salonId) {
+    if (!memoizedSalonId) {
       console.log('useBookingServices - No salon ID provided');
+      setServices([]);
       return;
     }
     
     setLoadingServices(true);
-    console.log('useBookingServices - Loading services for salon:', salonId);
+    setError(null);
+    console.log('useBookingServices - Loading services for salon:', memoizedSalonId);
     
     try {
       const { data, error } = await supabase
         .from('services')
         .select('*')
-        .eq('salon_id', salonId)
-        .eq('active', true)
+        .eq('salon_id', memoizedSalonId)
+        .eq('active', true) // Apenas serviços ativos
         .order('name');
 
       if (error) {
@@ -34,26 +40,34 @@ export const useBookingServices = (salonId: string) => {
       console.log('useBookingServices - Services loaded:', data?.length || 0, 'services');
       console.log('useBookingServices - Services data:', data);
       
-      setServices(data || []);
+      const activeServices = (data || []).filter(service => service.active === true);
+      console.log('useBookingServices - Active services filtered:', activeServices.length);
+      
+      setServices(activeServices);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar serviços';
       console.error('Erro ao carregar serviços:', error);
+      setError(errorMessage);
+      
       toast({
         title: "Erro",
-        description: "Erro ao carregar serviços",
+        description: "Erro ao carregar serviços do estabelecimento",
         variant: "destructive"
       });
+      
       setServices([]);
     } finally {
       setLoadingServices(false);
     }
-  }, [salonId, toast]);
+  }, [memoizedSalonId, toast]);
 
   // Carregar serviços automaticamente quando o salonId muda
   useEffect(() => {
-    if (salonId) {
+    if (memoizedSalonId) {
+      console.log('useBookingServices - Auto-loading services for salon change:', memoizedSalonId);
       loadServices();
     }
-  }, [salonId, loadServices]);
+  }, [memoizedSalonId, loadServices]);
 
   // Compatibility alias for existing modal hooks
   const loadSalonServices = loadServices;
@@ -61,7 +75,9 @@ export const useBookingServices = (salonId: string) => {
   return {
     services,
     loadingServices,
+    error,
     loadServices,
-    loadSalonServices // Compatibility alias
+    loadSalonServices, // Compatibility alias
+    refreshServices: loadServices
   };
 };

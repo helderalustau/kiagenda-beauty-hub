@@ -37,6 +37,10 @@ const SimpleServiceSelectionStep = ({
     allServices: services
   });
 
+  // Filter only active services
+  const activeServices = services.filter(service => service.active === true);
+  console.log('SimpleServiceSelectionStep - Active services:', activeServices.length);
+
   if (loadingServices) {
     return (
       <div className="text-center py-8">
@@ -73,12 +77,21 @@ const SimpleServiceSelectionStep = ({
       {services.length === 0 ? (
         <div className="text-center py-8">
           <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum serviço cadastrado</h3>
+          <p className="text-gray-600">Este estabelecimento ainda não possui serviços cadastrados.</p>
+        </div>
+      ) : activeServices.length === 0 ? (
+        <div className="text-center py-8">
+          <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum serviço disponível</h3>
           <p className="text-gray-600">Este estabelecimento não possui serviços ativos no momento.</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Total: {services.length} serviços | Ativos: {activeServices.length}
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
-          {services.map((service) => (
+          {activeServices.map((service) => (
             <Card
               key={service.id}
               className={`cursor-pointer transition-all duration-200 hover:shadow-md ${

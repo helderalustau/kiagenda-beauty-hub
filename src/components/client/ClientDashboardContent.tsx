@@ -7,7 +7,7 @@ import { MapPin, Calendar, Star, Phone, User } from "lucide-react";
 import { Salon, Appointment, Service } from '@/hooks/useSupabaseData';
 import { formatPhone } from '@/utils/phoneFormatter';
 import PendingAppointments from './PendingAppointments';
-import ModernBookingModal from './ModernBookingModal';
+import SimpleBookingModal from './SimpleBookingModal';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
@@ -24,7 +24,6 @@ const ClientDashboardContent = ({
 }: ClientDashboardContentProps) => {
   const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [salonServices, setSalonServices] = useState<Service[]>([]);
 
   // Pegar ID do cliente do localStorage
   const getClientId = () => {
@@ -43,60 +42,21 @@ const ClientDashboardContent = ({
   const clientId = getClientId();
 
   const handleBookService = async (salon: Salon) => {
-    try {
-      // Buscar serviços do salão
-      const response = await fetch(`/api/salons/${salon.id}/services`);
-      if (response.ok) {
-        const services = await response.json();
-        setSalonServices(services);
-      } else {
-        // Fallback para serviços mockados se a API não estiver disponível
-        setSalonServices([
-          {
-            id: '1',
-            salon_id: salon.id,
-            name: 'Corte Masculino',
-            description: 'Corte tradicional masculino',
-            price: 25,
-            duration_minutes: 30,
-            active: true
-          },
-          {
-            id: '2',
-            salon_id: salon.id,
-            name: 'Barba',
-            description: 'Aparar e modelar barba',
-            price: 15,
-            duration_minutes: 20,
-            active: true
-          }
-        ]);
-      }
-      
-      setSelectedSalon(salon);
-      setIsBookingModalOpen(true);
-    } catch (error) {
-      console.error('Error loading salon services:', error);
-      // Usar serviços mockados em caso de erro
-      setSalonServices([
-        {
-          id: '1',
-          salon_id: salon.id,
-          name: 'Corte Masculino',
-          description: 'Corte tradicional masculino',
-          price: 25,
-          duration_minutes: 30,
-          active: true
-        }
-      ]);
-      setSelectedSalon(salon);
-      setIsBookingModalOpen(true);
-    }
+    console.log('🏪 Opening booking modal for salon:', salon.name, 'ID:', salon.id);
+    setSelectedSalon(salon);
+    setIsBookingModalOpen(true);
   };
 
   const handleBookingSuccess = () => {
+    console.log('✅ Booking successful, refreshing page');
     // Atualizar lista de agendamentos
     window.location.reload();
+  };
+
+  const handleCloseModal = () => {
+    console.log('🚪 Closing booking modal');
+    setIsBookingModalOpen(false);
+    setSelectedSalon(null);
   };
 
   return (
@@ -171,7 +131,7 @@ const ClientDashboardContent = ({
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {salons.map((salon) => (
             <Card key={salon.id} className="hover:shadow-lg transition-all duration-200 overflow-hidden">
-              {/* Banner no topo */}
+              {/* Banner no topo do card */}
               {salon.banner_image_url && (
                 <div className="h-32 bg-cover bg-center" 
                      style={{ backgroundImage: `url(${salon.banner_image_url})` }}>
@@ -248,17 +208,12 @@ const ClientDashboardContent = ({
         </div>
       )}
 
-      {/* Modal de Agendamento */}
+      {/* Modal de Agendamento Simplificado */}
       {selectedSalon && (
-        <ModernBookingModal
+        <SimpleBookingModal
           isOpen={isBookingModalOpen}
-          onClose={() => {
-            setIsBookingModalOpen(false);
-            setSelectedSalon(null);
-            setSalonServices([]);
-          }}
+          onClose={handleCloseModal}
           salon={selectedSalon}
-          services={salonServices}
           onBookingSuccess={handleBookingSuccess}
         />
       )}

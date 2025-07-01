@@ -1,5 +1,5 @@
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import { Salon } from '@/hooks/useSupabaseData';
 import { useBookingState } from '@/hooks/booking/useBookingState';
 import { useBookingServices } from '@/hooks/booking/useBookingServices';
@@ -7,10 +7,10 @@ import { useBookingSubmission } from '@/hooks/booking/useBookingSubmission';
 import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
 
 export const useSimpleBooking = (salon: Salon) => {
-  console.log('🏪 useSimpleBooking initialized for salon:', salon?.name);
+  console.log('🏪 useSimpleBooking initialized for salon:', salon?.name, 'ID:', salon?.id);
   
   const bookingState = useBookingState();
-  const { services, loadingServices, loadServices } = useBookingServices(salon?.id);
+  const { services, loadingServices, error: servicesError, refreshServices } = useBookingServices(salon?.id);
   const { isSubmitting, submitBooking: submitBookingBase } = useBookingSubmission(salon?.id);
   
   // Prevent unnecessary re-renders with stable salon ID
@@ -29,24 +29,41 @@ export const useSimpleBooking = (salon: Salon) => {
   );
 
   // Debug logs
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('📊 Booking state update:', {
+      salonId,
+      salonName: salon?.name,
       selectedService: bookingState.selectedService?.name,
       selectedDate: bookingState.selectedDate?.toDateString(),
       selectedTime: bookingState.selectedTime,
+      servicesCount: services?.length || 0,
       availableSlotsCount: availableSlots?.length || 0,
+      loadingServices,
       loadingTimes,
+      servicesError,
       timeSlotsError
     });
-  }, [bookingState.selectedService, bookingState.selectedDate, bookingState.selectedTime, availableSlots, loadingTimes, timeSlotsError]);
+  }, [
+    salonId, 
+    salon?.name,
+    bookingState.selectedService, 
+    bookingState.selectedDate, 
+    bookingState.selectedTime, 
+    services,
+    availableSlots, 
+    loadingServices,
+    loadingTimes, 
+    servicesError,
+    timeSlotsError
+  ]);
 
-  // Load services when salon changes
-  React.useEffect(() => {
-    if (salonId && !services.length && !loadingServices) {
-      console.log('🔄 Loading services for salon:', salon?.name);
-      loadServices();
+  // Force refresh services when salon changes
+  useEffect(() => {
+    if (salonId && (!services.length || servicesError)) {
+      console.log('🔄 Force refreshing services for salon:', salon?.name);
+      refreshServices();
     }
-  }, [salonId, services.length, loadingServices, loadServices, salon?.name]);
+  }, [salonId, services.length, servicesError, refreshServices, salon?.name]);
 
   // Handle date selection with validation
   const handleDateSelect = useCallback((date: Date | undefined) => {
@@ -74,7 +91,7 @@ export const useSimpleBooking = (salon: Salon) => {
 
   // Handle service selection
   const handleServiceSelect = useCallback((service: any) => {
-    console.log('🛍️ Service selected:', service?.name);
+    console.log('🛍️ Service selected:', service?.name, 'ID:', service?.id);
     bookingState.setSelectedService(service);
     
     // Reset time when service changes (different services may have different availability)
@@ -143,6 +160,14 @@ export const useSimpleBooking = (salon: Salon) => {
     return success;
   }, [submitBookingBase, bookingState, isSubmitting]);
 
+  // Format currency
+  const formatCurrency = useCallback((value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  }, []);
+
   return {
     // States
     ...bookingState,
@@ -150,6 +175,7 @@ export const useSimpleBooking = (salon: Salon) => {
     // Services
     services,
     loadingServices,
+    servicesError,
     
     // Time slots
     availableTimes: availableSlots || [],
@@ -166,6 +192,8 @@ export const useSimpleBooking = (salon: Salon) => {
     submitBooking: handleSubmitBooking,
     
     // Utilities
-    refetchSlots
+    refetchSlots,
+    refreshServices,
+    formatCurrency
   };
 };

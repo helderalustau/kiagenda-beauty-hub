@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Service, PresetService } from '@/types/supabase-entities';
 
@@ -8,8 +8,8 @@ export const useServiceFetch = () => {
   const [presetServices, setPresetServices] = useState<PresetService[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch salon services with better error handling
-  const fetchSalonServices = async (salonId: string): Promise<Service[]> => {
+  // Fetch salon services with better error handling and filtering
+  const fetchSalonServices = useCallback(async (salonId: string): Promise<Service[]> => {
     try {
       setLoading(true);
       console.log('useServiceFetch - Fetching services for salon ID:', salonId);
@@ -41,7 +41,8 @@ export const useServiceFetch = () => {
           id: service.id,
           name: service.name,
           active: service.active,
-          salon_id: service.salon_id
+          salon_id: service.salon_id,
+          price: service.price
         });
       });
       
@@ -54,10 +55,10 @@ export const useServiceFetch = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch preset services
-  const fetchPresetServices = async (): Promise<PresetService[]> => {
+  const fetchPresetServices = useCallback(async (): Promise<PresetService[]> => {
     try {
       setLoading(true);
       console.log('useServiceFetch - Fetching preset services...');
@@ -84,7 +85,7 @@ export const useServiceFetch = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     services,
