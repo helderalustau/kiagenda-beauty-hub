@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,10 +14,12 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
+  const [lastCheck, setLastCheck] = useState<number>(0);
   const { toast } = useToast();
 
   const AUTHORIZED_SUPER_ADMIN = 'Helder';
-  const SUPER_ADMIN_PASSWORD = 'Hd@123@@'; // This should be moved to environment variables in production
+  const SUPER_ADMIN_PASSWORD = 'Hd@123@@';
+  const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutos em vez de 30 segundos
 
   const logSecurityEvent = async (event: string, details: any) => {
     try {
@@ -28,7 +30,7 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
           action: event,
           table_name: 'admin_auth',
           new_values: details,
-          ip_address: null, // Could be enhanced to capture real IP
+          ip_address: null,
           user_agent: navigator.userAgent,
           created_at: new Date().toISOString()
         });
@@ -37,7 +39,14 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
     }
   };
 
-  const checkAccess = async (): Promise<boolean> => {
+  const checkAccess = useCallback(async (): Promise<boolean> => {
+    const now = Date.now();
+    
+    // Evitar verificações muito frequentes (cache por 5 minutos)
+    if (now - lastCheck < CHECK_INTERVAL && isAuthorized) {
+      return isAuthorized;
+    }
+
     try {
       setIsLoading(true);
       
@@ -48,6 +57,7 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
         await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { reason: 'No admin auth' });
         setIsAuthorized(false);
         setUser(null);
+        setLastCheck(now);
         return false;
       }
 
@@ -59,37 +69,25 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
         await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { reason: 'Invalid admin data format' });
         setIsAuthorized(false);
         setUser(null);
+        setLastCheck(now);
         return false;
       }
 
-      console.log('SuperAdmin Auth: Checking admin data:', adminData.name);
-
-      // Verify name
-      if (adminData.name !== AUTHORIZED_SUPER_ADMIN) {
+      // Verify name and role
+      if (adminData.name !== AUTHORIZED_SUPER_ADMIN || adminData.role !== 'super_admin') {
         console.log(`SuperAdmin Auth: Access denied for user: ${adminData.name}`);
         await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { 
-          reason: 'Unauthorized user', 
-          user: adminData.name 
-        });
-        setIsAuthorized(false);
-        setUser(null);
-        return false;
-      }
-
-      // Verify role
-      if (adminData.role !== 'super_admin') {
-        console.log('SuperAdmin Auth: User does not have super_admin role');
-        await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { 
-          reason: 'Invalid role', 
+          reason: 'Unauthorized user or invalid role', 
           user: adminData.name,
           role: adminData.role 
         });
         setIsAuthorized(false);
         setUser(null);
+        setLastCheck(now);
         return false;
       }
 
-      // Database validation with secure password check
+      // Database validation apenas se necessário
       try {
         const { data: adminRecord, error } = await supabase
           .from('admin_auth')
@@ -98,51 +96,28 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
           .eq('role', 'super_admin')
           .single();
 
-        if (error) {
-          if (error.code === 'PGRST116') {
-            console.log('SuperAdmin Auth: No super admin record found in database');
-          } else {
-            console.error('SuperAdmin Auth: Database query error:', error);
-          }
+        if (error || !adminRecord) {
+          console.log('SuperAdmin Auth: Database validation failed');
           await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { 
             reason: 'Database validation failed',
-            error: error.message 
+            error: error?.message 
           });
           setIsAuthorized(false);
           setUser(null);
+          setLastCheck(now);
           return false;
         }
 
-        if (!adminRecord) {
-          console.log('SuperAdmin Auth: No matching admin record found');
-          await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { reason: 'No matching admin record' });
-          setIsAuthorized(false);
-          setUser(null);
-          return false;
-        }
-
-        // Enhanced password validation - check both hash and plaintext during migration
+        // Password validation simplificada
         let isPasswordValid = false;
         if (adminRecord.password_hash) {
-          // Use secure hash verification
           const { data: verifyResult } = await supabase.rpc('verify_password', {
             password: SUPER_ADMIN_PASSWORD,
             hash: adminRecord.password_hash
           });
           isPasswordValid = verifyResult;
         } else if (adminRecord.password === SUPER_ADMIN_PASSWORD) {
-          // Fallback for migration period
           isPasswordValid = true;
-          // Hash the password for future use
-          const { data: hashedPassword } = await supabase.rpc('hash_password', {
-            password: SUPER_ADMIN_PASSWORD
-          });
-          if (hashedPassword) {
-            await supabase
-              .from('admin_auth')
-              .update({ password_hash: hashedPassword })
-              .eq('id', adminRecord.id);
-          }
         }
 
         if (!isPasswordValid) {
@@ -153,51 +128,47 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
           });
           setIsAuthorized(false);
           setUser(null);
+          setLastCheck(now);
           return false;
         }
 
-        console.log('SuperAdmin Auth: All validations passed for Helder');
+        console.log('SuperAdmin Auth: Access granted');
         await logSecurityEvent('SUPER_ADMIN_ACCESS_GRANTED', { 
           user: AUTHORIZED_SUPER_ADMIN,
           timestamp: new Date().toISOString()
         });
         setIsAuthorized(true);
         setUser(adminRecord);
+        setLastCheck(now);
         return true;
 
       } catch (dbError) {
         console.error('SuperAdmin Auth: Database connection error:', dbError);
-        await logSecurityEvent('SUPER_ADMIN_ACCESS_ERROR', { 
-          reason: 'Database connection error',
-          error: dbError instanceof Error ? dbError.message : 'Unknown error'
-        });
         setIsAuthorized(false);
         setUser(null);
+        setLastCheck(now);
         return false;
       }
 
     } catch (error) {
-      console.error('SuperAdmin Auth: Unexpected error during validation:', error);
-      await logSecurityEvent('SUPER_ADMIN_ACCESS_ERROR', { 
-        reason: 'Unexpected error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
+      console.error('SuperAdmin Auth: Unexpected error:', error);
       setIsAuthorized(false);
       setUser(null);
+      setLastCheck(now);
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthorized, lastCheck]);
 
-  const showUnauthorizedMessage = () => {
+  const showUnauthorizedMessage = useCallback(() => {
     toast({
       title: "Acesso Negado",
-      description: "Você não tem permissão para acessar esta área. Apenas o Super Administrador tem acesso.",
+      description: "Você não tem permissão para acessar esta área.",
       variant: "destructive",
       duration: 5000
     });
-  };
+  }, [toast]);
 
   useEffect(() => {
     const validateAccess = async () => {
@@ -209,11 +180,11 @@ export const useSuperAdminAuth = (): SuperAdminAuthResult => {
 
     validateAccess();
 
-    // Enhanced security: re-validate every 30 seconds
-    const interval = setInterval(validateAccess, 30000);
+    // Verificação menos frequente
+    const interval = setInterval(validateAccess, CHECK_INTERVAL);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [checkAccess, showUnauthorizedMessage]);
 
   return {
     isAuthorized,

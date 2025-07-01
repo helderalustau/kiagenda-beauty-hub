@@ -22,8 +22,8 @@ export const useBookingClientData = (
   // Auto-preencher dados do cliente logado apenas uma vez
   useEffect(() => {
     const loadClientData = async () => {
-      if (user && !hasAutoFilled.current && !clientData.name) {
-        console.log('Auto-filling client data from logged user (once):', user);
+      if (user && !hasAutoFilled.current && (!clientData.name || !clientData.phone)) {
+        console.log('Auto-filling client data from logged user:', user);
         
         try {
           // Buscar dados do cliente na tabela client_auth pelo ID do usuário logado
@@ -39,44 +39,22 @@ export const useBookingClientData = (
             hasAutoFilled.current = true;
             
             setClientData({
-              name: clientAuthData.username || clientAuthData.name || '',
+              name: clientAuthData.username || clientAuthData.name || user.name || '',
               phone: formatPhoneNumber(clientAuthData.phone || ''),
               email: clientAuthData.email || '',
               notes: clientData.notes || ''
             });
           } else {
-            console.log('No client auth data found for user ID, trying by username');
+            console.log('No client auth data found, using user data');
             
-            // Fallback: buscar pelo username como antes
-            const { data: clientAuthByUsername, error: usernameError } = await supabase
-              .from('client_auth')
-              .select('username, name, phone, email')
-              .eq('username', user.name)
-              .single();
-
-            if (!usernameError && clientAuthByUsername) {
-              console.log('Found client auth data by username:', clientAuthByUsername);
-              
-              hasAutoFilled.current = true;
-              
-              setClientData({
-                name: clientAuthByUsername.username || clientAuthByUsername.name || '',
-                phone: formatPhoneNumber(clientAuthByUsername.phone || ''),
-                email: clientAuthByUsername.email || '',
-                notes: clientData.notes || ''
-              });
-            } else {
-              console.log('No client auth data found, using only name from user');
-              
-              hasAutoFilled.current = true;
-              
-              setClientData({
-                name: user.name || '',
-                phone: '',
-                email: '',
-                notes: clientData.notes || ''
-              });
-            }
+            hasAutoFilled.current = true;
+            
+            setClientData({
+              name: user.name || '',
+              phone: formatPhoneNumber(''),
+              email: '',
+              notes: clientData.notes || ''
+            });
           }
         } catch (error) {
           console.error('Error loading client auth data:', error);
@@ -86,7 +64,7 @@ export const useBookingClientData = (
           
           setClientData({
             name: user.name || '',
-            phone: '',
+            phone: formatPhoneNumber(''),
             email: '',
             notes: clientData.notes || ''
           });
@@ -95,9 +73,9 @@ export const useBookingClientData = (
     };
 
     loadClientData();
-  }, [user, clientData.name, setClientData, formatPhoneNumber]);
+  }, [user, setClientData, formatPhoneNumber, clientData.notes]);
 
-  // Reset do flag quando o modal for fechado (clientData limpo)
+  // Reset do flag quando o modal for fechado
   useEffect(() => {
     if (!clientData.name && !clientData.phone && hasAutoFilled.current) {
       hasAutoFilled.current = false;
