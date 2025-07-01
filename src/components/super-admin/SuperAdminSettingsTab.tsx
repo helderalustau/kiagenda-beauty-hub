@@ -6,7 +6,7 @@ import SuperAdminSupportSettings from './SuperAdminSupportSettings';
 
 interface SuperAdminSettingsTabProps {
   planConfigurations: PlanConfiguration[];
-  onRefreshPlanConfigurations: () => void;
+  onRefreshPlanConfigurations: () => Promise<void>; // Fix: Make it return Promise<void>
 }
 
 const SuperAdminSettingsTab = ({ 

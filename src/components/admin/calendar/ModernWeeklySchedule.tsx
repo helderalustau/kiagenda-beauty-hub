@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,30 +65,7 @@ const ModernWeeklySchedule = ({
     return acc;
   }, {} as Record<string, Appointment>);
 
-  const handlePreviousWeek = () => {
-    setCurrentWeek(prev => subWeeks(prev, 1));
-  };
-
-  const handleNextWeek = () => {
-    setCurrentWeek(prev => addWeeks(prev, 1));
-  };
-
-  const handleDayClick = (day: Date) => {
-    setSelectedDay(day);
-    setViewMode('day');
-  };
-
-  const handleBackToWeek = () => {
-    setViewMode('week');
-    setSelectedDay(null);
-  };
-
-  const getAppointmentForSlot = (day: Date, timeSlot: string) => {
-    const dateKey = format(day, 'yyyy-MM-dd');
-    const key = `${dateKey}-${timeSlot}`;
-    return appointmentsByDateTime[key];
-  };
-
+  // Helper functions - moved to top level to avoid duplicates
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -136,6 +114,30 @@ const ModernWeeklySchedule = ({
       return (appointment as any).client_name;
     }
     return 'Cliente';
+  };
+
+  const handlePreviousWeek = () => {
+    setCurrentWeek(prev => subWeeks(prev, 1));
+  };
+
+  const handleNextWeek = () => {
+    setCurrentWeek(prev => addWeeks(prev, 1));
+  };
+
+  const handleDayClick = (day: Date) => {
+    setSelectedDay(day);
+    setViewMode('day');
+  };
+
+  const handleBackToWeek = () => {
+    setViewMode('week');
+    setSelectedDay(null);
+  };
+
+  const getAppointmentForSlot = (day: Date, timeSlot: string) => {
+    const dateKey = format(day, 'yyyy-MM-dd');
+    const key = `${dateKey}-${timeSlot}`;
+    return appointmentsByDateTime[key];
   };
 
   // Verificar se temos horários válidos
@@ -322,53 +324,6 @@ const ModernWeeklySchedule = ({
       </CardContent>
     </Card>
   );
-
-  // Helper functions
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'confirmed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  }
-
-  function getStatusText(status: string) {
-    switch (status) {
-      case 'pending': return 'Pendente';
-      case 'confirmed': return 'Confirmado';
-      case 'completed': return 'Concluído';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
-    }
-  }
-
-  function getServiceName(appointment: Appointment) {
-    if ((appointment as any).service?.name) {
-      return (appointment as any).service.name;
-    }
-    if ((appointment as any).services?.name) {
-      return (appointment as any).services.name;
-    }
-    if ((appointment as any).service_name) {
-      return (appointment as any).service_name;
-    }
-    return 'Serviço';
-  }
-
-  function getClientName(appointment: Appointment) {
-    if ((appointment as any).client?.name) {
-      return (appointment as any).client.name;
-    }
-    if ((appointment as any).client_auth?.name) {
-      return (appointment as any).client_auth.name;
-    }
-    if ((appointment as any).client_name) {
-      return (appointment as any).client_name;
-    }
-    return 'Cliente';
-  }
 };
 
 export default ModernWeeklySchedule;

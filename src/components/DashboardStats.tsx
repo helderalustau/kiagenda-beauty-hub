@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,9 +42,9 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
 
   const pendingAppointments = appointments.filter(apt => apt.status === 'pending').length;
 
-  // Calculate plan usage
+  // Calculate plan usage - fix the 'active' property issue
   const maxAttendants = salon.max_attendants || 1;
-  const currentAttendants = adminUsers.filter(user => user.active).length;
+  const currentAttendants = adminUsers.length; // Remove the .active filter since it doesn't exist
   const usagePercentage = Math.round((currentAttendants / maxAttendants) * 100);
 
   const getPlanInfo = (plan: string) => {
