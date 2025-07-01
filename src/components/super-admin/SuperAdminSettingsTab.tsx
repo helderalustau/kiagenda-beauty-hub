@@ -29,7 +29,7 @@ const SuperAdminSettingsTab = ({
         
         <div className="md:col-span-2">
           <PlanConfigurationManager 
-            planConfigurations={planConfigurations}
+            configurations={planConfigurations}
             onRefresh={onRefreshPlanConfigurations}
           />
         </div>
