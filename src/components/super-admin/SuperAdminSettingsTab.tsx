@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import PlanConfigurationManager from '@/components/PlanConfigurationManager';
 import { PlanConfiguration } from '@/hooks/useSupabaseData';
+import PlanConfigurationManager from '@/components/PlanConfigurationManager';
+import SuperAdminSupportSettings from './SuperAdminSupportSettings';
 
 interface SuperAdminSettingsTabProps {
   planConfigurations: PlanConfiguration[];
-  onRefreshPlanConfigurations: () => Promise<void>;
+  onRefreshPlanConfigurations: () => void;
 }
 
 const SuperAdminSettingsTab = ({ 
@@ -19,25 +19,21 @@ const SuperAdminSettingsTab = ({
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
           Configurações do Sistema
         </h2>
-        <p className="text-lg text-gray-600 mb-6">
-          Configure as opções globais do sistema
+        <p className="text-lg text-gray-600">
+          Gerencie as configurações globais do sistema
         </p>
       </div>
-      
-      <Card className="bg-white/80 backdrop-blur-sm border-0">
-        <CardHeader>
-          <CardTitle>Configurações de Planos</CardTitle>
-          <CardDescription>
-            Edite os valores, nomes e descrições dos planos de assinatura
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <SuperAdminSupportSettings />
+        
+        <div className="md:col-span-2">
           <PlanConfigurationManager 
-            configurations={planConfigurations}
+            planConfigurations={planConfigurations}
             onRefresh={onRefreshPlanConfigurations}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

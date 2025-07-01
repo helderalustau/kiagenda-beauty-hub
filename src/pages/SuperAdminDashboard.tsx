@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, Users, Settings } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
@@ -30,12 +30,29 @@ const SuperAdminDashboard = () => {
     handleBackToHome
   } = useSuperAdminActions();
 
+  // Memoize the data loading functions to prevent unnecessary re-renders
+  const loadInitialData = useCallback(() => {
+    console.log('SuperAdminDashboard - Loading initial data...');
+    Promise.all([
+      fetchAllSalons(),
+      fetchDashboardStats(),
+      fetchPlanConfigurations()
+    ]).then(() => {
+      console.log('SuperAdminDashboard - Initial data loaded');
+    }).catch(error => {
+      console.error('SuperAdminDashboard - Error loading initial data:', error);
+    });
+  }, [fetchAllSalons, fetchDashboardStats, fetchPlanConfigurations]);
+
+  // Load data only once on mount
   useEffect(() => {
-    console.log('SuperAdminDashboard - Carregando dados iniciais...');
-    fetchAllSalons();
-    fetchDashboardStats();
-    fetchPlanConfigurations();
-  }, []);
+    loadInitialData();
+  }, []); // Remove dependencies to prevent re-loading
+
+  // Memoize the dashboard stats and salons to prevent unnecessary re-renders
+  const memoizedStats = useMemo(() => dashboardStats, [dashboardStats]);
+  const memoizedSalons = useMemo(() => salons, [salons]);
+  const memoizedPlanConfigurations = useMemo(() => planConfigurations, [planConfigurations]);
 
   const DashboardContent = () => {
     if (loading && !salons.length) {
@@ -76,7 +93,7 @@ const SuperAdminDashboard = () => {
 
             <TabsContent value="overview">
               <SuperAdminOverviewTab 
-                dashboardStats={dashboardStats}
+                dashboardStats={memoizedStats}
                 loading={loading}
                 onRefresh={handleRefresh}
               />
@@ -84,7 +101,7 @@ const SuperAdminDashboard = () => {
 
             <TabsContent value="salons">
               <SuperAdminSalonsTab 
-                salons={salons}
+                salons={memoizedSalons}
                 loading={loading}
                 onRefresh={handleRefresh}
                 onCreateSalon={handleCreateSalon}
@@ -94,7 +111,7 @@ const SuperAdminDashboard = () => {
 
             <TabsContent value="settings">
               <SuperAdminSettingsTab 
-                planConfigurations={planConfigurations}
+                planConfigurations={memoizedPlanConfigurations}
                 onRefreshPlanConfigurations={fetchPlanConfigurations}
               />
             </TabsContent>

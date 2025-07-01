@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,17 @@ const ModernWeeklySchedule = ({
     openingHours: salon.opening_hours
   });
 
+  // Filter appointments to show confirmed and pending ones for admin view
+  const visibleAppointments = appointments.filter(appointment => 
+    ['confirmed', 'pending'].includes(appointment.status)
+  );
+
+  console.log('ModernWeeklySchedule - Filtered appointments:', {
+    total: appointments.length,
+    visible: visibleAppointments.length,
+    statuses: appointments.map(a => a.status)
+  });
+
   // Gerar os dias da semana atual
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 }); // Começa no domingo
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -42,7 +52,7 @@ const ModernWeeklySchedule = ({
   console.log('ModernWeeklySchedule - Generated time slots:', timeSlots);
 
   // Organizar agendamentos por data e horário
-  const appointmentsByDateTime = appointments.reduce((acc, appointment) => {
+  const appointmentsByDateTime = visibleAppointments.reduce((acc, appointment) => {
     try {
       const dateKey = format(new Date(appointment.appointment_date), 'yyyy-MM-dd');
       const timeKey = appointment.appointment_time;
@@ -162,7 +172,7 @@ const ModernWeeklySchedule = ({
         <CardContent>
           <div className="space-y-2">
             {timeSlots.map((timeSlot) => {
-              const appointment = getAppointmentForSlot(selectedDay, timeSlot);
+              const appointment = appointmentsByDateTime[`${format(selectedDay, 'yyyy-MM-dd')}-${timeSlot}`];
               
               return (
                 <div 
@@ -227,7 +237,7 @@ const ModernWeeklySchedule = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
             <Calendar className="h-5 w-5" />
-            <span>Agenda Semanal</span>
+            <span>Agenda Semanal - Agendamentos Confirmados</span>
           </CardTitle>
           
           <div className="flex items-center space-x-2">
@@ -280,7 +290,8 @@ const ModernWeeklySchedule = ({
                   </div>
                   
                   {weekDays.map((day) => {
-                    const appointment = getAppointmentForSlot(day, timeSlot);
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    const appointment = appointmentsByDateTime[`${dateKey}-${timeSlot}`];
                     
                     return (
                       <div 
@@ -311,6 +322,53 @@ const ModernWeeklySchedule = ({
       </CardContent>
     </Card>
   );
+
+  // Helper functions
+  function getStatusColor(status: string) {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'confirmed': return 'bg-green-100 text-green-800 border-green-200';
+      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  }
+
+  function getStatusText(status: string) {
+    switch (status) {
+      case 'pending': return 'Pendente';
+      case 'confirmed': return 'Confirmado';
+      case 'completed': return 'Concluído';
+      case 'cancelled': return 'Cancelado';
+      default: return status;
+    }
+  }
+
+  function getServiceName(appointment: Appointment) {
+    if ((appointment as any).service?.name) {
+      return (appointment as any).service.name;
+    }
+    if ((appointment as any).services?.name) {
+      return (appointment as any).services.name;
+    }
+    if ((appointment as any).service_name) {
+      return (appointment as any).service_name;
+    }
+    return 'Serviço';
+  }
+
+  function getClientName(appointment: Appointment) {
+    if ((appointment as any).client?.name) {
+      return (appointment as any).client.name;
+    }
+    if ((appointment as any).client_auth?.name) {
+      return (appointment as any).client_auth.name;
+    }
+    if ((appointment as any).client_name) {
+      return (appointment as any).client_name;
+    }
+    return 'Cliente';
+  }
 };
 
 export default ModernWeeklySchedule;
