@@ -3,17 +3,28 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Clock, List } from "lucide-react";
 import { format, addWeeks, subWeeks, startOfWeek, addDays, isSameDay, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment, Salon } from '@/types/supabase-entities';
 import { useOpeningHours } from '@/hooks/useOpeningHours';
+import AppointmentDetailsModal from '../AppointmentDetailsModal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ModernWeeklyScheduleProps {
   appointments: Appointment[];
   salon: Salon;
   onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => void;
   isUpdating: boolean;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  price: number;
+  duration_minutes: number;
+  active: boolean;
+  description?: string;
 }
 
 const ModernWeeklySchedule = ({ 
@@ -25,7 +36,34 @@ const ModernWeeklySchedule = ({
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
   const { generateTimeSlots } = useOpeningHours();
+
+  // Carregar serviços do salão
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .eq('salon_id', salon.id)
+          .eq('active', true)
+          .order('name');
+
+        if (!error && data) {
+          setServices(data);
+        }
+      } catch (error) {
+        console.error('Error loading services:', error);
+      }
+    };
+
+    if (salon?.id) {
+      loadServices();
+    }
+  }, [salon.id]);
 
   console.log('ModernWeeklySchedule - Rendering with:', {
     appointmentsCount: appointments.length,
@@ -33,9 +71,9 @@ const ModernWeeklySchedule = ({
     openingHours: salon.opening_hours
   });
 
-  // Filter appointments to show confirmed and pending ones for admin view
+  // Filter appointments to show only confirmed ones for clean view  
   const visibleAppointments = appointments.filter(appointment => 
-    ['confirmed', 'pending'].includes(appointment.status)
+    appointment.status === 'confirmed'
   );
 
   console.log('ModernWeeklySchedule - Filtered appointments:', {
@@ -140,6 +178,18 @@ const ModernWeeklySchedule = ({
     return appointmentsByDateTime[key];
   };
 
+  const handleAppointmentClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsModal(true);
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   // Verificar se temos horários válidos
   if (timeSlots.length === 0) {
     console.warn('ModernWeeklySchedule - No time slots generated');
@@ -239,7 +289,7 @@ const ModernWeeklySchedule = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
             <Calendar className="h-5 w-5" />
-            <span>Agenda Semanal - Agendamentos Confirmados</span>
+            <span>Agenda Semanal</span>
           </CardTitle>
           
           <div className="flex items-center space-x-2">
@@ -298,19 +348,17 @@ const ModernWeeklySchedule = ({
                     return (
                       <div 
                         key={`${day.toString()}-${timeSlot}`}
-                        className={`p-2 min-h-[60px] rounded border text-xs ${
+                        className={`p-2 min-h-[60px] rounded border text-xs cursor-pointer transition-colors ${
                           appointment 
-                            ? getStatusColor(appointment.status)
+                            ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
                             : 'bg-white border-gray-200 hover:bg-gray-50'
                         }`}
+                        onClick={() => appointment && handleAppointmentClick(appointment)}
                       >
                         {appointment && (
                           <div className="space-y-1">
-                            <div className="font-medium truncate">{getServiceName(appointment)}</div>
-                            <div className="text-gray-600 truncate">{getClientName(appointment)}</div>
-                            <Badge className={`text-xs ${getStatusColor(appointment.status)}`}>
-                              {getStatusText(appointment.status)}
-                            </Badge>
+                            <div className="font-medium text-blue-900 truncate">{getClientName(appointment)}</div>
+                            <div className="text-blue-700 text-xs truncate">{getServiceName(appointment)}</div>
                           </div>
                         )}
                       </div>
@@ -321,7 +369,52 @@ const ModernWeeklySchedule = ({
             </div>
           </div>
         </div>
+
+        {/* Lista de Serviços */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <List className="h-5 w-5 text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Serviços Disponíveis</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {services.map((service) => (
+              <Card key={service.id} className="border border-gray-200">
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900">{service.name}</h4>
+                    {service.description && (
+                      <p className="text-sm text-gray-600">{service.description}</p>
+                    )}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-green-600 font-semibold">
+                        {formatCurrency(service.price)}
+                      </span>
+                      <span className="text-gray-500">
+                        {service.duration_minutes} min
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {services.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <List className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>Nenhum serviço disponível</p>
+            </div>
+          )}
+        </div>
       </CardContent>
+
+      {/* Modal de Detalhes */}
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+      />
     </Card>
   );
 };

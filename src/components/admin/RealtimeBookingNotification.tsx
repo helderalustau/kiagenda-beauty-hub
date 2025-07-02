@@ -19,6 +19,7 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate }: RealtimeB
   const [pendingAppointment, setPendingAppointment] = useState<Appointment | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [alertAudio, setAlertAudio] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!salonId) return;
@@ -60,10 +61,13 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate }: RealtimeB
               setPendingAppointment(appointment as Appointment);
               setIsOpen(true);
               
-              // Som de notificação
+              // Som de alerta contínuo
               try {
-                const audio = new Audio('/notification.mp3');
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYfCEWm5fK/bS==');
+                audio.loop = true;
+                audio.volume = 0.5;
                 audio.play().catch(() => {});
+                setAlertAudio(audio);
               } catch (error) {
                 // Ignorar erro de áudio
               }
@@ -110,6 +114,13 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate }: RealtimeB
         description: `Agendamento de ${pendingAppointment.client?.name || pendingAppointment.client?.username} foi confirmado`,
       });
 
+      // Parar som de alerta
+      if (alertAudio) {
+        alertAudio.pause();
+        alertAudio.currentTime = 0;
+        setAlertAudio(null);
+      }
+      
       setIsOpen(false);
       setPendingAppointment(null);
       onAppointmentUpdate?.();
@@ -154,6 +165,13 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate }: RealtimeB
         description: `Agendamento de ${pendingAppointment.client?.name || pendingAppointment.client?.username} foi recusado`,
       });
 
+      // Parar som de alerta
+      if (alertAudio) {
+        alertAudio.pause();
+        alertAudio.currentTime = 0;
+        setAlertAudio(null);
+      }
+      
       setIsOpen(false);
       setPendingAppointment(null);
       onAppointmentUpdate?.();
