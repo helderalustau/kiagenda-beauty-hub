@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, User, Phone, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { Service } from '@/hooks/useSupabaseData';
-import { useBookingClientData } from '@/hooks/booking/useBookingClientData';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
 
 interface ClientData {
   name: string;
@@ -43,8 +45,57 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
-  // Auto-preencher dados do usuário logado e obter função de formatação
-  const { user, formatPhoneNumber } = useBookingClientData(clientData, onClientDataChange);
+  const { user } = useAuth();
+  const { formatPhoneNumber } = usePhoneFormatter();
+
+  // Auto-preencher dados do cliente logado
+  useEffect(() => {
+    const loadClientData = async () => {
+      if (user && (!clientData.name || !clientData.phone)) {
+        console.log('SimpleClientDataStep - Loading client data for user:', user.id);
+        
+        try {
+          // Buscar dados do cliente na tabela client_auth
+          const { data: clientAuthData, error } = await supabase
+            .from('client_auth')
+            .select('username, name, phone, email')
+            .eq('id', user.id)
+            .single();
+
+          if (!error && clientAuthData) {
+            console.log('SimpleClientDataStep - Found client auth data:', clientAuthData);
+            
+            onClientDataChange({
+              name: clientAuthData.username || clientAuthData.name || user.name || '',
+              phone: formatPhoneNumber(clientAuthData.phone || ''),
+              email: clientAuthData.email || user.email || '',
+              notes: clientData.notes || ''
+            });
+          } else {
+            console.log('SimpleClientDataStep - No client auth data found, using basic user data');
+            
+            onClientDataChange({
+              name: user.name || '',
+              phone: formatPhoneNumber(''),
+              email: user.email || '',
+              notes: clientData.notes || ''
+            });
+          }
+        } catch (error) {
+          console.error('SimpleClientDataStep - Error loading client auth data:', error);
+          
+          onClientDataChange({
+            name: user.name || '',
+            phone: formatPhoneNumber(''),
+            email: user.email || '',
+            notes: clientData.notes || ''
+          });
+        }
+      }
+    };
+
+    loadClientData();
+  }, [user, onClientDataChange, formatPhoneNumber, clientData.notes, clientData.name, clientData.phone]);
 
   const handlePhoneChange = (value: string) => {
     const formattedPhone = formatPhoneNumber(value);
@@ -66,8 +117,8 @@ const SimpleClientDataStep = ({
       </div>
 
       <div className="text-center">
-        <h3 className="text-xl font-semibold">Seus Dados</h3>
-        <p className="text-gray-600">Confirme seus dados para finalizar</p>
+        <h3 className="text-xl font-semibold">Confirme seus dados para finalizar</h3>
+        <p className="text-gray-600">Verifique se suas informações estão corretas</p>
       </div>
 
       <Card className="bg-blue-50 border-blue-200">
@@ -96,8 +147,8 @@ const SimpleClientDataStep = ({
               required
             />
           </div>
-          {user?.name && clientData.name === user.name && (
-            <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente</p>
+          {user && clientData.name && (
+            <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente do seu perfil</p>
           )}
         </div>
 
@@ -117,7 +168,7 @@ const SimpleClientDataStep = ({
             />
           </div>
           {user && clientData.phone && (
-            <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente</p>
+            <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente do seu perfil</p>
           )}
         </div>
       </div>

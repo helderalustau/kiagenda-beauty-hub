@@ -22,7 +22,7 @@ export const useBookingClientData = (
   // Auto-preencher dados do cliente logado apenas uma vez
   useEffect(() => {
     const loadClientData = async () => {
-      if (user && !hasAutoFilled.current && (!clientData.name || !clientData.phone)) {
+      if (user && !hasAutoFilled.current) {
         console.log('Auto-filling client data from logged user:', user);
         
         try {
@@ -41,7 +41,7 @@ export const useBookingClientData = (
             setClientData({
               name: clientAuthData.username || clientAuthData.name || user.name || '',
               phone: formatPhoneNumber(clientAuthData.phone || ''),
-              email: clientAuthData.email || '',
+              email: clientAuthData.email || user.email || '',
               notes: clientData.notes || ''
             });
           } else {
@@ -52,7 +52,7 @@ export const useBookingClientData = (
             setClientData({
               name: user.name || '',
               phone: formatPhoneNumber(''),
-              email: '',
+              email: user.email || '',
               notes: clientData.notes || ''
             });
           }
@@ -65,7 +65,7 @@ export const useBookingClientData = (
           setClientData({
             name: user.name || '',
             phone: formatPhoneNumber(''),
-            email: '',
+            email: user.email || '',
             notes: clientData.notes || ''
           });
         }
@@ -75,7 +75,7 @@ export const useBookingClientData = (
     loadClientData();
   }, [user, setClientData, formatPhoneNumber, clientData.notes]);
 
-  // Reset do flag quando o modal for fechado
+  // Reset do flag quando os dados forem limpos
   useEffect(() => {
     if (!clientData.name && !clientData.phone && hasAutoFilled.current) {
       hasAutoFilled.current = false;
