@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,13 +7,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import { formatPhone, unformatPhone } from '@/utils/phoneFormatter';
 import { Phone, MapPin, User, Save, CheckCircle } from "lucide-react";
 
 interface SalonInfoManagerProps {
   salon: any;
   onUpdate: (updatedSalon: any) => void;
 }
+
+// Função para formatar telefone brasileiro
+const formatBrazilianPhone = (value: string): string => {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, '');
+  
+  // Limita a 11 dígitos
+  const limitedNumbers = numbers.slice(0, 11);
+  
+  // Aplica formatação brasileira
+  if (limitedNumbers.length === 0) return '';
+  if (limitedNumbers.length <= 2) return `(${limitedNumbers}`;
+  if (limitedNumbers.length <= 6) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2)}`;
+  if (limitedNumbers.length <= 10) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 6)}-${limitedNumbers.slice(6)}`;
+  return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7)}`;
+};
+
+// Função para extrair apenas números
+const extractNumbers = (phone: string): string => {
+  return phone.replace(/\D/g, '');
+};
 
 const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
   const { toast } = useToast();
@@ -36,8 +55,8 @@ const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
       setFormData({
         name: salon.name || '',
         owner_name: salon.owner_name || '',
-        phone: salon.phone || '',
-        contact_phone: salon.contact_phone || '',
+        phone: formatBrazilianPhone(salon.phone || ''),
+        contact_phone: formatBrazilianPhone(salon.contact_phone || ''),
         address: salon.address || '',
         street_number: salon.street_number || '',
         city: salon.city || '',
@@ -51,12 +70,8 @@ const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
     
     // Formatação automática para campos de telefone
     if (field === 'phone' || field === 'contact_phone') {
-      const digits = value.replace(/\D/g, '');
-      if (digits.length <= 11) {
-        processedValue = digits;
-      } else {
-        return; // Não permite mais de 11 dígitos
-      }
+      // Permitir apenas números e formatação brasileira
+      processedValue = formatBrazilianPhone(value);
     }
     
     setFormData(prev => ({
@@ -85,8 +100,8 @@ const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
       const updateData = {
         ...formData,
         // Salvar telefones sem formatação no banco
-        phone: unformatPhone(formData.phone),
-        contact_phone: formData.contact_phone ? unformatPhone(formData.contact_phone) : null,
+        phone: extractNumbers(formData.phone),
+        contact_phone: formData.contact_phone ? extractNumbers(formData.contact_phone) : null,
         updated_at: new Date().toISOString()
       };
 
@@ -171,12 +186,14 @@ const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
                 <Phone className="h-4 w-4 text-gray-500" />
                 <Input
                   id="phone"
-                  value={formatPhone(formData.phone)}
+                  value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="(00)00000-0000"
+                  placeholder="(00) 00000-0000"
                   required
+                  maxLength={15}
                 />
               </div>
+              <p className="text-xs text-gray-500 mt-1">Apenas números válidos</p>
             </div>
 
             <div>
@@ -185,11 +202,13 @@ const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
                 <Phone className="h-4 w-4 text-gray-500" />
                 <Input
                   id="contact_phone"
-                  value={formatPhone(formData.contact_phone)}
+                  value={formData.contact_phone}
                   onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                  placeholder="(00)0000-0000"
+                  placeholder="(00) 00000-0000"
+                  maxLength={15}
                 />
               </div>
+              <p className="text-xs text-gray-500 mt-1">Apenas números válidos</p>
             </div>
           </div>
 

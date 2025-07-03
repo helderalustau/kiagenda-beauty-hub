@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,6 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
 import { Salon } from '@/types/supabase-entities';
 import SalonBannerManager from '@/components/SalonBannerManager';
 
@@ -18,16 +16,38 @@ interface SalonConfigurationFormProps {
   onSalonChange: (updatedSalon: Salon) => Promise<void>;
 }
 
+// Função para formatar telefone brasileiro
+const formatBrazilianPhone = (value: string): string => {
+  const numbers = value.replace(/\D/g, '');
+  const limitedNumbers = numbers.slice(0, 11);
+  
+  if (limitedNumbers.length === 0) return '';
+  if (limitedNumbers.length <= 2) return `(${limitedNumbers}`;
+  if (limitedNumbers.length <= 6) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2)}`;
+  if (limitedNumbers.length <= 10) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 6)}-${limitedNumbers.slice(6)}`;
+  return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7)}`;
+};
+
+// Função para extrair apenas números
+const extractNumbers = (phone: string): string => {
+  return phone.replace(/\D/g, '');
+};
+
+// Função para validar telefone
+const validatePhone = (phone: string): boolean => {
+  const numbers = extractNumbers(phone);
+  return numbers.length >= 10 && numbers.length <= 11;
+};
+
 const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationFormProps) => {
   const { updateSalon } = useSupabaseData();
   const { toast } = useToast();
-  const { formatPhoneNumber, extractPhoneNumbers, validatePhone } = usePhoneFormatter();
   
   const [formData, setFormData] = useState({
     name: salon.name || '',
     owner_name: salon.owner_name || '',
-    phone: salon.phone || '',
-    contact_phone: salon.contact_phone || '',
+    phone: formatBrazilianPhone(salon.phone || ''),
+    contact_phone: formatBrazilianPhone(salon.contact_phone || ''),
     address: salon.address || '',
     city: salon.city || '',
     state: salon.state || '',
@@ -40,8 +60,8 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
 
   const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
     if (field === 'phone' || field === 'contact_phone') {
-      // Aplicar formatação de telefone
-      const formattedValue = formatPhoneNumber(value as string);
+      // Aplicar formatação de telefone brasileiro
+      const formattedValue = formatBrazilianPhone(value as string);
       setFormData(prev => ({
         ...prev,
         [field]: formattedValue
@@ -82,8 +102,8 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
       // Extrair apenas números dos telefones para salvar
       const updateData = {
         ...formData,
-        phone: extractPhoneNumbers(formData.phone),
-        contact_phone: formData.contact_phone ? extractPhoneNumbers(formData.contact_phone) : null
+        phone: extractNumbers(formData.phone),
+        contact_phone: formData.contact_phone ? extractNumbers(formData.contact_phone) : null
       };
 
       // Garantir que o plan mantenha o tipo correto
@@ -173,7 +193,9 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
               onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="(XX) XXXXX-XXXX"
               required
+              maxLength={15}
             />
+            <p className="text-xs text-gray-500 mt-1">Apenas números válidos</p>
           </div>
           
           <div>
@@ -183,7 +205,9 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
               value={formData.contact_phone}
               onChange={(e) => handleInputChange('contact_phone', e.target.value)}
               placeholder="(XX) XXXXX-XXXX"
+              maxLength={15}
             />
+            <p className="text-xs text-gray-500 mt-1">Apenas números válidos</p>
           </div>
         </div>
 

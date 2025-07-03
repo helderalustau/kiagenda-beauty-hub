@@ -19,28 +19,23 @@ interface ContactStepProps {
   updateFormData: (updates: Partial<FormData>) => void;
 }
 
-const ContactStep = ({ formData, updateFormData }: ContactStepProps) => {
-  const formatPhone = (value: string) => {
-    // Remove all non-numeric characters
-    const numbers = value.replace(/\D/g, '');
-    
-    // Apply Brazilian phone format
-    if (numbers.length <= 10) {
-      // Format: (XX) XXXX-XXXX
-      return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    } else {
-      // Format: (XX) XXXXX-XXXX
-      return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    }
-  };
+// Função para formatar telefone brasileiro
+const formatBrazilianPhone = (value: string): string => {
+  const numbers = value.replace(/\D/g, '');
+  const limitedNumbers = numbers.slice(0, 11);
+  
+  if (limitedNumbers.length === 0) return '';
+  if (limitedNumbers.length <= 2) return `(${limitedNumbers}`;
+  if (limitedNumbers.length <= 6) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2)}`;
+  if (limitedNumbers.length <= 10) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 6)}-${limitedNumbers.slice(6)}`;
+  return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7)}`;
+};
 
+const ContactStep = ({ formData, updateFormData }: ContactStepProps) => {
   const handlePhoneChange = (value: string) => {
-    // Only allow numbers and formatting characters
-    const numbersOnly = value.replace(/\D/g, '');
-    if (numbersOnly.length <= 11) {
-      const formatted = formatPhone(numbersOnly);
-      updateFormData({ contact_phone: formatted });
-    }
+    // Aplicar formatação brasileira automaticamente
+    const formatted = formatBrazilianPhone(value);
+    updateFormData({ contact_phone: formatted });
   };
 
   return (
@@ -71,7 +66,7 @@ const ContactStep = ({ formData, updateFormData }: ContactStepProps) => {
               maxLength={15}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Este será o telefone principal para contato dos clientes
+              Digite apenas números - a formatação é automática
             </p>
           </div>
 

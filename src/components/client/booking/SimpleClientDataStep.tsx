@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, User, Phone, ArrowLeft } from "lucide-react";
+import { Loader2, User, Phone, ArrowLeft, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Service } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/hooks/useAuth';
@@ -96,11 +97,6 @@ const SimpleClientDataStep = ({
     loadClientData();
   }, [user, onClientDataChange, formatPhoneNumber, clientData.notes, clientData.name, clientData.phone]);
 
-  const handlePhoneChange = (value: string) => {
-    const formattedPhone = formatPhoneNumber(value);
-    onClientDataChange({ ...clientData, phone: formattedPhone });
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -117,7 +113,7 @@ const SimpleClientDataStep = ({
 
       <div className="text-center">
         <h3 className="text-xl font-semibold">Confirme seus dados para finalizar</h3>
-        <p className="text-gray-600">Verifique se suas informações estão corretas</p>
+        <p className="text-gray-600">Revise as informações do seu agendamento</p>
       </div>
 
       <Card className="bg-blue-50 border-blue-200">
@@ -131,52 +127,56 @@ const SimpleClientDataStep = ({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="name">Nome Completo *</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              id="name"
-              type="text"
-              placeholder="Seu nome completo"
-              value={clientData.name}
-              onChange={(e) => onClientDataChange({ ...clientData, name: e.target.value })}
-              className="pl-10"
-              required
-            />
-          </div>
-          {user && clientData.name && (
-            <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente do seu perfil</p>
-          )}
-        </div>
+      {/* Dados do Cliente - Apenas para visualização */}
+      <Card className="bg-green-50 border-green-200">
+        <CardContent className="p-4">
+          <h4 className="font-semibold mb-3 flex items-center">
+            <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+            Seus Dados (Preenchidos Automaticamente)
+          </h4>
+          
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <User className="h-4 w-4 text-gray-500" />
+              <div>
+                <p className="text-sm font-medium text-gray-700">Nome Completo</p>
+                <p className="font-medium">{clientData.name || 'Carregando...'}</p>
+              </div>
+            </div>
 
-        <div>
-          <Label htmlFor="phone">Telefone *</Label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="(11) 99999-9999"
-              value={clientData.phone}
-              onChange={(e) => handlePhoneChange(e.target.value)}
-              className="pl-10"
-              required
-              maxLength={15}
-            />
-          </div>
-          {user && clientData.phone && (
-            <p className="text-xs text-green-600 mt-1">✓ Preenchido automaticamente do seu perfil</p>
-          )}
-        </div>
-      </div>
+            <div className="flex items-center space-x-3">
+              <Phone className="h-4 w-4 text-gray-500" />
+              <div>
+                <p className="text-sm font-medium text-gray-700">Telefone</p>
+                <p className="font-medium">{clientData.phone || 'Carregando...'}</p>
+              </div>
+            </div>
 
+            {clientData.email && (
+              <div className="flex items-center space-x-3">
+                <div className="h-4 w-4 text-gray-500">@</div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">E-mail</p>
+                  <p className="font-medium">{clientData.email}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-3 p-2 bg-green-100 rounded-lg">
+            <p className="text-xs text-green-800">
+              ✓ Dados carregados automaticamente do seu perfil de usuário
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Campo de Observações - Único campo editável */}
       <div>
-        <Label htmlFor="notes">Observações</Label>
+        <Label htmlFor="notes">Observações (Opcional)</Label>
         <Textarea
           id="notes"
-          placeholder="Alguma observação adicional?"
+          placeholder="Alguma observação adicional sobre o agendamento?"
           value={clientData.notes}
           onChange={(e) => onClientDataChange({ ...clientData, notes: e.target.value })}
           rows={3}

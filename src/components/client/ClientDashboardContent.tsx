@@ -1,13 +1,13 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Star, Phone, User } from "lucide-react";
-import { Salon, Appointment, Service } from '@/hooks/useSupabaseData';
-import { formatPhone } from '@/utils/phoneFormatter';
-import PendingAppointments from './PendingAppointments';
-import SimpleBookingModal from './SimpleBookingModal';
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, MapPin, Scissors, User, CheckCircle, AlertCircle } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Salon } from '@/hooks/useSupabaseData';
+import { Appointment } from '@/types/supabase-entities';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
@@ -16,96 +16,77 @@ interface ClientDashboardContentProps {
   completedAppointments: Appointment[];
 }
 
-const ClientDashboardContent = ({
-  salons,
-  onBookService,
-  activeAppointments,
-  completedAppointments
+const ClientDashboardContent = ({ 
+  salons, 
+  onBookService, 
+  activeAppointments, 
+  completedAppointments 
 }: ClientDashboardContentProps) => {
-  const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-
-  // Pegar ID do cliente do localStorage
-  const getClientId = () => {
-    const clientAuth = localStorage.getItem('clientAuth');
-    if (clientAuth) {
-      try {
-        const client = JSON.parse(clientAuth);
-        return client.id;
-      } catch (error) {
-        console.error('Error parsing clientAuth:', error);
-      }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
+      case 'confirmed':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Confirmado</Badge>;
+      case 'completed':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Concluído</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">Cancelado</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
-    return null;
   };
 
-  const clientId = getClientId();
-
-  const handleBookService = async (salon: Salon) => {
-    console.log('🏪 Opening booking modal for salon:', salon.name, 'ID:', salon.id);
-    setSelectedSalon(salon);
-    setIsBookingModalOpen(true);
-  };
-
-  const handleBookingSuccess = () => {
-    console.log('✅ Booking successful, refreshing page');
-    // Atualizar lista de agendamentos
-    window.location.reload();
-  };
-
-  const handleCloseModal = () => {
-    console.log('🚪 Closing booking modal');
-    setIsBookingModalOpen(false);
-    setSelectedSalon(null);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-8">
-      {/* Agendamentos Pendentes */}
-      {clientId && activeAppointments.length > 0 && (
-        <PendingAppointments 
-          clientId={clientId}
-          appointments={activeAppointments}
-        />
-      )}
-
-      {/* Meus Agendamentos Ativos */}
+      {/* Seção de Agendamentos Ativos */}
       {activeAppointments.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <Calendar className="h-5 w-5 mr-2 text-blue-500" />
-            Meus Agendamentos
-          </h3>
+        <section>
+          <div className="flex items-center mb-4">
+            <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
+            <h2 className="text-xl font-semibold text-gray-900">Agendamentos Ativos</h2>
+          </div>
           
           <div className="grid gap-4">
-            {activeAppointments.filter(apt => apt.status === 'confirmed').map((appointment) => (
-              <Card key={appointment.id} className="border-l-4 border-l-green-500 bg-green-50">
-                <CardHeader className="pb-2">
+            {activeAppointments.map((appointment) => (
+              <Card key={appointment.id} className="border-l-4 border-l-blue-500">
+                <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg text-gray-900">
-                      {appointment.salon?.name}
+                    <CardTitle className="text-lg flex items-center">
+                      <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                      {(appointment as any).salon?.name}
                     </CardTitle>
-                    <Badge className="bg-green-600">
-                      Confirmado
-                    </Badge>
+                    {getStatusBadge(appointment.status)}
                   </div>
                 </CardHeader>
                 
                 <CardContent className="space-y-3">
-                  <div className="bg-white p-3 rounded border">
-                    <p className="font-medium">{appointment.service?.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {appointment.service?.duration_minutes} min - R$ {appointment.service?.price}
-                    </p>
+                  <div className="flex items-center text-gray-600">
+                    <Scissors className="h-4 w-4 mr-2" />
+                    <span className="font-medium">{(appointment as any).service?.name}</span>
+                    <span className="ml-2 text-sm">
+                      - {formatCurrency((appointment as any).service?.price || 0)}
+                    </span>
                   </div>
                   
                   <div className="flex items-center space-x-4 text-sm">
-                    <span className="text-blue-600">
-                      📅 {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')}
-                    </span>
-                    <span className="text-blue-600">
-                      🕒 {appointment.appointment_time}
-                    </span>
+                    <div className="flex items-center text-blue-600">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      <span>
+                        {format(new Date(appointment.appointment_date), "dd 'de' MMMM", { locale: ptBR })}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-blue-600">
+                      <Clock className="h-4 w-4 mr-1" />
+                      <span>{appointment.appointment_time}</span>
+                    </div>
                   </div>
 
                   {appointment.notes && (
@@ -119,104 +100,117 @@ const ClientDashboardContent = ({
               </Card>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Lista de Estabelecimentos */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Estabelecimentos Disponíveis
-        </h3>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {salons.map((salon) => (
-            <Card key={salon.id} className="hover:shadow-lg transition-all duration-200 overflow-hidden">
-              {/* Banner no topo do card */}
-              {salon.banner_image_url && (
-                <div className="h-32 bg-cover bg-center" 
-                     style={{ backgroundImage: `url(${salon.banner_image_url})` }}>
-                </div>
-              )}
-              
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    {salon.name}
-                  </CardTitle>
-                  <Badge variant={salon.is_open ? "default" : "secondary"}>
-                    {salon.is_open ? "Aberto" : "Fechado"}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-3">
-                <div className="flex items-start space-x-2 text-sm text-gray-600">
-                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <span>{salon.address}</span>
-                </div>
-                
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Phone className="h-4 w-4 flex-shrink-0" />
-                  <span>{formatPhone(salon.phone)}</span>
-                </div>
-                
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <User className="h-4 w-4 flex-shrink-0" />
-                  <span>{salon.owner_name}</span>
-                </div>
-                
-                <Button
-                  onClick={() => handleBookService(salon)}
-                  disabled={!salon.is_open}
-                  className="w-full mt-4"
-                >
-                  {salon.is_open ? "Agendar Serviço" : "Estabelecimento Fechado"}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+      {/* Seção de Histórico */}
+      <section>
+        <div className="flex items-center mb-4">
+          <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+          <h2 className="text-xl font-semibold text-gray-900">Histórico de Atendimentos</h2>
         </div>
-      </div>
-
-      {/* Histórico de Agendamentos */}
-      {completedAppointments.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Histórico de Agendamentos
-          </h3>
-          
+        
+        {completedAppointments.length > 0 ? (
           <div className="grid gap-4">
-            {completedAppointments.slice(0, 5).map((appointment) => (
-              <Card key={appointment.id} className="bg-gray-50">
-                <CardContent className="p-4">
+            {completedAppointments.map((appointment) => (
+              <Card key={appointment.id} className="border-l-4 border-l-green-500 bg-green-50">
+                <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{appointment.salon?.name}</p>
-                      <p className="text-sm text-gray-600">{appointment.service?.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(appointment.appointment_date).toLocaleDateString('pt-BR')} às {appointment.appointment_time}
+                    <CardTitle className="text-lg flex items-center">
+                      <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                      {(appointment as any).salon?.name}
+                    </CardTitle>
+                    {getStatusBadge(appointment.status)}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-3">
+                  <div className="flex items-center text-gray-600">
+                    <Scissors className="h-4 w-4 mr-2" />
+                    <span className="font-medium">{(appointment as any).service?.name}</span>
+                    <span className="ml-2 text-sm">
+                      - {formatCurrency((appointment as any).service?.price || 0)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4 text-sm">
+                    <div className="flex items-center text-green-600">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      <span>
+                        {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-green-600">
+                      <Clock className="h-4 w-4 mr-1" />
+                      <span>{appointment.appointment_time}</span>
+                    </div>
+                  </div>
+
+                  {appointment.notes && (
+                    <div className="bg-white p-2 rounded border">
+                      <p className="text-sm text-gray-700">
+                        <strong>Observações:</strong> {appointment.notes}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-gray-600 border-gray-300">
-                      Concluído
-                    </Badge>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum atendimento realizado</h3>
+              <p className="text-gray-500 mb-4">Você ainda não possui histórico de atendimentos.</p>
+            </CardContent>
+          </Card>
+        )}
+      </section>
 
-      {/* Modal de Agendamento Simplificado */}
-      {selectedSalon && (
-        <SimpleBookingModal
-          isOpen={isBookingModalOpen}
-          onClose={handleCloseModal}
-          salon={selectedSalon}
-          onBookingSuccess={handleBookingSuccess}
-        />
-      )}
+      {/* Seção de Estabelecimentos Disponíveis */}
+      <section>
+        <div className="flex items-center mb-4">
+          <Scissors className="h-5 w-5 mr-2 text-purple-600" />
+          <h2 className="text-xl font-semibold text-gray-900">Estabelecimentos Disponíveis</h2>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {salons.map((salon) => (
+            <Card key={salon.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">{salon.name}</CardTitle>
+                <p className="text-sm text-gray-600">{salon.owner_name}</p>
+              </CardHeader>
+              
+              <CardContent className="space-y-3">
+                <div className="flex items-start text-sm text-gray-600">
+                  <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>{salon.address}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Badge variant={salon.is_open ? "default" : "secondary"} className={
+                    salon.is_open 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-gray-100 text-gray-800"
+                  }>
+                    {salon.is_open ? 'Aberto' : 'Fechado'}
+                  </Badge>
+                  
+                  <Button 
+                    size="sm" 
+                    onClick={() => onBookService(salon)}
+                    disabled={!salon.is_open}
+                  >
+                    Agendar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
     </div>
   );
 };
