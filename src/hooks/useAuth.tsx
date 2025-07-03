@@ -1,9 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface AuthUser {
   id: string;
   name: string;
+  email?: string; // Add email property as optional
   role?: string;
   salon_id?: string;
   isFirstAccess?: boolean;
