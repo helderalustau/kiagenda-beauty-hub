@@ -45,45 +45,54 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
-  const { user } = useAuth();
+  const { user, isClient } = useAuth();
   const { formatPhoneNumber } = usePhoneFormatter();
 
-  // Auto-preencher dados do cliente logado
+  // Auto-preencher dados do cliente logado apenas se for um cliente real
   useEffect(() => {
     const loadClientData = async () => {
-      if (user && (!clientData.name || !clientData.phone)) {
-        console.log('SimpleClientDataStep - Loading client data for user:', user.id);
-        
-        try {
-          // Buscar dados do cliente na tabela client_auth
-          const { data: clientAuthData, error } = await supabase
-            .from('client_auth')
-            .select('username, name, phone, email')
-            .eq('id', user.id)
-            .single();
+      console.log('SimpleClientDataStep - User info:', { 
+        userId: user?.id, 
+        userName: user?.name, 
+        isClient,
+        userRole: user?.role 
+      });
 
-          if (!error && clientAuthData) {
-            console.log('SimpleClientDataStep - Found client auth data:', clientAuthData);
-            
-            onClientDataChange({
-              name: clientAuthData.username || clientAuthData.name || user.name || '',
-              phone: formatPhoneNumber(clientAuthData.phone || ''),
-              email: clientAuthData.email || user.email || '',
-              notes: clientData.notes || ''
-            });
-          } else {
-            console.log('SimpleClientDataStep - No client auth data found, using basic user data');
-            
-            onClientDataChange({
-              name: user.name || '',
-              phone: formatPhoneNumber(''),
-              email: user.email || '',
-              notes: clientData.notes || ''
-            });
-          }
-        } catch (error) {
-          console.error('SimpleClientDataStep - Error loading client auth data:', error);
+      // Verificar se é um cliente real (não admin/super admin)
+      if (!user?.id || !isClient) {
+        console.log('SimpleClientDataStep - User is not a client, skipping auto-fill');
+        return;
+      }
+
+      // Só carregar se os dados ainda não foram preenchidos
+      if (clientData.name && clientData.phone) {
+        console.log('SimpleClientDataStep - Client data already filled');
+        return;
+      }
+
+      try {
+        console.log('SimpleClientDataStep - Loading client data for client user:', user.id);
+        
+        // Buscar dados do cliente na tabela client_auth usando o ID do usuário logado
+        const { data: clientAuthData, error } = await supabase
+          .from('client_auth')
+          .select('username, name, phone, email')
+          .eq('id', user.id)
+          .single();
+
+        if (!error && clientAuthData) {
+          console.log('SimpleClientDataStep - Found client auth data:', clientAuthData);
           
+          onClientDataChange({
+            name: clientAuthData.username || clientAuthData.name || user.name || '',
+            phone: formatPhoneNumber(clientAuthData.phone || ''),
+            email: clientAuthData.email || user.email || '',
+            notes: clientData.notes || ''
+          });
+        } else {
+          console.log('SimpleClientDataStep - No client auth data found, using basic user data');
+          
+          // Para clientes que ainda não têm dados completos na client_auth
           onClientDataChange({
             name: user.name || '',
             phone: formatPhoneNumber(''),
@@ -91,11 +100,48 @@ const SimpleClientDataStep = ({
             notes: clientData.notes || ''
           });
         }
+      } catch (error) {
+        console.error('SimpleClientDataStep - Error loading client auth data:', error);
+        
+        // Fallback para dados básicos do usuário
+        onClientDataChange({
+          name: user.name || '',
+          phone: formatPhoneNumber(''),
+          email: user.email || '',
+          notes: clientData.notes || ''
+        });
       }
     };
 
     loadClientData();
-  }, [user, onClientDataChange, formatPhoneNumber, clientData.notes, clientData.name, clientData.phone]);
+  }, [user, isClient, onClientDataChange, formatPhoneNumber, clientData.notes, clientData.name, clientData.phone]);
+
+  // Se não for um cliente, mostrar mensagem de erro
+  if (!isClient) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <Badge variant="outline">Passo 3 de 3</Badge>
+        </div>
+
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="p-4 text-center">
+            <h4 className="font-semibold mb-2 text-red-800">Acesso Restrito</h4>
+            <p className="text-red-600 mb-4">
+              Apenas clientes podem fazer agendamentos. Você está logado como administrador.
+            </p>
+            <Button onClick={onCancel} variant="outline">
+              Voltar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -165,7 +211,7 @@ const SimpleClientDataStep = ({
           
           <div className="mt-3 p-2 bg-green-100 rounded-lg">
             <p className="text-xs text-green-800">
-              ✓ Dados carregados automaticamente do seu perfil de usuário
+              ✓ Dados carregados automaticamente do seu perfil de cliente
             </p>
           </div>
         </CardContent>
