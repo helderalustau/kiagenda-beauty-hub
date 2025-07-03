@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from '@/hooks/useAuthData';
 import { useSalonData } from '@/hooks/useSalonData';
-import { useServiceData } from '@/hooks/useServiceData';
 import AdminRegistrationHeader from './admin-registration/AdminRegistrationHeader';
 import AdminCreationInfo from './admin-registration/AdminCreationInfo';
 import AdminFormFields from './admin-registration/AdminFormFields';
@@ -47,7 +46,6 @@ const AdminRegistrationForm = ({
   const [errors, setErrors] = useState<Partial<AdminFormData>>({});
 
   useEffect(() => {
-    // Atualizar data sempre que o componente renderizar
     setFormData(prev => ({
       ...prev,
       setDateadm: new Date().toISOString()
@@ -62,10 +60,9 @@ const AdminRegistrationForm = ({
     setFormData(prev => ({
       ...prev,
       [field]: value,
-      setDateadm: new Date().toISOString() // Atualizar data sempre que houver mudança
+      setDateadm: new Date().toISOString()
     }));
 
-    // Limpar erro do campo quando começar a digitar
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
@@ -94,15 +91,15 @@ const AdminRegistrationForm = ({
     setSubmitting(true);
 
     try {
-      console.log('Criando estabelecimento temporário para o administrador...');
+      console.log('Iniciando cadastro de administrador:', formData.name);
 
-      // Primeiro, criar um estabelecimento temporário para o administrador
+      // Criar estabelecimento temporário para o administrador
       const temporarySalonData = {
         name: generateSequentialSalonName(),
         owner_name: formData.name.trim(),
         phone: formData.phone.replace(/\D/g, ''),
         address: 'Endereço será preenchido na configuração',
-        plan: 'bronze' // Plano padrão inicial
+        plan: 'bronze'
       };
 
       console.log('Criando estabelecimento temporário:', temporarySalonData);
@@ -111,18 +108,18 @@ const AdminRegistrationForm = ({
       if (!salonResult.success) {
         const errorMessage = 'message' in salonResult && salonResult.message 
           ? salonResult.message 
-          : 'Erro desconhecido';
-        throw new Error('Erro ao criar estabelecimento: ' + errorMessage);
+          : 'Erro desconhecido ao criar estabelecimento';
+        throw new Error(errorMessage);
       }
 
       if (!('salon' in salonResult) || !salonResult.salon) {
-        throw new Error('Erro ao criar estabelecimento: dados do estabelecimento não retornados');
+        throw new Error('Dados do estabelecimento não retornados');
       }
 
-      console.log('Estabelecimento criado com sucesso:', salonResult.salon);
+      console.log('Estabelecimento criado:', salonResult.salon.id);
 
-      // Agora criar o administrador vinculado ao estabelecimento
-      const result = await registerAdmin(
+      // Criar administrador vinculado ao estabelecimento
+      const adminResult = await registerAdmin(
         salonResult.salon.id,
         formData.name.trim(),
         formData.password,
@@ -131,43 +128,54 @@ const AdminRegistrationForm = ({
         formData.role
       );
 
-      if (result.success) {
-        toast({
-          title: "Sucesso!",
-          description: "Administrador criado com sucesso! Redirecionando para configuração do estabelecimento..."
-        });
-        
-        // Armazenar dados do administrador e estabelecimento para uso na configuração
-        localStorage.setItem('adminAuth', JSON.stringify({
-          ...result.admin,
-          salon_id: salonResult.salon.id,
-          isFirstAccess: true // Marcar como primeiro acesso
-        }));
-        localStorage.setItem('selectedSalonId', salonResult.salon.id);
-        
-        // Reset form
-        setFormData({
-          name: '',
-          password: '',
-          email: '',
-          phone: '',
-          role: 'admin',
-          setDateadm: new Date().toISOString()
-        });
-        
-        // Sempre redirecionar para salon-setup após criação do administrador
-        setTimeout(() => {
-          window.location.href = '/salon-setup';
-        }, 2000);
-        
-        onSuccess?.();
-      } else {
-        throw new Error(result.message);
+      if (!adminResult.success) {
+        throw new Error(adminResult.message || 'Erro ao criar administrador');
       }
-    } catch (error) {
-      console.error('Erro ao criar administrador:', error);
+
+      console.log('Administrador criado com sucesso:', adminResult.admin.id);
+
+      // Preparar dados para configuração do estabelecimento
+      const adminAuthData = {
+        id: adminResult.admin.id,
+        name: adminResult.admin.name,
+        email: adminResult.admin.email,
+        role: adminResult.admin.role,
+        salon_id: salonResult.salon.id,
+        isFirstAccess: true,
+        loginTime: new Date().toISOString()
+      };
+
+      // Armazenar dados necessários no localStorage
+      localStorage.setItem('adminAuth', JSON.stringify(adminAuthData));
+      localStorage.setItem('selectedSalonId', salonResult.salon.id);
+      
       toast({
-        title: "Erro",
+        title: "Cadastro Realizado com Sucesso!",
+        description: "Redirecionando para configuração do estabelecimento..."
+      });
+
+      // Limpar formulário
+      setFormData({
+        name: '',
+        password: '',
+        email: '',
+        phone: '',
+        role: 'admin',
+        setDateadm: new Date().toISOString()
+      });
+
+      // Callback de sucesso se fornecido
+      onSuccess?.();
+
+      // Redirecionar para configuração do estabelecimento
+      setTimeout(() => {
+        window.location.href = '/salon-setup';
+      }, 1500);
+
+    } catch (error) {
+      console.error('Erro no cadastro do administrador:', error);
+      toast({
+        title: "Erro no Cadastro",
         description: error instanceof Error ? error.message : "Erro ao criar administrador",
         variant: "destructive"
       });
@@ -177,7 +185,6 @@ const AdminRegistrationForm = ({
   };
 
   const handleCancel = () => {
-    // Redirecionar para homepage
     window.location.href = '/';
   };
 
