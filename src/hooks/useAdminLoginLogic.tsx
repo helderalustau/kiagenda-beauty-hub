@@ -20,7 +20,7 @@ export const useAdminLoginLogic = () => {
     const password = formData.get('password') as string;
 
     try {
-      // Verificação especial para super admin
+      // Verificação especial para super admin Helder
       if (name === 'Helder' && password === 'Hd@123@@') {
         const superAdminUser = {
           id: 'super-admin-helder',
@@ -100,7 +100,7 @@ export const useAdminLoginLogic = () => {
         description: `Bem-vindo, ${adminData.name}!`
       });
 
-      // Lógica de redirecionamento baseada no estabelecimento
+      // Lógica de redirecionamento baseada na configuração do estabelecimento
       const salon = adminData.salons;
       if (salon && salon.setup_completed) {
         navigate('/admin-dashboard');
