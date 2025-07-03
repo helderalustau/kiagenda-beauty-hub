@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 import { useSimpleBooking } from '@/hooks/useSimpleBooking';
 import SimpleBookingProgressIndicator from './booking/SimpleBookingProgressIndicator';
@@ -30,16 +30,18 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
     loadingServices,
     loadingTimes,
     timeSlotsError,
+    servicesError,
+    isClient,
+    user,
     setCurrentStep,
     handleServiceSelect,
-    setSelectedDate,
-    setSelectedTime,
+    handleDateSelect,
+    handleTimeSelect,
     setClientData,
     submitBooking,
     resetBooking,
     formatCurrency,
-    handleDateSelect,
-    handleTimeSelect
+    validateBookingData
   } = useSimpleBooking(salon);
 
   const handleClose = () => {
@@ -76,6 +78,67 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
       console.error('❌ Error in modal submit:', error);
     }
   };
+
+  // Validações para navegação entre steps
+  const canProceedToStep2 = () => {
+    return selectedService !== null && !loadingServices;
+  };
+
+  const canProceedToStep3 = () => {
+    return selectedDate !== undefined && selectedTime !== '' && !loadingTimes;
+  };
+
+  const canSubmit = () => {
+    const validation = validateBookingData();
+    return validation.isValid && !isSubmitting;
+  };
+
+  // Handle authentication issues
+  if (!user) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
+              Login Necessário
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-6">
+            <p className="text-gray-600 mb-4">
+              Você precisa estar logado para fazer um agendamento.
+            </p>
+            <Button onClick={handleClose}>
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!isClient) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
+              Acesso Restrito
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-6">
+            <p className="text-gray-600 mb-4">
+              Apenas clientes podem fazer agendamentos. Você está logado como administrador.
+            </p>
+            <Button onClick={handleClose}>
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (!salon?.is_open) {
     return (
@@ -114,7 +177,11 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
               selectedService={selectedService}
               loadingServices={loadingServices}
               onServiceSelect={handleServiceSelect}
-              onNext={() => setCurrentStep(2)}
+              onNext={() => {
+                if (canProceedToStep2()) {
+                  setCurrentStep(2);
+                }
+              }}
               onCancel={handleClose}
             />
           )}
@@ -129,7 +196,11 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
               timeSlotsError={timeSlotsError}
               onDateSelect={handleDateSelect}
               onTimeSelect={handleTimeSelect}
-              onNext={() => setCurrentStep(3)}
+              onNext={() => {
+                if (canProceedToStep3()) {
+                  setCurrentStep(3);
+                }
+              }}
               onBack={() => setCurrentStep(1)}
               formatCurrency={formatCurrency}
             />
@@ -150,6 +221,15 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
             />
           )}
         </div>
+
+        {/* Debug Info - Remover em produção */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="text-xs text-gray-400 mt-4 p-2 bg-gray-100 rounded">
+            Debug: Step {currentStep} | Service: {selectedService?.name || 'none'} | 
+            Date: {selectedDate?.toDateString() || 'none'} | Time: {selectedTime || 'none'} |
+            Can Submit: {canSubmit().toString()}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

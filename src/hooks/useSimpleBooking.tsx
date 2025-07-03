@@ -5,8 +5,10 @@ import { useBookingState } from '@/hooks/booking/useBookingState';
 import { useBookingServices } from '@/hooks/booking/useBookingServices';
 import { useBookingSubmission } from '@/hooks/booking/useBookingSubmission';
 import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
+import { useAuth } from '@/hooks/useAuth';
 
 export const useSimpleBooking = (salon: Salon) => {
+  const { user, isClient } = useAuth();
   console.log('🏪 useSimpleBooking initialized for salon:', salon?.name, 'ID:', salon?.id);
   
   const bookingState = useBookingState();
@@ -36,12 +38,16 @@ export const useSimpleBooking = (salon: Salon) => {
       selectedService: bookingState.selectedService?.name,
       selectedDate: bookingState.selectedDate?.toDateString(),
       selectedTime: bookingState.selectedTime,
+      clientName: bookingState.clientData.name,
+      clientPhone: bookingState.clientData.phone,
       servicesCount: services?.length || 0,
       availableSlotsCount: availableSlots?.length || 0,
       loadingServices,
       loadingTimes,
       servicesError,
-      timeSlotsError
+      timeSlotsError,
+      isClient,
+      userId: user?.id
     });
   }, [
     salonId, 
@@ -49,12 +55,15 @@ export const useSimpleBooking = (salon: Salon) => {
     bookingState.selectedService, 
     bookingState.selectedDate, 
     bookingState.selectedTime, 
+    bookingState.clientData,
     services,
     availableSlots, 
     loadingServices,
     loadingTimes, 
     servicesError,
-    timeSlotsError
+    timeSlotsError,
+    isClient,
+    user?.id
   ]);
 
   // Force refresh services when salon changes
@@ -64,6 +73,28 @@ export const useSimpleBooking = (salon: Salon) => {
       refreshServices();
     }
   }, [salonId, services.length, servicesError, refreshServices, salon?.name]);
+
+  // Validation functions
+  const validateBookingData = useCallback(() => {
+    const errors: string[] = [];
+    
+    if (!bookingState.selectedService) errors.push('Selecione um serviço');
+    if (!bookingState.selectedDate) errors.push('Selecione uma data');
+    if (!bookingState.selectedTime) errors.push('Selecione um horário');
+    if (!bookingState.clientData.name?.trim()) errors.push('Nome é obrigatório');
+    if (!bookingState.clientData.phone?.trim()) errors.push('Telefone é obrigatório');
+    
+    // Validação básica do telefone
+    const phoneClean = bookingState.clientData.phone?.replace(/\D/g, '') || '';
+    if (phoneClean.length < 10 || phoneClean.length > 11) {
+      errors.push('Telefone deve ter 10 ou 11 dígitos');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }, [bookingState.selectedService, bookingState.selectedDate, bookingState.selectedTime, bookingState.clientData]);
 
   // Handle date selection with validation
   const handleDateSelect = useCallback((date: Date | undefined) => {
@@ -94,52 +125,51 @@ export const useSimpleBooking = (salon: Salon) => {
     console.log('🛍️ Service selected:', service?.name, 'ID:', service?.id);
     bookingState.setSelectedService(service);
     
-    // Reset time when service changes (different services may have different availability)
+    // Reset time when service changes
     if (bookingState.selectedTime) {
       console.log('🔄 Resetting selected time due to service change');
       bookingState.setSelectedTime('');
     }
   }, [bookingState]);
 
-  // Submit booking
+  // Submit booking with enhanced validation
   const handleSubmitBooking = useCallback(async () => {
     if (isSubmitting) {
       console.log('⚠️ Submission already in progress');
       return false;
     }
 
-    console.log('📋 Starting booking submission with data:', {
+    console.log('📋 Starting booking submission validation');
+
+    // Client authentication check
+    if (!user?.id) {
+      console.error('❌ User not authenticated');
+      return false;
+    }
+
+    if (!isClient) {
+      console.error('❌ User is not a client');
+      return false;
+    }
+
+    // Data validation
+    const validation = validateBookingData();
+    if (!validation.isValid) {
+      console.error('❌ Validation failed:', validation.errors);
+      return false;
+    }
+
+    console.log('📋 Submitting booking with data:', {
       service: bookingState.selectedService?.name,
       date: bookingState.selectedDate?.toDateString(),
       time: bookingState.selectedTime,
-      clientData: bookingState.clientData
+      clientData: {
+        name: bookingState.clientData.name,
+        phone: bookingState.clientData.phone,
+        email: bookingState.clientData.email,
+        notes: bookingState.clientData.notes
+      }
     });
-
-    // Validate required fields
-    if (!bookingState.selectedService) {
-      console.error('❌ No service selected');
-      return false;
-    }
-
-    if (!bookingState.selectedDate) {
-      console.error('❌ No date selected');
-      return false;
-    }
-
-    if (!bookingState.selectedTime) {
-      console.error('❌ No time selected');
-      return false;
-    }
-
-    if (!bookingState.clientData.name.trim()) {
-      console.error('❌ Client name missing');
-      return false;
-    }
-
-    if (!bookingState.clientData.phone.trim()) {
-      console.error('❌ Client phone missing');
-      return false;
-    }
     
     const success = await submitBookingBase(
       bookingState.selectedService,
@@ -158,7 +188,7 @@ export const useSimpleBooking = (salon: Salon) => {
     }
     
     return success;
-  }, [submitBookingBase, bookingState, isSubmitting]);
+  }, [submitBookingBase, bookingState, isSubmitting, user?.id, isClient, validateBookingData]);
 
   // Format currency
   const formatCurrency = useCallback((value: number) => {
@@ -173,7 +203,7 @@ export const useSimpleBooking = (salon: Salon) => {
     ...bookingState,
     
     // Services
-    services,
+    services: services || [],
     loadingServices,
     servicesError,
     
@@ -181,6 +211,10 @@ export const useSimpleBooking = (salon: Salon) => {
     availableTimes: availableSlots || [],
     loadingTimes,
     timeSlotsError,
+    
+    // Authentication
+    isClient,
+    user,
     
     // Handlers
     handleDateSelect,
@@ -190,6 +224,9 @@ export const useSimpleBooking = (salon: Salon) => {
     // Submission
     isSubmitting,
     submitBooking: handleSubmitBooking,
+    
+    // Validation
+    validateBookingData,
     
     // Utilities
     refetchSlots,
