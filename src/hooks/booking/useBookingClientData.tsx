@@ -42,9 +42,9 @@ export const useBookingClientData = (
         return;
       }
 
-      // Se já tem dados, não sobrescrever
+      // Se já tem dados preenchidos, não sobrescrever
       if (clientData.name && clientData.phone) {
-        console.log('useBookingClientData - Data already exists, skipping');
+        console.log('useBookingClientData - Data already exists, marking as filled');
         hasAutoFilled.current = true;
         return;
       }
@@ -111,13 +111,13 @@ export const useBookingClientData = (
       }
     };
 
-    // Delay para evitar múltiplas chamadas
+    // Executar após um pequeno delay para garantir que o contexto de autenticação está pronto
     const timer = setTimeout(() => {
       loadClientData();
-    }, 100);
+    }, 200);
 
     return () => clearTimeout(timer);
-  }, [user?.id, isClient, setClientData, formatPhoneNumber, clientData.notes]);
+  }, [user?.id, isClient, setClientData, formatPhoneNumber]);
 
   // Reset do flag quando os dados forem limpos manualmente
   useEffect(() => {

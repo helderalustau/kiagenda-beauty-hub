@@ -8,9 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, User, Phone, Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Service } from '@/hooks/useSupabaseData';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
+import { useBookingClientData } from '@/hooks/booking/useBookingClientData';
 
 interface ClientData {
   name: string;
@@ -44,73 +42,10 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
-  const { user, isClient } = useAuth();
-  const { formatPhoneNumber } = usePhoneFormatter();
-
-  // Auto-preencher dados do cliente logado
-  useEffect(() => {
-    const loadClientData = async () => {
-      console.log('SimpleClientDataStep - Loading client data for user:', { 
-        userId: user?.id, 
-        isClient,
-        hasData: !!(clientData.name && clientData.phone)
-      });
-
-      if (!user?.id || !isClient) {
-        console.log('SimpleClientDataStep - User is not a client, skipping auto-fill');
-        return;
-      }
-
-      // Só carregar se os dados ainda não foram preenchidos
-      if (clientData.name && clientData.phone) {
-        console.log('SimpleClientDataStep - Client data already filled');
-        return;
-      }
-
-      try {
-        console.log('SimpleClientDataStep - Fetching client data from database');
-        
-        const { data: clientAuthData, error } = await supabase
-          .from('client_auth')
-          .select('username, name, phone, email')
-          .eq('id', user.id)
-          .single();
-
-        if (!error && clientAuthData) {
-          console.log('SimpleClientDataStep - Client data loaded:', {
-            name: clientAuthData.username || clientAuthData.name,
-            phone: clientAuthData.phone,
-            email: clientAuthData.email
-          });
-          
-          onClientDataChange({
-            name: clientAuthData.username || clientAuthData.name || user.name || '',
-            phone: formatPhoneNumber(clientAuthData.phone || ''),
-            email: clientAuthData.email || user.email || '',
-            notes: clientData.notes || ''
-          });
-        } else {
-          console.log('SimpleClientDataStep - Using fallback user data');
-          onClientDataChange({
-            name: user.name || '',
-            phone: formatPhoneNumber(''),
-            email: user.email || '',
-            notes: clientData.notes || ''
-          });
-        }
-      } catch (error) {
-        console.error('SimpleClientDataStep - Error loading client data:', error);
-        onClientDataChange({
-          name: user.name || '',
-          phone: formatPhoneNumber(''),
-          email: user.email || '',
-          notes: clientData.notes || ''
-        });
-      }
-    };
-
-    loadClientData();
-  }, [user?.id, isClient, onClientDataChange, formatPhoneNumber]);
+  const { user, isClient, hasAutoFilled, isLoading } = useBookingClientData(
+    clientData,
+    onClientDataChange
+  );
 
   // Validar se pode submeter
   const canSubmit = () => {
@@ -119,7 +54,8 @@ const SimpleClientDataStep = ({
            selectedTime && 
            clientData.name?.trim() && 
            clientData.phone?.trim() && 
-           !isSubmitting;
+           !isSubmitting &&
+           hasAutoFilled; // Só pode submeter se os dados foram carregados
   };
 
   if (!isClient) {
@@ -181,57 +117,54 @@ const SimpleClientDataStep = ({
         </CardContent>
       </Card>
 
-      {/* Dados do Cliente */}
+      {/* Dados do Cliente - Somente Leitura */}
       <Card className="bg-green-50 border-green-200">
         <CardContent className="p-4">
           <h4 className="font-semibold mb-3 flex items-center">
             <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-            Seus Dados
+            Seus Dados (Carregados Automaticamente)
           </h4>
           
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700">Nome Completo</p>
-                <p className="font-medium">
-                  {clientData.name || (
-                    <span className="text-gray-400 flex items-center">
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      Carregando...
-                    </span>
-                  )}
-                </p>
-              </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <span>Carregando seus dados...</span>
             </div>
-
-            <div className="flex items-center space-x-3">
-              <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700">Telefone</p>
-                <p className="font-medium">
-                  {clientData.phone || (
-                    <span className="text-gray-400 flex items-center">
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      Carregando...
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {clientData.email && (
+          ) : (
+            <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-700">E-mail</p>
-                  <p className="font-medium">{clientData.email}</p>
+                  <p className="text-sm font-medium text-gray-700">Nome Completo</p>
+                  <p className="font-medium text-gray-900">
+                    {clientData.name || 'Não informado'}
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
+
+              <div className="flex items-center space-x-3">
+                <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-700">Telefone</p>
+                  <p className="font-medium text-gray-900">
+                    {clientData.phone || 'Não informado'}
+                  </p>
+                </div>
+              </div>
+
+              {clientData.email && (
+                <div className="flex items-center space-x-3">
+                  <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">E-mail</p>
+                    <p className="font-medium text-gray-900">{clientData.email}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           
-          {clientData.name && clientData.phone && (
+          {hasAutoFilled && (
             <div className="mt-3 p-2 bg-green-100 rounded-lg">
               <p className="text-xs text-green-800">
                 ✓ Dados carregados automaticamente do seu perfil
@@ -254,6 +187,17 @@ const SimpleClientDataStep = ({
           className="mt-1"
         />
       </div>
+
+      {/* Alerta se dados não foram carregados */}
+      {!hasAutoFilled && !isLoading && (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="p-4">
+            <p className="text-amber-800 text-sm">
+              ⚠️ Não foi possível carregar seus dados automaticamente. Verifique se você está logado corretamente.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Botões de Ação */}
       <div className="flex justify-between pt-4">
@@ -285,7 +229,7 @@ const SimpleClientDataStep = ({
       {process.env.NODE_ENV === 'development' && (
         <div className="text-xs text-gray-400 mt-4 p-2 bg-gray-100 rounded">
           Debug: User ID: {user?.id} | Is Client: {isClient?.toString()} | 
-          Can Submit: {canSubmit().toString()}
+          Has Auto Filled: {hasAutoFilled?.toString()} | Can Submit: {canSubmit().toString()}
         </div>
       )}
     </div>
