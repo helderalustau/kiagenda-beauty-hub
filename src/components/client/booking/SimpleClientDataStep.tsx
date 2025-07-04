@@ -42,10 +42,16 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
-  const { user, isClient, hasAutoFilled, isLoading } = useBookingClientData(
+  const { user, hasAutoFilled, isLoading } = useBookingClientData(
     clientData,
     onClientDataChange
   );
+
+  // Verificar se é cliente logado
+  const isClientLoggedIn = () => {
+    const clientAuth = localStorage.getItem('clientAuth');
+    return !!clientAuth;
+  };
 
   // Validar se pode submeter
   const canSubmit = () => {
@@ -55,10 +61,10 @@ const SimpleClientDataStep = ({
            clientData.name?.trim() && 
            clientData.phone?.trim() && 
            !isSubmitting &&
-           hasAutoFilled; // Só pode submeter se os dados foram carregados
+           hasAutoFilled;
   };
 
-  if (!isClient) {
+  if (!isClientLoggedIn()) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -71,12 +77,12 @@ const SimpleClientDataStep = ({
 
         <Card className="bg-red-50 border-red-200">
           <CardContent className="p-6 text-center">
-            <h4 className="font-semibold mb-2 text-red-800">Acesso Restrito</h4>
+            <h4 className="font-semibold mb-2 text-red-800">Login Necessário</h4>
             <p className="text-red-600 mb-4">
-              Apenas clientes podem fazer agendamentos. Você está logado como administrador.
+              Você precisa fazer login como cliente para finalizar o agendamento.
             </p>
-            <Button onClick={onCancel} variant="outline">
-              Voltar
+            <Button onClick={() => window.location.href = '/client-login'} variant="outline">
+              Fazer Login
             </Button>
           </CardContent>
         </Card>
@@ -117,7 +123,7 @@ const SimpleClientDataStep = ({
         </CardContent>
       </Card>
 
-      {/* Dados do Cliente - Somente Leitura */}
+      {/* Dados do Cliente - Carregados automaticamente */}
       <Card className="bg-green-50 border-green-200">
         <CardContent className="p-4">
           <h4 className="font-semibold mb-3 flex items-center">
@@ -224,14 +230,6 @@ const SimpleClientDataStep = ({
           )}
         </Button>
       </div>
-
-      {/* Debug Info - Remover em produção */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-400 mt-4 p-2 bg-gray-100 rounded">
-          Debug: User ID: {user?.id} | Is Client: {isClient?.toString()} | 
-          Has Auto Filled: {hasAutoFilled?.toString()} | Can Submit: {canSubmit().toString()}
-        </div>
-      )}
     </div>
   );
 };
