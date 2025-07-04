@@ -77,6 +77,8 @@ const AdminRegistrationForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Iniciando processo de cadastro de administrador');
+    
     const validationErrors = validateAdminForm(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -91,7 +93,7 @@ const AdminRegistrationForm = ({
     setSubmitting(true);
 
     try {
-      console.log('Iniciando cadastro de administrador:', formData.name);
+      console.log('Dados validados, criando estabelecimento temporário');
 
       // Criar estabelecimento temporário para o administrador
       const temporarySalonData = {
@@ -102,10 +104,11 @@ const AdminRegistrationForm = ({
         plan: 'bronze'
       };
 
-      console.log('Criando estabelecimento temporário:', temporarySalonData);
+      console.log('Criando estabelecimento:', temporarySalonData);
       const salonResult = await createSalon(temporarySalonData);
 
       if (!salonResult.success) {
+        console.error('Erro ao criar estabelecimento:', salonResult);
         const errorMessage = 'message' in salonResult && salonResult.message 
           ? salonResult.message 
           : 'Erro desconhecido ao criar estabelecimento';
@@ -116,9 +119,10 @@ const AdminRegistrationForm = ({
         throw new Error('Dados do estabelecimento não retornados');
       }
 
-      console.log('Estabelecimento criado:', salonResult.salon.id);
+      console.log('Estabelecimento criado com sucesso:', salonResult.salon.id);
 
       // Criar administrador vinculado ao estabelecimento
+      console.log('Criando administrador');
       const adminResult = await registerAdmin(
         salonResult.salon.id,
         formData.name.trim(),
@@ -129,12 +133,13 @@ const AdminRegistrationForm = ({
       );
 
       if (!adminResult.success) {
+        console.error('Erro ao criar administrador:', adminResult);
         throw new Error(adminResult.message || 'Erro ao criar administrador');
       }
 
       console.log('Administrador criado com sucesso:', adminResult.admin.id);
 
-      // Preparar dados para configuração do estabelecimento
+      // Preparar dados para armazenamento local
       const adminAuthData = {
         id: adminResult.admin.id,
         name: adminResult.admin.name,
@@ -145,7 +150,8 @@ const AdminRegistrationForm = ({
         loginTime: new Date().toISOString()
       };
 
-      // Armazenar dados necessários no localStorage
+      // Armazenar dados no localStorage
+      console.log('Armazenando dados de autenticação:', adminAuthData);
       localStorage.setItem('adminAuth', JSON.stringify(adminAuthData));
       localStorage.setItem('selectedSalonId', salonResult.salon.id);
       
@@ -165,15 +171,18 @@ const AdminRegistrationForm = ({
       });
 
       // Callback de sucesso se fornecido
-      onSuccess?.();
+      if (onSuccess) {
+        onSuccess();
+      }
 
       // Redirecionar para configuração do estabelecimento
+      console.log('Redirecionando para /salon-setup');
       setTimeout(() => {
         window.location.href = '/salon-setup';
       }, 1500);
 
     } catch (error) {
-      console.error('Erro no cadastro do administrador:', error);
+      console.error('Erro no processo de cadastro:', error);
       toast({
         title: "Erro no Cadastro",
         description: error instanceof Error ? error.message : "Erro ao criar administrador",
@@ -185,7 +194,11 @@ const AdminRegistrationForm = ({
   };
 
   const handleCancel = () => {
-    window.location.href = '/';
+    if (onCancel) {
+      onCancel();
+    } else {
+      window.location.href = '/admin-login';
+    }
   };
 
   return (

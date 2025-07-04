@@ -20,8 +20,12 @@ export const useAdminLoginLogic = () => {
     const password = formData.get('password') as string;
 
     try {
+      console.log('Tentativa de login:', { name });
+
       // Verificação especial para super admin Helder
       if (name === 'Helder' && password === 'Hd@123@@') {
+        console.log('Login como Super Admin detectado');
+        
         const superAdminUser = {
           id: 'super-admin-helder',
           name: 'Helder',
@@ -43,7 +47,9 @@ export const useAdminLoginLogic = () => {
         return;
       }
 
-      // Login normal para outros usuários
+      // Login normal para outros usuários - buscar primeiro pelo nome
+      console.log('Buscando administrador no banco:', name);
+      
       const { data: adminData, error } = await supabase
         .from('admin_auth')
         .select(`
@@ -53,16 +59,19 @@ export const useAdminLoginLogic = () => {
           role,
           salon_id,
           password,
+          password_hash,
           salons!inner(
             id,
             name,
-            setup_completed
+            setup_completed,
+            admin_setup_completed
           )
         `)
         .eq('name', name)
         .single();
 
       if (error || !adminData) {
+        console.error('Erro ao buscar administrador:', error);
         toast({
           title: "Erro de Login",
           description: "Usuário não encontrado",
@@ -71,8 +80,19 @@ export const useAdminLoginLogic = () => {
         return;
       }
 
-      // Verificar senha
-      if (adminData.password !== password) {
+      console.log('Administrador encontrado:', adminData);
+
+      // Verificar senha (suporte a hash e texto plano durante migração)
+      let isPasswordValid = false;
+      if (adminData.password_hash) {
+        // Verificar senha com hash (implementar verificação adequada se necessário)
+        isPasswordValid = adminData.password === password; // Temporário
+      } else if (adminData.password) {
+        isPasswordValid = adminData.password === password;
+      }
+
+      if (!isPasswordValid) {
+        console.log('Senha incorreta');
         toast({
           title: "Erro de Login",
           description: "Senha incorreta",
@@ -93,7 +113,10 @@ export const useAdminLoginLogic = () => {
 
       login(userData);
       localStorage.setItem('adminAuth', JSON.stringify(userData));
-      localStorage.setItem('selectedSalonId', adminData.salon_id);
+      
+      if (adminData.salon_id) {
+        localStorage.setItem('selectedSalonId', adminData.salon_id);
+      }
 
       toast({
         title: "Login realizado com sucesso!",
@@ -102,14 +125,21 @@ export const useAdminLoginLogic = () => {
 
       // Lógica de redirecionamento baseada na configuração do estabelecimento
       const salon = adminData.salons;
-      if (salon && salon.setup_completed) {
+      console.log('Status do salão:', {
+        setup_completed: salon?.setup_completed,
+        admin_setup_completed: salon?.admin_setup_completed
+      });
+
+      if (salon && salon.admin_setup_completed === true && salon.setup_completed === true) {
+        console.log('Redirecionando para admin dashboard');
         navigate('/admin-dashboard');
       } else {
+        console.log('Redirecionando para configuração do salão');
         navigate('/salon-setup');
       }
 
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Erro no login:', error);
       toast({
         title: "Erro interno",
         description: "Erro ao fazer login. Tente novamente.",
