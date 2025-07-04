@@ -42,11 +42,9 @@ export const useSalonSetup = () => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  // Get correct salon ID from localStorage
   const getSalonId = () => {
     console.log('Buscando salon ID no localStorage');
     
-    // Try adminAuth first
     const adminAuth = localStorage.getItem('adminAuth');
     if (adminAuth) {
       try {
@@ -60,7 +58,6 @@ export const useSalonSetup = () => {
       }
     }
 
-    // Fallback to selectedSalonId
     const selectedSalonId = localStorage.getItem('selectedSalonId');
     if (selectedSalonId) {
       console.log('Salon ID encontrado em selectedSalonId:', selectedSalonId);
@@ -71,10 +68,10 @@ export const useSalonSetup = () => {
     return null;
   };
 
-  // Check if admin setup is completed and redirect to dashboard
+  // Verificar se setup já foi concluído
   useEffect(() => {
-    if (salon && salon.admin_setup_completed === true) {
-      console.log('Admin setup já concluído, redirecionando para dashboard');
+    if (salon && salon.admin_setup_completed === true && salon.setup_completed === true) {
+      console.log('Setup já concluído, redirecionando para dashboard');
       toast({
         title: "Configuração já concluída",
         description: "Redirecionando para o painel administrativo...",
@@ -85,7 +82,7 @@ export const useSalonSetup = () => {
     }
   }, [salon, toast]);
 
-  // Initialize data only once
+  // Inicializar dados apenas uma vez
   useEffect(() => {
     if (initialized) return;
 
@@ -99,7 +96,7 @@ export const useSalonSetup = () => {
           console.error('ID do estabelecimento não encontrado');
           toast({
             title: "Erro",
-            description: "ID do estabelecimento não encontrado. Redirecionando...",
+            description: "ID do estabelecimento não encontrado. Faça login novamente.",
             variant: "destructive"
           });
           setTimeout(() => window.location.href = '/admin-login', 2000);
@@ -108,7 +105,6 @@ export const useSalonSetup = () => {
 
         console.log('Carregando dados para salon ID:', salonId);
 
-        // Load data in parallel but only once
         await Promise.all([
           fetchSalonData(salonId),
           fetchPresetServices()
@@ -121,16 +117,17 @@ export const useSalonSetup = () => {
         console.error('Erro ao inicializar dados:', error);
         toast({
           title: "Erro",
-          description: "Erro ao carregar dados. Tente novamente.",
+          description: "Erro ao carregar dados. Tente fazer login novamente.",
           variant: "destructive"
         });
+        setTimeout(() => window.location.href = '/admin-login', 2000);
       }
     };
 
     initializeData();
   }, [initialized, fetchSalonData, fetchPresetServices, toast]);
 
-  // Update form data when salon is loaded
+  // Atualizar dados do formulário quando salão for carregado
   useEffect(() => {
     if (salon && initialized) {
       console.log('Atualizando dados do formulário com dados do salão:', salon);

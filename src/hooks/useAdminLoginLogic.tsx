@@ -22,34 +22,7 @@ export const useAdminLoginLogic = () => {
     try {
       console.log('Tentativa de login:', { name });
 
-      // Verificação especial para super admin Helder
-      if (name === 'Helder' && password === 'Hd@123@@') {
-        console.log('Login como Super Admin detectado');
-        
-        const superAdminUser = {
-          id: 'super-admin-helder',
-          name: 'Helder',
-          email: 'helder@superadmin.com',
-          role: 'super_admin',
-          isFirstAccess: false,
-          loginTime: new Date().toISOString()
-        };
-
-        login(superAdminUser);
-        localStorage.setItem('adminAuth', JSON.stringify(superAdminUser));
-        
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo, Super Administrador!"
-        });
-
-        navigate('/super-admin-dashboard');
-        return;
-      }
-
-      // Login normal para outros usuários - buscar primeiro pelo nome
-      console.log('Buscando administrador no banco:', name);
-      
+      // Buscar administrador no banco de dados
       const { data: adminData, error } = await supabase
         .from('admin_auth')
         .select(`
@@ -82,12 +55,24 @@ export const useAdminLoginLogic = () => {
 
       console.log('Administrador encontrado:', adminData);
 
-      // Verificar senha (suporte a hash e texto plano durante migração)
+      // Verificar senha - aceitar tanto hash quanto texto plano
       let isPasswordValid = false;
+      
+      // Se tem hash, verificar com hash
       if (adminData.password_hash) {
-        // Verificar senha com hash (implementar verificação adequada se necessário)
-        isPasswordValid = adminData.password === password; // Temporário
-      } else if (adminData.password) {
+        try {
+          const { data: hashResult } = await supabase.rpc('verify_password', {
+            password: password,
+            hash: adminData.password_hash
+          });
+          isPasswordValid = hashResult;
+        } catch (hashError) {
+          console.log('Erro na verificação de hash, tentando senha plana:', hashError);
+          // Fallback para senha plana se a verificação de hash falhar
+          isPasswordValid = adminData.password === password;
+        }
+      } else {
+        // Verificar senha plana
         isPasswordValid = adminData.password === password;
       }
 
@@ -101,6 +86,7 @@ export const useAdminLoginLogic = () => {
         return;
       }
 
+      // Criar dados do usuário para login
       const userData = {
         id: adminData.id,
         name: adminData.name,
@@ -111,6 +97,7 @@ export const useAdminLoginLogic = () => {
         loginTime: new Date().toISOString()
       };
 
+      // Fazer login
       login(userData);
       localStorage.setItem('adminAuth', JSON.stringify(userData));
       
@@ -123,18 +110,14 @@ export const useAdminLoginLogic = () => {
         description: `Bem-vindo, ${adminData.name}!`
       });
 
-      // Lógica de redirecionamento baseada na configuração do estabelecimento
+      // Determinar redirecionamento baseado na configuração do estabelecimento
       const salon = adminData.salons;
-      console.log('Status do salão:', {
-        setup_completed: salon?.setup_completed,
-        admin_setup_completed: salon?.admin_setup_completed
-      });
-
-      if (salon && salon.admin_setup_completed === true && salon.setup_completed === true) {
-        console.log('Redirecionando para admin dashboard');
+      
+      if (salon && salon.setup_completed === true && salon.admin_setup_completed === true) {
+        console.log('Redirecionando para admin dashboard - estabelecimento configurado');
         navigate('/admin-dashboard');
       } else {
-        console.log('Redirecionando para configuração do salão');
+        console.log('Redirecionando para configuração do estabelecimento');
         navigate('/salon-setup');
       }
 

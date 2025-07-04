@@ -72,7 +72,7 @@ export const useAdminRegistrationForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Iniciando processo de cadastro de administrador');
+    console.log('Iniciando processo de cadastro simplificado de administrador');
     
     const validationErrors = validateAdminForm(formData);
     if (Object.keys(validationErrors).length > 0) {
@@ -90,7 +90,6 @@ export const useAdminRegistrationForm = ({
     try {
       console.log('Dados validados, criando estabelecimento temporário');
 
-      // Criar estabelecimento temporário para o administrador
       const temporarySalonData = {
         name: generateSequentialSalonName(),
         owner_name: formData.name.trim(),
@@ -102,21 +101,13 @@ export const useAdminRegistrationForm = ({
       console.log('Criando estabelecimento:', temporarySalonData);
       const salonResult = await createSalon(temporarySalonData);
 
-      if (!salonResult.success) {
-        console.error('Erro ao criar estabelecimento:', salonResult);
-        const errorMessage = 'message' in salonResult && salonResult.message 
-          ? salonResult.message 
-          : 'Erro desconhecido ao criar estabelecimento';
+      if (!salonResult.success || !('salon' in salonResult) || !salonResult.salon) {
+        const errorMessage = 'message' in salonResult ? salonResult.message : 'Erro ao criar estabelecimento';
         throw new Error(errorMessage);
-      }
-
-      if (!('salon' in salonResult) || !salonResult.salon) {
-        throw new Error('Dados do estabelecimento não retornados');
       }
 
       console.log('Estabelecimento criado com sucesso:', salonResult.salon.id);
 
-      // Criar administrador vinculado ao estabelecimento
       console.log('Criando administrador');
       const adminResult = await registerAdmin(
         salonResult.salon.id,
@@ -132,27 +123,11 @@ export const useAdminRegistrationForm = ({
         throw new Error(adminResult.message || 'Erro ao criar administrador');
       }
 
-      console.log('Administrador criado com sucesso:', adminResult.admin.id);
+      console.log('Administrador criado com sucesso');
 
-      // Preparar dados para armazenamento local
-      const adminAuthData = {
-        id: adminResult.admin.id,
-        name: adminResult.admin.name,
-        email: adminResult.admin.email,
-        role: adminResult.admin.role,
-        salon_id: salonResult.salon.id,
-        isFirstAccess: true,
-        loginTime: new Date().toISOString()
-      };
-
-      // Armazenar dados no localStorage
-      console.log('Armazenando dados de autenticação:', adminAuthData);
-      localStorage.setItem('adminAuth', JSON.stringify(adminAuthData));
-      localStorage.setItem('selectedSalonId', salonResult.salon.id);
-      
       toast({
         title: "Cadastro Realizado com Sucesso!",
-        description: "Redirecionando para configuração do estabelecimento..."
+        description: "Você pode fazer login agora"
       });
 
       // Limpar formulário
@@ -165,16 +140,14 @@ export const useAdminRegistrationForm = ({
         setDateadm: new Date().toISOString()
       });
 
-      // Callback de sucesso se fornecido
       if (onSuccess) {
         onSuccess();
+      } else {
+        // Redirecionar para login após sucesso
+        setTimeout(() => {
+          window.location.href = '/admin-login';
+        }, 1500);
       }
-
-      // Redirecionar para configuração do estabelecimento
-      console.log('Redirecionando para /salon-setup');
-      setTimeout(() => {
-        window.location.href = '/salon-setup';
-      }, 1500);
 
     } catch (error) {
       console.error('Erro no processo de cadastro:', error);
