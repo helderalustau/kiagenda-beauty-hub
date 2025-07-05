@@ -72,7 +72,12 @@ export const useAdminRegistrationForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Iniciando processo de cadastro simplificado de administrador');
+    if (submitting) {
+      console.log('Já está processando, ignorando nova submissão');
+      return;
+    }
+
+    console.log('Iniciando processo de cadastro de administrador');
     
     const validationErrors = validateAdminForm(formData);
     if (Object.keys(validationErrors).length > 0) {
@@ -101,9 +106,13 @@ export const useAdminRegistrationForm = ({
       console.log('Criando estabelecimento:', temporarySalonData);
       const salonResult = await createSalon(temporarySalonData);
 
-      if (!salonResult.success || !('salon' in salonResult) || !salonResult.salon) {
+      if (!salonResult.success) {
         const errorMessage = 'message' in salonResult ? salonResult.message : 'Erro ao criar estabelecimento';
         throw new Error(errorMessage);
+      }
+
+      if (!('salon' in salonResult) || !salonResult.salon) {
+        throw new Error('Erro ao criar estabelecimento: dados não retornados');
       }
 
       console.log('Estabelecimento criado com sucesso:', salonResult.salon.id);
@@ -127,7 +136,7 @@ export const useAdminRegistrationForm = ({
 
       toast({
         title: "Cadastro Realizado com Sucesso!",
-        description: "Você pode fazer login agora"
+        description: "Administrador criado com sucesso"
       });
 
       // Limpar formulário
@@ -143,9 +152,9 @@ export const useAdminRegistrationForm = ({
       if (onSuccess) {
         onSuccess();
       } else {
-        // Redirecionar para login após sucesso
+        // Aguardar um pouco antes de redirecionar
         setTimeout(() => {
-          window.location.href = '/admin-login';
+          window.location.href = '/super-admin-dashboard';
         }, 1500);
       }
 
@@ -165,7 +174,7 @@ export const useAdminRegistrationForm = ({
     if (onCancel) {
       onCancel();
     } else {
-      window.location.href = '/admin-login';
+      window.location.href = '/super-admin-dashboard';
     }
   };
 
