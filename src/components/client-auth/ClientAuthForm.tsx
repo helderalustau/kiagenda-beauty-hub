@@ -1,222 +1,401 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StateSelect } from "@/components/ui/state-select";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2, User, Lock, Phone, Mail, MapPin, Home } from "lucide-react";
+import { useClientAuth } from '@/hooks/useClientAuth';
 
-interface FormData {
-  username: string;
-  password: string;
-  phone: string;
-  email: string;
-}
-
-interface ClientAuthFormProps {
-  onLogin: (username: string, password: string) => Promise<void>;
-  onRegister: (username: string, password: string, phone: string, email: string) => Promise<void>;
-  loading: boolean;
-}
-
-export const ClientAuthForm: React.FC<ClientAuthFormProps> = ({
-  onLogin,
-  onRegister,
-  loading
-}) => {
-  const { toast } = useToast();
-  const { formatPhoneNumber, extractPhoneNumbers, validatePhone } = usePhoneFormatter();
-  
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
+const ClientAuthForm = () => {
+  const [activeTab, setActiveTab] = useState('login');
+  const [loginData, setLoginData] = useState({ username: '', password: '' });
+  const [registerData, setRegisterData] = useState({
     username: '',
     password: '',
+    confirmPassword: '',
     phone: '',
-    email: ''
+    email: '',
+    fullName: '',
+    city: '',
+    state: '',
+    address: '',
+    houseNumber: '',
+    neighborhood: '',
+    zipCode: ''
   });
-
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    if (field === 'phone') {
-      // Format phone with mask for display
-      const formattedPhone = formatPhoneNumber(value);
-      setFormData(prev => ({
-        ...prev,
-        [field]: formattedPhone
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
-    }
-  };
+  
+  const { loading, authenticateClient, registerClient } = useClientAuth();
+  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.username.trim()) {
+    if (!loginData.username || !loginData.password) {
       toast({
         title: "Erro",
-        description: "Nome de usuário é obrigatório",
+        description: "Preencha todos os campos",
         variant: "destructive"
       });
       return;
     }
 
-    if (!formData.password.trim()) {
+    const result = await authenticateClient(loginData.username, loginData.password);
+    
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: "Login realizado com sucesso!"
+      });
+      window.location.href = '/client-dashboard';
+    } else {
       toast({
         title: "Erro",
-        description: "Senha é obrigatória",
+        description: result.message,
         variant: "destructive"
       });
-      return;
     }
-
-    await onLogin(formData.username, formData.password);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.username.trim()) {
+    if (!registerData.username || !registerData.password || !registerData.phone) {
       toast({
         title: "Erro",
-        description: "Nome de usuário é obrigatório",
+        description: "Preencha os campos obrigatórios: nome de usuário, senha e telefone",
         variant: "destructive"
       });
       return;
     }
 
-    if (!formData.password.trim() || formData.password.length < 6) {
+    if (registerData.password !== registerData.confirmPassword) {
       toast({
         title: "Erro",
-        description: "Senha deve ter pelo menos 6 caracteres",
+        description: "As senhas não conferem",
         variant: "destructive"
       });
       return;
     }
 
-    if (!formData.phone.trim()) {
+    if (registerData.password.length < 6) {
       toast({
         title: "Erro",
-        description: "Telefone é obrigatório",
+        description: "A senha deve ter pelo menos 6 caracteres",
         variant: "destructive"
       });
       return;
     }
 
-    if (!validatePhone(formData.phone)) {
+    const result = await registerClient(
+      registerData.username,
+      registerData.password,
+      registerData.phone,
+      registerData.email || undefined
+    );
+    
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: "Cadastro realizado com sucesso! Faça login para continuar."
+      });
+      setActiveTab('login');
+      setLoginData({ username: registerData.username, password: '' });
+      setRegisterData({
+        username: '',
+        password: '',
+        confirmPassword: '',
+        phone: '',
+        email: '',
+        fullName: '',
+        city: '',
+        state: '',
+        address: '',
+        houseNumber: '',
+        neighborhood: '',
+        zipCode: ''
+      });
+    } else {
       toast({
         title: "Erro",
-        description: "Formato de telefone inválido. Use (XX) XXXXX-XXXX",
+        description: result.message,
         variant: "destructive"
       });
-      return;
     }
-
-    // Extract only numbers from phone before sending to register
-    const phoneNumbers = extractPhoneNumbers(formData.phone);
-    await onRegister(formData.username, formData.password, phoneNumbers, formData.email);
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-md mx-auto">
-        <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-3xl font-bold text-gray-900">
-              {isRegistering ? 'Criar Conta' : 'Login do Cliente'}
-            </CardTitle>
-            <CardDescription className="text-lg text-gray-600">
-              {isRegistering ? 'Crie sua conta para agendar serviços' : 'Acesse sua conta para ver estabelecimentos disponíveis'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="username">Nome de Usuário</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="Digite seu nome de usuário"
-                  value={formData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
-                  required
-                />
-                {isRegistering && (
-                  <p className="text-sm text-gray-500">
-                    Escolha um nome de usuário único para sua conta
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Digite sua senha"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  required
-                />
-              </div>
-
-              {isRegistering && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-gray-900">
+            Área do Cliente
+          </CardTitle>
+          <p className="text-gray-600">
+            Faça login ou cadastre-se para agendar seus serviços
+          </p>
+        </CardHeader>
+        
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Entrar</TabsTrigger>
+              <TabsTrigger value="register">Cadastrar</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login" className="space-y-4 mt-6">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="username">Nome de usuário *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="phone"
+                      id="username"
+                      type="text"
+                      placeholder="Seu nome de usuário"
+                      value={loginData.username}
+                      onChange={(e) => setLoginData({...loginData, username: e.target.value})}
+                      className="pl-10"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="password">Senha *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Sua senha"
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                      className="pl-10"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="register" className="space-y-4 mt-6">
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <Label htmlFor="reg-username">Nome de usuário *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="reg-username"
+                      type="text"
+                      placeholder="Escolha um nome de usuário"
+                      value={registerData.username}
+                      onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
+                      className="pl-10"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="reg-fullname">Nome completo</Label>
+                  <Input
+                    id="reg-fullname"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    value={registerData.fullName}
+                    onChange={(e) => setRegisterData({...registerData, fullName: e.target.value})}
+                    disabled={loading}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="reg-phone">Telefone *</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="reg-phone"
                       type="tel"
                       placeholder="(11) 99999-9999"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      maxLength={15}
-                      required
+                      value={registerData.phone}
+                      onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
+                      className="pl-10"
+                      disabled={loading}
                     />
-                    <p className="text-sm text-gray-500">
-                      Digite apenas números. Ex: 11999999999
-                    </p>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email (opcional)</Label>
+                </div>
+                
+                <div>
+                  <Label htmlFor="reg-email">E-mail</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="email"
+                      id="reg-email"
                       type="email"
                       placeholder="seu@email.com"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      value={registerData.email}
+                      onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                      className="pl-10"
+                      disabled={loading}
                     />
                   </div>
-                </>
-              )}
+                </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-                disabled={loading}
-              >
-                {loading ? 'Processando...' : (isRegistering ? 'Criar Conta' : 'Entrar')}
-              </Button>
-            </form>
+                {/* Endereço */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="reg-city">Cidade</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="reg-city"
+                        type="text"
+                        placeholder="Sua cidade"
+                        value={registerData.city}
+                        onChange={(e) => setRegisterData({...registerData, city: e.target.value})}
+                        className="pl-10"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="reg-state">Estado</Label>
+                    <StateSelect
+                      value={registerData.state}
+                      onValueChange={(value) => setRegisterData({...registerData, state: value})}
+                      placeholder="UF"
+                    />
+                  </div>
+                </div>
 
-            <div className="mt-6 text-center space-y-4">
-              <p className="text-gray-600">
-                {isRegistering ? 'Já tem uma conta?' : 'Não tem uma conta?'}{' '}
-                <button
-                  onClick={() => setIsRegistering(!isRegistering)}
-                  className="text-blue-600 hover:text-blue-700 font-medium underline"
-                >
-                  {isRegistering ? 'Fazer login' : 'Criar conta'}
-                </button>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <div>
+                  <Label htmlFor="reg-address">Endereço</Label>
+                  <div className="relative">
+                    <Home className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="reg-address"
+                      type="text"
+                      placeholder="Rua, avenida..."
+                      value={registerData.address}
+                      onChange={(e) => setRegisterData({...registerData, address: e.target.value})}
+                      className="pl-10"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="reg-house">Número</Label>
+                    <Input
+                      id="reg-house"
+                      type="text"
+                      placeholder="123"
+                      value={registerData.houseNumber}
+                      onChange={(e) => setRegisterData({...registerData, houseNumber: e.target.value})}
+                      disabled={loading}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="reg-neighborhood">Bairro</Label>
+                    <Input
+                      id="reg-neighborhood"
+                      type="text"
+                      placeholder="Bairro"
+                      value={registerData.neighborhood}
+                      onChange={(e) => setRegisterData({...registerData, neighborhood: e.target.value})}
+                      disabled={loading}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="reg-zip">CEP</Label>
+                    <Input
+                      id="reg-zip"
+                      type="text"
+                      placeholder="00000-000"
+                      value={registerData.zipCode}
+                      onChange={(e) => setRegisterData({...registerData, zipCode: e.target.value})}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="reg-password">Senha *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="reg-password"
+                      type="password"
+                      placeholder="Mínimo 6 caracteres"
+                      value={registerData.password}
+                      onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                      className="pl-10"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="reg-confirm">Confirmar senha *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="reg-confirm"
+                      type="password"
+                      placeholder="Digite a senha novamente"
+                      value={registerData.confirmPassword}
+                      onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                      className="pl-10"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Cadastrando...
+                    </>
+                  ) : (
+                    'Cadastrar'
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="mt-6 text-center">
+            <Button 
+              variant="ghost" 
+              onClick={() => window.location.href = '/'}
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
+              ← Voltar ao início
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
+
+export default ClientAuthForm;

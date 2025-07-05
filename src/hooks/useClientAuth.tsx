@@ -56,12 +56,20 @@ export const useClientAuth = () => {
         return { success: false, message: 'Credenciais inválidas' };
       }
 
+      // Store complete client data in localStorage
       localStorage.setItem('clientAuth', JSON.stringify({
         id: clientRecord.id,
-        name: clientRecord.username,
+        name: clientRecord.name,
         username: clientRecord.username,
         phone: clientRecord.phone,
-        email: clientRecord.email
+        email: clientRecord.email,
+        fullName: clientRecord.full_name,
+        city: clientRecord.city,
+        state: clientRecord.state,
+        address: clientRecord.address || clientRecord.street_address,
+        houseNumber: clientRecord.house_number,
+        neighborhood: clientRecord.neighborhood,
+        zipCode: clientRecord.zip_code
       }));
       
       return { success: true, client: clientRecord };

@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, User, Phone, Mail, ArrowLeft, CheckCircle } from "lucide-react";
+import { Loader2, User, Phone, Mail, ArrowLeft, CheckCircle, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { Service } from '@/hooks/useSupabaseData';
 import { useBookingClientData } from '@/hooks/booking/useBookingClientData';
@@ -47,10 +47,29 @@ const SimpleClientDataStep = ({
     onClientDataChange
   );
 
-  // Verificar se é cliente logado
+  // Verificar se é cliente logado através do localStorage
   const isClientLoggedIn = () => {
     const clientAuth = localStorage.getItem('clientAuth');
-    return !!clientAuth;
+    if (!clientAuth) return false;
+    
+    try {
+      const parsedAuth = JSON.parse(clientAuth);
+      return !!(parsedAuth && parsedAuth.id && parsedAuth.username);
+    } catch {
+      return false;
+    }
+  };
+
+  // Obter dados do cliente logado
+  const getLoggedClientData = () => {
+    const clientAuth = localStorage.getItem('clientAuth');
+    if (!clientAuth) return null;
+    
+    try {
+      return JSON.parse(clientAuth);
+    } catch {
+      return null;
+    }
   };
 
   // Validar se pode submeter
@@ -60,8 +79,7 @@ const SimpleClientDataStep = ({
            selectedTime && 
            clientData.name?.trim() && 
            clientData.phone?.trim() && 
-           !isSubmitting &&
-           hasAutoFilled;
+           !isSubmitting;
   };
 
   if (!isClientLoggedIn()) {
@@ -89,6 +107,8 @@ const SimpleClientDataStep = ({
       </div>
     );
   }
+
+  const loggedClient = getLoggedClientData();
 
   return (
     <div className="space-y-6">
@@ -123,60 +143,63 @@ const SimpleClientDataStep = ({
         </CardContent>
       </Card>
 
-      {/* Dados do Cliente - Carregados automaticamente */}
+      {/* Dados do Cliente - Exibir dados do cliente logado */}
       <Card className="bg-green-50 border-green-200">
         <CardContent className="p-4">
           <h4 className="font-semibold mb-3 flex items-center">
             <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-            Seus Dados (Carregados Automaticamente)
+            Seus Dados
           </h4>
           
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Carregando seus dados...</span>
+          <div className="space-y-4 text-sm">
+            <div className="flex items-center space-x-3">
+              <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-700">Nome</p>
+                <p className="font-medium text-gray-900">
+                  {loggedClient?.name || loggedClient?.username || 'Não informado'}
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
+
+            <div className="flex items-center space-x-3">
+              <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-700">Telefone</p>
+                <p className="font-medium text-gray-900">
+                  {loggedClient?.phone || 'Não informado'}
+                </p>
+              </div>
+            </div>
+
+            {loggedClient?.email && (
               <div className="flex items-center space-x-3">
-                <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-700">Nome Completo</p>
+                  <p className="text-sm font-medium text-gray-700">E-mail</p>
+                  <p className="font-medium text-gray-900">{loggedClient.email}</p>
+                </div>
+              </div>
+            )}
+
+            {(loggedClient?.city || loggedClient?.state) && (
+              <div className="flex items-center space-x-3">
+                <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-700">Localização</p>
                   <p className="font-medium text-gray-900">
-                    {clientData.name || 'Não informado'}
+                    {loggedClient.city}{loggedClient.city && loggedClient.state && ', '}{loggedClient.state}
                   </p>
                 </div>
               </div>
-
-              <div className="flex items-center space-x-3">
-                <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-700">Telefone</p>
-                  <p className="font-medium text-gray-900">
-                    {clientData.phone || 'Não informado'}
-                  </p>
-                </div>
-              </div>
-
-              {clientData.email && (
-                <div className="flex items-center space-x-3">
-                  <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-700">E-mail</p>
-                    <p className="font-medium text-gray-900">{clientData.email}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
           
-          {hasAutoFilled && (
-            <div className="mt-3 p-2 bg-green-100 rounded-lg">
-              <p className="text-xs text-green-800">
-                ✓ Dados carregados automaticamente do seu perfil
-              </p>
-            </div>
-          )}
+          <div className="mt-3 p-2 bg-green-100 rounded-lg">
+            <p className="text-xs text-green-800">
+              ✓ Dados obtidos do seu perfil logado
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -193,17 +216,6 @@ const SimpleClientDataStep = ({
           className="mt-1"
         />
       </div>
-
-      {/* Alerta se dados não foram carregados */}
-      {!hasAutoFilled && !isLoading && (
-        <Card className="bg-amber-50 border-amber-200">
-          <CardContent className="p-4">
-            <p className="text-amber-800 text-sm">
-              ⚠️ Não foi possível carregar seus dados automaticamente. Verifique se você está logado corretamente.
-            </p>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Botões de Ação */}
       <div className="flex justify-between pt-4">
