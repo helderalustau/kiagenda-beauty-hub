@@ -3,28 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Calendar, Clock, List } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
 import { format, addWeeks, subWeeks, startOfWeek, addDays, isSameDay, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment, Salon } from '@/types/supabase-entities';
 import { useOpeningHours } from '@/hooks/useOpeningHours';
 import AppointmentDetailsModal from '../AppointmentDetailsModal';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ModernWeeklyScheduleProps {
   appointments: Appointment[];
   salon: Salon;
   onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => void;
   isUpdating: boolean;
-}
-
-interface Service {
-  id: string;
-  name: string;
-  price: number;
-  duration_minutes: number;
-  active: boolean;
-  description?: string;
 }
 
 const ModernWeeklySchedule = ({ 
@@ -38,32 +28,7 @@ const ModernWeeklySchedule = ({
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [services, setServices] = useState<Service[]>([]);
   const { generateTimeSlots } = useOpeningHours();
-
-  // Carregar serviços do salão
-  useEffect(() => {
-    const loadServices = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('services')
-          .select('*')
-          .eq('salon_id', salon.id)
-          .eq('active', true)
-          .order('name');
-
-        if (!error && data) {
-          setServices(data);
-        }
-      } catch (error) {
-        console.error('Error loading services:', error);
-      }
-    };
-
-    if (salon?.id) {
-      loadServices();
-    }
-  }, [salon.id]);
 
   console.log('ModernWeeklySchedule - Rendering with:', {
     appointmentsCount: appointments.length,
@@ -71,12 +36,10 @@ const ModernWeeklySchedule = ({
     openingHours: salon.opening_hours
   });
 
-  // Filter appointments to show only confirmed ones for clean view  
-  const visibleAppointments = appointments.filter(appointment => 
-    appointment.status === 'confirmed'
-  );
+  // Mostrar todos os agendamentos (não filtrar por status)
+  const visibleAppointments = appointments;
 
-  console.log('ModernWeeklySchedule - Filtered appointments:', {
+  console.log('ModernWeeklySchedule - All appointments:', {
     total: appointments.length,
     visible: visibleAppointments.length,
     statuses: appointments.map(a => a.status)
@@ -103,7 +66,7 @@ const ModernWeeklySchedule = ({
     return acc;
   }, {} as Record<string, Appointment>);
 
-  // Helper functions - moved to top level to avoid duplicates
+  // Helper functions
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -183,13 +146,6 @@ const ModernWeeklySchedule = ({
     setShowDetailsModal(true);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
   // Verificar se temos horários válidos
   if (timeSlots.length === 0) {
     console.warn('ModernWeeklySchedule - No time slots generated');
@@ -229,11 +185,12 @@ const ModernWeeklySchedule = ({
               return (
                 <div 
                   key={timeSlot} 
-                  className={`flex items-center p-3 rounded-lg border ${
+                  className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
                     appointment 
-                      ? getStatusColor(appointment.status)
+                      ? `${getStatusColor(appointment.status)} hover:opacity-80`
                       : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                   }`}
+                  onClick={() => appointment && handleAppointmentClick(appointment)}
                 >
                   <div className="w-20 text-sm font-medium">
                     {timeSlot}
@@ -252,7 +209,10 @@ const ModernWeeklySchedule = ({
                             <div className="flex space-x-1">
                               <Button
                                 size="sm"
-                                onClick={() => onUpdateAppointment(appointment.id, { status: 'confirmed' })}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdateAppointment(appointment.id, { status: 'confirmed' });
+                                }}
                                 disabled={isUpdating}
                                 className="bg-green-600 hover:bg-green-700"
                               >
@@ -261,7 +221,10 @@ const ModernWeeklySchedule = ({
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => onUpdateAppointment(appointment.id, { status: 'cancelled' })}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdateAppointment(appointment.id, { status: 'cancelled' });
+                                }}
                                 disabled={isUpdating}
                               >
                                 Recusar
@@ -350,15 +313,18 @@ const ModernWeeklySchedule = ({
                         key={`${day.toString()}-${timeSlot}`}
                         className={`p-2 min-h-[60px] rounded border text-xs cursor-pointer transition-colors ${
                           appointment 
-                            ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                            ? `${getStatusColor(appointment.status)} hover:opacity-80`
                             : 'bg-white border-gray-200 hover:bg-gray-50'
                         }`}
                         onClick={() => appointment && handleAppointmentClick(appointment)}
                       >
                         {appointment && (
                           <div className="space-y-1">
-                            <div className="font-medium text-blue-900 truncate">{getClientName(appointment)}</div>
-                            <div className="text-blue-700 text-xs truncate">{getServiceName(appointment)}</div>
+                            <div className="font-medium truncate">{getClientName(appointment)}</div>
+                            <div className="text-xs truncate">{getServiceName(appointment)}</div>
+                            <Badge size="sm" className={`text-xs ${getStatusColor(appointment.status)}`}>
+                              {getStatusText(appointment.status)}
+                            </Badge>
                           </div>
                         )}
                       </div>
@@ -368,44 +334,6 @@ const ModernWeeklySchedule = ({
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Lista de Serviços */}
-        <div className="mt-8">
-          <div className="flex items-center gap-2 mb-4">
-            <List className="h-5 w-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Serviços Disponíveis</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {services.map((service) => (
-              <Card key={service.id} className="border border-gray-200">
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900">{service.name}</h4>
-                    {service.description && (
-                      <p className="text-sm text-gray-600">{service.description}</p>
-                    )}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-green-600 font-semibold">
-                        {formatCurrency(service.price)}
-                      </span>
-                      <span className="text-gray-500">
-                        {service.duration_minutes} min
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          {services.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <List className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>Nenhum serviço disponível</p>
-            </div>
-          )}
         </div>
       </CardContent>
 
