@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ClientLoginHeader } from '@/components/client-auth/ClientLoginHeader';
-import { ClientAuthForm } from '@/components/client-auth/ClientAuthForm';
+import ClientAuthForm from '@/components/client-auth/ClientAuthForm';
 import { useClientLoginLogic } from '@/hooks/useClientLoginLogic';
 
 const ClientLogin = () => {
