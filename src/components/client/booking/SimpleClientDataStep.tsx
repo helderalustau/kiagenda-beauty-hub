@@ -72,14 +72,46 @@ const SimpleClientDataStep = ({
     }
   };
 
-  // Validar se pode submeter
+  // Auto-preencher dados do cliente logado se ainda não foram preenchidos
+  useEffect(() => {
+    if (isClientLoggedIn() && (!clientData.name || !clientData.phone)) {
+      const loggedClient = getLoggedClientData();
+      if (loggedClient) {
+        console.log('Auto-filling client data from logged client:', loggedClient);
+        onClientDataChange({
+          name: loggedClient.name || loggedClient.username || '',
+          phone: loggedClient.phone || '',
+          email: loggedClient.email || '',
+          notes: clientData.notes || ''
+        });
+      }
+    }
+  }, [clientData, onClientDataChange]);
+
+  // Validar se pode submeter - versão melhorada
   const canSubmit = () => {
-    return selectedService && 
-           selectedDate && 
-           selectedTime && 
-           clientData.name?.trim() && 
-           clientData.phone?.trim() && 
-           !isSubmitting;
+    const loggedClient = getLoggedClientData();
+    
+    // Verificar dados básicos necessários
+    const hasService = selectedService !== null;
+    const hasDate = selectedDate !== undefined;
+    const hasTime = selectedTime !== '';
+    const hasClientName = (clientData.name?.trim() || loggedClient?.name || loggedClient?.username || '').trim() !== '';
+    const hasClientPhone = (clientData.phone?.trim() || loggedClient?.phone || '').trim() !== '';
+    const notSubmitting = !isSubmitting;
+    
+    console.log('canSubmit validation:', {
+      hasService,
+      hasDate,
+      hasTime,
+      hasClientName,
+      hasClientPhone,
+      notSubmitting,
+      clientData,
+      loggedClient
+    });
+    
+    return hasService && hasDate && hasTime && hasClientName && hasClientPhone && notSubmitting;
   };
 
   if (!isClientLoggedIn()) {
@@ -157,7 +189,7 @@ const SimpleClientDataStep = ({
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-700">Nome</p>
                 <p className="font-medium text-gray-900">
-                  {loggedClient?.name || loggedClient?.username || 'Não informado'}
+                  {clientData.name || loggedClient?.name || loggedClient?.username || 'Não informado'}
                 </p>
               </div>
             </div>
@@ -167,17 +199,17 @@ const SimpleClientDataStep = ({
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-700">Telefone</p>
                 <p className="font-medium text-gray-900">
-                  {loggedClient?.phone || 'Não informado'}
+                  {clientData.phone || loggedClient?.phone || 'Não informado'}
                 </p>
               </div>
             </div>
 
-            {loggedClient?.email && (
+            {(clientData.email || loggedClient?.email) && (
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-700">E-mail</p>
-                  <p className="font-medium text-gray-900">{loggedClient.email}</p>
+                  <p className="font-medium text-gray-900">{clientData.email || loggedClient?.email}</p>
                 </div>
               </div>
             )}
@@ -216,6 +248,17 @@ const SimpleClientDataStep = ({
           className="mt-1"
         />
       </div>
+
+      {/* Debug Info - Remover em produção */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-400 p-2 bg-gray-100 rounded">
+          Debug: canSubmit={canSubmit().toString()} | 
+          clientData.name="{clientData.name}" | 
+          clientData.phone="{clientData.phone}" |
+          loggedClient.name="{loggedClient?.name}" |
+          loggedClient.phone="{loggedClient?.phone}"
+        </div>
+      )}
 
       {/* Botões de Ação */}
       <div className="flex justify-between pt-4">
