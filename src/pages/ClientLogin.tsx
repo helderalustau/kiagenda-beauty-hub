@@ -5,16 +5,12 @@ import ClientAuthForm from '@/components/client-auth/ClientAuthForm';
 import { useClientLoginLogic } from '@/hooks/useClientLoginLogic';
 
 const ClientLogin = () => {
-  const { handleLogin, handleRegister, handleBackToHome, loading } = useClientLoginLogic();
+  const { handleBackToHome } = useClientLoginLogic();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
       <ClientLoginHeader onBackToHome={handleBackToHome} />
-      <ClientAuthForm 
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-        loading={loading}
-      />
+      <ClientAuthForm />
     </div>
   );
 };
