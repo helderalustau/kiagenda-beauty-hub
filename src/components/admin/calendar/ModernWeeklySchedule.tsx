@@ -322,7 +322,7 @@ const ModernWeeklySchedule = ({
                           <div className="space-y-1">
                             <div className="font-medium truncate">{getClientName(appointment)}</div>
                             <div className="text-xs truncate">{getServiceName(appointment)}</div>
-                            <Badge size="sm" className={`text-xs ${getStatusColor(appointment.status)}`}>
+                            <Badge className={`text-xs ${getStatusColor(appointment.status)}`}>
                               {getStatusText(appointment.status)}
                             </Badge>
                           </div>
