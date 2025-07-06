@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from '@/hooks/useAuthData';
 import { useSalonData } from '@/hooks/useSalonData';
+import { useAuth } from '@/hooks/useAuth';
 import { validateAdminForm, formatPhone } from '@/components/admin-registration/AdminFormValidation';
 
 interface AdminFormData {
@@ -26,6 +27,7 @@ export const useAdminRegistrationForm = ({
   const { toast } = useToast();
   const { registerAdmin, loading } = useAuthData();
   const { createSalon } = useSalonData();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -67,33 +69,6 @@ export const useAdminRegistrationForm = ({
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
     return `EST-${timestamp}-${random}`;
-  };
-
-  const authenticateNewAdmin = async (adminData: any, salonId: string) => {
-    try {
-      console.log('Autenticando novo administrador:', adminData.name);
-      
-      // Criar dados do usuário para login automático
-      const userData = {
-        id: adminData.id,
-        name: adminData.name,
-        email: adminData.email,
-        role: adminData.role,
-        salon_id: salonId,
-        isFirstAccess: true,
-        loginTime: new Date().toISOString()
-      };
-
-      // Salvar dados de autenticação no localStorage
-      localStorage.setItem('adminAuth', JSON.stringify(userData));
-      localStorage.setItem('selectedSalonId', salonId);
-      
-      console.log('Administrador autenticado automaticamente');
-      return true;
-    } catch (error) {
-      console.error('Erro ao autenticar novo administrador:', error);
-      return false;
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,12 +140,21 @@ export const useAdminRegistrationForm = ({
 
       console.log('Administrador criado com sucesso:', adminResult.admin.id);
 
-      // Autenticar automaticamente o novo administrador
-      const authSuccess = await authenticateNewAdmin(adminResult.admin, salonResult.salon.id);
-      
-      if (!authSuccess) {
-        throw new Error('Erro ao autenticar novo administrador');
-      }
+      // Fazer login automático do novo administrador
+      const userData = {
+        id: adminResult.admin.id,
+        name: adminResult.admin.name,
+        email: adminResult.admin.email,
+        role: adminResult.admin.role,
+        salon_id: salonResult.salon.id,
+        isFirstAccess: true,
+        loginTime: new Date().toISOString()
+      };
+
+      // Usar o contexto de autenticação para fazer login
+      login(userData);
+
+      console.log('Administrador autenticado automaticamente');
 
       toast({
         title: "Cadastro Realizado com Sucesso!",
@@ -187,14 +171,10 @@ export const useAdminRegistrationForm = ({
         setDateadm: new Date().toISOString()
       });
 
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        // Redirecionar diretamente para configuração da loja
-        setTimeout(() => {
-          window.location.href = '/salon-setup';
-        }, 1500);
-      }
+      // Redirecionar para configuração da loja
+      setTimeout(() => {
+        window.location.href = '/salon-setup';
+      }, 1500);
 
     } catch (error) {
       console.error('Erro no processo de cadastro:', error);

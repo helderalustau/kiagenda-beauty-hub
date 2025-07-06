@@ -3,11 +3,6 @@ import React from 'react';
 import AdminRegistrationForm from '@/components/AdminRegistrationForm';
 
 const AdminRegistration = () => {
-  const handleSuccess = () => {
-    // Não fazer nada aqui - o hook já cuida do redirecionamento automático
-    console.log('Administrador criado com sucesso, aguardando redirecionamento automático');
-  };
-
   const handleCancel = () => {
     // Voltar para dashboard do super admin
     window.location.href = '/super-admin-dashboard';
@@ -33,7 +28,6 @@ const AdminRegistration = () => {
 
         {/* Formulário */}
         <AdminRegistrationForm
-          onSuccess={handleSuccess}
           onCancel={handleCancel}
         />
       </div>
