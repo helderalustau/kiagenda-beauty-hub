@@ -113,12 +113,13 @@ export const useAdminLoginLogic = () => {
       // Determinar redirecionamento baseado na configuração do estabelecimento
       const salon = adminData.salons;
       
-      if (salon && salon.setup_completed === true && salon.admin_setup_completed === true) {
-        console.log('Redirecionando para admin dashboard - estabelecimento configurado');
-        navigate('/admin-dashboard');
-      } else {
+      // Se o estabelecimento não está configurado, ir para setup
+      if (!salon || salon.setup_completed !== true || salon.admin_setup_completed !== true) {
         console.log('Redirecionando para configuração do estabelecimento');
         navigate('/salon-setup');
+      } else {
+        console.log('Redirecionando para admin dashboard - estabelecimento configurado');
+        navigate('/admin-dashboard');
       }
 
     } catch (error) {

@@ -4,12 +4,12 @@ import AdminRegistrationForm from '@/components/AdminRegistrationForm';
 
 const AdminRegistration = () => {
   const handleSuccess = () => {
-    // Redirecionar para dashboard ou lista de administradores
-    window.location.href = '/super-admin-dashboard';
+    // Não fazer nada aqui - o hook já cuida do redirecionamento automático
+    console.log('Administrador criado com sucesso, aguardando redirecionamento automático');
   };
 
   const handleCancel = () => {
-    // Voltar para dashboard
+    // Voltar para dashboard do super admin
     window.location.href = '/super-admin-dashboard';
   };
 
@@ -24,6 +24,9 @@ const AdminRegistration = () => {
             </h1>
             <p className="text-gray-600">
               Adicione um novo administrador ao sistema
+            </p>
+            <p className="text-sm text-blue-600 mt-2">
+              Após o cadastro, o administrador será redirecionado para configurar sua loja
             </p>
           </div>
         </div>

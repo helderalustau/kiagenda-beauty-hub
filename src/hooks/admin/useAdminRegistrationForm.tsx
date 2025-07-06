@@ -69,6 +69,33 @@ export const useAdminRegistrationForm = ({
     return `EST-${timestamp}-${random}`;
   };
 
+  const authenticateNewAdmin = async (adminData: any, salonId: string) => {
+    try {
+      console.log('Autenticando novo administrador:', adminData.name);
+      
+      // Criar dados do usuário para login automático
+      const userData = {
+        id: adminData.id,
+        name: adminData.name,
+        email: adminData.email,
+        role: adminData.role,
+        salon_id: salonId,
+        isFirstAccess: true,
+        loginTime: new Date().toISOString()
+      };
+
+      // Salvar dados de autenticação no localStorage
+      localStorage.setItem('adminAuth', JSON.stringify(userData));
+      localStorage.setItem('selectedSalonId', salonId);
+      
+      console.log('Administrador autenticado automaticamente');
+      return true;
+    } catch (error) {
+      console.error('Erro ao autenticar novo administrador:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -132,11 +159,22 @@ export const useAdminRegistrationForm = ({
         throw new Error(adminResult.message || 'Erro ao criar administrador');
       }
 
-      console.log('Administrador criado com sucesso');
+      if (!adminResult.admin) {
+        throw new Error('Dados do administrador não retornados');
+      }
+
+      console.log('Administrador criado com sucesso:', adminResult.admin.id);
+
+      // Autenticar automaticamente o novo administrador
+      const authSuccess = await authenticateNewAdmin(adminResult.admin, salonResult.salon.id);
+      
+      if (!authSuccess) {
+        throw new Error('Erro ao autenticar novo administrador');
+      }
 
       toast({
         title: "Cadastro Realizado com Sucesso!",
-        description: "Administrador criado com sucesso"
+        description: "Redirecionando para configuração da loja..."
       });
 
       // Limpar formulário
@@ -152,9 +190,9 @@ export const useAdminRegistrationForm = ({
       if (onSuccess) {
         onSuccess();
       } else {
-        // Aguardar um pouco antes de redirecionar
+        // Redirecionar diretamente para configuração da loja
         setTimeout(() => {
-          window.location.href = '/super-admin-dashboard';
+          window.location.href = '/salon-setup';
         }, 1500);
       }
 
