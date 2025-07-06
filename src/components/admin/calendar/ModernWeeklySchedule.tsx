@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { Appointment, Salon } from '@/types/supabase-entities';
 import { useOpeningHours } from '@/hooks/useOpeningHours';
 import AppointmentDetailsModal from '../AppointmentDetailsModal';
+import CleanAppointmentCard from './CleanAppointmentCard';
 
 interface ModernWeeklyScheduleProps {
   appointments: Appointment[];
@@ -36,13 +37,15 @@ const ModernWeeklySchedule = ({
     openingHours: salon.opening_hours
   });
 
-  // Mostrar todos os agendamentos (não filtrar por status)
-  const visibleAppointments = appointments;
+  // Filtrar apenas agendamentos confirmados e pendentes para mostrar na agenda
+  const visibleAppointments = appointments.filter(apt => 
+    ['confirmed', 'pending', 'completed'].includes(apt.status)
+  );
 
-  console.log('ModernWeeklySchedule - All appointments:', {
+  console.log('ModernWeeklySchedule - Visible appointments:', {
     total: appointments.length,
     visible: visibleAppointments.length,
-    statuses: appointments.map(a => a.status)
+    statuses: visibleAppointments.map(a => a.status)
   });
 
   // Gerar os dias da semana atual
@@ -89,7 +92,6 @@ const ModernWeeklySchedule = ({
 
   // Helper function to safely get service name from appointment
   const getServiceName = (appointment: Appointment) => {
-    // Try different possible paths for service name
     if ((appointment as any).service?.name) {
       return (appointment as any).service.name;
     }
@@ -104,7 +106,6 @@ const ModernWeeklySchedule = ({
 
   // Helper function to safely get client name from appointment
   const getClientName = (appointment: Appointment) => {
-    // Try different possible paths for client name
     if ((appointment as any).client?.name) {
       return (appointment as any).client.name;
     }
@@ -185,56 +186,20 @@ const ModernWeeklySchedule = ({
               return (
                 <div 
                   key={timeSlot} 
-                  className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
-                    appointment 
-                      ? `${getStatusColor(appointment.status)} hover:opacity-80`
-                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                  }`}
-                  onClick={() => appointment && handleAppointmentClick(appointment)}
+                  className="flex items-center p-3 rounded-lg border hover:bg-gray-50 transition-colors"
                 >
-                  <div className="w-20 text-sm font-medium">
+                  <div className="w-20 text-sm font-medium text-gray-600">
                     {timeSlot}
                   </div>
                   
                   <div className="flex-1 ml-4">
                     {appointment ? (
-                      <div className="space-y-1">
-                        <div className="font-medium">{getServiceName(appointment)}</div>
-                        <div className="text-sm text-gray-600">{getClientName(appointment)}</div>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getStatusColor(appointment.status)}>
-                            {getStatusText(appointment.status)}
-                          </Badge>
-                          {appointment.status === 'pending' && (
-                            <div className="flex space-x-1">
-                              <Button
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onUpdateAppointment(appointment.id, { status: 'confirmed' });
-                                }}
-                                disabled={isUpdating}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                Confirmar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onUpdateAppointment(appointment.id, { status: 'cancelled' });
-                                }}
-                                disabled={isUpdating}
-                              >
-                                Recusar
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <CleanAppointmentCard
+                        appointment={appointment}
+                        onClick={() => handleAppointmentClick(appointment)}
+                      />
                     ) : (
-                      <div className="text-gray-500 text-sm">Horário disponível</div>
+                      <div className="text-sm text-gray-400 italic p-3">Horário disponível</div>
                     )}
                   </div>
                 </div>
@@ -311,21 +276,13 @@ const ModernWeeklySchedule = ({
                     return (
                       <div 
                         key={`${day.toString()}-${timeSlot}`}
-                        className={`p-2 min-h-[60px] rounded border text-xs cursor-pointer transition-colors ${
-                          appointment 
-                            ? `${getStatusColor(appointment.status)} hover:opacity-80`
-                            : 'bg-white border-gray-200 hover:bg-gray-50'
-                        }`}
-                        onClick={() => appointment && handleAppointmentClick(appointment)}
+                        className="p-1 min-h-[60px] rounded border bg-white hover:bg-gray-50 transition-colors"
                       >
                         {appointment && (
-                          <div className="space-y-1">
-                            <div className="font-medium truncate">{getClientName(appointment)}</div>
-                            <div className="text-xs truncate">{getServiceName(appointment)}</div>
-                            <Badge className={`text-xs ${getStatusColor(appointment.status)}`}>
-                              {getStatusText(appointment.status)}
-                            </Badge>
-                          </div>
+                          <CleanAppointmentCard
+                            appointment={appointment}
+                            onClick={() => handleAppointmentClick(appointment)}
+                          />
                         )}
                       </div>
                     );

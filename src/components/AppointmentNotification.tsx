@@ -125,16 +125,21 @@ const AppointmentNotification = ({
               <span className="text-gray-900">{appointment.service?.duration_minutes} min</span>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-700">
-                {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-              </span>
+            {/* Data do Agendamento (não data atual) */}
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-blue-800">Data Agendada:</span>
+              </div>
+              <div className="text-lg font-semibold text-blue-900">
+                {format(new Date(appointment.appointment_date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              </div>
             </div>
             
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-700">{appointment.appointment_time}</span>
+              <span className="font-medium text-gray-700">Horário:</span>
+              <span className="font-semibold text-gray-900">{appointment.appointment_time}</span>
             </div>
             
             {appointment.notes && (

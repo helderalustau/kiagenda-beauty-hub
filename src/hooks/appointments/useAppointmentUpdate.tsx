@@ -13,7 +13,11 @@ export const useAppointmentUpdate = () => {
       setLoading(true);
       console.log('🔄 Updating appointment status:', { appointmentId, status, reason });
       
-      const updateData: any = { status };
+      const updateData: any = { 
+        status,
+        updated_at: new Date().toISOString()
+      };
+      
       if (reason) {
         updateData.notes = reason;
       }
@@ -54,7 +58,10 @@ export const useAppointmentUpdate = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('appointments')
-        .update({ deleted_at: null })
+        .update({ 
+          deleted_at: null,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', appointmentId)
         .select(`
           *,
