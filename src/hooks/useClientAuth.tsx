@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePasswordSecurity } from './usePasswordSecurity';
 import { useInputValidation } from './useInputValidation';
+import { formatPhone, unformatPhone } from '@/utils/phoneFormatter';
 
 export const useClientAuth = () => {
   const [loading, setLoading] = useState(false);
@@ -61,7 +62,7 @@ export const useClientAuth = () => {
         id: clientRecord.id,
         name: clientRecord.name,
         username: clientRecord.username,
-        phone: clientRecord.phone,
+        phone: formatPhone(clientRecord.phone || ''),
         email: clientRecord.email,
         fullName: clientRecord.full_name,
         city: clientRecord.city,
@@ -81,14 +82,9 @@ export const useClientAuth = () => {
     }
   };
 
-  // Format phone number to only digits
-  const formatPhoneForStorage = (phone: string): string => {
-    return phone.replace(/\D/g, '');
-  };
-
   // Validate Brazilian phone number (10 or 11 digits)
   const validateBrazilianPhone = (phone: string): boolean => {
-    const digits = phone.replace(/\D/g, '');
+    const digits = unformatPhone(phone);
     return digits.length >= 10 && digits.length <= 11;
   };
 
@@ -103,11 +99,11 @@ export const useClientAuth = () => {
         return { success: false, message: usernameValidation.error || 'Nome de usuário inválido' };
       }
 
-      // Format phone to only digits
-      const formattedPhone = formatPhoneForStorage(phone);
+      // Format phone to only digits for storage
+      const formattedPhone = unformatPhone(phone);
       
       // Validate phone
-      if (!validateBrazilianPhone(formattedPhone)) {
+      if (!validateBrazilianPhone(phone)) {
         return { success: false, message: 'Telefone deve ter 10 ou 11 dígitos' };
       }
 
