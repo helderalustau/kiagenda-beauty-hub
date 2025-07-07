@@ -9,7 +9,6 @@ import { ptBR } from "date-fns/locale";
 import { Appointment, Salon } from '@/types/supabase-entities';
 import { useOpeningHours } from '@/hooks/useOpeningHours';
 import AppointmentDetailsModal from '../AppointmentDetailsModal';
-import CleanAppointmentCard from './CleanAppointmentCard';
 
 interface ModernWeeklyScheduleProps {
   appointments: Appointment[];
@@ -80,16 +79,6 @@ const ModernWeeklySchedule = ({
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Pendente';
-      case 'confirmed': return 'Confirmado';
-      case 'completed': return 'Concluído';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
-    }
-  };
-
   // Helper function to safely get service name from appointment
   const getServiceName = (appointment: Appointment) => {
     if ((appointment as any).service?.name) {
@@ -147,6 +136,21 @@ const ModernWeeklySchedule = ({
     setShowDetailsModal(true);
   };
 
+  // Componente de Agendamento estilo Google Agenda
+  const AppointmentBlock = ({ appointment }: { appointment: Appointment }) => (
+    <div 
+      className={`p-2 m-1 rounded border cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(appointment.status)}`}
+      onClick={() => handleAppointmentClick(appointment)}
+    >
+      <div className="text-xs font-medium truncate">
+        {appointment.appointment_time} - {getServiceName(appointment)}
+      </div>
+      <div className="text-xs truncate opacity-80">
+        {getClientName(appointment)}
+      </div>
+    </div>
+  );
+
   // Verificar se temos horários válidos
   if (timeSlots.length === 0) {
     console.warn('ModernWeeklySchedule - No time slots generated');
@@ -179,25 +183,22 @@ const ModernWeeklySchedule = ({
         </CardHeader>
         
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {timeSlots.map((timeSlot) => {
               const appointment = appointmentsByDateTime[`${format(selectedDay, 'yyyy-MM-dd')}-${timeSlot}`];
               
               return (
                 <div 
                   key={timeSlot} 
-                  className="flex items-center p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                  className="flex items-center border-b border-gray-100 hover:bg-gray-50 transition-colors min-h-[50px]"
                 >
-                  <div className="w-20 text-sm font-medium text-gray-600">
+                  <div className="w-20 text-sm font-medium text-gray-600 px-3">
                     {timeSlot}
                   </div>
                   
-                  <div className="flex-1 ml-4">
+                  <div className="flex-1">
                     {appointment ? (
-                      <CleanAppointmentCard
-                        appointment={appointment}
-                        onClick={() => handleAppointmentClick(appointment)}
-                      />
+                      <AppointmentBlock appointment={appointment} />
                     ) : (
                       <div className="text-sm text-gray-400 italic p-3">Horário disponível</div>
                     )}
@@ -260,29 +261,25 @@ const ModernWeeklySchedule = ({
               ))}
             </div>
 
-            {/* Grid de horários */}
+            {/* Grid de horários com agendamentos */}
             <div className="space-y-1">
               {timeSlots.map((timeSlot) => (
-                <div key={timeSlot} className="grid grid-cols-8 gap-1">
+                <div key={timeSlot} className="grid grid-cols-8 gap-1 min-h-[60px]">
                   <div className="p-2 text-sm font-medium text-gray-600 flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
                     {timeSlot}
                   </div>
                   
                   {weekDays.map((day) => {
-                    const dateKey = format(day, 'yyyy-MM-dd');
-                    const appointment = appointmentsByDateTime[`${dateKey}-${timeSlot}`];
+                    const appointment = getAppointmentForSlot(day, timeSlot);
                     
                     return (
                       <div 
                         key={`${day.toString()}-${timeSlot}`}
-                        className="p-1 min-h-[60px] rounded border bg-white hover:bg-gray-50 transition-colors"
+                        className="border border-gray-200 rounded bg-white hover:bg-gray-50 transition-colors"
                       >
                         {appointment && (
-                          <CleanAppointmentCard
-                            appointment={appointment}
-                            onClick={() => handleAppointmentClick(appointment)}
-                          />
+                          <AppointmentBlock appointment={appointment} />
                         )}
                       </div>
                     );

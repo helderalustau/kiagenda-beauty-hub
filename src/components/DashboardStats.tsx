@@ -86,58 +86,58 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Coluna Esquerda - Plano e Indicadores */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Uso do Plano - Seção Superior */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Crown className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg text-slate-900">Plano Atual</CardTitle>
-                    <Badge className={`${planInfo.color} text-sm px-2 py-1 border font-medium mt-1`}>
-                      {planInfo.name}
-                    </Badge>
-                  </div>
+      <div className="space-y-6">
+        {/* Uso do Plano - Topo */}
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Crown className="h-5 w-5 text-blue-600" />
                 </div>
-                {canUpgrade && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setUpgradeModalOpen(true)}
-                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                  >
-                    <ArrowUp className="h-4 w-4 mr-1" />
-                    Upgrade
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2 text-slate-700">
-                  <span className="font-medium">Atendentes</span>
-                  <span className="font-bold">{currentAttendants} de {maxAttendants}</span>
+                <div>
+                  <CardTitle className="text-lg text-slate-900">Plano Atual</CardTitle>
+                  <Badge className={`${planInfo.color} text-sm px-2 py-1 border font-medium mt-1`}>
+                    {planInfo.name}
+                  </Badge>
                 </div>
-                <Progress 
-                  value={usagePercentage} 
-                  className={`h-2 ${usagePercentage >= 90 ? 'bg-red-50' : usagePercentage >= 70 ? 'bg-yellow-50' : 'bg-green-50'}`}
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  {usagePercentage >= 90 ? '⚠️ Limite quase atingido!' : 
-                   usagePercentage >= 70 ? '⚠️ Considere fazer upgrade' : 
-                   '✅ Uso dentro do limite'}
-                </p>
               </div>
-            </CardContent>
-          </Card>
+              {canUpgrade && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setUpgradeModalOpen(true)}
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                >
+                  <ArrowUp className="h-4 w-4 mr-1" />
+                  Upgrade
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-2 text-slate-700">
+                <span className="font-medium">Atendentes</span>
+                <span className="font-bold">{currentAttendants} de {maxAttendants}</span>
+              </div>
+              <Progress 
+                value={usagePercentage} 
+                className={`h-2 ${usagePercentage >= 90 ? 'bg-red-50' : usagePercentage >= 70 ? 'bg-yellow-50' : 'bg-green-50'}`}
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                {usagePercentage >= 90 ? '⚠️ Limite quase atingido!' : 
+                 usagePercentage >= 70 ? '⚠️ Considere fazer upgrade' : 
+                 '✅ Uso dentro do limite'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Indicadores de Performance - Cartões Empilhados */}
-          <div className="space-y-4">
+        {/* Grid Principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Coluna Esquerda - Indicadores */}
+          <div className="lg:col-span-1 space-y-4">
             {/* Agendamentos de Hoje */}
             <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="p-4">
@@ -212,16 +212,16 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
               </CardContent>
             </Card>
           </div>
-        </div>
 
-        {/* Coluna Direita - Tabela de Agendamentos */}
-        <div className="lg:col-span-2">
-          <RecentAppointmentsTable
-            appointments={recentAppointments}
-            onAppointmentClick={(appointment) => {
-              console.log('Appointment clicked:', appointment);
-            }}
-          />
+          {/* Coluna Direita - Tabela de Agendamentos */}
+          <div className="lg:col-span-2">
+            <RecentAppointmentsTable
+              appointments={recentAppointments}
+              onAppointmentClick={(appointment) => {
+                console.log('Appointment clicked:', appointment);
+              }}
+            />
+          </div>
         </div>
       </div>
 
