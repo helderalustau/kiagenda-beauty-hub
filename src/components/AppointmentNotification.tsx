@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Calendar, Clock, User, Phone, MapPin, Star } from "lucide-react";
+import { X, Calendar, Clock, User, Phone, MapPin, Star, Scissors } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/types/supabase-entities';
@@ -54,9 +54,28 @@ const AppointmentNotification = ({
 
   if (!isOpen || !appointment) return null;
 
+  const getClientName = () => {
+    if ((appointment as any).client?.name) return (appointment as any).client.name;
+    if ((appointment as any).client_auth?.name) return (appointment as any).client_auth.name;
+    if ((appointment as any).client?.username) return (appointment as any).client.username;
+    return 'Cliente';
+  };
+
+  const getClientPhone = () => {
+    if ((appointment as any).client?.phone) return (appointment as any).client.phone;
+    if ((appointment as any).client_auth?.phone) return (appointment as any).client_auth.phone;
+    return null;
+  };
+
+  const getClientEmail = () => {
+    if ((appointment as any).client?.email) return (appointment as any).client.email;
+    if ((appointment as any).client_auth?.email) return (appointment as any).client_auth.email;
+    return null;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md bg-white shadow-2xl border-2 border-blue-200 animate-in fade-in-0 zoom-in-95 duration-300">
+      <Card className="w-full max-w-lg bg-white shadow-2xl border-2 border-blue-200 animate-in fade-in-0 zoom-in-95 duration-300">
         <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -74,83 +93,90 @@ const AppointmentNotification = ({
           </div>
         </CardHeader>
         
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="p-6 space-y-6">
           {/* Informações do Cliente */}
-          <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+          <div className="bg-slate-50 p-4 rounded-lg space-y-3">
+            <h3 className="font-semibold text-slate-900 flex items-center gap-2">
               <User className="h-4 w-4 text-blue-500" />
               Informações do Cliente
             </h3>
             
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <User className="h-3 w-3 text-gray-500" />
-                <span className="font-medium text-gray-900">
-                  {appointment.client?.name || appointment.client?.username || 'Cliente'}
+                <User className="h-3 w-3 text-slate-500" />
+                <span className="font-medium text-slate-900">
+                  {getClientName()}
                 </span>
               </div>
               
-              {appointment.client?.phone && (
+              {getClientPhone() && (
                 <div className="flex items-center gap-2">
-                  <Phone className="h-3 w-3 text-gray-500" />
-                  <span className="text-gray-700">{appointment.client.phone}</span>
+                  <Phone className="h-3 w-3 text-slate-500" />
+                  <span className="text-slate-700">{getClientPhone()}</span>
                 </div>
               )}
               
-              {appointment.client?.email && (
+              {getClientEmail() && (
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-3 w-3 text-gray-500" />
-                  <span className="text-gray-700">{appointment.client.email}</span>
+                  <MapPin className="h-3 w-3 text-slate-500" />
+                  <span className="text-slate-700">{getClientEmail()}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Detalhes do Agendamento */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-700">Serviço:</span>
-              <span className="font-semibold text-gray-900">{appointment.service?.name}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-700">Valor:</span>
-              <span className="font-semibold text-green-600">
-                {formatCurrency(appointment.service?.price || 0)}
+              <span className="font-medium text-slate-700 flex items-center gap-2">
+                <Scissors className="h-4 w-4" />
+                Serviço:
+              </span>
+              <span className="font-semibold text-slate-900">
+                {(appointment as any).service?.name || 'Serviço'}
               </span>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-700">Duração:</span>
-              <span className="text-gray-900">{appointment.service?.duration_minutes} min</span>
+              <span className="font-medium text-slate-700">Valor:</span>
+              <span className="font-semibold text-green-600">
+                {formatCurrency((appointment as any).service?.price || 0)}
+              </span>
             </div>
             
-            {/* Data do Agendamento (não data atual) */}
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-blue-800">Data Agendada:</span>
-              </div>
-              <div className="text-lg font-semibold text-blue-900">
-                {format(new Date(appointment.appointment_date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-slate-700">Duração:</span>
+              <span className="text-slate-900">
+                {(appointment as any).service?.duration_minutes || 0} min
+              </span>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-500" />
-              <span className="font-medium text-gray-700">Horário:</span>
-              <span className="font-semibold text-gray-900">{appointment.appointment_time}</span>
+            {/* Data e Horário do Agendamento - CORRIGIDO */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <span className="font-semibold text-blue-800">Data e Horário Agendados:</span>
+              </div>
+              <div className="space-y-2">
+                <div className="text-xl font-bold text-blue-900">
+                  {format(new Date(appointment.appointment_date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </div>
+                <div className="flex items-center gap-2 text-lg font-semibold text-blue-800">
+                  <Clock className="h-4 w-4" />
+                  {appointment.appointment_time}
+                </div>
+              </div>
             </div>
             
             {appointment.notes && (
-              <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="bg-gray-50 p-3 rounded-lg border">
                 <span className="font-medium text-gray-700">Observações:</span>
                 <p className="text-gray-900 mt-1">{appointment.notes}</p>
               </div>
             )}
           </div>
 
-          <Badge variant="secondary" className="w-full justify-center bg-yellow-100 text-yellow-800">
+          <Badge variant="secondary" className="w-full justify-center bg-yellow-100 text-yellow-800 py-2">
             Aguardando sua aprovação
           </Badge>
 
