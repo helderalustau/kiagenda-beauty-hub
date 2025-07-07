@@ -100,14 +100,14 @@ const RecentAppointmentsTable = ({ appointments, onAppointmentClick }: RecentApp
                 </TableHead>
                 <TableHead className="font-semibold text-slate-700 py-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Data Agendada
+                    <User className="h-4 w-4" />
+                    Profissional
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold text-slate-700 py-3">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Horário
+                    <Calendar className="h-4 w-4" />
+                    Data Agendada
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold text-slate-700 py-3">Status</TableHead>
@@ -139,15 +139,19 @@ const RecentAppointmentsTable = ({ appointments, onAppointmentClick }: RecentApp
                     </div>
                   </TableCell>
                   <TableCell className="py-3">
-                    <div className="font-medium text-slate-900">
-                      {format(new Date(appointment.appointment_date), "dd/MM/yyyy", { locale: ptBR })}
+                    <div className="font-medium text-slate-800">
+                      Profissional
                     </div>
                     <div className="text-sm text-slate-500">
-                      {format(new Date(appointment.appointment_date), "EEEE", { locale: ptBR })}
+                      Disponível
                     </div>
                   </TableCell>
                   <TableCell className="py-3">
                     <div className="font-medium text-slate-900">
+                      {format(new Date(appointment.appointment_date), "dd/MM/yyyy", { locale: ptBR })}
+                    </div>
+                    <div className="text-sm text-slate-500 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
                       {appointment.appointment_time}
                     </div>
                   </TableCell>
