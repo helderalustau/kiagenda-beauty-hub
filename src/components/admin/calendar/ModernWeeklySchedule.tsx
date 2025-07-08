@@ -44,7 +44,13 @@ const ModernWeeklySchedule = ({
   console.log('ModernWeeklySchedule - Visible appointments:', {
     total: appointments.length,
     visible: visibleAppointments.length,
-    statuses: visibleAppointments.map(a => a.status)
+    statuses: visibleAppointments.map(a => a.status),
+    appointmentDetails: visibleAppointments.map(a => ({
+      id: a.id,
+      date: a.appointment_date,
+      time: a.appointment_time,
+      status: a.status
+    }))
   });
 
   // Gerar os dias da semana atual
@@ -62,12 +68,15 @@ const ModernWeeklySchedule = ({
       const dateKey = format(new Date(appointment.appointment_date), 'yyyy-MM-dd');
       const timeKey = appointment.appointment_time;
       const key = `${dateKey}-${timeKey}`;
+      console.log('ModernWeeklySchedule - Adding appointment to map:', { key, appointment: appointment.id });
       acc[key] = appointment;
     } catch (error) {
       console.error('Error processing appointment:', appointment, error);
     }
     return acc;
   }, {} as Record<string, Appointment>);
+
+  console.log('ModernWeeklySchedule - Appointments by date/time:', appointmentsByDateTime);
 
   // Helper functions
   const getStatusColor = (status: string) => {
@@ -129,7 +138,9 @@ const ModernWeeklySchedule = ({
   const getAppointmentForSlot = (day: Date, timeSlot: string) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     const key = `${dateKey}-${timeSlot}`;
-    return appointmentsByDateTime[key];
+    const appointment = appointmentsByDateTime[key];
+    console.log('ModernWeeklySchedule - Looking for appointment:', { dateKey, timeSlot, key, found: !!appointment });
+    return appointment;
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {

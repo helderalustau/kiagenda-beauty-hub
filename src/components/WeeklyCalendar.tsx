@@ -90,14 +90,30 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
     );
   }
 
-  // Sempre renderizar com dados disponíveis, mesmo que salon seja básico
-  console.log('WeeklyCalendar - Rendering with salon:', salon?.name, 'appointments:', appointments.length);
+  // Criar um salon mock com horários de funcionamento padrão se não existir
+  const salonWithDefaults = {
+    ...salon,
+    opening_hours: salon?.opening_hours && Object.keys(salon.opening_hours).length > 0 
+      ? salon.opening_hours 
+      : {
+          monday: { open: '08:00', close: '18:00', closed: false },
+          tuesday: { open: '08:00', close: '18:00', closed: false },
+          wednesday: { open: '08:00', close: '18:00', closed: false },
+          thursday: { open: '08:00', close: '18:00', closed: false },
+          friday: { open: '08:00', close: '18:00', closed: false },
+          saturday: { open: '08:00', close: '16:00', closed: false },
+          sunday: { open: '08:00', close: '16:00', closed: true }
+        }
+  };
+
+  console.log('WeeklyCalendar - Rendering with salon:', salonWithDefaults?.name, 'appointments:', appointments.length);
+  console.log('WeeklyCalendar - Salon opening hours:', salonWithDefaults?.opening_hours);
 
   return (
     <>
       <ModernWeeklySchedule 
         appointments={appointments}
-        salon={salon}
+        salon={salonWithDefaults}
         onUpdateAppointment={handleUpdateAppointment}
         isUpdating={false}
       />
