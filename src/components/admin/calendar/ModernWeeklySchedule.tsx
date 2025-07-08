@@ -36,7 +36,7 @@ const ModernWeeklySchedule = ({
     openingHours: salon.opening_hours
   });
 
-  // Filtrar apenas agendamentos confirmados e pendentes para mostrar na agenda
+  // Filtrar agendamentos confirmados e pendentes para mostrar na agenda
   const visibleAppointments = appointments.filter(apt => 
     ['confirmed', 'pending'].includes(apt.status)
   );
