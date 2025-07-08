@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
 interface AdminLoginFormProps {
@@ -41,10 +42,9 @@ export const AdminLoginForm = ({
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input 
+                <PasswordInput 
                   id="password" 
                   name="password"
-                  type="password" 
                   placeholder="Digite sua senha" 
                   required 
                 />

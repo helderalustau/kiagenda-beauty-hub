@@ -38,7 +38,7 @@ const ModernWeeklySchedule = ({
 
   // Filtrar apenas agendamentos confirmados e pendentes para mostrar na agenda
   const visibleAppointments = appointments.filter(apt => 
-    ['confirmed', 'pending', 'completed'].includes(apt.status)
+    ['confirmed', 'pending'].includes(apt.status)
   );
 
   console.log('ModernWeeklySchedule - Visible appointments:', {
@@ -54,6 +54,7 @@ const ModernWeeklySchedule = ({
   // Gerar horários disponíveis baseado no horário de funcionamento
   const timeSlots = generateTimeSlots(salon.opening_hours || {});
   console.log('ModernWeeklySchedule - Generated time slots:', timeSlots);
+  console.log('ModernWeeklySchedule - Opening hours:', salon.opening_hours);
 
   // Organizar agendamentos por data e horário
   const appointmentsByDateTime = visibleAppointments.reduce((acc, appointment) => {

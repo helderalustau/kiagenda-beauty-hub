@@ -156,7 +156,7 @@ export const useAdminDashboardLogic = () => {
       }
     };
 
-    const interval = setInterval(checkPendingAppointments, 30000);
+    const interval = setInterval(checkPendingAppointments, 60000); // 1 minuto
     return () => clearInterval(interval);
   }, []);
 
