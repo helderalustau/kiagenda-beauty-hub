@@ -2,18 +2,21 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Clock, MapPin, Scissors, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, Clock, MapPin, Scissors, User, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from '@/hooks/useAuth';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useClientData } from '@/hooks/useClientData';
+import { useToast } from "@/hooks/use-toast";
 
 const ClientAppointments = () => {
   const { user } = useAuth();
-  const { appointments, loading, fetchClientAppointments } = useAppointmentData();
+  const { appointments, loading, fetchClientAppointments, updateAppointmentStatus } = useAppointmentData();
   const { getClientByPhone } = useClientData();
   const [clientId, setClientId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadClientAndAppointments = async () => {
@@ -54,6 +57,37 @@ const ClientAppointments = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      const result = await updateAppointmentStatus(appointmentId, 'cancelled');
+      
+      if (result.success) {
+        toast({
+          title: "Agendamento Cancelado",
+          description: "Sua solicitação foi cancelada com sucesso.",
+        });
+        
+        // Recarregar os agendamentos
+        if (clientId) {
+          await fetchClientAppointments(clientId);
+        }
+      } else {
+        toast({
+          title: "Erro ao cancelar",
+          description: result.message || "Erro ao cancelar agendamento",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error canceling appointment:', error);
+      toast({
+        title: "Erro",
+        description: "Erro interno ao cancelar agendamento",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
@@ -140,6 +174,21 @@ const ClientAppointments = () => {
                   <p className="text-sm text-gray-700">
                     <strong>Observações:</strong> {appointment.notes}
                   </p>
+                </div>
+              )}
+
+              {/* Botão de cancelamento para agendamentos pendentes */}
+              {appointment.status === 'pending' && (
+                <div className="flex justify-end pt-3 border-t">
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => handleCancelAppointment(appointment.id)}
+                    className="flex items-center space-x-2"
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Cancelar Solicitação</span>
+                  </Button>
                 </div>
               )}
               

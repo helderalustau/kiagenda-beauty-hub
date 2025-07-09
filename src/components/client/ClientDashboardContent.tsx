@@ -3,25 +3,31 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, Scissors, CheckCircle, AlertCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, Scissors, CheckCircle, AlertCircle, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Salon } from '@/hooks/useSupabaseData';
 import { Appointment } from '@/types/supabase-entities';
+import { useAppointmentData } from '@/hooks/useAppointmentData';
+import { useToast } from "@/hooks/use-toast";
 
 interface ClientDashboardContentProps {
   salons: Salon[];
   onBookService: (salon: Salon) => void;
   activeAppointments: Appointment[];
   completedAppointments: Appointment[];
+  onAppointmentUpdate?: () => void;
 }
 
 const ClientDashboardContent = ({ 
   salons, 
   onBookService, 
   activeAppointments, 
-  completedAppointments 
+  completedAppointments,
+  onAppointmentUpdate 
 }: ClientDashboardContentProps) => {
+  const { updateAppointmentStatus } = useAppointmentData();
+  const { toast } = useToast();
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -42,6 +48,37 @@ const ClientDashboardContent = ({
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      const result = await updateAppointmentStatus(appointmentId, 'cancelled');
+      
+      if (result.success) {
+        toast({
+          title: "Agendamento Cancelado",
+          description: "Sua solicitação foi cancelada com sucesso.",
+        });
+        
+        // Notificar o componente pai para atualizar a lista
+        if (onAppointmentUpdate) {
+          onAppointmentUpdate();
+        }
+      } else {
+        toast({
+          title: "Erro ao cancelar",
+          description: result.message || "Erro ao cancelar agendamento",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error canceling appointment:', error);
+      toast({
+        title: "Erro",
+        description: "Erro interno ao cancelar agendamento",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -94,6 +131,21 @@ const ClientDashboardContent = ({
                       <p className="text-sm text-gray-700">
                         <strong>Observações:</strong> {appointment.notes}
                       </p>
+                    </div>
+                  )}
+
+                  {/* Botão de cancelamento para agendamentos pendentes */}
+                  {appointment.status === 'pending' && (
+                    <div className="flex justify-end">
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleCancelAppointment(appointment.id)}
+                        className="flex items-center space-x-2"
+                      >
+                        <X className="h-4 w-4" />
+                        <span>Cancelar Solicitação</span>
+                      </Button>
                     </div>
                   )}
                 </CardContent>
