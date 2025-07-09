@@ -30,28 +30,10 @@ const ModernWeeklySchedule = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { generateTimeSlots } = useOpeningHours();
 
-  console.log('ModernWeeklySchedule - Rendering with:', {
-    appointmentsCount: appointments.length,
-    salonName: salon.name,
-    openingHours: salon.opening_hours
-  });
-
   // Filtrar apenas agendamentos confirmados para mostrar na agenda
   const visibleAppointments = appointments.filter(apt => 
     apt.status === 'confirmed'
   );
-
-  console.log('ModernWeeklySchedule - Visible appointments:', {
-    total: appointments.length,
-    visible: visibleAppointments.length,
-    statuses: visibleAppointments.map(a => a.status),
-    appointmentDetails: visibleAppointments.map(a => ({
-      id: a.id,
-      date: a.appointment_date,
-      time: a.appointment_time,
-      status: a.status
-    }))
-  });
 
   // Gerar os dias da semana atual
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 }); // Começa no domingo
@@ -59,24 +41,20 @@ const ModernWeeklySchedule = ({
 
   // Gerar horários disponíveis baseado no horário de funcionamento
   const timeSlots = generateTimeSlots(salon.opening_hours || {});
-  console.log('ModernWeeklySchedule - Generated time slots:', timeSlots);
-  console.log('ModernWeeklySchedule - Opening hours:', salon.opening_hours);
 
   // Organizar agendamentos por data e horário
   const appointmentsByDateTime = visibleAppointments.reduce((acc, appointment) => {
     try {
-      const dateKey = format(new Date(appointment.appointment_date), 'yyyy-MM-dd');
+      // Usar a data diretamente do appointment_date (já vem no formato correto)
+      const dateKey = appointment.appointment_date;
       const timeKey = appointment.appointment_time;
       const key = `${dateKey}-${timeKey}`;
-      console.log('ModernWeeklySchedule - Adding appointment to map:', { key, appointment: appointment.id });
       acc[key] = appointment;
     } catch (error) {
       console.error('Error processing appointment:', appointment, error);
     }
     return acc;
   }, {} as Record<string, Appointment>);
-
-  console.log('ModernWeeklySchedule - Appointments by date/time:', appointmentsByDateTime);
 
   // Helper functions
   const getStatusColor = (status: string) => {
@@ -138,9 +116,7 @@ const ModernWeeklySchedule = ({
   const getAppointmentForSlot = (day: Date, timeSlot: string) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     const key = `${dateKey}-${timeSlot}`;
-    const appointment = appointmentsByDateTime[key];
-    console.log('ModernWeeklySchedule - Looking for appointment:', { dateKey, timeSlot, key, found: !!appointment });
-    return appointment;
+    return appointmentsByDateTime[key];
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
@@ -165,7 +141,6 @@ const ModernWeeklySchedule = ({
 
   // Verificar se temos horários válidos
   if (timeSlots.length === 0) {
-    console.warn('ModernWeeklySchedule - No time slots generated');
     return (
       <Card className="w-full">
         <CardContent className="p-6">
