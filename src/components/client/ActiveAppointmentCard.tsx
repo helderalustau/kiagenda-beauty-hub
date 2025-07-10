@@ -19,22 +19,31 @@ const ActiveAppointmentCard = ({ appointment }: ActiveAppointmentCardProps) => {
     }).format(value);
   };
 
-  // FIX: Parse date string correctly to avoid timezone issues
+  // FIX: Corrigir formatação de data para exibir corretamente
   const formatAppointmentDate = (dateString: string) => {
     try {
-      // Parse the date string as YYYY-MM-DD and treat it as local date
-      const [year, month, day] = dateString.split('-').map(Number);
-      const localDate = new Date(year, month - 1, day); // month is 0-indexed
-      return format(localDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      // Para appointment_date (formato YYYY-MM-DD), criar data local sem conversão de timezone
+      const dateParts = dateString.split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1; // Month é 0-indexed
+        const day = parseInt(dateParts[2], 10);
+        const localDate = new Date(year, month, day);
+        return format(localDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      }
+      
+      // Fallback para outros formatos
+      const date = new Date(dateString + 'T00:00:00');
+      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     } catch (error) {
-      console.error('Error formatting date:', dateString, error);
+      console.error('Error formatting appointment date:', dateString, error);
       return dateString;
     }
   };
 
   const formatCreatedAt = (dateString: string) => {
     try {
-      // For created_at, use parseISO since it includes time
+      // Para created_at, usar parseISO pois inclui horário
       const date = parseISO(dateString);
       return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     } catch (error) {

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Clock, MapPin, User, Star } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/types/supabase-entities';
 
@@ -18,6 +18,39 @@ const CompletedAppointmentCard = ({ appointment }: CompletedAppointmentCardProps
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  // FIX: Corrigir formatação de data para exibir corretamente
+  const formatAppointmentDate = (dateString: string) => {
+    try {
+      // Para appointment_date (formato YYYY-MM-DD), criar data local sem conversão de timezone
+      const dateParts = dateString.split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1; // Month é 0-indexed
+        const day = parseInt(dateParts[2], 10);
+        const localDate = new Date(year, month, day);
+        return format(localDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      }
+      
+      // Fallback para outros formatos
+      const date = new Date(dateString + 'T00:00:00');
+      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    } catch (error) {
+      console.error('Error formatting appointment date:', dateString, error);
+      return dateString;
+    }
+  };
+
+  const formatUpdatedAt = (dateString: string) => {
+    try {
+      // Para updated_at/created_at, usar parseISO pois inclui horário
+      const date = parseISO(dateString);
+      return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    } catch (error) {
+      console.error('Error formatting updated_at:', dateString, error);
+      return dateString;
+    }
   };
 
   return (
@@ -47,7 +80,7 @@ const CompletedAppointmentCard = ({ appointment }: CompletedAppointmentCardProps
           <div className="flex items-center text-gray-700">
             <CalendarIcon className="h-4 w-4 mr-2 text-green-600" />
             <span>
-              {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              {formatAppointmentDate(appointment.appointment_date)}
             </span>
           </div>
           
@@ -86,7 +119,7 @@ const CompletedAppointmentCard = ({ appointment }: CompletedAppointmentCardProps
           </div>
           
           <div className="text-xs text-green-600 pt-2 border-t border-green-200">
-            Finalizado em {format(new Date(appointment.updated_at || appointment.created_at || ''), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            Finalizado em {formatUpdatedAt(appointment.updated_at || appointment.created_at || '')}
           </div>
         </div>
       </CardContent>
