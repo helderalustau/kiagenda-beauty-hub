@@ -64,10 +64,20 @@ export const useBookingSubmission = (salonId: string) => {
     setIsSubmitting(true);
 
     try {
-      // Verificar se o horário ainda está disponível
-      const dateString = selectedDate.toISOString().split('T')[0];
+      // FIX: Format date correctly to avoid timezone issues
+      // Use the local date components to create ISO string
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
       
-      console.log('🔍 Checking availability for:', { salonId, dateString, selectedTime });
+      console.log('🔍 Checking availability for:', { 
+        salonId, 
+        dateString, 
+        selectedTime,
+        originalDate: selectedDate.toDateString(),
+        isoComponents: { year, month, day }
+      });
       
       const { data: conflictCheck, error: conflictError } = await supabase
         .from('appointments')
@@ -98,7 +108,7 @@ export const useBookingSubmission = (salonId: string) => {
         salon_id: salonId,
         service_id: selectedService.id,
         client_auth_id: user.id,
-        appointment_date: dateString,
+        appointment_date: dateString, // Use the corrected date string
         appointment_time: selectedTime,
         status: 'pending' as const,
         notes: clientData.notes?.trim() || null

@@ -21,9 +21,22 @@ export const useAppointmentCreate = () => {
         throw new Error(`Campos obrigatórios faltando: ${missingFields.join(', ')}`);
       }
 
+      // FIX: Validate and normalize date format
+      let formattedDate = appointmentData.appointment_date;
+      
+      // If date is a Date object, format it correctly
+      if (appointmentData.appointment_date instanceof Date) {
+        const date = appointmentData.appointment_date;
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        formattedDate = `${year}-${month}-${day}`;
+        console.log('📅 Converted Date object to string:', formattedDate);
+      }
+      
       // Validar formato da data
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(appointmentData.appointment_date)) {
+      if (!dateRegex.test(formattedDate)) {
         throw new Error('Formato de data inválido. Use YYYY-MM-DD');
       }
 
@@ -91,7 +104,7 @@ export const useAppointmentCreate = () => {
         salon_id: appointmentData.salon_id,
         client_auth_id: clientAuthId,
         service_id: appointmentData.service_id,
-        appointment_date: appointmentData.appointment_date,
+        appointment_date: formattedDate, // Use the corrected date format
         appointment_time: appointmentData.appointment_time,
         status: 'pending' as const,
         notes: appointmentData.notes || null,
@@ -137,7 +150,7 @@ export const useAppointmentCreate = () => {
       return { 
         success: true, 
         appointment: normalizedAppointment,
-        message: `Agendamento criado para ${appointmentData.appointment_date} às ${appointmentData.appointment_time}`
+        message: `Agendamento criado para ${formattedDate} às ${appointmentData.appointment_time}`
       };
     } catch (error) {
       console.error('❌ Error in createAppointment:', error);

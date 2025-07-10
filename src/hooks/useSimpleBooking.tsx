@@ -96,7 +96,7 @@ export const useSimpleBooking = (salon: Salon) => {
     };
   }, [bookingState.selectedService, bookingState.selectedDate, bookingState.selectedTime, bookingState.clientData]);
 
-  // Handle date selection with validation
+  // Handle date selection with validation - FIX: Prevent timezone issues
   const handleDateSelect = useCallback((date: Date | undefined) => {
     console.log('📅 Date selected:', date?.toDateString());
     
@@ -108,9 +108,15 @@ export const useSimpleBooking = (salon: Salon) => {
         console.log('❌ Cannot select past date');
         return;
       }
+      
+      // FIX: Create a new date ensuring it stays in local timezone
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      console.log('✅ Setting local date:', localDate.toDateString(), 'ISO:', localDate.toISOString().split('T')[0]);
+      bookingState.setSelectedDate(localDate);
+    } else {
+      bookingState.setSelectedDate(date);
     }
     
-    bookingState.setSelectedDate(date);
     bookingState.setSelectedTime(''); // Reset time when date changes
   }, [bookingState]);
 
@@ -162,6 +168,7 @@ export const useSimpleBooking = (salon: Salon) => {
     console.log('📋 Submitting booking with data:', {
       service: bookingState.selectedService?.name,
       date: bookingState.selectedDate?.toDateString(),
+      dateISO: bookingState.selectedDate?.toISOString().split('T')[0],
       time: bookingState.selectedTime,
       clientData: {
         name: bookingState.clientData.name,
