@@ -12,7 +12,7 @@ import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, Scissors } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface AdminDashboardContentProps {
@@ -44,12 +44,12 @@ const AdminDashboardContent = ({
     }).format(value);
   };
 
-  // FIX: Parse date string correctly to avoid timezone issues
+  // FIX: Função para formatar data local corretamente
   const formatAppointmentDate = (dateString: string) => {
     try {
-      // Parse the date string as YYYY-MM-DD and treat it as local date
+      // Parse da data como local (YYYY-MM-DD) sem conversão de timezone
       const [year, month, day] = dateString.split('-').map(Number);
-      const localDate = new Date(year, month - 1, day); // month is 0-indexed
+      const localDate = new Date(year, month - 1, day); // month é 0-indexed
       return format(localDate, "dd/MM/yyyy", { locale: ptBR });
     } catch (error) {
       console.error('Error formatting date:', dateString, error);
@@ -74,6 +74,10 @@ const AdminDashboardContent = ({
 
   // Filtrar apenas agendamentos concluídos para o histórico
   const completedAppointments = appointments.filter(apt => apt.status === 'completed');
+
+  // Log para debug
+  console.log('AdminDashboardContent - Total appointments:', appointments.length);
+  console.log('AdminDashboardContent - Appointments:', appointments);
 
   return (
     <>
@@ -107,7 +111,7 @@ const AdminDashboardContent = ({
       <TabsContent value="calendar" className="space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-            Agenda Completa
+            Agenda Completa ({appointments.length} agendamentos)
           </h2>
           <p className="text-gray-600 text-sm sm:text-base">
             Visualize e gerencie todos os agendamentos na agenda semanal
@@ -131,7 +135,12 @@ const AdminDashboardContent = ({
             {completedAppointments.length > 0 ? (
               <div className="space-y-4">
                 {completedAppointments
-                  .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
+                  .sort((a, b) => {
+                    // Ordenar por data de agendamento (não created_at)
+                    const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
+                    const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
+                    return dateB.getTime() - dateA.getTime();
+                  })
                   .slice(0, 10) // Mostrar apenas os últimos 10
                   .map((appointment) => (
                     <div key={appointment.id} className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
@@ -146,7 +155,7 @@ const AdminDashboardContent = ({
                           <div className="flex items-center space-x-4 text-sm text-gray-600">
                             <div className="flex items-center">
                               <User className="h-3 w-3 mr-1" />
-                              {(appointment as any).client_auth?.name || 'Cliente não identificado'}
+                              {(appointment as any).client_auth?.name || (appointment as any).client?.name || 'Cliente não identificado'}
                             </div>
                             <div className="flex items-center">
                               <Calendar className="h-3 w-3 mr-1" />

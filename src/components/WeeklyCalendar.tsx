@@ -106,8 +106,10 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
         }
   };
 
-  console.log('WeeklyCalendar - Rendering with salon:', salonWithDefaults?.name, 'appointments:', appointments.length);
-  console.log('WeeklyCalendar - Salon opening hours:', salonWithDefaults?.opening_hours);
+  // Log para debug
+  console.log('WeeklyCalendar - Appointments received:', appointments.length);
+  console.log('WeeklyCalendar - All appointments:', appointments);
+  console.log('WeeklyCalendar - Salon:', salonWithDefaults?.name);
 
   return (
     <>

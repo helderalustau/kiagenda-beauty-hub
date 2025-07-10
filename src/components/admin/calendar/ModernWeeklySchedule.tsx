@@ -30,10 +30,12 @@ const ModernWeeklySchedule = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { generateTimeSlots } = useOpeningHours();
 
-  // Filtrar apenas agendamentos confirmados para mostrar na agenda
-  const visibleAppointments = appointments.filter(apt => 
-    apt.status === 'confirmed'
-  );
+  // Log para debug
+  console.log('ModernWeeklySchedule - Appointments received:', appointments.length);
+  console.log('ModernWeeklySchedule - All appointments:', appointments);
+
+  // Mostrar TODOS os agendamentos (não filtrar por status)
+  const visibleAppointments = appointments;
 
   // Gerar os dias da semana atual
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 }); // Começa no domingo
@@ -42,19 +44,30 @@ const ModernWeeklySchedule = ({
   // Gerar horários disponíveis baseado no horário de funcionamento
   const timeSlots = generateTimeSlots(salon.opening_hours || {});
 
-  // FIX: Organizar agendamentos por data e horário considerando fuso horário brasileiro
+  // Organizar agendamentos por data e horário - CORRIGIDO para timezone Brasil
   const appointmentsByDateTime = visibleAppointments.reduce((acc, appointment) => {
     try {
-      // Parse the date string correctly to avoid timezone issues
-      const dateKey = appointment.appointment_date; // Keep as YYYY-MM-DD string
+      // FIX: Tratar a data como local sem conversão de timezone
+      const dateKey = appointment.appointment_date; // Manter como string YYYY-MM-DD
       const timeKey = appointment.appointment_time;
       const key = `${dateKey}-${timeKey}`;
+      
+      console.log('Processing appointment:', {
+        id: appointment.id,
+        dateKey,
+        timeKey,
+        key,
+        client: appointment.client_auth?.name || appointment.client?.name
+      });
+      
       acc[key] = appointment;
     } catch (error) {
       console.error('Error processing appointment:', appointment, error);
     }
     return acc;
   }, {} as Record<string, Appointment>);
+
+  console.log('appointmentsByDateTime:', appointmentsByDateTime);
 
   // Helper functions
   const getStatusColor = (status: string) => {
@@ -83,11 +96,11 @@ const ModernWeeklySchedule = ({
 
   // Helper function to safely get client name from appointment
   const getClientName = (appointment: Appointment) => {
-    if ((appointment as any).client?.name) {
-      return (appointment as any).client.name;
-    }
     if ((appointment as any).client_auth?.name) {
       return (appointment as any).client_auth.name;
+    }
+    if ((appointment as any).client?.name) {
+      return (appointment as any).client.name;
     }
     if ((appointment as any).client_name) {
       return (appointment as any).client_name;
@@ -113,12 +126,19 @@ const ModernWeeklySchedule = ({
     setSelectedDay(null);
   };
 
-  // FIX: Get appointment for slot considering Brazilian timezone
+  // Get appointment for slot - CORRIGIDO para timezone Brasil
   const getAppointmentForSlot = (day: Date, timeSlot: string) => {
     // Format day as YYYY-MM-DD in local timezone
     const dateKey = format(day, 'yyyy-MM-dd');
     const key = `${dateKey}-${timeSlot}`;
-    return appointmentsByDateTime[key];
+    
+    console.log('Looking for appointment with key:', key);
+    const appointment = appointmentsByDateTime[key];
+    if (appointment) {
+      console.log('Found appointment:', appointment);
+    }
+    
+    return appointment;
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
@@ -137,6 +157,9 @@ const ModernWeeklySchedule = ({
       </div>
       <div className="text-xs truncate opacity-80">
         {getClientName(appointment)}
+      </div>
+      <div className="text-xs opacity-60">
+        Status: {appointment.status}
       </div>
     </div>
   );
@@ -207,7 +230,7 @@ const ModernWeeklySchedule = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
             <Calendar className="h-5 w-5" />
-            <span>Agenda Semanal</span>
+            <span>Agenda Semanal ({visibleAppointments.length} agendamentos)</span>
           </CardTitle>
           
           <div className="flex items-center space-x-2">
