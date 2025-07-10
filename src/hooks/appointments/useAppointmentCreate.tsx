@@ -21,17 +21,17 @@ export const useAppointmentCreate = () => {
         throw new Error(`Campos obrigatórios faltando: ${missingFields.join(', ')}`);
       }
 
-      // FIX: Validate and normalize date format
+      // FIX: Validar e normalizar formato da data LOCALMENTE
       let formattedDate = appointmentData.appointment_date;
       
-      // If date is a Date object, format it correctly
+      // Se a data é um objeto Date, formatar corretamente usando componentes locais
       if (appointmentData.appointment_date instanceof Date) {
         const date = appointmentData.appointment_date;
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        formattedDate = `${year}-${month}-${day}`;
-        console.log('📅 Converted Date object to string:', formattedDate);
+        const month = date.getMonth() + 1; // getMonth() retorna 0-11
+        const day = date.getDate();
+        formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        console.log('📅 Converted Date object to local string:', formattedDate, 'from components:', { year, month, day });
       }
       
       // Validar formato da data
@@ -104,7 +104,7 @@ export const useAppointmentCreate = () => {
         salon_id: appointmentData.salon_id,
         client_auth_id: clientAuthId,
         service_id: appointmentData.service_id,
-        appointment_date: formattedDate, // Use the corrected date format
+        appointment_date: formattedDate, // Usar a data formatada localmente
         appointment_time: appointmentData.appointment_time,
         status: 'pending' as const,
         notes: appointmentData.notes || null,

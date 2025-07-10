@@ -64,19 +64,20 @@ export const useBookingSubmission = (salonId: string) => {
     setIsSubmitting(true);
 
     try {
-      // FIX: Format date correctly to avoid timezone issues
-      // Use the local date components to create ISO string
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      const dateString = `${year}-${month}-${day}`;
+      // FIX: Criar data local sem conversão de timezone
+      const localYear = selectedDate.getFullYear();
+      const localMonth = selectedDate.getMonth() + 1;
+      const localDay = selectedDate.getDate();
+      
+      // Formatar como YYYY-MM-DD garantindo que seja local
+      const dateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
       
       console.log('🔍 Checking availability for:', { 
         salonId, 
         dateString, 
         selectedTime,
         originalDate: selectedDate.toDateString(),
-        isoComponents: { year, month, day }
+        localComponents: { localYear, localMonth, localDay }
       });
       
       const { data: conflictCheck, error: conflictError } = await supabase
@@ -108,7 +109,7 @@ export const useBookingSubmission = (salonId: string) => {
         salon_id: salonId,
         service_id: selectedService.id,
         client_auth_id: user.id,
-        appointment_date: dateString, // Use the corrected date string
+        appointment_date: dateString,
         appointment_time: selectedTime,
         status: 'pending' as const,
         notes: clientData.notes?.trim() || null
