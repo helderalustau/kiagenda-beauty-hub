@@ -12,7 +12,7 @@ import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, Scissors } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface AdminDashboardContentProps {
@@ -42,6 +42,19 @@ const AdminDashboardContent = ({
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  // FIX: Parse date string correctly to avoid timezone issues
+  const formatAppointmentDate = (dateString: string) => {
+    try {
+      // Parse the date string as YYYY-MM-DD and treat it as local date
+      const [year, month, day] = dateString.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day); // month is 0-indexed
+      return format(localDate, "dd/MM/yyyy", { locale: ptBR });
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return dateString;
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -137,7 +150,7 @@ const AdminDashboardContent = ({
                             </div>
                             <div className="flex items-center">
                               <Calendar className="h-3 w-3 mr-1" />
-                              {format(new Date(appointment.appointment_date), "dd/MM/yyyy", { locale: ptBR })}
+                              {formatAppointmentDate(appointment.appointment_date)}
                             </div>
                             <div className="flex items-center">
                               <Clock className="h-3 w-3 mr-1" />

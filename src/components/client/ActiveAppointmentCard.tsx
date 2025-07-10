@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Clock, MapPin, User, Phone, CheckCircle, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/types/supabase-entities';
 
@@ -17,6 +17,30 @@ const ActiveAppointmentCard = ({ appointment }: ActiveAppointmentCardProps) => {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  // FIX: Parse date string correctly to avoid timezone issues
+  const formatAppointmentDate = (dateString: string) => {
+    try {
+      // Parse the date string as YYYY-MM-DD and treat it as local date
+      const [year, month, day] = dateString.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day); // month is 0-indexed
+      return format(localDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return dateString;
+    }
+  };
+
+  const formatCreatedAt = (dateString: string) => {
+    try {
+      // For created_at, use parseISO since it includes time
+      const date = parseISO(dateString);
+      return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    } catch (error) {
+      console.error('Error formatting created_at:', dateString, error);
+      return dateString;
+    }
   };
 
   const getStatusInfo = (status: string) => {
@@ -77,7 +101,7 @@ const ActiveAppointmentCard = ({ appointment }: ActiveAppointmentCardProps) => {
           <div className="flex items-center text-gray-700">
             <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
             <span>
-              {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              {formatAppointmentDate(appointment.appointment_date)}
             </span>
           </div>
           
@@ -125,7 +149,7 @@ const ActiveAppointmentCard = ({ appointment }: ActiveAppointmentCardProps) => {
           )}
           
           <div className="text-xs text-gray-500 pt-2 border-t border-gray-200">
-            Solicitado em {format(new Date(appointment.created_at || ''), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            Solicitado em {appointment.created_at ? formatCreatedAt(appointment.created_at) : 'Data não disponível'}
           </div>
         </div>
       </CardContent>

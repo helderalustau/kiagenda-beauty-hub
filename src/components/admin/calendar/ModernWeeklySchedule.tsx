@@ -42,11 +42,11 @@ const ModernWeeklySchedule = ({
   // Gerar horários disponíveis baseado no horário de funcionamento
   const timeSlots = generateTimeSlots(salon.opening_hours || {});
 
-  // Organizar agendamentos por data e horário
+  // FIX: Organizar agendamentos por data e horário considerando fuso horário brasileiro
   const appointmentsByDateTime = visibleAppointments.reduce((acc, appointment) => {
     try {
-      // Usar a data diretamente do appointment_date (já vem no formato correto)
-      const dateKey = appointment.appointment_date;
+      // Parse the date string correctly to avoid timezone issues
+      const dateKey = appointment.appointment_date; // Keep as YYYY-MM-DD string
       const timeKey = appointment.appointment_time;
       const key = `${dateKey}-${timeKey}`;
       acc[key] = appointment;
@@ -113,7 +113,9 @@ const ModernWeeklySchedule = ({
     setSelectedDay(null);
   };
 
+  // FIX: Get appointment for slot considering Brazilian timezone
   const getAppointmentForSlot = (day: Date, timeSlot: string) => {
+    // Format day as YYYY-MM-DD in local timezone
     const dateKey = format(day, 'yyyy-MM-dd');
     const key = `${dateKey}-${timeSlot}`;
     return appointmentsByDateTime[key];
@@ -172,7 +174,7 @@ const ModernWeeklySchedule = ({
         <CardContent>
           <div className="space-y-1">
             {timeSlots.map((timeSlot) => {
-              const appointment = appointmentsByDateTime[`${format(selectedDay, 'yyyy-MM-dd')}-${timeSlot}`];
+              const appointment = getAppointmentForSlot(selectedDay, timeSlot);
               
               return (
                 <div 
