@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,7 @@ const ModernWeeklySchedule = ({
         dateKey,
         timeKey,
         key,
-        client: appointment.client_auth?.name || appointment.client?.name
+        client: appointment.client?.name || 'No client name'
       });
       
       acc[key] = appointment;
@@ -94,13 +93,13 @@ const ModernWeeklySchedule = ({
     return 'Serviço';
   };
 
-  // Helper function to safely get client name from appointment
+  // Helper function to safely get client name from appointment - FIXED
   const getClientName = (appointment: Appointment) => {
-    if ((appointment as any).client_auth?.name) {
-      return (appointment as any).client_auth.name;
+    if (appointment.client?.name) {
+      return appointment.client.name;
     }
-    if ((appointment as any).client?.name) {
-      return (appointment as any).client.name;
+    if (appointment.client?.username) {
+      return appointment.client.username;
     }
     if ((appointment as any).client_name) {
       return (appointment as any).client_name;
