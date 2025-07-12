@@ -61,20 +61,32 @@ const ClientAppointments = () => {
 
   // FIX: Corrigir formatação de data para exibir corretamente
   const formatAppointmentDate = (dateString: string) => {
+    console.log('🔍 Raw date string from DB:', dateString);
+    
     try {
-      // Para appointment_date (formato YYYY-MM-DD), criar data local sem conversão de timezone
+      // Para appointment_date (formato YYYY-MM-DD), usar formatação direta sem Date object
       const dateParts = dateString.split('-');
       if (dateParts.length === 3) {
         const year = parseInt(dateParts[0], 10);
-        const month = parseInt(dateParts[1], 10) - 1; // Month é 0-indexed
+        const monthNumber = parseInt(dateParts[1], 10);
         const day = parseInt(dateParts[2], 10);
-        const localDate = new Date(year, month, day);
-        return format(localDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+        
+        // Array de nomes dos meses em português
+        const months = [
+          'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+          'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+        ];
+        
+        const monthName = months[monthNumber - 1]; // months é 0-indexed
+        const formattedDate = `${day.toString().padStart(2, '0')} de ${monthName} de ${year}`;
+        
+        console.log('🔍 Formatted date result:', formattedDate);
+        return formattedDate;
       }
       
       // Fallback para outros formatos
-      const date = new Date(dateString + 'T00:00:00');
-      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      console.log('🔍 Using fallback formatting for:', dateString);
+      return dateString;
     } catch (error) {
       console.error('Error formatting appointment date:', dateString, error);
       return dateString;
