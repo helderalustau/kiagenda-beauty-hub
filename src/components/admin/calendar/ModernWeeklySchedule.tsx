@@ -125,10 +125,13 @@ const ModernWeeklySchedule = ({
     setSelectedDay(null);
   };
 
-  // Get appointment for slot - CORRIGIDO para timezone Brasil
+  // Get appointment for slot - CORRIGIDO para usar data local sem timezone
   const getAppointmentForSlot = (day: Date, timeSlot: string) => {
-    // Format day as YYYY-MM-DD in local timezone
-    const dateKey = format(day, 'yyyy-MM-dd');
+    // Usar componentes locais da data para formar YYYY-MM-DD
+    const year = day.getFullYear();
+    const month = (day.getMonth() + 1).toString().padStart(2, '0');
+    const dayNum = day.getDate().toString().padStart(2, '0');
+    const dateKey = `${year}-${month}-${dayNum}`;
     const key = `${dateKey}-${timeSlot}`;
     
     console.log('Looking for appointment with key:', key);
