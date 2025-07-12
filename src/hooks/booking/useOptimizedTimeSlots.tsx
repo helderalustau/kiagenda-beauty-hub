@@ -142,7 +142,11 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
       }
       
       // Buscar slots ocupados
-      const dateString = selectedDate.toISOString().split('T')[0];
+      // FIX: Usar componentes locais da data para evitar problemas de timezone
+      const localYear = selectedDate.getFullYear();
+      const localMonth = selectedDate.getMonth() + 1;
+      const localDay = selectedDate.getDate();
+      const dateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
       const bookedSlots = await fetchBookedSlots(salon.id, dateString);
       
       // Filtrar slots disponíveis

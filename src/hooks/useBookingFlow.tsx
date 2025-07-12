@@ -60,7 +60,11 @@ export const useBookingFlow = (salonId: string) => {
     setIsSubmitting(true);
 
     try {
-      const dateString = selectedDate.toISOString().split('T')[0];
+      // FIX: Usar componentes locais da data para evitar problemas de timezone
+      const localYear = selectedDate.getFullYear();
+      const localMonth = selectedDate.getMonth() + 1;
+      const localDay = selectedDate.getDate();
+      const dateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
       
       // Verificar se o horário ainda está disponível
       const { data: conflictCheck, error: conflictError } = await supabase

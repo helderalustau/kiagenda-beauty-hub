@@ -83,7 +83,11 @@ export const useBookingTimeSlots = (salon: Salon) => {
     setLoadingTimes(true);
     
     try {
-      const dateString = date.toISOString().split('T')[0];
+      // FIX: Usar componentes locais da data para evitar problemas de timezone
+      const localYear = date.getFullYear();
+      const localMonth = date.getMonth() + 1;
+      const localDay = date.getDate();
+      const dateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
       
       // Gerar todos os slots possíveis primeiro
       const allSlots = generateTimeSlots(date);
