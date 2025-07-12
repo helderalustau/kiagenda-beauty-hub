@@ -112,10 +112,16 @@ export const useBookingAppointment = () => {
         client: clientData.name
       });
 
+      // FIX: Usar componentes locais da data para evitar problemas de timezone
+      const localYear = selectedDate.getFullYear();
+      const localMonth = selectedDate.getMonth() + 1;
+      const localDay = selectedDate.getDate();
+      const localDateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
+
       const appointmentResult = await createAppointmentWithLoggedClient({
         salon_id: salon.id,
         service_id: selectedService.id,
-        appointment_date: selectedDate.toISOString().split('T')[0],
+        appointment_date: localDateString,
         appointment_time: selectedTime,
         clientName: clientData.name,
         clientPhone: clientData.phone,
