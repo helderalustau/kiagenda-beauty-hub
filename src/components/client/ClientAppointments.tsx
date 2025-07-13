@@ -59,18 +59,14 @@ const ClientAppointments = () => {
     }).format(value);
   };
 
-  // FIX DEFINITIVO: Formatação de data simples e direta
+  // Formatação direta da data sem conversões que alterem o dia
   const formatAppointmentDate = (dateString: string) => {
-    console.log('🔍 [DATA DEBUG] String do banco:', dateString);
-    
-    // Para appointment_date (formato YYYY-MM-DD), fazer split simples
+    // Para appointment_date (formato YYYY-MM-DD), usar split direto
     if (dateString && dateString.includes('-')) {
       const [year, month, day] = dateString.split('-');
-      const yearNum = parseInt(year, 10);
-      const monthNum = parseInt(month, 10);
       const dayNum = parseInt(day, 10);
-      
-      console.log('🔍 [DATA DEBUG] Componentes:', { ano: yearNum, mes: monthNum, dia: dayNum });
+      const monthNum = parseInt(month, 10);
+      const yearNum = parseInt(year, 10);
       
       const months = [
         'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -78,13 +74,9 @@ const ClientAppointments = () => {
       ];
       
       const monthName = months[monthNum - 1];
-      const result = `${dayNum.toString().padStart(2, '0')} de ${monthName} de ${yearNum}`;
-      
-      console.log('🔍 [DATA DEBUG] Resultado final:', result);
-      return result;
+      return `${dayNum.toString().padStart(2, '0')} de ${monthName} de ${yearNum}`;
     }
     
-    console.log('🔍 [DATA DEBUG] Retornando string original:', dateString);
     return dateString;
   };
 
