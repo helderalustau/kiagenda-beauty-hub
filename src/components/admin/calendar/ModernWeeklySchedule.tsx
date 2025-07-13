@@ -125,16 +125,22 @@ const ModernWeeklySchedule = ({
     setSelectedDay(null);
   };
 
-  // Get appointment for slot - CORRIGIDO para usar data local sem timezone
+  // Get appointment for slot - CORRIGIDO para usar EXATAMENTE a data local sem timezone
   const getAppointmentForSlot = (day: Date, timeSlot: string) => {
-    // Usar componentes locais da data para formar YYYY-MM-DD
+    // Usar componentes locais da data para formar YYYY-MM-DD EXATAMENTE como salvo no DB
     const year = day.getFullYear();
     const month = (day.getMonth() + 1).toString().padStart(2, '0');
     const dayNum = day.getDate().toString().padStart(2, '0');
     const dateKey = `${year}-${month}-${dayNum}`;
     const key = `${dateKey}-${timeSlot}`;
     
-    console.log('Looking for appointment with key:', key);
+    console.log('🔍 ADMIN CALENDAR - Procurando agendamento com:', {
+      dia: day.toDateString(),
+      componentesLocais: { ano: year, mes: month, dia: dayNum },
+      chaveData: dateKey,
+      horario: timeSlot,
+      chaveCompleta: key
+    });
     const appointment = appointmentsByDateTime[key];
     if (appointment) {
       console.log('Found appointment:', appointment);

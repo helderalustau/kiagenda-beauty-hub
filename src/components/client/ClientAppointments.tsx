@@ -59,17 +59,19 @@ const ClientAppointments = () => {
     }).format(value);
   };
 
-  // FIX: Corrigir formatação de data para exibir corretamente
+  // FIX FINAL: Formatação correta da data para exibir EXATAMENTE a data salva no DB
   const formatAppointmentDate = (dateString: string) => {
-    console.log('🔍 Raw date string from DB:', dateString);
+    console.log('🔍 Formatando data do agendamento - String do DB:', dateString);
     
     try {
-      // Para appointment_date (formato YYYY-MM-DD), usar formatação direta sem Date object
+      // Para appointment_date (formato YYYY-MM-DD), usar formatação direta sem Date object para evitar timezone
       const dateParts = dateString.split('-');
       if (dateParts.length === 3) {
         const year = parseInt(dateParts[0], 10);
         const monthNumber = parseInt(dateParts[1], 10);
         const day = parseInt(dateParts[2], 10);
+        
+        console.log('🔍 Componentes da data:', { ano: year, mes: monthNumber, dia: day });
         
         // Array de nomes dos meses em português
         const months = [
@@ -80,15 +82,15 @@ const ClientAppointments = () => {
         const monthName = months[monthNumber - 1]; // months é 0-indexed
         const formattedDate = `${day.toString().padStart(2, '0')} de ${monthName} de ${year}`;
         
-        console.log('🔍 Formatted date result:', formattedDate);
+        console.log('🔍 Data formatada para exibição:', formattedDate);
         return formattedDate;
       }
       
       // Fallback para outros formatos
-      console.log('🔍 Using fallback formatting for:', dateString);
+      console.log('🔍 Usando formatação fallback para:', dateString);
       return dateString;
     } catch (error) {
-      console.error('Error formatting appointment date:', dateString, error);
+      console.error('❌ Erro ao formatar data do agendamento:', dateString, error);
       return dateString;
     }
   };

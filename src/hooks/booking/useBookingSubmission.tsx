@@ -64,20 +64,26 @@ export const useBookingSubmission = (salonId: string) => {
     setIsSubmitting(true);
 
     try {
-      // FIX: Criar data local sem conversão de timezone
+      // FIX FINAL: Usar componentes locais da data para garantir que seja EXATAMENTE a data selecionada
       const localYear = selectedDate.getFullYear();
-      const localMonth = selectedDate.getMonth() + 1;
+      const localMonth = selectedDate.getMonth() + 1; // getMonth() retorna 0-11, precisamos 1-12
       const localDay = selectedDate.getDate();
       
-      // Formatar como YYYY-MM-DD garantindo que seja local
+      // Formatar como YYYY-MM-DD usando EXATAMENTE os componentes locais da data selecionada
       const dateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
       
-      console.log('🔍 Checking availability for:', { 
+      console.log('🔍 DATA DETALHADA - Verificando disponibilidade:', { 
         salonId, 
-        dateString, 
+        dateString,
         selectedTime,
-        originalDate: selectedDate.toDateString(),
-        localComponents: { localYear, localMonth, localDay }
+        'Data Original': selectedDate.toDateString(),
+        'Data ISO': selectedDate.toISOString(),
+        'Componentes Locais': { 
+          ano: localYear, 
+          mes: localMonth, 
+          dia: localDay 
+        },
+        'String Final para DB': dateString
       });
       
       const { data: conflictCheck, error: conflictError } = await supabase
