@@ -73,6 +73,17 @@ export const useAppointmentFetch = () => {
 
       console.log('Raw client appointments data:', data);
 
+      // DEBUG: Verificar datas específicas vindas do banco
+      if (data && data.length > 0) {
+        console.log('🔍 [FETCH DEBUG] Primeira entrada do banco:', {
+          id: data[0]?.id,
+          appointment_date: data[0]?.appointment_date,
+          appointment_time: data[0]?.appointment_time,
+          status: data[0]?.status,
+          created_at: data[0]?.created_at
+        });
+      }
+
       // Normalize the appointments data
       const normalizedAppointments: Appointment[] = (data || []).map(normalizeAppointment);
       console.log('Normalized client appointments:', normalizedAppointments);

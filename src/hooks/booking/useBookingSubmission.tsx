@@ -64,26 +64,21 @@ export const useBookingSubmission = (salonId: string) => {
     setIsSubmitting(true);
 
     try {
-      // FIX FINAL: Usar componentes locais da data para garantir que seja EXATAMENTE a data selecionada
-      const localYear = selectedDate.getFullYear();
-      const localMonth = selectedDate.getMonth() + 1; // getMonth() retorna 0-11, precisamos 1-12
-      const localDay = selectedDate.getDate();
+      // SALVAMENTO DE DATA - Garantir que seja EXATAMENTE a data selecionada
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth() + 1; // getMonth() é 0-indexed
+      const day = selectedDate.getDate();
       
-      // Formatar como YYYY-MM-DD usando EXATAMENTE os componentes locais da data selecionada
-      const dateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
+      // Criar string YYYY-MM-DD usando componentes locais
+      const dateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       
-      console.log('🔍 DATA DETALHADA - Verificando disponibilidade:', { 
+      console.log('🔍 [SALVAMENTO DEBUG] Salvando agendamento:', { 
         salonId, 
         dateString,
         selectedTime,
-        'Data Original': selectedDate.toDateString(),
-        'Data ISO': selectedDate.toISOString(),
-        'Componentes Locais': { 
-          ano: localYear, 
-          mes: localMonth, 
-          dia: localDay 
-        },
-        'String Final para DB': dateString
+        'Data Original Selecionada': selectedDate.toDateString(),
+        'Componentes Locais': { ano: year, mes: month, dia: day },
+        'String para Banco': dateString
       });
       
       const { data: conflictCheck, error: conflictError } = await supabase

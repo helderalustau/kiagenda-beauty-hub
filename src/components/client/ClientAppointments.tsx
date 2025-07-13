@@ -59,40 +59,33 @@ const ClientAppointments = () => {
     }).format(value);
   };
 
-  // FIX FINAL: Formatação correta da data para exibir EXATAMENTE a data salva no DB
+  // FIX DEFINITIVO: Formatação de data simples e direta
   const formatAppointmentDate = (dateString: string) => {
-    console.log('🔍 Formatando data do agendamento - String do DB:', dateString);
+    console.log('🔍 [DATA DEBUG] String do banco:', dateString);
     
-    try {
-      // Para appointment_date (formato YYYY-MM-DD), usar formatação direta sem Date object para evitar timezone
-      const dateParts = dateString.split('-');
-      if (dateParts.length === 3) {
-        const year = parseInt(dateParts[0], 10);
-        const monthNumber = parseInt(dateParts[1], 10);
-        const day = parseInt(dateParts[2], 10);
-        
-        console.log('🔍 Componentes da data:', { ano: year, mes: monthNumber, dia: day });
-        
-        // Array de nomes dos meses em português
-        const months = [
-          'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-          'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-        ];
-        
-        const monthName = months[monthNumber - 1]; // months é 0-indexed
-        const formattedDate = `${day.toString().padStart(2, '0')} de ${monthName} de ${year}`;
-        
-        console.log('🔍 Data formatada para exibição:', formattedDate);
-        return formattedDate;
-      }
+    // Para appointment_date (formato YYYY-MM-DD), fazer split simples
+    if (dateString && dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-');
+      const yearNum = parseInt(year, 10);
+      const monthNum = parseInt(month, 10);
+      const dayNum = parseInt(day, 10);
       
-      // Fallback para outros formatos
-      console.log('🔍 Usando formatação fallback para:', dateString);
-      return dateString;
-    } catch (error) {
-      console.error('❌ Erro ao formatar data do agendamento:', dateString, error);
-      return dateString;
+      console.log('🔍 [DATA DEBUG] Componentes:', { ano: yearNum, mes: monthNum, dia: dayNum });
+      
+      const months = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+      ];
+      
+      const monthName = months[monthNum - 1];
+      const result = `${dayNum.toString().padStart(2, '0')} de ${monthName} de ${yearNum}`;
+      
+      console.log('🔍 [DATA DEBUG] Resultado final:', result);
+      return result;
     }
+    
+    console.log('🔍 [DATA DEBUG] Retornando string original:', dateString);
+    return dateString;
   };
 
   const formatCreatedAt = (dateString: string) => {
