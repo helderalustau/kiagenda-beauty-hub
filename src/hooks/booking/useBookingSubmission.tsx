@@ -72,15 +72,6 @@ export const useBookingSubmission = (salonId: string) => {
       // Criar string YYYY-MM-DD usando componentes locais
       const dateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       
-      console.log('🔍 [SALVAMENTO DEBUG] Salvando agendamento:', { 
-        salonId, 
-        dateString,
-        selectedTime,
-        'Data Original Selecionada': selectedDate.toDateString(),
-        'Componentes Locais': { ano: year, mes: month, dia: day },
-        'String para Banco': dateString
-      });
-      
       const { data: conflictCheck, error: conflictError } = await supabase
         .from('appointments')
         .select('id')

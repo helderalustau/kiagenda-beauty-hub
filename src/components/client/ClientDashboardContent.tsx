@@ -50,6 +50,46 @@ const ClientDashboardContent = ({
     }).format(value);
   };
 
+  // Formatação direta da data sem conversões de timezone
+  const formatAppointmentDate = (dateString: string) => {
+    // Para appointment_date (formato YYYY-MM-DD), usar split direto
+    if (dateString && dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-');
+      const dayNum = parseInt(day, 10);
+      const monthNum = parseInt(month, 10);
+      
+      const months = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+      ];
+      
+      const monthName = months[monthNum - 1];
+      return `${dayNum} de ${monthName}`;
+    }
+    
+    return dateString;
+  };
+
+  const formatCompletedDate = (dateString: string) => {
+    // Para appointment_date (formato YYYY-MM-DD), usar split direto
+    if (dateString && dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-');
+      const dayNum = parseInt(day, 10);
+      const monthNum = parseInt(month, 10);
+      const yearNum = parseInt(year, 10);
+      
+      const months = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+      ];
+      
+      const monthName = months[monthNum - 1];
+      return `${dayNum} de ${monthName} de ${yearNum}`;
+    }
+    
+    return dateString;
+  };
+
   const handleCancelAppointment = async (appointmentId: string) => {
     try {
       const result = await updateAppointmentStatus(appointmentId, 'cancelled');
@@ -117,7 +157,7 @@ const ClientDashboardContent = ({
                     <div className="flex items-center text-blue-600">
                       <Calendar className="h-4 w-4 mr-1" />
                       <span>
-                        {format(new Date(appointment.appointment_date), "dd 'de' MMMM", { locale: ptBR })}
+                        {formatAppointmentDate(appointment.appointment_date)}
                       </span>
                     </div>
                     <div className="flex items-center text-blue-600">
@@ -246,7 +286,7 @@ const ClientDashboardContent = ({
                     <div className="flex items-center text-green-600">
                       <Calendar className="h-4 w-4 mr-1" />
                       <span>
-                        {format(new Date(appointment.appointment_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        {formatCompletedDate(appointment.appointment_date)}
                       </span>
                     </div>
                     <div className="flex items-center text-green-600">

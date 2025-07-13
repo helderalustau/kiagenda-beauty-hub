@@ -29,10 +29,6 @@ const ModernWeeklySchedule = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { generateTimeSlots } = useOpeningHours();
 
-  // Log para debug
-  console.log('ModernWeeklySchedule - Appointments received:', appointments.length);
-  console.log('ModernWeeklySchedule - All appointments:', appointments);
-
   // Mostrar TODOS os agendamentos (não filtrar por status)
   const visibleAppointments = appointments;
 
@@ -51,22 +47,12 @@ const ModernWeeklySchedule = ({
       const timeKey = appointment.appointment_time;
       const key = `${dateKey}-${timeKey}`;
       
-      console.log('Processing appointment:', {
-        id: appointment.id,
-        dateKey,
-        timeKey,
-        key,
-        client: appointment.client?.name || 'No client name'
-      });
-      
       acc[key] = appointment;
     } catch (error) {
       console.error('Error processing appointment:', appointment, error);
     }
     return acc;
   }, {} as Record<string, Appointment>);
-
-  console.log('appointmentsByDateTime:', appointmentsByDateTime);
 
   // Helper functions
   const getStatusColor = (status: string) => {
@@ -134,19 +120,7 @@ const ModernWeeklySchedule = ({
     const dateKey = `${year}-${month}-${dayNum}`;
     const key = `${dateKey}-${timeSlot}`;
     
-    console.log('🔍 ADMIN CALENDAR - Procurando agendamento com:', {
-      dia: day.toDateString(),
-      componentesLocais: { ano: year, mes: month, dia: dayNum },
-      chaveData: dateKey,
-      horario: timeSlot,
-      chaveCompleta: key
-    });
-    const appointment = appointmentsByDateTime[key];
-    if (appointment) {
-      console.log('Found appointment:', appointment);
-    }
-    
-    return appointment;
+    return appointmentsByDateTime[key];
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
