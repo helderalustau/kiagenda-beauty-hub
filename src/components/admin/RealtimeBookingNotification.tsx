@@ -215,7 +215,10 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate }: RealtimeB
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-blue-600" />
               <span>
-                {new Date(pendingAppointment.appointment_date).toLocaleDateString('pt-BR')}
+                {(() => {
+                  const [year, month, day] = pendingAppointment.appointment_date.split('-');
+                  return `${day}/${month}/${year}`;
+                })()}
               </span>
             </div>
             

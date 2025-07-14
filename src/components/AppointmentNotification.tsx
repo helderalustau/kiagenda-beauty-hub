@@ -159,7 +159,10 @@ const AppointmentNotification = ({
               </div>
               <div className="space-y-2">
                 <div className="text-xl font-bold text-blue-900">
-                  {format(new Date(appointment.appointment_date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {(() => {
+                    const [year, month, day] = appointment.appointment_date.split('-');
+                    return `${day}/${month}/${year}`;
+                  })()}
                 </div>
                 <div className="flex items-center gap-2 text-lg font-semibold text-blue-800">
                   <Clock className="h-4 w-4" />
