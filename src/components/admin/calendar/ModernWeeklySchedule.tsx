@@ -52,12 +52,24 @@ const ModernWeeklySchedule = ({
       const timeKey = appointment.appointment_time;
       const key = `${dateKey}-${timeKey}`;
       
+      console.log(`ModernWeeklySchedule - Mapping appointment:`, {
+        id: appointment.id,
+        dateKey,
+        timeKey,
+        key,
+        client: appointment.client?.name || appointment.client?.username,
+        service: appointment.service?.name,
+        status: appointment.status
+      });
+      
       acc[key] = appointment;
     } catch (error) {
       console.error('Error processing appointment:', appointment, error);
     }
     return acc;
   }, {} as Record<string, Appointment>);
+
+  console.log('ModernWeeklySchedule - appointmentsByDateTime map:', appointmentsByDateTime);
 
   // Helper functions
   const getStatusColor = (status: string) => {
@@ -125,7 +137,19 @@ const ModernWeeklySchedule = ({
     const dateKey = `${year}-${month}-${dayNum}`;
     const key = `${dateKey}-${timeSlot}`;
     
-    return appointmentsByDateTime[key];
+    console.log(`ModernWeeklySchedule - Looking for appointment with key: ${key}`);
+    const appointment = appointmentsByDateTime[key];
+    
+    if (appointment) {
+      console.log(`ModernWeeklySchedule - Found appointment:`, {
+        id: appointment.id,
+        client: appointment.client?.name || appointment.client?.username,
+        service: appointment.service?.name,
+        status: appointment.status
+      });
+    }
+    
+    return appointment;
   };
 
   const handleAppointmentClick = (appointment: Appointment) => {
@@ -133,20 +157,26 @@ const ModernWeeklySchedule = ({
     setShowDetailsModal(true);
   };
 
-  // Componente de Agendamento estilo Google Agenda
+  // Componente de Agendamento estilo Google Agenda - MELHORADO
   const AppointmentBlock = ({ appointment }: { appointment: Appointment }) => (
     <div 
-      className={`p-2 m-1 rounded border cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(appointment.status)}`}
+      className={`p-2 m-1 rounded-lg border cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 ${getStatusColor(appointment.status)}`}
       onClick={() => handleAppointmentClick(appointment)}
     >
-      <div className="text-xs font-medium truncate">
-        {appointment.appointment_time} - {getServiceName(appointment)}
-      </div>
-      <div className="text-xs truncate opacity-80">
+      <div className="text-xs font-semibold truncate mb-1">
         {getClientName(appointment)}
       </div>
-      <div className="text-xs opacity-60">
-        Status: {appointment.status}
+      <div className="text-xs truncate opacity-90 mb-1">
+        {getServiceName(appointment)}
+      </div>
+      <div className="text-xs opacity-70 font-medium">
+        {appointment.appointment_time}
+      </div>
+      <div className="text-xs opacity-60 mt-1">
+        {appointment.status === 'pending' ? '⏳ Pendente' : 
+         appointment.status === 'confirmed' ? '✅ Confirmado' :
+         appointment.status === 'completed' ? '🎉 Concluído' :
+         appointment.status === 'cancelled' ? '❌ Cancelado' : appointment.status}
       </div>
     </div>
   );
@@ -275,10 +305,16 @@ const ModernWeeklySchedule = ({
                     return (
                       <div 
                         key={`${day.toString()}-${timeSlot}`}
-                        className="border border-gray-200 rounded bg-white hover:bg-gray-50 transition-colors"
+                        className={`border border-gray-200 rounded bg-white hover:bg-gray-50 transition-colors min-h-[80px] relative ${
+                          appointment ? 'bg-blue-50' : ''
+                        }`}
                       >
-                        {appointment && (
+                        {appointment ? (
                           <AppointmentBlock appointment={appointment} />
+                        ) : (
+                          <div className="p-2 text-xs text-gray-400 h-full flex items-center justify-center">
+                            Disponível
+                          </div>
                         )}
                       </div>
                     );
