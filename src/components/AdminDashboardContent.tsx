@@ -81,30 +81,36 @@ const AdminDashboardContent = ({
 
   return (
     <>
-      <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-            Visão Geral
+      <TabsContent value="overview" className="space-y-6">
+        {/* Header */}
+        <div className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            Visão Geral do Estabelecimento
           </h2>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Acompanhe as métricas do seu estabelecimento
+          <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto">
+            Acompanhe em tempo real o desempenho e as métricas do seu negócio
           </p>
         </div>
         
-        {/* Layout lado a lado para Desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <DashboardStats 
-            appointments={appointments}
-            services={services}
-            salon={salon}
-            adminUsers={adminUsers}
-          />
+        {/* Stats e Lista de Agendamentos - Layout Responsivo */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Métricas do Dashboard - 2/3 do espaço */}
+          <div className="xl:col-span-2">
+            <DashboardStats 
+              appointments={appointments}
+              services={services}
+              salon={salon}
+              adminUsers={adminUsers}
+            />
+          </div>
 
-          {/* Lista de Agendamentos Ativos */}
-          <ActiveAppointmentsList 
-            appointments={appointments}
-            onUpdateStatus={handleUpdateAppointmentStatus}
-          />
+          {/* Lista de Agendamentos Ativos - 1/3 do espaço */}
+          <div className="xl:col-span-1">
+            <ActiveAppointmentsList 
+              appointments={appointments}
+              onUpdateStatus={handleUpdateAppointmentStatus}
+            />
+          </div>
         </div>
       </TabsContent>
 

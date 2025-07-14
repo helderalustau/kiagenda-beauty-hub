@@ -32,6 +32,11 @@ const ModernWeeklySchedule = ({
   // Mostrar TODOS os agendamentos (não filtrar por status)
   const visibleAppointments = appointments;
 
+  // DEBUG: Log para verificar agendamentos
+  console.log('ModernWeeklySchedule - Total appointments received:', appointments.length);
+  console.log('ModernWeeklySchedule - All appointments:', appointments);
+  console.log('ModernWeeklySchedule - Visible appointments:', visibleAppointments.length);
+
   // Gerar os dias da semana atual
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 }); // Começa no domingo
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));

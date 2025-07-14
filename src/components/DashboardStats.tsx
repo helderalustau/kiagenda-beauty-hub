@@ -87,7 +87,72 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
   return (
     <>
       <div className="space-y-6">
-        {/* Uso do Plano - Topo */}
+        {/* Grid Principal - Cards de Métricas */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Agendamentos de Hoje */}
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-600 uppercase">Hoje</p>
+                  <p className="text-xl font-bold text-slate-900">{todayAppointments}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Agendamentos Pendentes */}
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Clock className="h-5 w-5 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-600 uppercase">Pendentes</p>
+                  <p className="text-xl font-bold text-yellow-600">{pendingAppointments}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Receita Mensal */}
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-600 uppercase">Receita</p>
+                  <p className="text-lg font-bold text-green-600">
+                    {formatCurrency(monthlyRevenue)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total de Serviços */}
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Scissors className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-600 uppercase">Serviços</p>
+                  <p className="text-xl font-bold text-slate-900">{services.filter(s => s.active).length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Uso do Plano */}
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -123,9 +188,9 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
               </div>
               <Progress 
                 value={usagePercentage} 
-                className={`h-2 ${usagePercentage >= 90 ? 'bg-red-50' : usagePercentage >= 70 ? 'bg-yellow-50' : 'bg-green-50'}`}
+                className={`h-3 ${usagePercentage >= 90 ? 'bg-red-50' : usagePercentage >= 70 ? 'bg-yellow-50' : 'bg-green-50'}`}
               />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 mt-2">
                 {usagePercentage >= 90 ? '⚠️ Limite quase atingido!' : 
                  usagePercentage >= 70 ? '⚠️ Considere fazer upgrade' : 
                  '✅ Uso dentro do limite'}
@@ -134,95 +199,13 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
           </CardContent>
         </Card>
 
-        {/* Grid Principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Coluna Esquerda - Indicadores */}
-          <div className="lg:col-span-1 space-y-4">
-            {/* Agendamentos de Hoje */}
-            <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-3 bg-blue-100 rounded-lg">
-                      <Calendar className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-600">Agendamentos Hoje</p>
-                      <p className="text-2xl font-bold text-slate-900">{todayAppointments}</p>
-                    </div>
-                  </div>
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Agendamentos Pendentes */}
-            <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-3 bg-yellow-100 rounded-lg">
-                      <Clock className="h-6 w-6 text-yellow-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-600">Pendentes</p>
-                      <p className="text-2xl font-bold text-yellow-600">{pendingAppointments}</p>
-                    </div>
-                  </div>
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Receita Mensal */}
-            <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-3 bg-green-100 rounded-lg">
-                      <DollarSign className="h-6 w-6 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-600">Receita Mensal</p>
-                      <p className="text-xl font-bold text-green-600">
-                        {formatCurrency(monthlyRevenue)}
-                      </p>
-                    </div>
-                  </div>
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Total de Serviços */}
-            <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-3 bg-purple-100 rounded-lg">
-                      <Scissors className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-600">Serviços Ativos</p>
-                      <p className="text-2xl font-bold text-slate-900">{services.filter(s => s.active).length}</p>
-                    </div>
-                  </div>
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Coluna Direita - Tabela de Agendamentos */}
-          <div className="lg:col-span-2">
-            <RecentAppointmentsTable
-              appointments={recentAppointments}
-              onAppointmentClick={(appointment) => {
-                console.log('Appointment clicked:', appointment);
-              }}
-            />
-          </div>
-        </div>
+        {/* Tabela de Agendamentos Recentes */}
+        <RecentAppointmentsTable
+          appointments={recentAppointments}
+          onAppointmentClick={(appointment) => {
+            console.log('Appointment clicked:', appointment);
+          }}
+        />
       </div>
 
       <AdminPlanUpgradeModal

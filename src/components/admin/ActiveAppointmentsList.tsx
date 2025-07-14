@@ -55,17 +55,18 @@ const ActiveAppointmentsList = ({ appointments, onUpdateStatus }: ActiveAppointm
 
   if (activeAppointments.length === 0) {
     return (
-      <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Calendar className="h-5 w-5 text-blue-600" />
             Agendamentos Ativos
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Nenhum agendamento ativo no momento</p>
+          <div className="text-center py-6">
+            <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 text-sm">Nenhum agendamento ativo no momento</p>
+            <p className="text-gray-400 text-xs mt-1">Novos agendamentos aparecerão aqui</p>
           </div>
         </CardContent>
       </Card>
@@ -73,20 +74,23 @@ const ActiveAppointmentsList = ({ appointments, onUpdateStatus }: ActiveAppointm
   }
 
   return (
-    <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="border-slate-200 shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
           <Calendar className="h-5 w-5 text-blue-600" />
-          Agendamentos Ativos ({activeAppointments.length})
+          Agendamentos Ativos
+          <Badge variant="secondary" className="ml-2">
+            {activeAppointments.length}
+          </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 max-h-96 overflow-y-auto">
+      <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">{/* Scroll para muitos agendamentos */}
         {activeAppointments.map((appointment) => {
           const statusInfo = getStatusInfo(appointment.status);
           
           return (
-            <Card key={appointment.id} className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
+            <Card key={appointment.id} className="border-l-4 border-l-blue-500 hover:shadow-sm transition-shadow bg-slate-50/50">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     {statusInfo.icon}
@@ -142,7 +146,10 @@ const ActiveAppointmentsList = ({ appointments, onUpdateStatus }: ActiveAppointm
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-500" />
                         <span className="text-sm font-medium">
-                          {format(new Date(appointment.appointment_date), "dd/MM/yyyy", { locale: ptBR })}
+                          {(() => {
+                            const [year, month, day] = appointment.appointment_date.split('-');
+                            return `${day}/${month}/${year}`;
+                          })()}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
