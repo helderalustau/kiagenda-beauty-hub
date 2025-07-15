@@ -10,6 +10,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, User, Lock, Phone, Mail, MapPin, Home } from "lucide-react";
 import { useClientAuth } from '@/hooks/useClientAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
 import { formatCep } from '@/utils/cepFormatter';
 
@@ -32,6 +33,7 @@ const ClientAuthForm = () => {
   });
   
   const { loading, authenticateClient, registerClient } = useClientAuth();
+  const { login } = useAuth();
   const { formatPhoneNumber } = usePhoneFormatter();
   const { toast } = useToast();
 
@@ -60,6 +62,22 @@ const ClientAuthForm = () => {
     const result = await authenticateClient(loginData.username, loginData.password);
     
     if (result.success) {
+      // Clear any admin auth to prevent conflicts
+      localStorage.removeItem('adminAuth');
+      localStorage.removeItem('selectedSalonId');
+      
+      // Store client auth with consistent format and update auth context
+      const clientData = {
+        id: result.client.id,
+        name: result.client.name,
+        phone: result.client.phone,
+        email: result.client.email || null,
+        loginTime: new Date().toISOString()
+      };
+      
+      // Update auth context (this will also update localStorage)
+      login(clientData);
+      
       toast({
         title: "Sucesso",
         description: "Login realizado com sucesso!"

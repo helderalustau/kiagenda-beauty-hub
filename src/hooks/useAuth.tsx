@@ -45,6 +45,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return;
         }
         
+        console.log('Auth: Loading admin user:', userData.name, userData.role);
         setUser(userData);
       } catch (error) {
         console.error('Error parsing admin auth:', error);
@@ -58,6 +59,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (clientAuth) {
       try {
         const userData = JSON.parse(clientAuth);
+        console.log('Auth: Loading client user:', userData.name, userData.id);
         setUser(userData);
       } catch (error) {
         console.error('Error parsing client auth:', error);
@@ -72,7 +74,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('Security violation: Attempt to login as unauthorized super admin');
       return;
     }
+    console.log('Auth: Logging in user:', userData.name, userData.role || 'client');
     setUser(userData);
+    
+    // Update localStorage based on user type
+    if (userData.role) {
+      localStorage.setItem('adminAuth', JSON.stringify(userData));
+    } else {
+      localStorage.setItem('clientAuth', JSON.stringify(userData));
+    }
   };
 
   const logout = () => {

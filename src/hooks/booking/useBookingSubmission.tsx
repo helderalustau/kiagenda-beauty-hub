@@ -30,7 +30,9 @@ export const useBookingSubmission = (salonId: string) => {
       time: selectedTime,
       clientName: clientData.name,
       clientPhone: clientData.phone,
-      userId: user?.id
+      userId: user?.id,
+      userRole: user?.role,
+      isClient: !user?.role
     });
 
     // Validações básicas
@@ -95,6 +97,27 @@ export const useBookingSubmission = (salonId: string) => {
         });
         return false;
       }
+
+      // Validar que o user.id existe na tabela client_auth antes de criar agendamento
+      console.log('🔍 Checking if client exists in client_auth table for ID:', user.id);
+      
+      const { data: clientExists, error: clientCheckError } = await supabase
+        .from('client_auth')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (clientCheckError || !clientExists) {
+        console.error('❌ Client not found in client_auth table:', clientCheckError);
+        toast({
+          title: "Erro de autenticação",
+          description: "Usuário não encontrado no sistema. Faça login novamente.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      console.log('✅ Client found in client_auth table:', clientExists.id);
 
       // Criar o agendamento
       const appointmentData = {

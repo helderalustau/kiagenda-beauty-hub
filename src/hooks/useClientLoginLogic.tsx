@@ -3,10 +3,12 @@ import { useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { useAuthData } from '@/hooks/useAuthData';
+import { useAuth } from '@/hooks/useAuth';
 
 export const useClientLoginLogic = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const { authenticateClient, registerClient, loading } = useAuthData();
 
   // Check if already logged in as client with better validation
@@ -42,7 +44,7 @@ export const useClientLoginLogic = () => {
         localStorage.removeItem('adminAuth');
         localStorage.removeItem('selectedSalonId');
         
-        // Store client auth with consistent format
+        // Store client auth with consistent format and update auth context
         const clientData = {
           id: result.client.id,
           name: result.client.name,
@@ -51,7 +53,8 @@ export const useClientLoginLogic = () => {
           loginTime: new Date().toISOString()
         };
         
-        localStorage.setItem('clientAuth', JSON.stringify(clientData));
+        // Update auth context (this will also update localStorage)
+        login(clientData);
         
         navigate('/client-dashboard');
       } else {
@@ -97,7 +100,8 @@ export const useClientLoginLogic = () => {
               loginTime: new Date().toISOString()
             };
             
-            localStorage.setItem('clientAuth', JSON.stringify(clientData));
+            // Update auth context (this will also update localStorage)
+            login(clientData);
             navigate('/client-dashboard');
           }
         }, 1000);
