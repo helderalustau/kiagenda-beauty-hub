@@ -29,9 +29,9 @@ const ModernWeeklySchedule = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { generateTimeSlots } = useOpeningHours();
 
-  // Filtrar apenas agendamentos confirmados e concluídos para mostrar na agenda
+  // Mostrar agendamentos pendentes, confirmados e concluídos
   const visibleAppointments = appointments.filter(appointment => 
-    appointment.status === 'confirmed' || appointment.status === 'completed'
+    appointment.status === 'pending' || appointment.status === 'confirmed' || appointment.status === 'completed'
   );
 
   // DEBUG: Log para verificar agendamentos
