@@ -29,13 +29,23 @@ const ModernWeeklySchedule = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { generateTimeSlots } = useOpeningHours();
 
-  // Mostrar TODOS os agendamentos (não filtrar por status)
-  const visibleAppointments = appointments;
+  // Filtrar apenas agendamentos confirmados e concluídos para mostrar na agenda
+  const visibleAppointments = appointments.filter(appointment => 
+    appointment.status === 'confirmed' || appointment.status === 'completed'
+  );
 
   // DEBUG: Log para verificar agendamentos
   console.log('ModernWeeklySchedule - Total appointments received:', appointments.length);
   console.log('ModernWeeklySchedule - All appointments:', appointments);
-  console.log('ModernWeeklySchedule - Visible appointments:', visibleAppointments.length);
+  console.log('ModernWeeklySchedule - Filtering for confirmed/completed only');
+  console.log('ModernWeeklySchedule - Visible appointments (confirmed/completed):', visibleAppointments.length);
+  console.log('ModernWeeklySchedule - Appointment statuses:', appointments.map(apt => ({
+    id: apt.id,
+    status: apt.status,
+    date: apt.appointment_date,
+    time: apt.appointment_time,
+    client: apt.client?.name || apt.client?.username
+  })));
 
   // Gerar os dias da semana atual
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 }); // Começa no domingo
