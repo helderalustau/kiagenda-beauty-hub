@@ -34,28 +34,35 @@ const ModernWeeklySchedule = ({
     appointment.status === 'pending' || appointment.status === 'confirmed' || appointment.status === 'completed'
   );
 
+  // Filtrar agendamentos para a semana atual
+  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 }); // Começa no domingo
+  const weekEnd = addDays(weekStart, 6);
+  
+  const weekAppointments = visibleAppointments.filter(appointment => {
+    const appointmentDate = new Date(appointment.appointment_date);
+    return appointmentDate >= weekStart && appointmentDate <= weekEnd;
+  });
+
   // DEBUG: Log para verificar agendamentos
   console.log('ModernWeeklySchedule - Total appointments received:', appointments.length);
-  console.log('ModernWeeklySchedule - All appointments:', appointments);
-  console.log('ModernWeeklySchedule - Filtering for confirmed/completed only');
-  console.log('ModernWeeklySchedule - Visible appointments (confirmed/completed):', visibleAppointments.length);
-  console.log('ModernWeeklySchedule - Appointment statuses:', appointments.map(apt => ({
+  console.log('ModernWeeklySchedule - Visible appointments:', visibleAppointments.length);
+  console.log('ModernWeeklySchedule - Appointment details:', visibleAppointments.map(apt => ({
     id: apt.id,
     status: apt.status,
     date: apt.appointment_date,
     time: apt.appointment_time,
-    client: apt.client?.name || apt.client?.username
+    client: apt.client?.name || apt.client?.username,
+    service: apt.service?.name
   })));
 
   // Gerar os dias da semana atual
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 }); // Começa no domingo
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   // Gerar horários disponíveis baseado no horário de funcionamento
   const timeSlots = generateTimeSlots(salon.opening_hours || {});
 
   // Organizar agendamentos por data e horário - CORRIGIDO para timezone Brasil
-  const appointmentsByDateTime = visibleAppointments.reduce((acc, appointment) => {
+  const appointmentsByDateTime = weekAppointments.reduce((acc, appointment) => {
     try {
       // FIX: Tratar a data como local sem conversão de timezone
       const dateKey = appointment.appointment_date; // Manter como string YYYY-MM-DD
@@ -257,7 +264,7 @@ const ModernWeeklySchedule = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
             <Calendar className="h-5 w-5" />
-            <span>Agenda Semanal ({visibleAppointments.length} agendamentos)</span>
+            <span>📅 Agenda Semanal ({weekAppointments.length} agendamentos)</span>
           </CardTitle>
           
           <div className="flex items-center space-x-2">
@@ -271,6 +278,13 @@ const ModernWeeklySchedule = ({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+        <div className="text-sm text-gray-600 mt-2">
+          {weekAppointments.length > 0 ? (
+            <span>Mostrando agendamentos para esta semana. Clique em uma data para ver detalhes.</span>
+          ) : (
+            <span>Nenhum agendamento nesta semana.</span>
+          )}
         </div>
       </CardHeader>
       

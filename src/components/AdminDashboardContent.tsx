@@ -5,6 +5,7 @@ import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData'
 import DashboardStats from '@/components/DashboardStats';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
 import ActiveAppointmentsList from '@/components/admin/ActiveAppointmentsList';
+import RecentAppointmentsOverview from '@/components/admin/RecentAppointmentsOverview';
 import FinancialDashboard from '@/components/admin/FinancialDashboard';
 import ServicesPage from '@/pages/ServicesPage';
 import SettingsPage from '@/pages/SettingsPage';
@@ -75,8 +76,19 @@ const AdminDashboardContent = ({
   // Filtrar apenas agendamentos concluídos para o histórico
   const completedAppointments = appointments.filter(apt => apt.status === 'completed');
 
+  // Filtrar agendamentos recentes (pendentes, confirmados e concluídos recentes)
+  const recentAppointments = appointments
+    .filter(apt => apt.status === 'pending' || apt.status === 'confirmed' || apt.status === 'completed')
+    .sort((a, b) => {
+      // Ordenar primeiro por data, depois por horário
+      const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
+      const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
+      return dateB.getTime() - dateA.getTime();
+    });
+
   // Log para debug
   console.log('AdminDashboardContent - Total appointments:', appointments.length);
+  console.log('AdminDashboardContent - Recent appointments:', recentAppointments.length);
   console.log('AdminDashboardContent - Appointments:', appointments);
 
   return (
@@ -104,10 +116,10 @@ const AdminDashboardContent = ({
             />
           </div>
 
-          {/* Lista de Agendamentos Ativos - 1/3 do espaço */}
+          {/* Lista de Agendamentos Recentes - 1/3 do espaço */}
           <div className="xl:col-span-1">
-            <ActiveAppointmentsList 
-              appointments={appointments}
+            <RecentAppointmentsOverview 
+              appointments={recentAppointments}
               onUpdateStatus={handleUpdateAppointmentStatus}
             />
           </div>
