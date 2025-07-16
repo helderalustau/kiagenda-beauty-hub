@@ -260,18 +260,18 @@ const ModernWeeklySchedule = ({
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
-            <span>📅 Agenda Semanal ({weekAppointments.length} agendamentos)</span>
+            <Calendar className="h-5 w-5 text-blue-600" />
+            <span>Agenda Semanal</span>
           </CardTitle>
           
           <div className="flex items-center space-x-2">
             <Button onClick={handlePreviousWeek} variant="outline" size="sm">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium px-3">
+            <span className="text-sm font-medium px-3 min-w-[120px] text-center">
               {format(weekStart, "dd/MM", { locale: ptBR })} - {format(addDays(weekStart, 6), "dd/MM/yyyy", { locale: ptBR })}
             </span>
             <Button onClick={handleNextWeek} variant="outline" size="sm">
@@ -279,11 +279,12 @@ const ModernWeeklySchedule = ({
             </Button>
           </div>
         </div>
+        
         <div className="text-sm text-gray-600 mt-2">
           {weekAppointments.length > 0 ? (
-            <span>Mostrando agendamentos para esta semana. Clique em uma data para ver detalhes.</span>
+            <span>{weekAppointments.length} agendamentos nesta semana</span>
           ) : (
-            <span>Nenhum agendamento nesta semana.</span>
+            <span>Nenhum agendamento nesta semana</span>
           )}
         </div>
       </CardHeader>

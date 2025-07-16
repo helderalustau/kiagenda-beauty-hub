@@ -2,19 +2,12 @@
 import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData';
-import DashboardStats from '@/components/DashboardStats';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
-import ActiveAppointmentsList from '@/components/admin/ActiveAppointmentsList';
-import RecentAppointmentsOverview from '@/components/admin/RecentAppointmentsOverview';
+import CleanDashboardOverview from '@/components/admin/CleanDashboardOverview';
 import FinancialDashboard from '@/components/admin/FinancialDashboard';
 import ServicesPage from '@/pages/ServicesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, Scissors } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 interface AdminDashboardContentProps {
   appointments: Appointment[];
@@ -38,196 +31,37 @@ const AdminDashboardContent = ({
     await onRefresh();
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  // FIX: Função para formatar data local corretamente
-  const formatAppointmentDate = (dateString: string) => {
-    try {
-      // Parse da data como local (YYYY-MM-DD) sem conversão de timezone
-      const [year, month, day] = dateString.split('-').map(Number);
-      const localDate = new Date(year, month - 1, day); // month é 0-indexed
-      return format(localDate, "dd/MM/yyyy", { locale: ptBR });
-    } catch (error) {
-      console.error('Error formatting date:', dateString, error);
-      return dateString;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
-      case 'confirmed':
-        return <Badge variant="default" className="bg-blue-100 text-blue-800">Confirmado</Badge>;
-      case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Concluído</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive">Cancelado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  // Filtrar apenas agendamentos concluídos para o histórico
-  const completedAppointments = appointments.filter(apt => apt.status === 'completed');
-
-  // Filtrar agendamentos recentes (pendentes, confirmados e concluídos recentes)
-  const recentAppointments = appointments
-    .filter(apt => apt.status === 'pending' || apt.status === 'confirmed' || apt.status === 'completed')
-    .sort((a, b) => {
-      // Ordenar primeiro por data, depois por horário
-      const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
-      const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
-      return dateB.getTime() - dateA.getTime();
-    });
-
-  // Log para debug
-  console.log('AdminDashboardContent - Total appointments:', appointments.length);
-  console.log('AdminDashboardContent - Recent appointments:', recentAppointments.length);
-  console.log('AdminDashboardContent - Appointments:', appointments);
-
   return (
     <>
       <TabsContent value="overview" className="space-y-6">
-        {/* Header */}
-        <div className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Visão Geral do Estabelecimento
-          </h2>
-          <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto">
-            Acompanhe em tempo real o desempenho e as métricas do seu negócio
-          </p>
-        </div>
-        
-        {/* Stats e Lista de Agendamentos - Layout Responsivo */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Métricas do Dashboard - 2/3 do espaço */}
-          <div className="xl:col-span-2">
-            <DashboardStats 
-              appointments={appointments}
-              services={services}
-              salon={salon}
-              adminUsers={adminUsers}
-            />
-          </div>
-
-          {/* Lista de Agendamentos Recentes - 1/3 do espaço */}
-          <div className="xl:col-span-1">
-            <RecentAppointmentsOverview 
-              appointments={recentAppointments}
-              onUpdateStatus={handleUpdateAppointmentStatus}
-            />
-          </div>
-        </div>
+        <CleanDashboardOverview 
+          appointments={appointments}
+          services={services}
+          salon={salon}
+          adminUsers={adminUsers}
+          onUpdateStatus={handleUpdateAppointmentStatus}
+        />
       </TabsContent>
 
-      <TabsContent value="calendar" className="space-y-4 sm:space-y-6">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-            Agenda Completa ({appointments.length} agendamentos)
-          </h2>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Visualize e gerencie todos os agendamentos na agenda semanal
-          </p>
-        </div>
-        
+      <TabsContent value="calendar" className="space-y-6">
         <WeeklyCalendar 
           appointments={appointments}
           onRefresh={onRefresh}
         />
-
-        {/* Histórico de Serviços Realizados */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Scissors className="h-5 w-5 mr-2" />
-              Histórico de Serviços Realizados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {completedAppointments.length > 0 ? (
-              <div className="space-y-4">
-                {completedAppointments
-                  .sort((a, b) => {
-                    // Ordenar por data de agendamento (não created_at)
-                    const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
-                    const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
-                    return dateB.getTime() - dateA.getTime();
-                  })
-                  .slice(0, 10) // Mostrar apenas os últimos 10
-                  .map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-green-100 p-2 rounded-full">
-                          <Scissors className="h-4 w-4 text-green-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {(appointment as any).service?.name || 'Serviço não identificado'}
-                          </h4>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <div className="flex items-center">
-                              <User className="h-3 w-3 mr-1" />
-                              {(appointment as any).client_auth?.name || (appointment as any).client?.name || 'Cliente não identificado'}
-                            </div>
-                            <div className="flex items-center">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              {formatAppointmentDate(appointment.appointment_date)}
-                            </div>
-                            <div className="flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {appointment.appointment_time}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {getStatusBadge(appointment.status)}
-                        <div className="text-sm font-medium text-green-600 mt-1">
-                          {formatCurrency((appointment as any).service?.price || 0)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                
-                {completedAppointments.length > 10 && (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-gray-500">
-                      Mostrando os últimos 10 serviços realizados de {completedAppointments.length} total
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum serviço realizado</h3>
-                <p className="text-gray-500">
-                  Quando você concluir alguns atendimentos, eles aparecerão aqui.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </TabsContent>
 
-      <TabsContent value="financial" className="space-y-4 sm:space-y-6">
+      <TabsContent value="financial" className="space-y-6">
         <FinancialDashboard appointments={appointments} />
       </TabsContent>
 
-      <TabsContent value="services" className="space-y-4 sm:space-y-6">
+      <TabsContent value="services" className="space-y-6">
         <ServicesPage 
           services={services}
           onRefresh={onRefresh}
         />
       </TabsContent>
 
-      <TabsContent value="settings" className="space-y-4 sm:space-y-6">
+      <TabsContent value="settings" className="space-y-6">
         <SettingsPage 
           salon={salon}
           onRefresh={onRefresh}
