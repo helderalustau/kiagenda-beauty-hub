@@ -54,7 +54,7 @@ const SimpleClientDataStep = ({
     
     try {
       const parsedAuth = JSON.parse(clientAuth);
-      return !!(parsedAuth && parsedAuth.id && parsedAuth.username);
+      return !!(parsedAuth && parsedAuth.id && parsedAuth.name);
     } catch {
       return false;
     }
