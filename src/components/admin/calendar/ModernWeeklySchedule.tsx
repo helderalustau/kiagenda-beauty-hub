@@ -145,24 +145,50 @@ const ModernWeeklySchedule = ({
     setSelectedDay(null);
   };
 
-  // Get appointment for slot - CORRIGIDO para usar EXATAMENTE a data local sem timezone
+  // Get appointment for slot - CORRIGIDO para buscar por EXATA data/hora
   const getAppointmentForSlot = (day: Date, timeSlot: string) => {
-    // Usar componentes locais da data para formar YYYY-MM-DD EXATAMENTE como salvo no DB
+    // Usar componentes locais da data para formar YYYY-MM-DD
     const year = day.getFullYear();
     const month = (day.getMonth() + 1).toString().padStart(2, '0');
     const dayNum = day.getDate().toString().padStart(2, '0');
     const dateKey = `${year}-${month}-${dayNum}`;
-    const key = `${dateKey}-${timeSlot}`;
     
-    console.log(`ModernWeeklySchedule - Looking for appointment with key: ${key}`);
-    const appointment = appointmentsByDateTime[key];
+    // Buscar tanto com segundos quanto sem segundos
+    const keyWithSeconds = `${dateKey}-${timeSlot}:00`;
+    const keyWithoutSeconds = `${dateKey}-${timeSlot}`;
+    
+    console.log(`ModernWeeklySchedule - Looking for appointment with key: ${keyWithoutSeconds} or ${keyWithSeconds}`);
+    
+    // Primeiro tentar com segundos, depois sem
+    let appointment = appointmentsByDateTime[keyWithSeconds] || appointmentsByDateTime[keyWithoutSeconds];
+    
+    // Se não encontrou, tentar procurar por horário aproximado (mesmo horário e data)
+    if (!appointment) {
+      const matchingAppointment = Object.entries(appointmentsByDateTime).find(([key, apt]) => {
+        const [date, time] = key.split('-').slice(0, -1).join('-').split('-').concat(key.split('-').slice(-1));
+        const appointmentDate = `${date.split('-')[0]}-${date.split('-')[1]}-${date.split('-')[2]}`;
+        const appointmentTime = key.split('-')[3];
+        
+        return appointmentDate === dateKey && (
+          appointmentTime === timeSlot ||
+          appointmentTime === `${timeSlot}:00` ||
+          appointmentTime.startsWith(timeSlot)
+        );
+      });
+      
+      if (matchingAppointment) {
+        appointment = matchingAppointment[1];
+      }
+    }
     
     if (appointment) {
       console.log(`ModernWeeklySchedule - Found appointment:`, {
         id: appointment.id,
         client: appointment.client?.name || appointment.client?.username,
         service: appointment.service?.name,
-        status: appointment.status
+        status: appointment.status,
+        date: appointment.appointment_date,
+        time: appointment.appointment_time
       });
     }
     
