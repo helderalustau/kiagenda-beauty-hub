@@ -8,11 +8,12 @@ import {
   Clock, 
   CheckCircle, 
   XCircle, 
-  Activity,
-  Crown,
-  Target,
-  ArrowRight,
-  Star
+  TrendingUp,
+  Users,
+  BarChart3,
+  Sparkles,
+  Timer,
+  DollarSign
 } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,9 +37,9 @@ const CleanDashboardOverview = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">Pendente</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs">Pendente</Badge>;
       case 'confirmed':
-        return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Confirmado</Badge>;
+        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs">Confirmado</Badge>;
       case 'completed':
         return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">Concluído</Badge>;
       case 'cancelled':
@@ -78,10 +79,10 @@ const CleanDashboardOverview = ({
 
   // Configuração do plano
   const planLimits = {
-    bronze: { appointments: 100, name: "Bronze" },
-    silver: { appointments: 300, name: "Prata" },
-    gold: { appointments: 1000, name: "Ouro" },
-    platinum: { appointments: 99999, name: "Platinum" }
+    bronze: { appointments: 100, name: "Bronze", color: "from-orange-400 to-orange-600" },
+    silver: { appointments: 300, name: "Prata", color: "from-gray-400 to-gray-600" },
+    gold: { appointments: 1000, name: "Ouro", color: "from-yellow-400 to-yellow-600" },
+    platinum: { appointments: 99999, name: "Platinum", color: "from-purple-400 to-purple-600" }
   };
 
   const currentPlan = planLimits[salon.plan as keyof typeof planLimits] || planLimits.bronze;
@@ -91,7 +92,7 @@ const CleanDashboardOverview = ({
     return aptDate.getMonth() === now.getMonth() && aptDate.getFullYear() === now.getFullYear();
   }).length;
 
-  const planUsagePercentage = (monthlyAppointments / currentPlan.appointments) * 100;
+  const planUsagePercentage = Math.min((monthlyAppointments / currentPlan.appointments) * 100, 100);
 
   // Agendamentos do dia
   const todayAppointments = appointments.filter(apt => {
@@ -127,155 +128,158 @@ const CleanDashboardOverview = ({
   }, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Barra de Status do Plano */}
-      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <Crown className="h-5 w-5 text-purple-600" />
-              </div>
+    <div className="space-y-8">
+      {/* Header com Métricas Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Card do Plano */}
+        <Card className={`bg-gradient-to-br ${currentPlan.color} text-white shadow-lg`}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Plano {currentPlan.name}</h3>
-                <p className="text-sm text-gray-600">Limite mensal de agendamentos</p>
+                <h3 className="text-xl font-bold">Plano {currentPlan.name}</h3>
+                <p className="text-white/80 text-sm">Limite mensal</p>
               </div>
+              <Sparkles className="h-8 w-8 text-white/80" />
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-purple-600">
-                {monthlyAppointments}/{currentPlan.appointments}
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-3xl font-bold">{monthlyAppointments}</span>
+                <span className="text-white/80">de {currentPlan.appointments}</span>
               </div>
-              <div className="text-sm text-gray-500">agendamentos</div>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Uso do plano</span>
-              <span className="font-medium">{planUsagePercentage.toFixed(1)}%</span>
-            </div>
-            <Progress 
-              value={planUsagePercentage} 
-              className="h-2"
-            />
-            {planUsagePercentage > 80 && (
-              <p className="text-xs text-orange-600 font-medium">
-                ⚠️ Você está próximo do limite do seu plano
+              
+              <Progress 
+                value={planUsagePercentage} 
+                className="h-3 bg-white/20"
+              />
+              
+              <p className="text-xs text-white/90">
+                {planUsagePercentage.toFixed(1)}% utilizado este mês
               </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cards de Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700">Hoje</p>
-                <p className="text-2xl font-bold text-blue-900">{todayAppointments.length}</p>
-              </div>
-              <Calendar className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-yellow-50 border-yellow-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+        {/* Agendamentos Hoje */}
+        <Card className="shadow-lg border-l-4 border-l-blue-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-sm font-medium text-yellow-700">Pendentes</p>
-                <p className="text-2xl font-bold text-yellow-900">{pendingAppointments.length}</p>
+                <h3 className="text-lg font-semibold text-gray-900">Hoje</h3>
+                <p className="text-sm text-gray-600">Agendamentos</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
+              <Calendar className="h-8 w-8 text-blue-500" />
+            </div>
+            
+            <div className="flex items-end space-x-2">
+              <span className="text-3xl font-bold text-gray-900">{todayAppointments.length}</span>
+              <span className="text-sm text-gray-500 mb-1">agendamentos</span>
+            </div>
+            
+            <div className="mt-3 flex space-x-2">
+              <div className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
+                {todayAppointments.filter(apt => apt.status === 'confirmed').length} confirmados
+              </div>
+              <div className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                {todayAppointments.filter(apt => apt.status === 'pending').length} pendentes
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+        {/* Receita Mensal */}
+        <Card className="shadow-lg border-l-4 border-l-green-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-sm font-medium text-green-700">Este Mês</p>
-                <p className="text-2xl font-bold text-green-900">{completedThisMonth.length}</p>
+                <h3 className="text-lg font-semibold text-gray-900">Receita</h3>
+                <p className="text-sm text-gray-600">Este mês</p>
               </div>
-              <Target className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-8 w-8 text-green-500" />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-purple-50 border-purple-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-700">Receita</p>
-                <p className="text-xl font-bold text-purple-900">{formatCurrency(monthlyRevenue)}</p>
+            
+            <div className="space-y-2">
+              <span className="text-2xl font-bold text-gray-900">{formatCurrency(monthlyRevenue)}</span>
+              <div className="flex items-center text-sm text-gray-600">
+                <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                {completedThisMonth.length} serviços concluídos
               </div>
-              <Star className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Agendamentos de Hoje */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center justify-between">
-            <div className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2 text-blue-600" />
-              Agendamentos de Hoje
+      {/* Agendamentos de Hoje - Redesenhado */}
+      <Card className="shadow-lg">
+        <CardHeader className="border-b border-gray-100">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Timer className="h-5 w-5 text-blue-600" />
+              <span className="text-xl font-semibold">Agenda de Hoje</span>
             </div>
-            <Badge variant="secondary">{todayAppointments.length} agendamentos</Badge>
+            <Badge variant="outline" className="text-sm">
+              {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        
+        <CardContent className="p-6">
           {todayAppointments.length === 0 ? (
-            <div className="text-center py-6">
-              <Calendar className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-              <p className="text-gray-500">Nenhum agendamento para hoje</p>
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-10 w-10 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento hoje</h3>
+              <p className="text-gray-500">Aproveite para organizar ou divulgar seus serviços!</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {todayAppointments
                 .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
                 .map((appointment) => (
                 <div 
                   key={appointment.id} 
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 hover:shadow-md transition-all duration-200"
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className="text-lg font-bold text-blue-600">
-                      {appointment.appointment_time}
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-lg font-bold text-blue-600">
+                        {appointment.appointment_time.substring(0, 5)}
+                      </span>
                     </div>
+                    
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <h4 className="text-lg font-semibold text-gray-900">
                         {getClientName(appointment)}
-                      </div>
-                      <div className="text-sm text-gray-600">
+                      </h4>
+                      <p className="text-gray-600 text-sm">
                         {getServiceName(appointment)}
+                      </p>
+                      <div className="mt-1">
+                        {getStatusBadge(appointment.status)}
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    {getStatusBadge(appointment.status)}
-                    
                     {appointment.status === 'pending' && (
-                      <div className="flex space-x-1">
+                      <div className="flex space-x-2">
                         <Button
                           size="sm"
                           onClick={() => onUpdateStatus(appointment.id, 'confirmed')}
-                          className="h-8 w-8 p-0 bg-green-600 hover:bg-green-700"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Confirmar
                         </Button>
                         <Button
                           size="sm"
+                          variant="outline"
                           onClick={() => onUpdateStatus(appointment.id, 'cancelled')}
-                          className="h-8 w-8 p-0 bg-red-600 hover:bg-red-700"
+                          className="border-red-300 text-red-600 hover:bg-red-50"
                         >
-                          <XCircle className="h-4 w-4" />
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Cancelar
                         </Button>
                       </div>
                     )}
@@ -284,8 +288,9 @@ const CleanDashboardOverview = ({
                       <Button
                         size="sm"
                         onClick={() => onUpdateStatus(appointment.id, 'completed')}
-                        className="h-8 px-3 text-sm bg-blue-600 hover:bg-blue-700"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
+                        <CheckCircle className="h-4 w-4 mr-1" />
                         Concluir
                       </Button>
                     )}
@@ -297,46 +302,52 @@ const CleanDashboardOverview = ({
         </CardContent>
       </Card>
 
-      {/* Próximos Agendamentos */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center justify-between">
-            <div className="flex items-center">
-              <Activity className="h-5 w-5 mr-2 text-green-600" />
-              Próximos Agendamentos
-            </div>
-            <ArrowRight className="h-4 w-4 text-gray-400" />
+      {/* Próximos Agendamentos - Redesenhado */}
+      <Card className="shadow-lg">
+        <CardHeader className="border-b border-gray-100">
+          <CardTitle className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5 text-green-600" />
+            <span className="text-xl font-semibold">Próximos Agendamentos</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        
+        <CardContent className="p-6">
           {upcomingAppointments.length === 0 ? (
-            <div className="text-center py-6">
-              <Activity className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-              <p className="text-gray-500">Nenhum agendamento próximo</p>
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-10 w-10 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento próximo</h3>
+              <p className="text-gray-500">Que tal promover seus serviços nas redes sociais?</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {upcomingAppointments.map((appointment) => (
+              {upcomingAppointments.map((appointment, index) => (
                 <div 
                   key={appointment.id} 
-                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-bold text-green-600">
+                        {index + 1}
+                      </span>
+                    </div>
+                    
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <h4 className="font-semibold text-gray-900">
                         {getClientName(appointment)}
-                      </div>
-                      <div className="text-sm text-gray-600">
+                      </h4>
+                      <p className="text-sm text-gray-600">
                         {getServiceName(appointment)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {formatAppointmentDate(appointment.appointment_date)} às {appointment.appointment_time}
-                      </div>
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatAppointmentDate(appointment.appointment_date)} às {appointment.appointment_time.substring(0, 5)}
+                      </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     {getStatusBadge(appointment.status)}
                     
                     {appointment.status === 'pending' && (
@@ -344,16 +355,16 @@ const CleanDashboardOverview = ({
                         <Button
                           size="sm"
                           onClick={() => onUpdateStatus(appointment.id, 'confirmed')}
-                          className="h-7 w-7 p-0 bg-green-600 hover:bg-green-700"
+                          className="h-8 w-8 p-0 bg-emerald-600 hover:bg-emerald-700"
                         >
-                          <CheckCircle className="h-3 w-3" />
+                          <CheckCircle className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => onUpdateStatus(appointment.id, 'cancelled')}
-                          className="h-7 w-7 p-0 bg-red-600 hover:bg-red-700"
+                          className="h-8 w-8 p-0 bg-red-600 hover:bg-red-700"
                         >
-                          <XCircle className="h-3 w-3" />
+                          <XCircle className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
