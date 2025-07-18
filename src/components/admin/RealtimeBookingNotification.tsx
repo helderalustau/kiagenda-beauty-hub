@@ -12,9 +12,10 @@ import { Appointment } from '@/types/supabase-entities';
 interface RealtimeBookingNotificationProps {
   salonId: string;
   onAppointmentUpdate?: () => void;
+  enablePageRefresh?: boolean;
 }
 
-const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate }: RealtimeBookingNotificationProps) => {
+const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate, enablePageRefresh = true }: RealtimeBookingNotificationProps) => {
   const { toast } = useToast();
   const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([]);
   const [currentAppointment, setCurrentAppointment] = useState<Appointment | null>(null);
@@ -143,6 +144,15 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate }: RealtimeB
         },
         async (payload) => {
           console.log('📝 Appointment updated:', payload);
+          
+          // Refresh da página quando detectar mudanças na agenda
+          if (enablePageRefresh && payload.old.status !== payload.new.status) {
+            console.log('🔄 Agenda alterada, fazendo refresh da página...');
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000); // Aguarda 2 segundos para não interromper animações
+            return;
+          }
           
           // Se um agendamento foi atualizado para pending, adicionar à lista
           if (payload.new.status === 'pending' && payload.old.status !== 'pending') {
