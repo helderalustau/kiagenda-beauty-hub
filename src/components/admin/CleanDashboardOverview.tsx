@@ -10,10 +10,11 @@ import {
   XCircle, 
   TrendingUp,
   Users,
-  BarChart3,
-  Sparkles,
+  Activity,
   Timer,
-  DollarSign
+  DollarSign,
+  Star,
+  CalendarDays
 } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -37,15 +38,15 @@ const CleanDashboardOverview = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs">Pendente</Badge>;
+        return <Badge variant="outline" className="text-muted-foreground border-muted">Pendente</Badge>;
       case 'confirmed':
-        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs">Confirmado</Badge>;
+        return <Badge variant="outline" className="text-primary border-primary">Confirmado</Badge>;
       case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">Concluído</Badge>;
+        return <Badge variant="secondary">Concluído</Badge>;
       case 'cancelled':
-        return <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">Cancelado</Badge>;
+        return <Badge variant="destructive" className="bg-destructive/10 text-destructive">Cancelado</Badge>;
       default:
-        return <Badge variant="secondary" className="text-xs">{status}</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
@@ -79,10 +80,10 @@ const CleanDashboardOverview = ({
 
   // Configuração do plano
   const planLimits = {
-    bronze: { appointments: 100, name: "Bronze", color: "from-orange-400 to-orange-600" },
-    silver: { appointments: 300, name: "Prata", color: "from-gray-400 to-gray-600" },
-    gold: { appointments: 1000, name: "Ouro", color: "from-yellow-400 to-yellow-600" },
-    platinum: { appointments: 99999, name: "Platinum", color: "from-purple-400 to-purple-600" }
+    bronze: { appointments: 100, name: "Bronze" },
+    silver: { appointments: 300, name: "Prata" },
+    gold: { appointments: 1000, name: "Ouro" },
+    platinum: { appointments: 99999, name: "Platinum" }
   };
 
   const currentPlan = planLimits[salon.plan as keyof typeof planLimits] || planLimits.bronze;
@@ -128,253 +129,205 @@ const CleanDashboardOverview = ({
   }, 0);
 
   return (
-    <div className="space-y-8">
-      {/* Header com Métricas Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Card do Plano */}
-        <Card className={`bg-gradient-to-br ${currentPlan.color} text-white shadow-lg`}>
+    <div className="space-y-6 p-6 bg-background">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Visão Geral</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+        </div>
+      </div>
+
+      {/* Métricas principais */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Plano */}
+        <Card className="relative overflow-hidden">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold">Plano {currentPlan.name}</h3>
-                <p className="text-white/80 text-sm">Limite mensal</p>
+                <p className="text-sm font-medium text-muted-foreground">Plano Atual</p>
+                <p className="text-2xl font-bold text-foreground">{currentPlan.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {monthlyAppointments} de {currentPlan.appointments} usados
+                </p>
               </div>
-              <Sparkles className="h-8 w-8 text-white/80" />
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-3xl font-bold">{monthlyAppointments}</span>
-                <span className="text-white/80">de {currentPlan.appointments}</span>
+              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Star className="h-6 w-6 text-primary" />
               </div>
-              
-              <Progress 
-                value={planUsagePercentage} 
-                className="h-3 bg-white/20"
-              />
-              
-              <p className="text-xs text-white/90">
-                {planUsagePercentage.toFixed(1)}% utilizado este mês
-              </p>
             </div>
+            <Progress value={planUsagePercentage} className="mt-4 h-2" />
           </CardContent>
         </Card>
 
         {/* Agendamentos Hoje */}
-        <Card className="shadow-lg border-l-4 border-l-blue-500">
+        <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Hoje</h3>
-                <p className="text-sm text-gray-600">Agendamentos</p>
+                <p className="text-sm font-medium text-muted-foreground">Hoje</p>
+                <p className="text-2xl font-bold text-foreground">{todayAppointments.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">agendamentos</p>
               </div>
-              <Calendar className="h-8 w-8 text-blue-500" />
-            </div>
-            
-            <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-gray-900">{todayAppointments.length}</span>
-              <span className="text-sm text-gray-500 mb-1">agendamentos</span>
-            </div>
-            
-            <div className="mt-3 flex space-x-2">
-              <div className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
-                {todayAppointments.filter(apt => apt.status === 'confirmed').length} confirmados
-              </div>
-              <div className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
-                {todayAppointments.filter(apt => apt.status === 'pending').length} pendentes
+              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Receita Mensal */}
-        <Card className="shadow-lg border-l-4 border-l-green-500">
+        {/* Pendentes */}
+        <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Receita</h3>
-                <p className="text-sm text-gray-600">Este mês</p>
+                <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
+                <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-500" />
+              <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center">
+                <Clock className="h-6 w-6 text-amber-600" />
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <span className="text-2xl font-bold text-gray-900">{formatCurrency(monthlyRevenue)}</span>
-              <div className="flex items-center text-sm text-gray-600">
-                <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
-                {completedThisMonth.length} serviços concluídos
+          </CardContent>
+        </Card>
+
+        {/* Receita */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Receita Mensal</p>
+                <p className="text-2xl font-bold text-foreground">{formatCurrency(monthlyRevenue)}</p>
+                <div className="flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
+                  <p className="text-xs text-muted-foreground">{completedThisMonth.length} concluídos</p>
+                </div>
+              </div>
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Agendamentos de Hoje - Redesenhado */}
-      <Card className="shadow-lg">
-        <CardHeader className="border-b border-gray-100">
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Timer className="h-5 w-5 text-blue-600" />
-              <span className="text-xl font-semibold">Agenda de Hoje</span>
-            </div>
-            <Badge variant="outline" className="text-sm">
-              {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="p-6">
-          {todayAppointments.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-10 w-10 text-gray-400" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Agenda de Hoje */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CalendarDays className="h-5 w-5" />
+              Agenda de Hoje
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {todayAppointments.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">Nenhum agendamento para hoje</p>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento hoje</h3>
-              <p className="text-gray-500">Aproveite para organizar ou divulgar seus serviços!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {todayAppointments
-                .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
-                .map((appointment) => (
-                <div 
-                  key={appointment.id} 
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 hover:shadow-md transition-all duration-200"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-lg font-bold text-blue-600">
-                        {appointment.appointment_time.substring(0, 5)}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900">
-                        {getClientName(appointment)}
-                      </h4>
-                      <p className="text-gray-600 text-sm">
-                        {getServiceName(appointment)}
-                      </p>
-                      <div className="mt-1">
-                        {getStatusBadge(appointment.status)}
+            ) : (
+              <div className="space-y-3">
+                {todayAppointments
+                  .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
+                  .map((appointment) => (
+                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">
+                          {appointment.appointment_time.substring(0, 5)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{getClientName(appointment)}</p>
+                        <p className="text-xs text-muted-foreground">{getServiceName(appointment)}</p>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    {appointment.status === 'pending' && (
-                      <div className="flex space-x-2">
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(appointment.status)}
+                      {appointment.status === 'pending' && (
                         <Button
                           size="sm"
                           onClick={() => onUpdateStatus(appointment.id, 'confirmed')}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                          className="h-7 px-2 text-xs"
                         >
-                          <CheckCircle className="h-4 w-4 mr-1" />
                           Confirmar
                         </Button>
+                      )}
+                      {appointment.status === 'confirmed' && (
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onUpdateStatus(appointment.id, 'cancelled')}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          onClick={() => onUpdateStatus(appointment.id, 'completed')}
+                          className="h-7 px-2 text-xs"
                         >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Cancelar
+                          Concluir
                         </Button>
-                      </div>
-                    )}
-                    
-                    {appointment.status === 'confirmed' && (
-                      <Button
-                        size="sm"
-                        onClick={() => onUpdateStatus(appointment.id, 'completed')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Concluir
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Próximos Agendamentos - Redesenhado */}
-      <Card className="shadow-lg">
-        <CardHeader className="border-b border-gray-100">
-          <CardTitle className="flex items-center space-x-2">
-            <BarChart3 className="h-5 w-5 text-green-600" />
-            <span className="text-xl font-semibold">Próximos Agendamentos</span>
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="p-6">
-          {upcomingAppointments.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="h-10 w-10 text-gray-400" />
+                ))}
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento próximo</h3>
-              <p className="text-gray-500">Que tal promover seus serviços nas redes sociais?</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {upcomingAppointments.map((appointment, index) => (
-                <div 
-                  key={appointment.id} 
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-green-600">
-                        {index + 1}
-                      </span>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Próximos Agendamentos */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Activity className="h-5 w-5" />
+              Próximos Agendamentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {upcomingAppointments.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Users className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">Nenhum agendamento próximo</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingAppointments.map((appointment) => (
+                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium">
+                          {formatAppointmentDate(appointment.appointment_date)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{getClientName(appointment)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {getServiceName(appointment)} • {appointment.appointment_time.substring(0, 5)}
+                        </p>
+                      </div>
                     </div>
-                    
-                    <div>
-                      <h4 className="font-semibold text-gray-900">
-                        {getClientName(appointment)}
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        {getServiceName(appointment)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatAppointmentDate(appointment.appointment_date)} às {appointment.appointment_time.substring(0, 5)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    {getStatusBadge(appointment.status)}
-                    
-                    {appointment.status === 'pending' && (
-                      <div className="flex space-x-1">
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(appointment.status)}
+                      {appointment.status === 'pending' && (
                         <Button
                           size="sm"
                           onClick={() => onUpdateStatus(appointment.id, 'confirmed')}
-                          className="h-8 w-8 p-0 bg-emerald-600 hover:bg-emerald-700"
+                          className="h-7 px-2 text-xs"
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          Confirmar
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => onUpdateStatus(appointment.id, 'cancelled')}
-                          className="h-8 w-8 p-0 bg-red-600 hover:bg-red-700"
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
