@@ -144,146 +144,140 @@ const CleanDashboardOverview = ({
   }, 0);
 
   return (
-    <div className="space-y-8 p-6 bg-gradient-to-br from-background via-background/95 to-primary/5 min-h-screen">
-      {/* Header com gradiente */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+    <div className="space-y-6 p-6 bg-background min-h-screen">
+      {/* Header limpo e moderno */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold text-foreground">
             Visão Geral
           </h1>
-          <p className="text-sm text-muted-foreground flex items-center gap-2">
+          <p className="text-muted-foreground flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </p>
         </div>
-        <div className="h-16 w-16 bg-gradient-to-br from-primary to-primary/70 rounded-2xl flex items-center justify-center shadow-lg animate-pulse">
-          <BarChart3 className="h-8 w-8 text-white" />
+        <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+          <BarChart3 className="h-7 w-7 text-primary" />
         </div>
       </div>
 
-      {/* Métricas principais com gradientes */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      {/* Métricas principais limpas */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Plano */}
-        <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-card to-card/50">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
-          <CardContent className="p-6 relative">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                   <Star className="h-3 w-3" />
                   Plano Atual
                 </p>
-                <p className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                <p className="text-2xl font-bold text-foreground">
                   {currentPlan.name}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {monthlyAppointments} de {currentPlan.appointments} usados
                 </p>
               </div>
-              <div className="h-12 w-12 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-md">
-                <Star className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Star className="h-6 w-6 text-primary" />
               </div>
             </div>
-            <Progress value={planUsagePercentage} className="mt-4 h-3 rounded-full" />
+            <Progress value={planUsagePercentage} className="mt-4 h-2" />
           </CardContent>
         </Card>
 
         {/* Agendamentos Hoje */}
-        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-card to-card/50">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
-          <CardContent className="p-6 relative">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                   <CalendarDays className="h-3 w-3" />
                   Hoje
                 </p>
-                <p className="text-2xl font-bold text-blue-600">{todayAppointments.length}</p>
+                <p className="text-2xl font-bold text-foreground">{todayAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">agendamentos</p>
               </div>
-              <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
-                <Calendar className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Pendentes */}
-        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-card to-card/50">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"></div>
-          <CardContent className="p-6 relative">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                   <Timer className="h-3 w-3" />
                   Pendentes
                 </p>
-                <p className="text-2xl font-bold text-amber-600">{pendingAppointments.length}</p>
+                <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
               </div>
-              <div className="h-12 w-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-md">
-                <Clock className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center">
+                <Clock className="h-6 w-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Confirmados */}
-        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-card to-card/50">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent"></div>
-          <CardContent className="p-6 relative">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                   <CheckCircle className="h-3 w-3" />
                   Confirmados
                 </p>
-                <p className="text-2xl font-bold text-green-600">{confirmedAppointments.length}</p>
+                <p className="text-2xl font-bold text-foreground">{confirmedAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">agendamentos confirmados</p>
               </div>
-              <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
-                <CheckCircle className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Receita */}
-        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-card to-card/50">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
-          <CardContent className="p-6 relative">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />
                   Receita Mensal
                 </p>
-                <p className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                <p className="text-2xl font-bold text-foreground">
                   {formatCurrency(monthlyRevenue)}
                 </p>
                 <div className="flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 text-emerald-600 mr-1" />
+                  <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
                   <p className="text-xs text-muted-foreground">{completedThisMonth.length} concluídos</p>
                 </div>
               </div>
-              <div className="h-12 w-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
-                <DollarSign className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Agenda de Hoje */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card/95 to-card/90 hover:shadow-2xl transition-all duration-500">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent rounded-lg"></div>
-          <CardHeader className="pb-4 relative">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <CalendarDays className="h-4 w-4 text-white" />
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                <CalendarDays className="h-4 w-4 text-blue-600" />
               </div>
-              <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent font-semibold">
+              <span className="text-foreground font-semibold">
                 Agenda de Hoje
               </span>
             </CardTitle>
@@ -301,10 +295,10 @@ const CleanDashboardOverview = ({
                 {todayAppointments
                   .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
                   .map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-card to-card/50 hover:from-accent/20 hover:to-accent/10 hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-sm">
-                        <span className="text-sm font-bold text-white">
+                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">
                           {appointment.appointment_time.substring(0, 5)}
                         </span>
                       </div>
