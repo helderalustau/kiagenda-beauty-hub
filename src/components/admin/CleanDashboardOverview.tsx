@@ -197,7 +197,7 @@ const CleanDashboardOverview = ({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foregrounddiv>Pendentes</p>
+                <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
                 <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
               </div>
