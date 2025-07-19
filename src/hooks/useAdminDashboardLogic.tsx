@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { useSalonData } from './useSalonData';
@@ -33,32 +32,10 @@ export const useAdminDashboardLogic = () => {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [salonStatus, setSalonStatus] = useState<boolean | null>(null);
 
-  // Get salon ID for unified notifications
-  const currentSalonId = getSalonId();
+  // Get salon ID first, then setup notifications
+  const [currentSalonId, setCurrentSalonId] = useState<string | null>(null);
 
-  // Setup unified realtime notifications
-  const {
-    pendingAppointments,
-    isCheckingManually,
-    checkForNewAppointments,
-    clearNotification,
-    clearAllNotifications
-  } = useUnifiedRealtimeNotifications({
-    salonId: currentSalonId || '',
-    onNewAppointment: (appointment) => {
-      console.log('🔔 Nova notificação de agendamento:', appointment);
-      setNewAppointment(appointment);
-      setShowNotification(true);
-    },
-    onAppointmentUpdate: (appointment) => {
-      console.log('📝 Agendamento atualizado:', appointment);
-      refreshData();
-    }
-  });
-
-  const loading = salonLoading || appointmentLoading || serviceLoading;
-
-  // Get correct salon ID from localStorage
+  // Function to get salon ID from localStorage
   function getSalonId() {
     const adminAuth = localStorage.getItem('adminAuth');
     if (adminAuth) {
@@ -96,6 +73,35 @@ export const useAdminDashboardLogic = () => {
     return null;
   }
 
+  // Initialize salon ID
+  useEffect(() => {
+    const salonId = getSalonId();
+    setCurrentSalonId(salonId);
+    console.log('🔑 Salon ID inicializado para notificações:', salonId);
+  }, []);
+
+  const loading = salonLoading || appointmentLoading || serviceLoading;
+
+  // Setup unified realtime notifications (conditional on salon ID)
+  const {
+    pendingAppointments,
+    isCheckingManually,
+    checkForNewAppointments,
+    clearNotification,
+    clearAllNotifications
+  } = useUnifiedRealtimeNotifications({
+    salonId: currentSalonId || '',
+    onNewAppointment: (appointment) => {
+      console.log('🔔 Nova notificação de agendamento:', appointment);
+      setNewAppointment(appointment);
+      setShowNotification(true);
+    },
+    onAppointmentUpdate: (appointment) => {
+      console.log('📝 Agendamento atualizado:', appointment);
+      refreshData();
+    }
+  });
+
   // Sincronizar o status local com o salon
   useEffect(() => {
     if (salon) {
@@ -104,7 +110,7 @@ export const useAdminDashboardLogic = () => {
   }, [salon]);
 
   const refreshData = async () => {
-    const salonId = getSalonId();
+    const salonId = currentSalonId || getSalonId();
     if (salonId) {
       console.log('Refreshing data for salon:', salonId);
       await fetchSalonData(salonId);
@@ -125,7 +131,7 @@ export const useAdminDashboardLogic = () => {
   };
 
   useEffect(() => {
-    const salonId = getSalonId();
+    const salonId = currentSalonId || getSalonId();
     if (!salonId) {
       console.error('Salon ID não encontrado, redirecionando para login');
       toast({
@@ -138,7 +144,7 @@ export const useAdminDashboardLogic = () => {
     }
 
     refreshData();
-  }, []);
+  }, [currentSalonId]);
 
   useEffect(() => {
     if (salon && !salon.setup_completed) {
@@ -223,7 +229,7 @@ export const useAdminDashboardLogic = () => {
 
   const handleStatusChange = async (isOpen: boolean) => {
     setSalonStatus(isOpen);
-    const salonId = getSalonId();
+    const salonId = currentSalonId || getSalonId();
     if (salonId) {
       await fetchSalonData(salonId);
     }

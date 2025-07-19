@@ -124,8 +124,8 @@ export const useUnifiedRealtimeNotifications = ({
 
   // Setup realtime subscription
   useEffect(() => {
-    if (!salonId) {
-      console.log('⚠️ No salon ID provided for unified notifications');
+    if (!salonId || salonId.trim() === '') {
+      console.log('⚠️ No salon ID provided for unified notifications, skipping setup');
       return;
     }
 
