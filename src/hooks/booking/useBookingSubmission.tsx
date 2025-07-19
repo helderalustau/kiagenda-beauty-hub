@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Service } from '@/hooks/useSupabaseData';
+import { useClientManagement } from './useClientManagement';
 
 interface ClientData {
   name: string;
@@ -17,6 +18,7 @@ export const useBookingSubmission = (salonId: string) => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionInProgress = useRef(false);
+  const { findOrCreateClient } = useClientManagement();
 
   const submitBooking = useCallback(async (
     selectedService: Service | null,
@@ -46,15 +48,8 @@ export const useBookingSubmission = (salonId: string) => {
       return false;
     }
 
-    if (!user?.id) {
-      console.error('❌ User not authenticated');
-      toast({
-        title: "Erro de autenticação",
-        description: "Você precisa estar logado para fazer um agendamento",
-        variant: "destructive"
-      });
-      return false;
-    }
+    // Permitir agendamentos mesmo sem usuário logado (agendamento direto)
+    console.log('🔑 User authentication status:', user?.id ? 'Logged in' : 'Direct booking');
 
     // Verificar se já há uma submissão em andamento
     if (submissionInProgress.current || isSubmitting) {
@@ -98,32 +93,39 @@ export const useBookingSubmission = (salonId: string) => {
         return false;
       }
 
-      // Validar que o user.id existe na tabela client_auth antes de criar agendamento
-      console.log('🔍 Checking if client exists in client_auth table for ID:', user.id);
+      // Buscar ou criar cliente se não estiver logado ou se for agendamento direto
+      let clientAuthId: string;
       
-      const { data: clientExists, error: clientCheckError } = await supabase
-        .from('client_auth')
-        .select('id')
-        .eq('id', user.id)
-        .single();
+      if (user?.id) {
+        // Verificar se o user.id existe na tabela client_auth
+        console.log('🔍 Checking if client exists in client_auth table for ID:', user.id);
+        
+        const { data: clientExists, error: clientCheckError } = await supabase
+          .from('client_auth')
+          .select('id')
+          .eq('id', user.id)
+          .single();
 
-      if (clientCheckError || !clientExists) {
-        console.error('❌ Client not found in client_auth table:', clientCheckError);
-        toast({
-          title: "Erro de autenticação",
-          description: "Usuário não encontrado no sistema. Faça login novamente.",
-          variant: "destructive"
-        });
-        return false;
+        if (clientExists) {
+          console.log('✅ Client found in client_auth table:', clientExists.id);
+          clientAuthId = clientExists.id;
+        } else {
+          console.log('⚠️ Client not found in client_auth, creating new client');
+          clientAuthId = await findOrCreateClient(clientData.name, clientData.phone);
+        }
+      } else {
+        // Criar ou encontrar cliente baseado no nome e telefone
+        console.log('👤 No user logged in, finding or creating client by name/phone');
+        clientAuthId = await findOrCreateClient(clientData.name, clientData.phone);
       }
 
-      console.log('✅ Client found in client_auth table:', clientExists.id);
+      console.log('✅ Using client_auth_id:', clientAuthId);
 
       // Criar o agendamento
       const appointmentData = {
         salon_id: salonId,
         service_id: selectedService.id,
-        client_auth_id: user.id,
+        client_auth_id: clientAuthId,
         appointment_date: dateString,
         appointment_time: selectedTime,
         status: 'pending' as const,
