@@ -631,6 +631,16 @@ export type Database = {
         }
         Returns: Json
       }
+      create_plan_upgrade_request: {
+        Args: {
+          p_salon_id: string
+          p_salon_name: string
+          p_current_plan: string
+          p_requested_plan: string
+          p_justification: string
+        }
+        Returns: string
+      }
       generate_unique_code: {
         Args: { prefix: string; length?: number }
         Returns: string

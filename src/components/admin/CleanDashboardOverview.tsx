@@ -14,7 +14,9 @@ import {
   Timer,
   DollarSign,
   Star,
-  CalendarDays
+  CalendarDays,
+  FileText,
+  BarChart3
 } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -142,7 +144,7 @@ const CleanDashboardOverview = ({
       </div>
 
       {/* Métricas principais */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Plano */}
         <Card className="relative overflow-hidden">
           <CardContent className="p-6">
@@ -173,6 +175,22 @@ const CleanDashboardOverview = ({
               </div>
               <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
                 <Calendar className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pendentes */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
+                <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
+              </div>
+              <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center">
+                <Clock className="h-6 w-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
