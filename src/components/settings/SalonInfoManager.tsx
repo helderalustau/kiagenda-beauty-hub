@@ -1,334 +1,253 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import { Phone, MapPin, User, Save, CheckCircle, Star } from "lucide-react";
+import { Salon } from '@/types/supabase-entities';
+import { Star, Crown, Diamond, ArrowUp } from "lucide-react";
 import PlanUpgradeModal from './PlanUpgradeModal';
 
 interface SalonInfoManagerProps {
-  salon: any;
-  onUpdate: (updatedSalon: any) => void;
+  salon: Salon;
+  onUpdate: () => void;
 }
-
-// Função para formatar telefone brasileiro
-const formatBrazilianPhone = (value: string): string => {
-  // Remove tudo que não é número
-  const numbers = value.replace(/\D/g, '');
-  
-  // Limita a 11 dígitos
-  const limitedNumbers = numbers.slice(0, 11);
-  
-  // Aplica formatação brasileira
-  if (limitedNumbers.length === 0) return '';
-  if (limitedNumbers.length <= 2) return `(${limitedNumbers}`;
-  if (limitedNumbers.length <= 6) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2)}`;
-  if (limitedNumbers.length <= 10) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 6)}-${limitedNumbers.slice(6)}`;
-  return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7)}`;
-};
-
-// Função para extrair apenas números
-const extractNumbers = (phone: string): string => {
-  return phone.replace(/\D/g, '');
-};
 
 const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
   const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    owner_name: '',
-    phone: '',
-    contact_phone: '',
-    address: '',
-    street_number: '',
-    city: '',
-    state: ''
+    name: salon.name || '',
+    owner_name: salon.owner_name || '',
+    phone: salon.phone || '',
+    contact_phone: salon.contact_phone || '',
+    address: salon.address || '',
+    city: salon.city || '',
+    state: salon.state || ''
   });
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-
-  useEffect(() => {
-    if (salon) {
-      setFormData({
-        name: salon.name || '',
-        owner_name: salon.owner_name || '',
-        phone: formatBrazilianPhone(salon.phone || ''),
-        contact_phone: formatBrazilianPhone(salon.contact_phone || ''),
-        address: salon.address || '',
-        street_number: salon.street_number || '',
-        city: salon.city || '',
-        state: salon.state || ''
-      });
-    }
-  }, [salon]);
-
-  const handleInputChange = (field: string, value: string) => {
-    let processedValue = value;
-    
-    // Formatação automática para campos de telefone
-    if (field === 'phone' || field === 'contact_phone') {
-      // Permitir apenas números e formatação brasileira
-      processedValue = formatBrazilianPhone(value);
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      [field]: processedValue
-    }));
-    
-    setHasChanges(true);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!salon?.id) {
-      toast({
-        title: "Erro",
-        description: "ID do estabelecimento não encontrado",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsUpdating(true);
+    setLoading(true);
 
     try {
-      const updateData = {
-        ...formData,
-        // Salvar telefones sem formatação no banco
-        phone: extractNumbers(formData.phone),
-        contact_phone: formData.contact_phone ? extractNumbers(formData.contact_phone) : null,
-        updated_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('salons')
-        .update(updateData)
-        .eq('id', salon.id)
-        .select()
-        .single();
+        .update(formData)
+        .eq('id', salon.id);
 
-      if (error) {
-        throw error;
-      }
-
-      // Atualizar o estado local imediatamente
-      const updatedSalon = { ...salon, ...data };
-      onUpdate(updatedSalon);
-      setHasChanges(false);
+      if (error) throw error;
 
       toast({
-        title: "✅ Informações Atualizadas!",
-        description: "As informações do estabelecimento foram salvas com sucesso.",
-        duration: 3000
+        title: "Sucesso",
+        description: "Informações do estabelecimento atualizadas com sucesso!"
       });
 
+      setIsEditing(false);
+      onUpdate();
     } catch (error) {
-      console.error('Error updating salon info:', error);
+      console.error('Error updating salon:', error);
       toast({
-        title: "Erro ao Atualizar",
-        description: "Não foi possível salvar as informações. Tente novamente.",
+        title: "Erro",
+        description: "Não foi possível atualizar as informações.",
         variant: "destructive"
       });
     } finally {
-      setIsUpdating(false);
+      setLoading(false);
     }
   };
 
-  const planDisplayNames = {
-    bronze: "Bronze",
-    silver: "Prata", 
-    gold: "Ouro",
-    platinum: "Platinum"
+  const handleCancel = () => {
+    setFormData({
+      name: salon.name || '',
+      owner_name: salon.owner_name || '',
+      phone: salon.phone || '',
+      contact_phone: salon.contact_phone || '',
+      address: salon.address || '',
+      city: salon.city || '',
+      state: salon.state || ''
+    });
+    setIsEditing(false);
   };
 
-  if (!salon) return null;
+  const getPlanIcon = (plan: string) => {
+    switch (plan) {
+      case 'bronze': return Star;
+      case 'silver': return Crown;
+      case 'gold': return Crown;
+      case 'platinum': return Diamond;
+      default: return Star;
+    }
+  };
+
+  const getPlanColor = (plan: string) => {
+    switch (plan) {
+      case 'bronze': return 'text-amber-600 bg-amber-50';
+      case 'silver': return 'text-gray-600 bg-gray-50';
+      case 'gold': return 'text-yellow-600 bg-yellow-50';
+      case 'platinum': return 'text-purple-600 bg-purple-50';
+      default: return 'text-amber-600 bg-amber-50';
+    }
+  };
+
+  const getPlanName = (plan: string) => {
+    const names = {
+      bronze: 'Bronze',
+      silver: 'Prata',
+      gold: 'Ouro',
+      platinum: 'Platinum'
+    };
+    return names[plan as keyof typeof names] || 'Bronze';
+  };
+
+  const PlanIcon = getPlanIcon(salon.plan);
 
   return (
     <div className="space-y-6">
+      {/* Plano Atual */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Informações do Estabelecimento</span>
-            {hasChanges && (
-              <Badge variant="outline" className="text-orange-600 border-orange-300">
-                Alterações pendentes
-              </Badge>
-            )}
+          <CardTitle className="flex items-center gap-2">
+            <PlanIcon className="h-5 w-5" />
+            Plano Atual
           </CardTitle>
         </CardHeader>
-      
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Nome do Estabelecimento *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                required
-              />
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${getPlanColor(salon.plan)}`}>
+                <PlanIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-semibold text-lg">{getPlanName(salon.plan)}</p>
+                <p className="text-sm text-muted-foreground">Plano ativo</p>
+              </div>
             </div>
+            <Badge className={getPlanColor(salon.plan)}>
+              {getPlanName(salon.plan)}
+            </Badge>
+          </div>
+          
+          <PlanUpgradeModal
+            currentPlan={salon.plan}
+            salonId={salon.id}
+            salonName={salon.name}
+            onUpgradeRequest={onUpdate}
+          />
+        </CardContent>
+      </Card>
 
-            <div>
-              <Label htmlFor="owner_name">Nome do Proprietário *</Label>
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-gray-500" />
+      {/* Informações do Estabelecimento */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Informações do Estabelecimento</CardTitle>
+          {!isEditing && (
+            <Button onClick={() => setIsEditing(true)} variant="outline">
+              Editar
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Nome do Estabelecimento</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  disabled={!isEditing}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="owner_name">Nome do Proprietário</Label>
                 <Input
                   id="owner_name"
                   value={formData.owner_name}
-                  onChange={(e) => handleInputChange('owner_name', e.target.value)}
+                  onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
+                  disabled={!isEditing}
                   required
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="phone">Telefone Principal *</Label>
-              <div className="flex items-center space-x-2">
-                <Phone className="h-4 w-4 text-gray-500" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="phone">Telefone Principal</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="(00) 00000-0000"
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  disabled={!isEditing}
                   required
-                  maxLength={15}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Apenas números válidos</p>
-            </div>
-
-            <div>
-              <Label htmlFor="contact_phone">Telefone de Contato</Label>
-              <div className="flex items-center space-x-2">
-                <Phone className="h-4 w-4 text-gray-500" />
+              
+              <div>
+                <Label htmlFor="contact_phone">Telefone de Contato</Label>
                 <Input
                   id="contact_phone"
                   value={formData.contact_phone}
-                  onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                  placeholder="(00) 00000-0000"
-                  maxLength={15}
+                  onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                  disabled={!isEditing}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Apenas números válidos</p>
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="address">Endereço Completo *</Label>
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
+            <div>
+              <Label htmlFor="address">Endereço</Label>
               <Input
                 id="address"
                 value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="Rua, número, bairro"
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                disabled={!isEditing}
                 required
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="street_number">Número</Label>
-              <Input
-                id="street_number"
-                value={formData.street_number}
-                onChange={(e) => handleInputChange('street_number', e.target.value)}
-                placeholder="123"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city">Cidade</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  disabled={!isEditing}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="state">Estado</Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  disabled={!isEditing}
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="city">Cidade</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="São Paulo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="state">Estado</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                placeholder="SP"
-                maxLength={2}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="submit"
-              disabled={!hasChanges || isUpdating}
-              className="flex items-center space-x-2"
-            >
-              {isUpdating ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Salvando...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  <span>Salvar Alterações</span>
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
-
-    {/* Plano Atual */}
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Star className="h-5 w-5 text-primary" />
-          Plano Atual
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-lg font-semibold">
-              Plano {planDisplayNames[salon.plan as keyof typeof planDisplayNames] || salon.plan}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Gerencie seu plano de assinatura
-            </p>
-          </div>
-          <Badge className="text-primary bg-primary/10 border-primary">
-            {planDisplayNames[salon.plan as keyof typeof planDisplayNames] || salon.plan}
-          </Badge>
-        </div>
-
-        <PlanUpgradeModal 
-          currentPlan={salon.plan}
-          salonId={salon.id}
-          salonName={salon.name}
-          onUpgradeRequest={() => {
-            toast({
-              title: "Solicitação registrada",
-              description: "O superadministrador foi notificado da sua solicitação.",
-              duration: 3000
-            });
-          }}
-        />
-      </CardContent>
-    </Card>
-  </div>);
+            {isEditing && (
+              <div className="flex gap-2 pt-4">
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Salvando...' : 'Salvar'}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleCancel}>
+                  Cancelar
+                </Button>
+              </div>
+            )}
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 export default SalonInfoManager;

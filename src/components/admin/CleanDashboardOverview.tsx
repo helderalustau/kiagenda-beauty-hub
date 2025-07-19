@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,8 @@ import {
   Star,
   CalendarDays,
   FileText,
-  BarChart3
+  BarChart3,
+  History
 } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -116,6 +118,16 @@ const CleanDashboardOverview = ({
     })
     .slice(0, 5);
 
+  // Histórico de atendimentos (últimos 10 concluídos)
+  const completedAppointments = appointments
+    .filter(apt => apt.status === 'completed')
+    .sort((a, b) => {
+      const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
+      const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
+      return dateB.getTime() - dateA.getTime(); // Mais recentes primeiro
+    })
+    .slice(0, 10);
+
   // Estatísticas gerais
   const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
   const confirmedAppointments = appointments.filter(apt => apt.status === 'confirmed');
@@ -185,7 +197,7 @@ const CleanDashboardOverview = ({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
+                <p className="text-sm font-medium text-muted-foregrounddiv>Pendentes</p>
                 <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
               </div>
@@ -232,7 +244,7 @@ const CleanDashboardOverview = ({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Agenda de Hoje */}
         <Card>
           <CardHeader className="pb-4">
@@ -339,6 +351,62 @@ const CleanDashboardOverview = ({
                           Confirmar
                         </Button>
                       )}
+                      {appointment.status === 'confirmed' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onUpdateStatus(appointment.id, 'completed')}
+                          className="h-7 px-2 text-xs"
+                        >
+                          Concluir
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Histórico de Atendimentos */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <History className="h-5 w-5" />
+              Histórico de Atendimentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {completedAppointments.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                  <History className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">Nenhum atendimento concluído</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {completedAppointments.map((appointment) => (
+                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium text-blue-600">
+                          {formatAppointmentDate(appointment.appointment_date)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{getClientName(appointment)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {getServiceName(appointment)} • {appointment.appointment_time.substring(0, 5)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(appointment.status)}
+                      <div className="text-xs text-green-600 font-medium">
+                        {formatCurrency((appointment as any).service?.price || 0)}
+                      </div>
                     </div>
                   </div>
                 ))}
