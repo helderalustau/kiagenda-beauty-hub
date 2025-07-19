@@ -144,46 +144,49 @@ const CleanDashboardOverview = ({
   }, 0);
 
   return (
-    <div className="space-y-6 p-6 bg-background min-h-screen">
-      {/* Header limpo e moderno */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-foreground">
-            Visão Geral
-          </h1>
-          <p className="text-muted-foreground flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+    <div className="space-y-6 p-6 bg-background">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Visão Geral</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </p>
-        </div>
-        <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center">
-          <BarChart3 className="h-7 w-7 text-primary" />
         </div>
       </div>
 
       {/* Métricas principais */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Plano */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <Star className="h-5 w-5 text-primary" />
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Plano</p>
-                <p className="text-lg font-semibold">{currentPlan.name}</p>
+                <p className="text-sm font-medium text-muted-foreground">Plano Atual</p>
+                <p className="text-2xl font-bold text-foreground">{currentPlan.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {monthlyAppointments} de {currentPlan.appointments} usados
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Star className="h-6 w-6 text-primary" />
               </div>
             </div>
+            <Progress value={planUsagePercentage} className="mt-4 h-2" />
           </CardContent>
         </Card>
 
         {/* Agendamentos Hoje */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <Calendar className="h-5 w-5 text-blue-600" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Hoje</p>
-                <p className="text-lg font-semibold">{todayAppointments.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Hoje</p>
+                <p className="text-2xl font-bold text-foreground">{todayAppointments.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">agendamentos</p>
+              </div>
+              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -191,12 +194,15 @@ const CleanDashboardOverview = ({
 
         {/* Pendentes */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <Clock className="h-5 w-5 text-orange-500" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pendentes</p>
-                <p className="text-lg font-semibold">{pendingAppointments.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
+                <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
+              </div>
+              <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center">
+                <Clock className="h-6 w-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
@@ -204,12 +210,15 @@ const CleanDashboardOverview = ({
 
         {/* Confirmados */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Confirmados</p>
-                <p className="text-lg font-semibold">{confirmedAppointments.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Confirmados</p>
+                <p className="text-2xl font-bold text-foreground">{confirmedAppointments.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">agendamentos confirmados</p>
+              </div>
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -217,12 +226,18 @@ const CleanDashboardOverview = ({
 
         {/* Receita */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <DollarSign className="h-5 w-5 text-green-600" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Receita Mensal</p>
-                <p className="text-lg font-semibold">{formatCurrency(monthlyRevenue)}</p>
+                <p className="text-sm font-medium text-muted-foreground">Receita Mensal</p>
+                <p className="text-2xl font-bold text-foreground">{formatCurrency(monthlyRevenue)}</p>
+                <div className="flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
+                  <p className="text-xs text-muted-foreground">{completedThisMonth.length} concluídos</p>
+                </div>
+              </div>
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -231,15 +246,11 @@ const CleanDashboardOverview = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Agenda de Hoje */}
-        <Card className="hover:shadow-lg transition-shadow duration-300">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                <CalendarDays className="h-4 w-4 text-blue-600" />
-              </div>
-              <span className="text-foreground font-semibold">
-                Agenda de Hoje
-              </span>
+              <CalendarDays className="h-5 w-5" />
+              Agenda de Hoje
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -297,16 +308,11 @@ const CleanDashboardOverview = ({
         </Card>
 
         {/* Próximos Agendamentos */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card/95 to-card/90 hover:shadow-2xl transition-all duration-500">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent rounded-lg"></div>
-          <CardHeader className="pb-4 relative">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="h-8 w-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
-                <Activity className="h-4 w-4 text-white" />
-              </div>
-              <span className="bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent font-semibold">
-                Próximos Agendamentos
-              </span>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Activity className="h-5 w-5" />
+              Próximos Agendamentos
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -320,10 +326,10 @@ const CleanDashboardOverview = ({
             ) : (
               <div className="space-y-3">
                 {upcomingAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-card to-card/50 hover:from-accent/20 hover:to-accent/10 hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-sm">
-                        <span className="text-xs font-bold text-white">
+                      <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium">
                           {formatAppointmentDate(appointment.appointment_date)}
                         </span>
                       </div>
@@ -364,16 +370,11 @@ const CleanDashboardOverview = ({
         </Card>
 
         {/* Histórico de Atendimentos */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card/95 to-card/90 hover:shadow-2xl transition-all duration-500">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent rounded-lg"></div>
-          <CardHeader className="pb-4 relative">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="h-8 w-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <History className="h-4 w-4 text-white" />
-              </div>
-              <span className="bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent font-semibold">
-                Histórico de Atendimentos
-              </span>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <History className="h-5 w-5" />
+              Histórico de Atendimentos
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -387,10 +388,10 @@ const CleanDashboardOverview = ({
             ) : (
               <div className="space-y-3">
                 {completedAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-card to-card/50 hover:from-accent/20 hover:to-accent/10 hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
-                        <span className="text-xs font-bold text-white">
+                      <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium text-blue-600">
                           {formatAppointmentDate(appointment.appointment_date)}
                         </span>
                       </div>
@@ -403,7 +404,7 @@ const CleanDashboardOverview = ({
                     </div>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(appointment.status)}
-                      <div className="text-sm text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg">
+                      <div className="text-xs text-green-600 font-medium">
                         {formatCurrency((appointment as any).service?.price || 0)}
                       </div>
                     </div>

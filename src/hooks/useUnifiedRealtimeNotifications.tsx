@@ -131,12 +131,8 @@ export const useUnifiedRealtimeNotifications = ({
 
     console.log('🔔 Configurando notificações unificadas para salon:', salonId);
 
-    // Buscar agendamentos pendentes apenas uma vez ao iniciar
-    let isInitialLoad = true;
-    if (isInitialLoad) {
-      fetchPendingAppointments();
-      isInitialLoad = false;
-    }
+    // Buscar agendamentos pendentes ao iniciar
+    fetchPendingAppointments();
 
     // Setup realtime subscription
     const channel = supabase
@@ -263,11 +259,18 @@ export const useUnifiedRealtimeNotifications = ({
         }
       });
 
+    // Verificação periódica como fallback
+    const interval = setInterval(() => {
+      console.log('⏰ Verificação periódica de agendamentos');
+      fetchPendingAppointments();
+    }, 30000); // A cada 30 segundos
+
     return () => {
       console.log('🔌 Limpando notificações unificadas para salon:', salonId);
+      clearInterval(interval);
       supabase.removeChannel(channel);
     };
-  }, [salonId]); // Removido fetchPendingAppointments das dependências para evitar loop
+  }, [salonId, onNewAppointment, onAppointmentUpdate, toast, fetchPendingAppointments, playNotificationSound]);
 
   // Limpar notificação específica
   const clearNotification = useCallback((appointmentId: string) => {
