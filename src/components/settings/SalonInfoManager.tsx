@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import { Phone, MapPin, User, Save, CheckCircle } from "lucide-react";
+import { Phone, MapPin, User, Save, CheckCircle, Star } from "lucide-react";
+import PlanUpgradeModal from './PlanUpgradeModal';
 
 interface SalonInfoManagerProps {
   salon: any;
@@ -139,20 +140,28 @@ const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
     }
   };
 
+  const planDisplayNames = {
+    bronze: "Bronze",
+    silver: "Prata", 
+    gold: "Ouro",
+    platinum: "Platinum"
+  };
+
   if (!salon) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Informações do Estabelecimento</span>
-          {hasChanges && (
-            <Badge variant="outline" className="text-orange-600 border-orange-300">
-              Alterações pendentes
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Informações do Estabelecimento</span>
+            {hasChanges && (
+              <Badge variant="outline" className="text-orange-600 border-orange-300">
+                Alterações pendentes
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
       
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -281,7 +290,45 @@ const SalonInfoManager = ({ salon, onUpdate }: SalonInfoManagerProps) => {
         </form>
       </CardContent>
     </Card>
-  );
+
+    {/* Plano Atual */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Star className="h-5 w-5 text-primary" />
+          Plano Atual
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-lg font-semibold">
+              Plano {planDisplayNames[salon.plan as keyof typeof planDisplayNames] || salon.plan}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Gerencie seu plano de assinatura
+            </p>
+          </div>
+          <Badge className="text-primary bg-primary/10 border-primary">
+            {planDisplayNames[salon.plan as keyof typeof planDisplayNames] || salon.plan}
+          </Badge>
+        </div>
+
+        <PlanUpgradeModal 
+          currentPlan={salon.plan}
+          salonId={salon.id}
+          salonName={salon.name}
+          onUpgradeRequest={() => {
+            toast({
+              title: "Solicitação registrada",
+              description: "O superadministrador foi notificado da sua solicitação.",
+              duration: 3000
+            });
+          }}
+        />
+      </CardContent>
+    </Card>
+  </div>);
 };
 
 export default SalonInfoManager;

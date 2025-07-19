@@ -38,13 +38,13 @@ const CleanDashboardOverview = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="text-muted-foreground border-muted">Pendente</Badge>;
+        return <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100">Pendente</Badge>;
       case 'confirmed':
-        return <Badge variant="outline" className="text-primary border-primary">Confirmado</Badge>;
+        return <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">Confirmado</Badge>;
       case 'completed':
-        return <Badge variant="secondary">Concluído</Badge>;
+        return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">Concluído</Badge>;
       case 'cancelled':
-        return <Badge variant="destructive" className="bg-destructive/10 text-destructive">Cancelado</Badge>;
+        return <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">Cancelado</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -116,6 +116,7 @@ const CleanDashboardOverview = ({
 
   // Estatísticas gerais
   const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
+  const confirmedAppointments = appointments.filter(apt => apt.status === 'confirmed');
   const completedThisMonth = appointments.filter(apt => {
     const aptDate = new Date(apt.appointment_date);
     const now = new Date();
@@ -177,17 +178,17 @@ const CleanDashboardOverview = ({
           </CardContent>
         </Card>
 
-        {/* Pendentes */}
+        {/* Confirmados */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
-                <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
+                <p className="text-sm font-medium text-muted-foreground">Confirmados</p>
+                <p className="text-2xl font-bold text-foreground">{confirmedAppointments.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">agendamentos confirmados</p>
               </div>
-              <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center">
-                <Clock className="h-6 w-6 text-amber-600" />
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
