@@ -161,108 +161,68 @@ const CleanDashboardOverview = ({
         </div>
       </div>
 
-      {/* Métricas principais limpas */}
+      {/* Métricas principais */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Plano */}
-        <Card className="hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Star className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                  <Star className="h-3 w-3" />
-                  Plano Atual
-                </p>
-                <p className="text-2xl font-bold text-foreground">
-                  {currentPlan.name}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {monthlyAppointments} de {currentPlan.appointments} usados
-                </p>
-              </div>
-              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Star className="h-6 w-6 text-primary" />
+                <p className="text-sm text-muted-foreground">Plano</p>
+                <p className="text-lg font-semibold">{currentPlan.name}</p>
               </div>
             </div>
-            <Progress value={planUsagePercentage} className="mt-4 h-2" />
           </CardContent>
         </Card>
 
         {/* Agendamentos Hoje */}
-        <Card className="hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Calendar className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                  <CalendarDays className="h-3 w-3" />
-                  Hoje
-                </p>
-                <p className="text-2xl font-bold text-foreground">{todayAppointments.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">agendamentos</p>
-              </div>
-              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-blue-600" />
+                <p className="text-sm text-muted-foreground">Hoje</p>
+                <p className="text-lg font-semibold">{todayAppointments.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Pendentes */}
-        <Card className="hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Clock className="h-5 w-5 text-orange-500" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                  <Timer className="h-3 w-3" />
-                  Pendentes
-                </p>
-                <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
-              </div>
-              <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center">
-                <Clock className="h-6 w-6 text-amber-600" />
+                <p className="text-sm text-muted-foreground">Pendentes</p>
+                <p className="text-lg font-semibold">{pendingAppointments.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Confirmados */}
-        <Card className="hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  Confirmados
-                </p>
-                <p className="text-2xl font-bold text-foreground">{confirmedAppointments.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">agendamentos confirmados</p>
-              </div>
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-600" />
+                <p className="text-sm text-muted-foreground">Confirmados</p>
+                <p className="text-lg font-semibold">{confirmedAppointments.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Receita */}
-        <Card className="hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <DollarSign className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                  <DollarSign className="h-3 w-3" />
-                  Receita Mensal
-                </p>
-                <p className="text-2xl font-bold text-foreground">
-                  {formatCurrency(monthlyRevenue)}
-                </p>
-                <div className="flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
-                  <p className="text-xs text-muted-foreground">{completedThisMonth.length} concluídos</p>
-                </div>
-              </div>
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-green-600" />
+                <p className="text-sm text-muted-foreground">Receita Mensal</p>
+                <p className="text-lg font-semibold">{formatCurrency(monthlyRevenue)}</p>
               </div>
             </div>
           </CardContent>
