@@ -148,47 +148,7 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate, enablePageR
           // Notificação instantânea como o IFOOD
           if (payload.new.status === 'pending') {
             console.log('🔔 Novo agendamento pendente - exibindo instantaneamente!');
-            
-            // Buscar dados completos do agendamento
-            const { data: appointment, error } = await supabase
-              .from('appointments')
-              .select(`
-                *,
-                salon:salons(id, name, address, phone),
-                service:services(id, name, price, duration_minutes),
-                client:client_auth(id, username, name, phone, email)
-              `)
-              .eq('id', payload.new.id)
-              .single();
-
-            if (!error && appointment) {
-              const newAppointment = appointment as Appointment;
-              
-              // Adicionar à lista se não estiver
-              setPendingAppointments(prev => {
-                const exists = prev.find(apt => apt.id === newAppointment.id);
-                return exists ? prev : [newAppointment, ...prev];
-              });
-              
-              // Se não há dialog aberto, mostrar agora
-              if (!isOpen) {
-                setCurrentAppointment(newAppointment);
-                setIsOpen(true);
-                
-                // Som de alerta
-                try {
-                  const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYfCEWm5fK/bS==');
-                  audio.loop = true;
-                  audio.volume = 0.5;
-                  audio.play().catch(() => {});
-                  setAlertAudio(audio);
-                } catch (error) {
-                  // Ignorar erro de áudio
-                }
-              }
-            }
-            
-            // Toast instantâneo
+            // Mostrar imediatamente na tela
             toast({
               title: "🔔 Novo Agendamento!",
               description: "Você tem um novo agendamento pendente",
@@ -196,10 +156,13 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate, enablePageR
             });
           }
           
-          // Atualizar dados quando status mudar (sem refresh da página)
+          // Refresh da página quando detectar mudanças na agenda
           if (enablePageRefresh && payload.old.status !== payload.new.status) {
-            console.log('🔄 Agenda alterada, atualizando dados...');
-            onAppointmentUpdate?.();
+            console.log('🔄 Agenda alterada, fazendo refresh da página...');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000); // Reduzindo para 1 segundo para resposta mais rápida
+            return;
           }
           
           // Se um agendamento foi atualizado para pending, adicionar à lista
@@ -407,36 +370,36 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate, enablePageR
       )}
 
       <Dialog open={isOpen} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-sm" onPointerDownOutside={(e) => e.preventDefault()}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between text-blue-900 text-base">
+            <DialogTitle className="flex items-center justify-between text-blue-900">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                <span>🔔 Nova Solicitação!</span>
+                <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                <span>Nova Solicitação de Agendamento!</span>
               </div>
               {pendingAppointments.length > 1 && (
                 <Badge variant="secondary" className="text-xs">
-                  {pendingAppointments.indexOf(currentAppointment) + 1}/{pendingAppointments.length}
+                  {pendingAppointments.indexOf(currentAppointment) + 1} de {pendingAppointments.length}
                 </Badge>
               )}
             </DialogTitle>
           </DialogHeader>
 
           <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="pt-3 space-y-3">
+            <CardContent className="pt-4 space-y-4">
               <div className="flex items-center space-x-2">
-                <User className="h-3 w-3 text-blue-600" />
-                <span className="font-medium text-sm">{currentAppointment.client?.name || currentAppointment.client?.username}</span>
+                <User className="h-4 w-4 text-blue-600" />
+                <span className="font-medium">{currentAppointment.client?.name || currentAppointment.client?.username}</span>
               </div>
               
               <div className="flex items-center space-x-2">
-                <Phone className="h-3 w-3 text-blue-600" />
-                <span className="text-sm">{currentAppointment.client?.phone}</span>
+                <Phone className="h-4 w-4 text-blue-600" />
+                <span>{currentAppointment.client?.phone}</span>
               </div>
               
               <div className="flex items-center space-x-2">
-                <Calendar className="h-3 w-3 text-blue-600" />
-                <span className="text-sm">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                <span>
                   {(() => {
                     const [year, month, day] = currentAppointment.appointment_date.split('-');
                     return `${day}/${month}/${year}`;
@@ -445,50 +408,48 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate, enablePageR
               </div>
               
               <div className="flex items-center space-x-2">
-                <Clock className="h-3 w-3 text-blue-600" />
-                <span className="text-sm">{currentAppointment.appointment_time}</span>
+                <Clock className="h-4 w-4 text-blue-600" />
+                <span>{currentAppointment.appointment_time}</span>
               </div>
               
-              <div className="bg-white p-2 rounded border">
-                <p className="font-medium text-sm text-gray-900">{currentAppointment.service?.name}</p>
-                <p className="text-xs text-gray-600">
+              <div className="bg-white p-3 rounded border">
+                <p className="font-medium text-gray-900">{currentAppointment.service?.name}</p>
+                <p className="text-sm text-gray-600">
                   {currentAppointment.service?.duration_minutes} min - R$ {currentAppointment.service?.price}
                 </p>
               </div>
 
               {currentAppointment.notes && (
                 <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-xs text-gray-700"><strong>Obs:</strong> {currentAppointment.notes}</p>
+                  <p className="text-sm text-gray-700"><strong>Observações:</strong> {currentAppointment.notes}</p>
                 </div>
               )}
               
-              <div className="flex justify-center">
-                <Badge variant="outline" className="text-orange-600 border-orange-200 text-xs">
+              <div className="flex justify-between items-center pt-2">
+                <Badge variant="outline" className="text-orange-600 border-orange-200">
                   Aguardando aprovação
                 </Badge>
               </div>
             </CardContent>
           </Card>
 
-          <div className="flex space-x-2 pt-3">
+          <div className="flex space-x-2 pt-4">
             <Button
               onClick={handleApprove}
               disabled={isProcessing}
-              size="sm"
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
             >
-              <CheckCircle className="h-3 w-3 mr-1" />
-              {isProcessing ? 'Confirmando...' : 'Confirmar'}
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {isProcessing ? 'Confirmando...' : 'Confirmar Agendamento'}
             </Button>
             
             <Button
               onClick={handleReject}
               disabled={isProcessing}
               variant="destructive"
-              size="sm"
-              className="flex-1 text-xs"
+              className="flex-1"
             >
-              <XCircle className="h-3 w-3 mr-1" />
+              <XCircle className="h-4 w-4 mr-2" />
               {isProcessing ? 'Recusando...' : 'Recusar'}
             </Button>
           </div>
