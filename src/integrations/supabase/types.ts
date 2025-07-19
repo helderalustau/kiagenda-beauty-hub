@@ -330,6 +330,54 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_upgrade_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          current_plan: string
+          id: string
+          justification: string
+          requested_at: string
+          requested_plan: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          salon_id: string
+          salon_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          current_plan: string
+          id?: string
+          justification: string
+          requested_at?: string
+          requested_plan: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          salon_id: string
+          salon_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          current_plan?: string
+          id?: string
+          justification?: string
+          requested_at?: string
+          requested_plan?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          salon_id?: string
+          salon_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       preset_services: {
         Row: {
           category: string

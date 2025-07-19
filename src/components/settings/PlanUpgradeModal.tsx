@@ -74,18 +74,14 @@ const PlanUpgradeModal = ({ currentPlan, salonId, salonName, onUpgradeRequest }:
     setIsSubmitting(true);
 
     try {
-      // Criar solicitação de upgrade no banco
-      const { error } = await supabase
-        .from('plan_upgrade_requests')
-        .insert({
-          salon_id: salonId,
-          salon_name: salonName,
-          current_plan: currentPlan,
-          requested_plan: selectedPlan,
-          justification: justification.trim(),
-          status: 'pending',
-          requested_at: new Date().toISOString()
-        });
+      // Criar solicitação de upgrade no banco usando SQL direto
+      const { error } = await supabase.rpc('create_plan_upgrade_request', {
+        p_salon_id: salonId,
+        p_salon_name: salonName,
+        p_current_plan: currentPlan,
+        p_requested_plan: selectedPlan,
+        p_justification: justification.trim()
+      });
 
       if (error) throw error;
 
