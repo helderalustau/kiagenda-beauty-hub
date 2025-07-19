@@ -4,25 +4,32 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut, Menu } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 import SalonStatusToggle from '@/components/SalonStatusToggle';
+import ManualNotificationChecker from '@/components/admin/ManualNotificationChecker';
 
 interface AdminDashboardHeaderProps {
   salon: Salon;
   salonStatus: boolean | null;
   mobileMenuOpen: boolean;
+  pendingCount?: number;
+  isCheckingManually?: boolean;
   onBackToHome: () => void;
   onLogout: () => void;
   onToggleMobileMenu: () => void;
   onStatusChange: (isOpen: boolean) => void;
+  onCheckAppointments?: () => void;
 }
 
 const AdminDashboardHeader = ({
   salon,
   salonStatus,
   mobileMenuOpen,
+  pendingCount = 0,
+  isCheckingManually = false,
   onBackToHome,
   onLogout,
   onToggleMobileMenu,
-  onStatusChange
+  onStatusChange,
+  onCheckAppointments
 }: AdminDashboardHeaderProps) => {
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
@@ -42,6 +49,17 @@ const AdminDashboardHeader = ({
                 onStatusChange={onStatusChange}
               />
             </div>
+            
+            {/* Verificador Manual de Agendamentos */}
+            {onCheckAppointments && (
+              <div className="hidden lg:block">
+                <ManualNotificationChecker
+                  pendingCount={pendingCount}
+                  isChecking={isCheckingManually}
+                  onCheck={onCheckAppointments}
+                />
+              </div>
+            )}
             <Button
               variant="outline"
               onClick={onLogout}
@@ -71,6 +89,17 @@ const AdminDashboardHeader = ({
                 onStatusChange={onStatusChange}
               />
             </div>
+            
+            {/* Verificador Manual de Agendamentos no Mobile */}
+            {onCheckAppointments && (
+              <div className="mb-4">
+                <ManualNotificationChecker
+                  pendingCount={pendingCount}
+                  isChecking={isCheckingManually}
+                  onCheck={onCheckAppointments}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useSalonData } from './useSalonData';
 import { useAppointmentData } from './useAppointmentData';
 import { useServiceData } from './useServiceData';
+import { useUnifiedRealtimeNotifications } from './useUnifiedRealtimeNotifications';
 
 export const useAdminDashboardLogic = () => {
   const { 
@@ -32,10 +33,33 @@ export const useAdminDashboardLogic = () => {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [salonStatus, setSalonStatus] = useState<boolean | null>(null);
 
+  // Get salon ID for unified notifications
+  const currentSalonId = getSalonId();
+
+  // Setup unified realtime notifications
+  const {
+    pendingAppointments,
+    isCheckingManually,
+    checkForNewAppointments,
+    clearNotification,
+    clearAllNotifications
+  } = useUnifiedRealtimeNotifications({
+    salonId: currentSalonId || '',
+    onNewAppointment: (appointment) => {
+      console.log('🔔 Nova notificação de agendamento:', appointment);
+      setNewAppointment(appointment);
+      setShowNotification(true);
+    },
+    onAppointmentUpdate: (appointment) => {
+      console.log('📝 Agendamento atualizado:', appointment);
+      refreshData();
+    }
+  });
+
   const loading = salonLoading || appointmentLoading || serviceLoading;
 
   // Get correct salon ID from localStorage
-  const getSalonId = () => {
+  function getSalonId() {
     const adminAuth = localStorage.getItem('adminAuth');
     if (adminAuth) {
       try {
@@ -70,7 +94,7 @@ export const useAdminDashboardLogic = () => {
 
     console.error('Nenhum salon ID encontrado no localStorage');
     return null;
-  };
+  }
 
   // Sincronizar o status local com o salon
   useEffect(() => {
@@ -123,42 +147,23 @@ export const useAdminDashboardLogic = () => {
     }
   }, [salon]);
 
-  // Monitorar novos agendamentos pendentes
+  // Monitorar novos agendamentos pendentes (backup para notificações unificadas)
   useEffect(() => {
     if (appointments && appointments.length > 0) {
-      const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
+      const pendingAppts = appointments.filter(apt => apt.status === 'pending');
       
-      if (pendingAppointments.length > 0) {
-        const latestPending = pendingAppointments.sort((a, b) => 
+      if (pendingAppts.length > 0 && !showNotification) {
+        const latestPending = pendingAppts.sort((a, b) => 
           new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
         )[0];
         
-        if (!showNotification || (newAppointment && newAppointment.id !== latestPending.id)) {
+        if (!newAppointment || newAppointment.id !== latestPending.id) {
           setNewAppointment(latestPending);
           setShowNotification(true);
         }
       }
     }
-  }, [appointments]);
-
-  // Verificar agendamentos pendentes periodicamente
-  useEffect(() => {
-    const checkPendingAppointments = async () => {
-      const adminData = localStorage.getItem('adminData');
-      if (adminData) {
-        const admin = JSON.parse(adminData);
-        if (admin.salon_id) {
-          const result = await fetchAllAppointments(admin.salon_id);
-          if (result && result.success) {
-            console.log('Verificação automática de agendamentos concluída');
-          }
-        }
-      }
-    };
-
-    const interval = setInterval(checkPendingAppointments, 60000); // 1 minuto
-    return () => clearInterval(interval);
-  }, []);
+  }, [appointments, showNotification, newAppointment]);
 
   const handleAcceptAppointment = async () => {
     if (newAppointment) {
@@ -166,6 +171,7 @@ export const useAdminDashboardLogic = () => {
       if (result.success) {
         setShowNotification(false);
         setNewAppointment(null);
+        clearNotification(newAppointment.id);
         toast({
           title: "Agendamento Confirmado",
           description: "O cliente foi notificado sobre a confirmação."
@@ -187,6 +193,7 @@ export const useAdminDashboardLogic = () => {
       if (result.success) {
         setShowNotification(false);
         setNewAppointment(null);
+        clearNotification(newAppointment.id);
         toast({
           title: "Agendamento Recusado",
           description: "O cliente foi notificado sobre a recusa."
@@ -232,8 +239,11 @@ export const useAdminDashboardLogic = () => {
     showNotification,
     mobileMenuOpen,
     salonStatus,
+    pendingAppointments,
+    isCheckingManually,
     setMobileMenuOpen,
     refreshData,
+    checkForNewAppointments,
     handleAcceptAppointment,
     handleRejectAppointment,
     handleLogout,
