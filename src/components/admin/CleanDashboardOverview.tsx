@@ -185,8 +185,8 @@ const CleanDashboardOverview = ({
                 <p className="text-2xl font-bold text-foreground">{todayAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">agendamentos</p>
               </div>
-              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-blue-600" />
+              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -201,8 +201,8 @@ const CleanDashboardOverview = ({
                 <p className="text-2xl font-bold text-foreground">{pendingAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">aguardando confirmação</p>
               </div>
-              <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center">
-                <Clock className="h-6 w-6 text-amber-600" />
+              <div className="h-12 w-12 bg-secondary rounded-lg flex items-center justify-center">
+                <Clock className="h-6 w-6 text-foreground" />
               </div>
             </div>
           </CardContent>
@@ -217,8 +217,8 @@ const CleanDashboardOverview = ({
                 <p className="text-2xl font-bold text-foreground">{confirmedAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">agendamentos confirmados</p>
               </div>
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -231,13 +231,13 @@ const CleanDashboardOverview = ({
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Receita Mensal</p>
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(monthlyRevenue)}</p>
-                <div className="flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
-                  <p className="text-xs text-muted-foreground">{completedThisMonth.length} concluídos</p>
-                </div>
+                  <div className="flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 text-primary mr-1" />
+                    <p className="text-xs text-muted-foreground">{completedThisMonth.length} concluídos</p>
+                  </div>
               </div>
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -390,8 +390,8 @@ const CleanDashboardOverview = ({
                 {completedAppointments.map((appointment) => (
                   <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-blue-600">
+                      <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium text-foreground">
                           {formatAppointmentDate(appointment.appointment_date)}
                         </span>
                       </div>
@@ -404,7 +404,7 @@ const CleanDashboardOverview = ({
                     </div>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(appointment.status)}
-                      <div className="text-xs text-green-600 font-medium">
+                      <div className="text-xs text-primary font-medium">
                         {formatCurrency((appointment as any).service?.price || 0)}
                       </div>
                     </div>
