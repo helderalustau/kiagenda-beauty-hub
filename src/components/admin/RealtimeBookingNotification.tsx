@@ -114,15 +114,33 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate, enablePageR
                 setIsOpen(true);
               }
               
-              // Som de alerta contínuo
+              // Som de alerta usando Web Audio API
               try {
-                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYfCEWm5fK/bS==');
-                audio.loop = true;
-                audio.volume = 0.5;
-                audio.play().catch(() => {});
-                setAlertAudio(audio);
+                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Som de notificação agradável
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.1);
+                oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.3);
+                
+                oscillator.type = 'sine';
+                
+                // Volume suave
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.8);
+
+                console.log('🔊 Som de notificação tocado com sucesso');
               } catch (error) {
-                // Ignorar erro de áudio
+                console.log('Erro ao reproduzir som:', error);
               }
 
               toast({
