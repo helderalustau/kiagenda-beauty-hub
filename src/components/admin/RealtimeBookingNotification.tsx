@@ -145,12 +145,23 @@ const RealtimeBookingNotification = ({ salonId, onAppointmentUpdate, enablePageR
         async (payload) => {
           console.log('📝 Appointment updated:', payload);
           
+          // Notificação instantânea como o IFOOD
+          if (payload.new.status === 'pending') {
+            console.log('🔔 Novo agendamento pendente - exibindo instantaneamente!');
+            // Mostrar imediatamente na tela
+            toast({
+              title: "🔔 Novo Agendamento!",
+              description: "Você tem um novo agendamento pendente",
+              variant: "default",
+            });
+          }
+          
           // Refresh da página quando detectar mudanças na agenda
           if (enablePageRefresh && payload.old.status !== payload.new.status) {
             console.log('🔄 Agenda alterada, fazendo refresh da página...');
             setTimeout(() => {
               window.location.reload();
-            }, 2000); // Aguarda 2 segundos para não interromper animações
+            }, 1000); // Reduzindo para 1 segundo para resposta mais rápida
             return;
           }
           

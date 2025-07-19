@@ -26,21 +26,11 @@ const AdminDashboardHeader = ({
 }: AdminDashboardHeaderProps) => {
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
-      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+      <div className="container mx-auto px-3 sm:px-4 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <Button
-              variant="ghost"
-              onClick={onBackToHome}
-              className="flex items-center space-x-1 sm:space-x-2 text-sm"
-              size="sm"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Voltar ao Login</span>
-            </Button>
             <div>
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate max-w-48 sm:max-w-none">{salon.name}</h1>
-              <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Dashboard Administrativo</p>
             </div>
           </div>
           
