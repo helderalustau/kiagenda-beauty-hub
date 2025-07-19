@@ -17,7 +17,7 @@ const BasicInfoStep = ({ salon }: BasicInfoStepProps) => {
           <Store className="h-10 w-10 text-blue-600" />
         </div>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Bem-vindo ao BeautyFlow!
+          Bem-vindo ao Kiagenda!
         </h3>
         <p className="text-gray-600">
           Complete as informações para começar a receber agendamentos

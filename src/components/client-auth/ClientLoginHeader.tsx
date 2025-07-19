@@ -17,7 +17,7 @@ export const ClientLoginHeader: React.FC<ClientLoginHeaderProps> = ({ onBackToHo
               <User className="h-6 w-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">
-              BeautyFlow - Cliente
+              Kiagenda - Cliente
             </h1>
           </div>
           <Button 

@@ -21,7 +21,7 @@ const BookingPageHeader = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">
-                BeautyFlow
+                Kiagenda
               </h1>
               <p className="text-sm text-gray-600">Agendamento</p>
             </div>
