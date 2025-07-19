@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Clock } from "lucide-react";
+import { Clock, AlertCircle, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -11,6 +11,8 @@ interface TimeSlotGridProps {
   onTimeSelect: (time: string) => void;
   selectedDate?: Date;
   loading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 const TimeSlotGrid = ({ 
@@ -18,13 +20,16 @@ const TimeSlotGrid = ({
   selectedTime, 
   onTimeSelect, 
   selectedDate,
-  loading = false 
+  loading = false,
+  error = null,
+  onRetry
 }: TimeSlotGridProps) => {
   console.log('TimeSlotGrid - Rendering with:', { 
     availableTimesCount: availableTimes?.length || 0, 
     selectedTime, 
     selectedDate: selectedDate?.toDateString(),
     loading,
+    error,
     availableTimes
   });
 
@@ -46,6 +51,27 @@ const TimeSlotGrid = ({
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <AlertCircle className="h-12 w-12 text-amber-400 mx-auto mb-4" />
+        <div className="space-y-3">
+          <p className="text-amber-600 font-medium">{error}</p>
+          {onRetry && (
+            <Button
+              variant="outline"
+              onClick={onRetry}
+              className="flex items-center space-x-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Tentar novamente</span>
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (!availableTimes || availableTimes.length === 0) {
     return (
       <div className="text-center py-8">
@@ -60,6 +86,16 @@ const TimeSlotGrid = ({
           <p className="text-sm text-blue-600">
             Tente selecionar outra data.
           </p>
+          {onRetry && (
+            <Button
+              variant="outline"
+              onClick={onRetry}
+              className="mt-3 flex items-center space-x-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Atualizar horários</span>
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -125,9 +161,12 @@ const TimeSlotGrid = ({
         </p>
       </div>
 
-      <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg mb-4 flex items-center">
+      <div className="text-xs text-green-600 bg-green-50 p-3 rounded-lg mb-4 flex items-center">
         <Clock className="h-4 w-4 mr-2" />
-        {availableTimes.length} horário{availableTimes.length !== 1 ? 's' : ''} disponível{availableTimes.length !== 1 ? 'eis' : ''}
+        {availableTimes.length} horário{availableTimes.length !== 1 ? 's' : ''} disponível{availableTimes.length !== 1 ? 'eis' : ''} 
+        {selectedDate.toDateString() === new Date().toDateString() && (
+          <span className="ml-2 text-amber-600">• Horários passados não são exibidos</span>
+        )}
       </div>
 
       <TimeSlotSection title="Manhã" slots={morningSlots} />

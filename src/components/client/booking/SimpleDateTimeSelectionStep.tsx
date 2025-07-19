@@ -69,21 +69,6 @@ const SimpleDateTimeSelectionStep = ({
     }
   }, [refetchSlots]);
 
-  // Debug: Log props received (throttled to prevent spam)
-  React.useEffect(() => {
-    const debugTimer = setTimeout(() => {
-      console.log('📊 SimpleDateTimeSelectionStep state:', {
-        selectedDate: selectedDate?.toDateString(),
-        availableTimesCount: availableTimes?.length || 0,
-        loadingTimes,
-        timeSlotsError: timeSlotsError ? 'Error present' : 'No error',
-        selectedTime
-      });
-    }, 300);
-
-    return () => clearTimeout(debugTimer);
-  }, [selectedDate, availableTimes?.length, loadingTimes, timeSlotsError, selectedTime]);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -179,7 +164,7 @@ const SimpleDateTimeSelectionStep = ({
                 <Clock className="h-5 w-5 mr-2" />
                 Escolha o Horário
               </div>
-              {timeSlotsError && refetchSlots && (
+              {(timeSlotsError || (!loadingTimes && availableTimes.length === 0)) && refetchSlots && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -188,7 +173,7 @@ const SimpleDateTimeSelectionStep = ({
                   className="flex items-center"
                 >
                   <RefreshCw className={`h-4 w-4 mr-1 ${loadingTimes ? 'animate-spin' : ''}`} />
-                  Tentar novamente
+                  Atualizar
                 </Button>
               )}
             </CardTitle>
@@ -201,6 +186,7 @@ const SimpleDateTimeSelectionStep = ({
               selectedDate={selectedDate}
               loading={loadingTimes}
               error={timeSlotsError}
+              onRetry={refetchSlots}
             />
           </CardContent>
         </Card>

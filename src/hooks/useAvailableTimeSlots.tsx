@@ -55,52 +55,93 @@ export const useAvailableTimeSlots = (
         date: dateString,
         service: serviceId
       });
-      
-      // Sempre usar fallback para gerar horários
-      console.log('🔄 Using fallback time slot generation');
-      
+
+      // Buscar dados do salão para obter horários de funcionamento
       const { data: salonData, error: salonError } = await supabase
         .from('salons')
         .select('opening_hours')
         .eq('id', salonId)
         .single();
-        
-      if (!salonError && salonData?.opening_hours) {
-        const fallbackSlots = generateFallbackTimeSlots(salonData.opening_hours, selectedDate);
-        console.log('✅ Fallback slots generated:', fallbackSlots);
-        setAvailableSlots(fallbackSlots);
-        setError(null);
-      } else {
-        // Horários padrão se não encontrar configuração
-        const defaultSlots = generateDefaultTimeSlots(selectedDate);
-        console.log('✅ Default slots generated:', defaultSlots);
-        setAvailableSlots(defaultSlots);
-        setError(null);
+
+      if (salonError) {
+        console.error('❌ Error fetching salon data:', salonError);
+        setError('Erro ao buscar dados do estabelecimento');
+        setAvailableSlots([]);
+        return;
       }
+
+      if (!salonData?.opening_hours) {
+        console.log('❌ No opening hours found for salon');
+        setError('Horários de funcionamento não configurados');
+        setAvailableSlots([]);
+        return;
+      }
+
+      // Gerar horários disponíveis baseado nos horários de funcionamento
+      const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
+      const daySchedule = salonData.opening_hours[dayOfWeek];
+
+      if (!daySchedule || daySchedule.closed === true || !daySchedule.open || !daySchedule.close) {
+        console.log(`🚫 Salon closed on ${dayOfWeek}`);
+        setAvailableSlots([]);
+        setError('Estabelecimento fechado neste dia');
+        return;
+      }
+
+      // Gerar todos os slots possíveis para o dia
+      const allSlots = generateTimeSlots(daySchedule.open, daySchedule.close);
+      console.log('📅 Generated slots:', allSlots);
+
+      if (allSlots.length === 0) {
+        console.log('❌ No slots generated');
+        setAvailableSlots([]);
+        setError('Nenhum horário disponível');
+        return;
+      }
+
+      // Buscar agendamentos já ocupados para esta data
+      const { data: bookedAppointments, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('appointment_time, service_id, services(duration_minutes)')
+        .eq('salon_id', salonId)
+        .eq('appointment_date', dateString)
+        .in('status', ['pending', 'confirmed']);
+
+      if (appointmentsError) {
+        console.error('❌ Error fetching appointments:', appointmentsError);
+        // Mesmo com erro, mostrar slots (melhor mostrar algo do que nada)
+        const filteredSlots = filterPastSlots(allSlots, selectedDate);
+        setAvailableSlots(filteredSlots);
+        setError('Aviso: não foi possível verificar agendamentos existentes');
+        return;
+      }
+
+      console.log('📅 Booked appointments:', bookedAppointments);
+
+      // Filtrar horários disponíveis
+      const availableSlots = filterAvailableSlots(allSlots, bookedAppointments || [], selectedDate, serviceId);
+
+      console.log(`✅ Final available slots (${availableSlots.length}):`, availableSlots);
+      setAvailableSlots(availableSlots);
+      setError(null);
+
     } catch (err: any) {
       console.error('❌ Exception fetching time slots:', err);
-      // Mesmo com erro, fornecer horários padrão
-      const defaultSlots = generateDefaultTimeSlots(selectedDate);
-      setAvailableSlots(defaultSlots);
-      setError('Usando horários padrão');
+      // Em caso de erro, fornecer horários básicos filtrados
+      const fallbackSlots = generateDefaultTimeSlots(selectedDate);
+      setAvailableSlots(fallbackSlots);
+      setError('Usando horários padrão devido a erro');
     } finally {
       setLoading(false);
       isCurrentlyFetching.current = false;
     }
   }, [salonId, selectedDate, serviceId]);
 
-  // Generate fallback time slots when RPC fails
-  const generateFallbackTimeSlots = (openingHours: any, date: Date) => {
-    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()];
-    const daySchedule = openingHours[dayOfWeek];
-    
-    if (!daySchedule || daySchedule.closed === true) {
-      return [];
-    }
-    
+  // Gerar slots de tempo baseado em horário de abertura e fechamento
+  const generateTimeSlots = (openTime: string, closeTime: string): string[] => {
     const slots: string[] = [];
-    const [openHour, openMinute] = (daySchedule.open || '08:00').split(':').map(Number);
-    const [closeHour, closeMinute] = (daySchedule.close || '18:00').split(':').map(Number);
+    const [openHour, openMinute] = openTime.split(':').map(Number);
+    const [closeHour, closeMinute] = closeTime.split(':').map(Number);
     
     const openTimeInMinutes = openHour * 60 + openMinute;
     const closeTimeInMinutes = closeHour * 60 + closeMinute;
@@ -110,25 +151,85 @@ export const useAvailableTimeSlots = (
       const hour = Math.floor(time / 60);
       const minute = time % 60;
       const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      
-      // Se é hoje, só mostrar horários futuros (com margem de 1 hora)
-      if (date.toDateString() === new Date().toDateString()) {
-        const now = new Date();
-        const slotTime = new Date();
-        slotTime.setHours(hour, minute, 0, 0);
-        
-        if (slotTime > new Date(now.getTime() + 60 * 60 * 1000)) {
-          slots.push(timeString);
-        }
-      } else {
-        slots.push(timeString);
-      }
+      slots.push(timeString);
     }
     
     return slots;
   };
 
-  // Generate default time slots (8:00 - 18:00)
+  // Filtrar slots disponíveis removendo conflitos
+  const filterAvailableSlots = (
+    allSlots: string[], 
+    bookedAppointments: any[], 
+    date: Date, 
+    currentServiceId?: string
+  ): string[] => {
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    return allSlots.filter(slot => {
+      // Se é hoje, não mostrar horários que já passaram (com margem de 1 hora)
+      if (isToday) {
+        const [hour, minute] = slot.split(':').map(Number);
+        const slotDateTime = new Date();
+        slotDateTime.setHours(hour, minute, 0, 0);
+        
+        const currentTimePlusMargin = new Date(now.getTime() + 60 * 60 * 1000);
+        if (slotDateTime <= currentTimePlusMargin) {
+          return false;
+        }
+      }
+
+      // Verificar se o slot está ocupado por algum agendamento
+      for (const appointment of bookedAppointments) {
+        const appointmentTime = appointment.appointment_time;
+        const serviceDuration = appointment.services?.duration_minutes || 30;
+        
+        // Calcular o horário de fim do agendamento
+        const [appHour, appMinute] = appointmentTime.split(':').map(Number);
+        const appointmentStartMinutes = appHour * 60 + appMinute;
+        const appointmentEndMinutes = appointmentStartMinutes + serviceDuration;
+        
+        // Calcular o horário do slot atual
+        const [slotHour, slotMinute] = slot.split(':').map(Number);
+        const slotStartMinutes = slotHour * 60 + slotMinute;
+        
+        // Assumir duração padrão de 30 minutos para o novo agendamento
+        const newServiceDuration = 30; // Pode ser refinado baseado no serviceId
+        const slotEndMinutes = slotStartMinutes + newServiceDuration;
+        
+        // Verificar sobreposição de horários
+        if (
+          (slotStartMinutes < appointmentEndMinutes) && 
+          (slotEndMinutes > appointmentStartMinutes)
+        ) {
+          console.log(`❌ Slot ${slot} conflicts with appointment at ${appointmentTime}`);
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
+
+  // Filtrar apenas horários que não passaram (para casos de erro)
+  const filterPastSlots = (slots: string[], date: Date): string[] => {
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    if (!isToday) return slots;
+    
+    return slots.filter(slot => {
+      const [hour, minute] = slot.split(':').map(Number);
+      const slotDateTime = new Date();
+      slotDateTime.setHours(hour, minute, 0, 0);
+      
+      const currentTimePlusMargin = new Date(now.getTime() + 60 * 60 * 1000);
+      return slotDateTime > currentTimePlusMargin;
+    });
+  };
+
+  // Gerar horários padrão em caso de erro (8:00 - 18:00)
   const generateDefaultTimeSlots = (date: Date) => {
     const slots: string[] = [];
     const startHour = 8;
@@ -137,23 +238,11 @@ export const useAvailableTimeSlots = (
     for (let hour = startHour; hour < endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        
-        // Se é hoje, só mostrar horários futuros
-        if (date.toDateString() === new Date().toDateString()) {
-          const now = new Date();
-          const slotTime = new Date();
-          slotTime.setHours(hour, minute, 0, 0);
-          
-          if (slotTime > new Date(now.getTime() + 60 * 60 * 1000)) {
-            slots.push(timeString);
-          }
-        } else {
-          slots.push(timeString);
-        }
+        slots.push(timeString);
       }
     }
     
-    return slots;
+    return filterPastSlots(slots, date);
   };
 
   // Single useEffect with proper dependency management
