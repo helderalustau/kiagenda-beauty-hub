@@ -10,6 +10,7 @@ import AdminDashboardTabs from '@/components/AdminDashboardTabs';
 import AdminDashboardContent from '@/components/AdminDashboardContent';
 import AppointmentNotification from '@/components/AppointmentNotification';
 import FloatingSupport from '@/components/admin/FloatingSupport';
+import RealtimeBookingNotification from '@/components/admin/RealtimeBookingNotification';
 
 const AdminDashboard = () => {
   const {
@@ -101,6 +102,13 @@ const AdminDashboard = () => {
         soundType={salon.notification_sound as 'default' | 'bell' | 'chime' | 'alert' || 'default'}
         onAccept={handleAcceptAppointment}
         onReject={handleRejectAppointment}
+      />
+
+      {/* Notificações em Tempo Real */}
+      <RealtimeBookingNotification 
+        salonId={salon.id} 
+        onAppointmentUpdate={refreshData}
+        enablePageRefresh={true}
       />
 
       {/* Suporte Flutuante */}

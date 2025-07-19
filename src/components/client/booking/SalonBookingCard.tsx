@@ -86,11 +86,11 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
         </div>
 
         {salon.banner_image_url && (
-          <div className="mt-6">
+          <div className="mt-4">
             <img
               src={salon.banner_image_url}
               alt={`Banner do ${salon.name}`}
-              className="w-full h-48 object-cover rounded-lg"
+              className="w-full h-24 object-cover rounded-lg"
             />
           </div>
         )}
