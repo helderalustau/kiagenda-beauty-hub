@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, Bell, Palette, Shield, Info } from "lucide-react";
+import { Settings, Users, Bell, Palette, Shield, Info, UserX } from "lucide-react";
 import SalonConfigurationForm from '@/components/settings/SalonConfigurationForm';
 import SalonUsersManager from '@/components/settings/SalonUsersManager';
+import SalonAccountDeletion from '@/components/settings/SalonAccountDeletion';
 import { Salon } from '@/hooks/useSupabaseData';
 interface SettingsPageProps {
   salon: Salon;
@@ -55,7 +56,7 @@ const SettingsPage = ({
       <Card className="shadow-xl border-0">
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-xl h-auto">
+            <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-xl h-auto">
               <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
                 <div className="flex flex-col items-center space-y-1">
                   <Settings className="h-5 w-5" />
@@ -78,6 +79,12 @@ const SettingsPage = ({
                 <div className="flex flex-col items-center space-y-1">
                   <Palette className="h-5 w-5" />
                   <span className="text-sm font-medium">Aparência</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="account" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
+                <div className="flex flex-col items-center space-y-1">
+                  <UserX className="h-5 w-5" />
+                  <span className="text-sm font-medium">Conta</span>
                 </div>
               </TabsTrigger>
             </TabsList>
@@ -197,6 +204,21 @@ const SettingsPage = ({
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Tab: Conta */}
+            <TabsContent value="account" className="space-y-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                  <CardTitle className="flex items-center space-x-2">
+                    <UserX className="h-6 w-6 text-red-600" />
+                    <span>Gerenciar Conta</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <SalonAccountDeletion salon={salon} />
                 </CardContent>
               </Card>
             </TabsContent>
