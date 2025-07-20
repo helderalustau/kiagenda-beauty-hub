@@ -1,15 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Eye, EyeOff, Loader2, RefreshCw } from "lucide-react";
+import { Users, Eye, EyeOff, Loader2, RefreshCw, TrendingUp } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import ClientFilters from './client-management/ClientFilters';
+import ClientExportButton from './client-management/ClientExportButton';
 
 interface Client {
   id: string;
@@ -29,6 +30,8 @@ const SuperAdminClientsTab = () => {
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [stateFilter, setStateFilter] = useState('all');
+  const [cityFilter, setCityFilter] = useState('all');
   const [showPasswords, setShowPasswords] = useState(false);
   const { toast } = useToast();
 
@@ -49,7 +52,6 @@ const SuperAdminClientsTab = () => {
 
       console.log('Clients fetched successfully:', data?.length || 0);
       setClients(data || []);
-      setFilteredClients(data || []);
     } catch (error) {
       console.error('Error in fetchClients:', error);
       toast({
@@ -62,24 +64,81 @@ const SuperAdminClientsTab = () => {
     }
   };
 
+  // Memoized values for performance
+  const availableStates = useMemo(() => {
+    const states = [...new Set(clients.map(client => client.state).filter(Boolean))];
+    return states.sort();
+  }, [clients]);
+
+  const availableCities = useMemo(() => {
+    const cities = [...new Set(
+      clients
+        .filter(client => stateFilter === 'all' || client.state === stateFilter)
+        .map(client => client.city)
+        .filter(Boolean)
+    )];
+    return cities.sort();
+  }, [clients, stateFilter]);
+
+  const clientStats = useMemo(() => {
+    const total = clients.length;
+    const withEmail = clients.filter(c => c.email).length;
+    const withPhone = clients.filter(c => c.phone).length;
+    
+    // Calcular crescimento dos últimos 30 dias
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentClients = clients.filter(c => new Date(c.created_at) >= thirtyDaysAgo).length;
+    
+    const stateDistribution = availableStates.map(state => ({
+      state,
+      count: clients.filter(c => c.state === state).length
+    })).sort((a, b) => b.count - a.count);
+
+    return {
+      total,
+      withEmail,
+      withPhone,
+      recentClients,
+      topStates: stateDistribution.slice(0, 3)
+    };
+  }, [clients, availableStates]);
+
   useEffect(() => {
     fetchClients();
   }, []);
 
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredClients(clients);
-    } else {
-      const filtered = clients.filter(client =>
+    let filtered = clients;
+
+    // Filtro por termo de busca
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(client =>
         client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.phone?.includes(searchTerm) ||
         client.city?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredClients(filtered);
     }
-  }, [searchTerm, clients]);
+
+    // Filtro por estado
+    if (stateFilter !== 'all') {
+      filtered = filtered.filter(client => client.state === stateFilter);
+    }
+
+    // Filtro por cidade
+    if (cityFilter !== 'all') {
+      filtered = filtered.filter(client => client.city === cityFilter);
+    }
+
+    setFilteredClients(filtered);
+  }, [searchTerm, stateFilter, cityFilter, clients]);
+
+  // Reset city filter when state changes
+  useEffect(() => {
+    setCityFilter('all');
+  }, [stateFilter]);
 
   const handleRefresh = () => {
     fetchClients();
@@ -113,62 +172,99 @@ const SuperAdminClientsTab = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Clientes Cadastrados</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Gestão de Clientes</h2>
           <p className="text-gray-600">
             Gerencie todos os clientes cadastrados no sistema
           </p>
         </div>
-        <Button onClick={handleRefresh} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Atualizar
-        </Button>
+        <div className="flex items-center space-x-2">
+          <ClientExportButton clients={clients} filteredClients={filteredClients} />
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            Estatísticas
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{clients.length}</div>
-              <div className="text-sm text-gray-600">Total de Clientes</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {clients.filter(c => c.email).length}
-              </div>
-              <div className="text-sm text-gray-600">Com E-mail</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {clients.filter(c => c.phone).length}
-              </div>
-              <div className="text-sm text-gray-600">Com Telefone</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Enhanced Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{clientStats.total}</div>
+            <p className="text-xs text-muted-foreground">
+              {clientStats.recentClients} novos nos últimos 30 dias
+            </p>
+          </CardContent>
+        </Card>
 
-      {/* Search and Controls */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Com E-mail</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{clientStats.withEmail}</div>
+            <p className="text-xs text-muted-foreground">
+              {clientStats.total > 0 ? Math.round((clientStats.withEmail / clientStats.total) * 100) : 0}% do total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Com Telefone</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{clientStats.withPhone}</div>
+            <p className="text-xs text-muted-foreground">
+              {clientStats.total > 0 ? Math.round((clientStats.withPhone / clientStats.total) * 100) : 0}% do total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Estado Líder</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold text-orange-600">
+              {clientStats.topStates[0]?.state || 'N/A'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {clientStats.topStates[0]?.count || 0} clientes
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <ClientFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        stateFilter={stateFilter}
+        setStateFilter={setStateFilter}
+        cityFilter={cityFilter}
+        setCityFilter={setCityFilter}
+        availableStates={availableStates}
+        availableCities={availableCities}
+      />
+
+      {/* Controls */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Pesquisar por nome, usuário, email, telefone ou cidade..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Mostrando {filteredClients.length} de {clients.length} clientes
             </div>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowPasswords(!showPasswords)}
               className="flex items-center space-x-2"
             >
@@ -191,10 +287,14 @@ const SuperAdminClientsTab = () => {
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+                {searchTerm || stateFilter !== 'all' || cityFilter !== 'all' 
+                  ? 'Nenhum cliente encontrado' 
+                  : 'Nenhum cliente cadastrado'}
               </h3>
               <p className="text-gray-500">
-                {searchTerm ? 'Tente ajustar os termos de pesquisa' : 'Aguarde o primeiro cadastro de cliente'}
+                {searchTerm || stateFilter !== 'all' || cityFilter !== 'all'
+                  ? 'Tente ajustar os filtros de pesquisa' 
+                  : 'Aguarde o primeiro cadastro de cliente'}
               </p>
             </div>
           ) : (
@@ -204,7 +304,7 @@ const SuperAdminClientsTab = () => {
                   <TableRow>
                     <TableHead>Nome/Usuário</TableHead>
                     <TableHead>Contato</TableHead>
-                    <TableHead>Endereço</TableHead>
+                    <TableHead>Localização</TableHead>
                     <TableHead>Senha</TableHead>
                     <TableHead>Cadastro</TableHead>
                     <TableHead>Status</TableHead>
@@ -234,13 +334,13 @@ const SuperAdminClientsTab = () => {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {client.address && (
-                            <div className="mb-1">{client.address}</div>
-                          )}
                           {(client.city || client.state) && (
-                            <div className="text-gray-600">
+                            <div className="font-medium">
                               {client.city}{client.city && client.state && ', '}{client.state}
                             </div>
+                          )}
+                          {client.address && (
+                            <div className="text-gray-600 text-xs mt-1">{client.address}</div>
                           )}
                           {!client.address && !client.city && !client.state && (
                             <div className="text-gray-400">Não informado</div>

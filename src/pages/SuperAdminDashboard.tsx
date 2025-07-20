@@ -1,13 +1,14 @@
 
 import React, { useEffect, useCallback, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Users, Settings, UserCheck } from "lucide-react";
+import { BarChart3, Users, Settings, UserCheck, DollarSign } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import SuperAdminDashboardHeader from '@/components/SuperAdminDashboardHeader';
 import SuperAdminOverviewTab from '@/components/super-admin/SuperAdminOverviewTab';
 import SuperAdminSalonsTab from '@/components/super-admin/SuperAdminSalonsTab';
 import SuperAdminSettingsTab from '@/components/super-admin/SuperAdminSettingsTab';
 import SuperAdminClientsTab from '@/components/super-admin/SuperAdminClientsTab';
+import FinancialDashboard from '@/components/super-admin/financial/FinancialDashboard';
 import { useSuperAdminActions } from '@/hooks/super-admin/useSuperAdminActions';
 import SuperAdminProtection from '@/components/SuperAdminProtection';
 
@@ -77,7 +78,7 @@ const SuperAdminDashboard = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
                 <span>Visão Geral</span>
@@ -89,6 +90,10 @@ const SuperAdminDashboard = () => {
               <TabsTrigger value="clients" className="flex items-center space-x-2">
                 <UserCheck className="h-4 w-4" />
                 <span>Clientes</span>
+              </TabsTrigger>
+              <TabsTrigger value="financial" className="flex items-center space-x-2">
+                <DollarSign className="h-4 w-4" />
+                <span>Financeiro</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center space-x-2">
                 <Settings className="h-4 w-4" />
@@ -116,6 +121,13 @@ const SuperAdminDashboard = () => {
 
             <TabsContent value="clients">
               <SuperAdminClientsTab />
+            </TabsContent>
+
+            <TabsContent value="financial">
+              <FinancialDashboard 
+                salons={memoizedSalons}
+                dashboardStats={memoizedStats}
+              />
             </TabsContent>
 
             <TabsContent value="settings">
