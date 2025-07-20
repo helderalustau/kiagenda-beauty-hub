@@ -3,17 +3,32 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Phone, Crown, Scissors } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Crown, Scissors, Filter } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useToast } from "@/components/ui/use-toast";
+import { StateSelect } from "@/components/ui/state-select";
 
 const SalonSelection = () => {
   const { salons, fetchAllSalons, loading } = useSupabaseData();
   const { toast } = useToast();
+  const [selectedState, setSelectedState] = useState<string>('');
+  const [filteredSalons, setFilteredSalons] = useState(salons);
 
   useEffect(() => {
     fetchAllSalons();
   }, []);
+
+  // Filtrar salões por estado
+  useEffect(() => {
+    if (selectedState && selectedState !== '') {
+      const filtered = salons.filter(salon => 
+        salon.state && salon.state.toLowerCase() === selectedState.toLowerCase()
+      );
+      setFilteredSalons(filtered);
+    } else {
+      setFilteredSalons(salons);
+    }
+  }, [salons, selectedState]);
 
   const handleSalonSelect = (salonId: string) => {
     localStorage.setItem('selectedSalonId', salonId);
@@ -88,26 +103,57 @@ const SalonSelection = () => {
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
             Selecione o estabelecimento para agendar
           </h2>
-          <p className="text-base sm:text-lg text-gray-600 px-4">
+          <p className="text-base sm:text-lg text-gray-600 px-4 mb-4 sm:mb-6">
             Escolha entre os melhores salões de beleza da sua região
           </p>
+
+          {/* Filtro por Estado */}
+          <div className="max-w-sm mx-auto px-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Filtrar por Estado:</span>
+            </div>
+            <StateSelect
+              value={selectedState}
+              onValueChange={setSelectedState}
+              placeholder="Todos os estados"
+            />
+            {selectedState && (
+              <p className="text-xs text-gray-500 mt-2">
+                Mostrando estabelecimentos em {selectedState}
+              </p>
+            )}
+          </div>
         </div>
 
-        {salons.length === 0 ? (
+        {filteredSalons.length === 0 ? (
           <div className="text-center py-8 sm:py-12">
             <div className="bg-white/60 backdrop-blur-sm rounded-lg p-6 sm:p-8 max-w-md mx-auto">
               <Scissors className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Nenhum estabelecimento encontrado
+                {selectedState ? 'Nenhum estabelecimento encontrado neste estado' : 'Nenhum estabelecimento encontrado'}
               </h3>
               <p className="text-gray-600 text-sm sm:text-base">
-                Não há estabelecimentos cadastrados no momento.
+                {selectedState 
+                  ? `Não há estabelecimentos cadastrados em ${selectedState} no momento.`
+                  : 'Não há estabelecimentos cadastrados no momento.'
+                }
               </p>
+              {selectedState && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-3"
+                  onClick={() => setSelectedState('')}
+                >
+                  Ver todos os estados
+                </Button>
+              )}
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto">
-            {salons.map((salon) => (
+            {filteredSalons.map((salon) => (
               <Card 
                 key={salon.id} 
                 className="hover:shadow-lg transition-shadow cursor-pointer bg-white/80 backdrop-blur-sm border-0"
@@ -133,11 +179,18 @@ const SalonSelection = () => {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-start text-sm text-gray-600">
                       <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="break-words">{salon.address}</span>
+                      <div className="break-words">
+                        <span>{salon.address}</span>
+                        {(salon.city || salon.state) && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {salon.city}{salon.city && salon.state && ', '}{salon.state}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-gray-400 flex-shrink-0" />
-                      <span>{salon.phone}</span>
+                      <span>{salon.contact_phone || salon.phone}</span>
                     </div>
                   </div>
                   
