@@ -48,23 +48,39 @@ const PlanUpgradeRequestsList = () => {
     setProcessing(request.id);
     
     try {
-      // Atualizar o plano do salão
+      // 1. Atualizar o plano do salão
       const { error: salonError } = await supabase
         .from('salons')
         .update({ 
           plan: request.requested_plan,
-          is_open: true 
+          is_open: true,
+          updated_at: new Date().toISOString()
         })
         .eq('id', request.salon_id);
 
       if (salonError) throw salonError;
 
-      // Marcar solicitação como aprovada
+      // 2. Atualizar todas as tabelas relacionadas com o plano (se existirem)
+      // Verificar se existem outras tabelas que armazenam informações do plano
+      const { error: adminError } = await supabase
+        .from('admin_auth')
+        .update({ 
+          updated_at: new Date().toISOString()
+        })
+        .eq('salon_id', request.salon_id);
+
+      // Não falha se não conseguir atualizar admin_auth (pode não existir)
+      if (adminError) {
+        console.warn('Aviso ao atualizar admin_auth:', adminError);
+      }
+
+      // 3. Marcar solicitação como aprovada
       const { error: requestError } = await supabase
         .from('plan_upgrade_requests')
         .update({ 
           status: 'approved',
-          reviewed_at: new Date().toISOString()
+          reviewed_at: new Date().toISOString(),
+          admin_notes: `Upgrade aprovado automaticamente. Plano alterado de ${request.current_plan} para ${request.requested_plan}.`
         })
         .eq('id', request.id);
 
@@ -72,7 +88,7 @@ const PlanUpgradeRequestsList = () => {
 
       toast({
         title: "Solicitação Aprovada",
-        description: `Plano do ${request.salon_name} atualizado para ${request.requested_plan.toUpperCase()}.`,
+        description: `Plano do ${request.salon_name} atualizado para ${request.requested_plan.toUpperCase()}. O estabelecimento foi reaberto automaticamente.`,
       });
 
       // Remover da lista
@@ -97,7 +113,8 @@ const PlanUpgradeRequestsList = () => {
         .from('plan_upgrade_requests')
         .update({ 
           status: 'rejected',
-          reviewed_at: new Date().toISOString()
+          reviewed_at: new Date().toISOString(),
+          admin_notes: 'Solicitação rejeitada pelo super administrador.'
         })
         .eq('id', request.id);
 
@@ -105,7 +122,7 @@ const PlanUpgradeRequestsList = () => {
 
       toast({
         title: "Solicitação Rejeitada",
-        description: `Solicitação do ${request.salon_name} foi rejeitada.`,
+        description: `Solicitação do ${request.salon_name} foi rejeitada. O estabelecimento continua com o plano ${request.current_plan.toUpperCase()}.`,
       });
 
       // Remover da lista

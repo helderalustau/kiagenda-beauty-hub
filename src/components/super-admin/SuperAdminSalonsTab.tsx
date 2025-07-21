@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import SuperAdminSalonManager from '@/components/SuperAdminSalonManager';
+import SalonManagementTable from './SalonManagementTable';
 import SuperAdminCreateSalonDialog from '@/components/SuperAdminCreateSalonDialog';
 import SalonFilters from './salon-management/SalonFilters';
 import { Salon } from '@/hooks/useSupabaseData';
@@ -197,7 +197,7 @@ const SuperAdminSalonsTab = ({
         </CardContent>
       </Card>
 
-      <SuperAdminSalonManager 
+      <SalonManagementTable 
         salons={filteredSalons} 
         loading={loading} 
         onRefresh={onRefresh} 
