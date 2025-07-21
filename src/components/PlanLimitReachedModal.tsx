@@ -87,10 +87,7 @@ const PlanLimitReachedModal = ({
           )}
           
           <Button 
-            onClick={() => {
-              onClose();
-              setShowUpgradeModal(false);
-            }} 
+            onClick={onClose} 
             variant="outline" 
             className="w-full"
           >
