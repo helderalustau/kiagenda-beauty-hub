@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Mail, Calendar, Clock, Star, Building2, Scissors, ShieldCheck, Users, Crown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 const Index = () => {
+  const { getAllPlansInfo } = usePlanConfigurations();
+  const plansInfo = getAllPlansInfo();
   const navigate = useNavigate();
   const navigateToAdminLogin = () => {
     navigate('/admin-login');
@@ -118,129 +121,91 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto">
-            {/* Bronze Plan */}
-            <Card className="bg-white/80 backdrop-blur-sm border-2 border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl sm:text-2xl">Bronze</CardTitle>
-                <div className="mt-3 sm:mt-4">
-                  <span className="text-3xl sm:text-4xl font-bold text-gray-900">GRÁTIS</span>
-                  <span className="text-sm sm:text-base text-gray-600">/limitado</span>
-                </div>
-                <CardDescription className="text-sm sm:text-base">Ideal para profissionais autônomos</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-                <div className="space-y-2 sm:space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">1 Atendente</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">25 agendamentos por mês</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Relatórios Básicos</span>
-                  </div>
-                </div>
-                <Button 
-                  onClick={() => navigateToAdminRegistrationWithPlan('bronze')} 
-                  className="w-full mt-4 sm:mt-6 text-sm sm:text-base" 
-                  variant="outline"
-                >
-                  Escolher Bronze
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Silver Plan */}
-            <Card className="bg-white/80 backdrop-blur-sm border-2 border-gray-300 shadow-lg hover:shadow-xl transition-all duration-300 sm:transform sm:scale-105">
-              <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
-                <Badge className="bg-gradient-to-r from-blue-500 to-pink-500 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold mb-2">
-                  MAIS POPULAR
-                </Badge>
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl sm:text-2xl">Prata</CardTitle>
-                <div className="mt-3 sm:mt-4">
-                  <span className="text-3xl sm:text-4xl font-bold text-gray-900">R$ XX</span>
-                  <span className="text-sm sm:text-base text-gray-600">/mês</span>
-                </div>
-                <CardDescription className="text-sm sm:text-base">Perfeito para salões</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-                <div className="space-y-2 sm:space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Até 3 Atendentes</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">500 agendamentos por mês</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Relatórios Avançados</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Relatórios Completos</span>
-                  </div>
-                </div>
-                <Button 
-                  onClick={() => navigateToAdminRegistrationWithPlan('prata')} 
-                  className="w-full mt-4 sm:mt-6 text-sm sm:text-base"
-                >
-                  Escolher Prata
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Gold Plan */}
-            <Card className="bg-white/80 backdrop-blur-sm border-2 border-yellow-300 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl sm:text-2xl">Ouro</CardTitle>
-                <div className="mt-3 sm:mt-4">
-                  <span className="text-3xl sm:text-4xl font-bold text-gray-900">R$ XX</span>
-                  <span className="text-sm sm:text-base text-gray-600">/mês</span>
-                </div>
-                <CardDescription className="text-sm sm:text-base">Para grandes estabelecimentos</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-                <div className="space-y-2 sm:space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Atendentes Ilimitados</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Agendamentos Ilimitados</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Relatórios Completos</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Suporte Prioritário</span>
-                  </div>
-                </div>
-                <Button 
-                  onClick={() => navigateToAdminRegistrationWithPlan('gold')} 
-                  className="w-full mt-4 sm:mt-6 text-sm sm:text-base" 
-                  variant="outline"
-                >
-                  Escolher Ouro
-                </Button>
-              </CardContent>
-            </Card>
+            {plansInfo.map((plan, index) => {
+              const isPopular = plan.plan_type === 'prata';
+              const isPremium = plan.plan_type === 'gold';
+              
+              return (
+                <Card key={plan.id} className={`bg-white/80 backdrop-blur-sm border-2 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                  plan.plan_type === 'bronze' ? 'border-amber-200' :
+                  plan.plan_type === 'prata' ? 'border-gray-300 sm:transform sm:scale-105' :
+                  'border-yellow-300'
+                }`}>
+                  <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
+                    {isPopular && (
+                      <Badge className="bg-gradient-to-r from-blue-500 to-pink-500 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold mb-2">
+                        MAIS POPULAR
+                      </Badge>
+                    )}
+                    <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 ${
+                      plan.plan_type === 'bronze' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
+                      plan.plan_type === 'prata' ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
+                      'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                    }`}>
+                      {plan.plan_type === 'bronze' ? <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" /> :
+                       plan.plan_type === 'prata' ? <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" /> :
+                       <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-white" />}
+                    </div>
+                    <CardTitle className="text-xl sm:text-2xl">{plan.name}</CardTitle>
+                    <div className="mt-3 sm:mt-4">
+                      <span className="text-3xl sm:text-4xl font-bold text-gray-900">
+                        {plan.plan_type === 'bronze' ? 'GRÁTIS' : plan.price}
+                      </span>
+                      <span className="text-sm sm:text-base text-gray-600">
+                        {plan.plan_type === 'bronze' ? '/limitado' : '/mês'}
+                      </span>
+                    </div>
+                    <CardDescription className="text-sm sm:text-base">
+                      {plan.plan_type === 'bronze' ? 'Ideal para profissionais autônomos' :
+                       plan.plan_type === 'prata' ? 'Perfeito para salões' :
+                       'Para grandes estabelecimentos'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                        <span className="text-sm sm:text-base">
+                          {plan.max_attendants === 1 ? '1 Atendente' :
+                           plan.max_attendants > 10 ? 'Atendentes Ilimitados' :
+                           `Até ${plan.max_attendants} Atendentes`}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                        <span className="text-sm sm:text-base">
+                          {plan.max_appointments > 1000 ? 'Agendamentos Ilimitados' :
+                           `${plan.max_appointments} agendamentos por mês`}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                        <span className="text-sm sm:text-base">
+                          {plan.plan_type === 'bronze' ? 'Relatórios Básicos' :
+                           plan.plan_type === 'prata' ? 'Relatórios Avançados' :
+                           'Relatórios Completos'}
+                        </span>
+                      </div>
+                      {plan.plan_type !== 'bronze' && (
+                        <div className="flex items-center space-x-2">
+                          <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                          <span className="text-sm sm:text-base">
+                            {plan.plan_type === 'gold' ? 'Suporte Prioritário' : 'Relatórios Completos'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <Button 
+                      onClick={() => navigateToAdminRegistrationWithPlan(plan.plan_type)} 
+                      className="w-full mt-4 sm:mt-6 text-sm sm:text-base" 
+                      variant={plan.plan_type === 'prata' ? 'default' : 'outline'}
+                    >
+                      Escolher {plan.name}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>
