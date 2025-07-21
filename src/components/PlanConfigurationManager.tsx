@@ -211,8 +211,8 @@ const PlanConfigurationManager: React.FC<Props> = ({ configurations, onRefresh }
                           <Input
                             type="number"
                             min="1"
-                            value={currentPlan?.max_users || 1}
-                            onChange={(e) => handleChange('max_users', parseInt(e.target.value) || 1)}
+                            value={currentPlan?.max_users || ''}
+                            onChange={(e) => handleChange('max_users', e.target.value === '' ? '' : parseInt(e.target.value))}
                             className="w-20"
                             disabled={isUpdating}
                           />
@@ -227,8 +227,8 @@ const PlanConfigurationManager: React.FC<Props> = ({ configurations, onRefresh }
                           <Input
                             type="number"
                             min="1"
-                            value={currentPlan?.max_attendants || 1}
-                            onChange={(e) => handleChange('max_attendants', parseInt(e.target.value) || 1)}
+                            value={currentPlan?.max_attendants || ''}
+                            onChange={(e) => handleChange('max_attendants', e.target.value === '' ? '' : parseInt(e.target.value))}
                             className="w-20"
                             disabled={isUpdating}
                           />
@@ -243,8 +243,8 @@ const PlanConfigurationManager: React.FC<Props> = ({ configurations, onRefresh }
                           <Input
                             type="number"
                             min="1"
-                            value={currentPlan?.max_appointments || 50}
-                            onChange={(e) => handleChange('max_appointments', parseInt(e.target.value) || 50)}
+                            value={currentPlan?.max_appointments || ''}
+                            onChange={(e) => handleChange('max_appointments', e.target.value === '' ? '' : parseInt(e.target.value))}
                             className="w-24"
                             disabled={isUpdating}
                           />
