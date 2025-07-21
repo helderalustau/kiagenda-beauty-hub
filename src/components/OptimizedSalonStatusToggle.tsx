@@ -1,8 +1,9 @@
-import React, { memo, useState, useCallback } from 'react';
+import React, { memo, useEffect, useState, useCallback } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Store, LockOpen, Lock } from "lucide-react";
+import { Store, LockOpen, Lock, AlertTriangle } from "lucide-react";
 import { useSalonData } from '@/hooks/useSalonData';
 import { useToast } from "@/hooks/use-toast";
+import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 
 interface OptimizedSalonStatusToggleProps {
   salonId: string;
@@ -13,7 +14,29 @@ interface OptimizedSalonStatusToggleProps {
 const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: OptimizedSalonStatusToggleProps) => {
   const { toggleSalonStatus } = useSalonData();
   const { toast } = useToast();
+  const { getSalonAppointmentStats } = usePlanLimitsChecker();
+  const [isLimitReached, setIsLimitReached] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [appointmentStats, setAppointmentStats] = useState<any>(null);
+
+  // Verificar limites quando o salonId mudar - OTIMIZADO
+  const checkLimits = useCallback(async () => {
+    if (!salonId) return;
+    
+    try {
+      const stats = await getSalonAppointmentStats(salonId);
+      if (stats.success) {
+        setIsLimitReached(stats.limitReached);
+        setAppointmentStats(stats);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar limites:', error);
+    }
+  }, [salonId, getSalonAppointmentStats]);
+
+  useEffect(() => {
+    checkLimits();
+  }, [checkLimits]);
 
   const handleToggleStatus = useCallback(async () => {
     if (loading) return;
@@ -23,6 +46,7 @@ const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: Op
     try {
       const newStatus = !isOpen;
       
+      // Alteração direta do status sem verificação de limites
       const result = await toggleSalonStatus(salonId, newStatus);
       
       if (result.success) {
@@ -33,6 +57,15 @@ const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: Op
         
         // Callback para atualizar o estado no componente pai
         onStatusChange?.(newStatus);
+        
+        // Atualizar apenas as estatísticas para exibição se a loja foi aberta
+        if (newStatus) {
+          await checkLimits();
+        } else {
+          // Se fechou a loja, limpar as estatísticas
+          setIsLimitReached(false);
+          setAppointmentStats(null);
+        }
       } else {
         toast({
           title: "Erro",
@@ -50,7 +83,7 @@ const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: Op
     } finally {
       setLoading(false);
     }
-  }, [loading, isOpen, salonId, toggleSalonStatus, toast, onStatusChange]);
+  }, [loading, isOpen, salonId, toggleSalonStatus, toast, onStatusChange, checkLimits]);
 
   return (
     <div className="flex items-center space-x-4">
@@ -79,6 +112,16 @@ const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: Op
             {loading ? 'Alterando...' : isOpen ? 'Aberta' : 'Fechada'}
           </span>
         </Badge>
+        
+        {/* Aviso de limite atingido - apenas informativo */}
+        {isLimitReached && (
+          <div className="flex items-center space-x-1">
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <span className="text-xs text-orange-600 font-medium">
+              Limite atingido ({appointmentStats?.currentAppointments}/{appointmentStats?.maxAppointments})
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
