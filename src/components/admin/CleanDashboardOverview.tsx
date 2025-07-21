@@ -27,6 +27,7 @@ import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData'
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 import PlanLimitReachedModal from '@/components/PlanLimitReachedModal';
+import PlanLimitDebugPanel from './PlanLimitDebugPanel';
 
 interface CleanDashboardOverviewProps {
   appointments: Appointment[];
@@ -51,17 +52,20 @@ const CleanDashboardOverview = ({
   // Buscar estatísticas de agendamentos
   useEffect(() => {
     if (salon?.id) {
+      console.log('🔍 Buscando estatísticas para salão:', salon.id, 'Status:', salon.is_open);
       getSalonAppointmentStats(salon.id).then(stats => {
+        console.log('📊 Estatísticas recebidas:', stats);
         if (stats.success) {
           setAppointmentStats(stats);
-          // Mostrar modal se limite foi atingido e salão está fechado
-          if (stats.limitReached && !salon.is_open) {
+          // Mostrar modal se limite foi atingido
+          if (stats.limitReached) {
+            console.log('🚨 Limite atingido! Abrindo modal...');
             setShowLimitModal(true);
           }
         }
       });
     }
-  }, [salon?.id, getSalonAppointmentStats]);
+  }, [salon?.id, salon?.is_open, getSalonAppointmentStats]);
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -172,6 +176,14 @@ const CleanDashboardOverview = ({
           </p>
         </div>
       </div>
+
+      {/* Debug Panel - Para testar limites */}
+      <PlanLimitDebugPanel 
+        salonId={salon.id}
+        salonName={salon.name}
+        currentPlan={salon.plan}
+        isOpen={salon.is_open || false}
+      />
 
       {/* Alerta de limite atingido */}
       {appointmentStats?.limitReached && (

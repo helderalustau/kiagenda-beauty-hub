@@ -15,7 +15,7 @@ export const usePlanLimitsChecker = () => {
         .from('salons')
         .select('id, name, plan, is_open')
         .eq('id', salonId)
-        .single();
+        .maybeSingle();
 
       if (salonError || !salon) {
         console.error('Erro ao buscar salão:', salonError);
@@ -103,7 +103,7 @@ export const usePlanLimitsChecker = () => {
         .from('salons')
         .select('plan')
         .eq('id', salonId)
-        .single();
+        .maybeSingle();
 
       if (salonError || !salon) {
         return { success: false, message: 'Salão não encontrado' };

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Store, LockOpen, Lock, AlertTriangle } from "lucide-react";
 import { useSalonData } from '@/hooks/useSalonData';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 
 interface SalonStatusToggleProps {

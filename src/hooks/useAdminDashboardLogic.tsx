@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useSalonData } from './useSalonData';
 import { useAppointmentData } from './useAppointmentData';
 import { useServiceData } from './useServiceData';
