@@ -302,6 +302,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          max_appointments: number | null
+          max_attendants: number | null
           max_users: number | null
           name: string
           plan_type: string
@@ -312,6 +314,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          max_appointments?: number | null
+          max_attendants?: number | null
           max_users?: number | null
           name: string
           plan_type: string
@@ -322,6 +326,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          max_appointments?: number | null
+          max_attendants?: number | null
           max_users?: number | null
           name?: string
           plan_type?: string

@@ -126,9 +126,11 @@ export interface PlanConfiguration {
   name: string;
   price: number;
   description?: string;
+  max_users?: number;
   max_attendants?: number;
   max_appointments?: number;
-  max_users?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface DashboardStats {
