@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlanConfigurations } from './usePlanConfigurations';
@@ -51,37 +52,16 @@ export const usePlanLimitsChecker = () => {
 
       console.log(`🔍 Plano ${salon.plan}: ${currentAppointments}/${maxAppointments} agendamentos este mês`);
 
-      // Se atingiu o limite, fechar o salão
-      if (currentAppointments >= maxAppointments && salon.is_open) {
-        console.log('🚫 Limite de agendamentos atingido. Fechando salão automaticamente.');
-        
-        const { error: updateError } = await supabase
-          .from('salons')
-          .update({ is_open: false })
-          .eq('id', salonId);
+      // REMOVIDO: Fechamento automático da loja
+      // A loja não será fechada automaticamente quando o limite for atingido
+      // Apenas retorna informações sobre o limite para controle do admin
 
-        if (updateError) {
-          console.error('Erro ao fechar salão:', updateError);
-          return { success: false, message: 'Erro ao fechar salão' };
-        }
-
-        return {
-          success: true,
-          limitReached: true,
-          currentAppointments,
-          maxAppointments,
-          salonClosed: true,
-          message: `Limite de ${maxAppointments} agendamentos atingido. Salão fechado automaticamente.`
-        };
-      }
-
-      // Se ainda não atingiu o limite
       return {
         success: true,
-        limitReached: false,
+        limitReached: currentAppointments >= maxAppointments,
         currentAppointments,
         maxAppointments,
-        salonClosed: false,
+        salonClosed: false, // Nunca fecha automaticamente
         message: `${currentAppointments}/${maxAppointments} agendamentos utilizados este mês`
       };
 
@@ -153,9 +133,31 @@ export const usePlanLimitsChecker = () => {
     }
   }, [getPlanLimits]);
 
+  // Nova função para verificar se pode criar agendamento
+  const canCreateAppointment = useCallback(async (salonId: string) => {
+    try {
+      const stats = await getSalonAppointmentStats(salonId);
+      if (!stats.success) {
+        return { canCreate: false, message: 'Erro ao verificar limites' };
+      }
+
+      if (stats.limitReached) {
+        return { 
+          canCreate: false, 
+          message: `Limite de ${stats.maxAppointments} agendamentos atingido este mês. Faça upgrade do plano para continuar.` 
+        };
+      }
+
+      return { canCreate: true, message: 'Pode criar agendamento' };
+    } catch (error) {
+      return { canCreate: false, message: 'Erro ao verificar limites' };
+    }
+  }, [getSalonAppointmentStats]);
+
   return {
     checking,
     checkAndEnforcePlanLimits,
-    getSalonAppointmentStats
+    getSalonAppointmentStats,
+    canCreateAppointment
   };
 };

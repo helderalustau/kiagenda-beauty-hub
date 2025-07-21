@@ -15,11 +15,12 @@ interface SalonStatusToggleProps {
 const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggleProps) => {
   const { toggleSalonStatus } = useSalonData();
   const { toast } = useToast();
-  const { checkAndEnforcePlanLimits, getSalonAppointmentStats } = usePlanLimitsChecker();
+  const { getSalonAppointmentStats } = usePlanLimitsChecker();
   const [isLimitReached, setIsLimitReached] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [appointmentStats, setAppointmentStats] = useState<any>(null);
 
-  // Verificar limites apenas quando o salonId mudar, não quando status mudar
+  // Verificar limites quando o salonId mudar
   useEffect(() => {
     const checkLimits = async () => {
       if (!salonId) return;
@@ -28,6 +29,7 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
         const stats = await getSalonAppointmentStats(salonId);
         if (stats.success) {
           setIsLimitReached(stats.limitReached);
+          setAppointmentStats(stats);
         }
       } catch (error) {
         console.error('Erro ao verificar limites:', error);
@@ -35,47 +37,39 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
     };
 
     checkLimits();
-  }, [salonId, getSalonAppointmentStats]); // Remover isOpen das dependências
+  }, [salonId, getSalonAppointmentStats]);
 
   const handleToggleStatus = async () => {
-    if (loading || isLimitReached) return;
+    if (loading) return;
     
     setLoading(true);
     
     try {
-      // Se está tentando abrir, verificar limites primeiro
-      if (!isOpen) {
-        const stats = await getSalonAppointmentStats(salonId);
-        if (stats.success && stats.limitReached) {
-          toast({
-            title: "Limite Atingido",
-            description: "Você atingiu o limite do seu plano. Faça upgrade para reabrir a loja.",
-            variant: "destructive"
-          });
-          setLoading(false);
-          return;
-        }
-      }
-
       const newStatus = !isOpen;
       console.log('🔄 Alterando status da loja:', { salonId, from: isOpen, to: newStatus });
+      
+      // REMOVIDO: Verificação que impedia abrir quando limite atingido
+      // Agora o admin pode sempre abrir/fechar a loja manualmente
       
       const result = await toggleSalonStatus(salonId, newStatus);
       
       if (result.success) {
         console.log('✅ Status alterado com sucesso:', result);
+        
+        // Feedback de sucesso
         toast({
           title: "Status Atualizado",
           description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
         });
         
-        // Chamar callback para atualizar o estado no componente pai PRIMEIRO
+        // Callback para atualizar o estado no componente pai
         onStatusChange?.(newStatus);
         
-        // Então atualizar stats após mudança de status
+        // Atualizar stats após mudança de status
         const updatedStats = await getSalonAppointmentStats(salonId);
         if (updatedStats.success) {
           setIsLimitReached(updatedStats.limitReached);
+          setAppointmentStats(updatedStats);
         }
       } else {
         console.error('❌ Erro ao alterar status:', result);
@@ -104,35 +98,33 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
         <span className="text-sm text-gray-600">Status:</span>
         <Badge 
           variant={isOpen ? "default" : "secondary"} 
-          className={`flex items-center space-x-1 transition-colors ${
-            isLimitReached 
-              ? 'bg-orange-500 text-white cursor-not-allowed' 
-              : loading 
-                ? 'cursor-wait opacity-70'
-                : `cursor-pointer ${
-                    isOpen 
-                      ? 'bg-green-500 hover:bg-green-600 text-white' 
-                      : 'bg-red-500 hover:bg-red-600 text-white'
-                  }`
+          className={`flex items-center space-x-1 transition-colors cursor-pointer ${
+            loading 
+              ? 'opacity-70 cursor-wait'
+              : isOpen 
+                ? 'bg-green-500 hover:bg-green-600 text-white' 
+                : 'bg-red-500 hover:bg-red-600 text-white'
           }`}
-          onClick={isLimitReached ? undefined : handleToggleStatus}
-          title={isLimitReached ? "Limite do plano atingido. Faça upgrade para reabrir." : undefined}
+          onClick={handleToggleStatus}
         >
-          {isLimitReached ? (
-            <AlertTriangle className="h-3 w-3" />
-          ) : isOpen ? (
+          {isOpen ? (
             <LockOpen className="h-3 w-3" />
           ) : (
             <Lock className="h-3 w-3" />
           )}
           <span>
-            {isLimitReached ? 'Limite Atingido' : isOpen ? 'Aberta' : 'Fechada'}
+            {isOpen ? 'Aberta' : 'Fechada'}
           </span>
         </Badge>
+        
+        {/* Aviso de limite atingido - apenas informativo */}
         {isLimitReached && (
-          <span className="text-xs text-orange-600 font-medium">
-            Upgrade necessário
-          </span>
+          <div className="flex items-center space-x-1">
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <span className="text-xs text-orange-600 font-medium">
+              Limite atingido ({appointmentStats?.currentAppointments}/{appointmentStats?.maxAppointments})
+            </span>
+          </div>
         )}
       </div>
     </div>

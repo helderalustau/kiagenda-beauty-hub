@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useSalonData } from './useSalonData';
@@ -27,7 +28,7 @@ export const useAdminDashboardLogic = () => {
   } = useServiceData();
   
   const { toast } = useToast();
-  const { checkAndEnforcePlanLimits } = usePlanLimitsChecker();
+  const { getSalonAppointmentStats } = usePlanLimitsChecker(); // Removido checkAndEnforcePlanLimits
   const [newAppointment, setNewAppointment] = useState<any>(null);
   const [showNotification, setShowNotification] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -103,23 +104,24 @@ export const useAdminDashboardLogic = () => {
     }
   });
 
-  // Verificar limites do plano automaticamente quando salon muda
+  // REMOVIDO: Verificação automática de limites que fechava a loja
+  // Agora apenas obtém estatísticas para exibição
   useEffect(() => {
     if (salon) {
-      // Verificar limites do plano automaticamente
-      const checkLimitsAutomatically = async () => {
-        const result = await checkAndEnforcePlanLimits(salon.id);
-        if (result.success && result.limitReached && result.salonClosed) {
-          toast({
-            title: "Limite Atingido",
-            description: result.message,
-            variant: "destructive"
-          });
+      const getStatsForDisplay = async () => {
+        try {
+          const stats = await getSalonAppointmentStats(salon.id);
+          if (stats.success && stats.limitReached) {
+            // Apenas aviso, não fecha a loja
+            console.log(`📊 Limite atingido: ${stats.currentAppointments}/${stats.maxAppointments}`);
+          }
+        } catch (error) {
+          console.error('Erro ao obter estatísticas:', error);
         }
       };
-      checkLimitsAutomatically();
+      getStatsForDisplay();
     }
-  }, [salon, checkAndEnforcePlanLimits, toast]);
+  }, [salon, getSalonAppointmentStats]);
 
   const refreshData = async () => {
     const salonId = currentSalonId || getSalonId();

@@ -1,226 +1,69 @@
 
-import { useState, useCallback, useRef } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Service } from '@/hooks/useSupabaseData';
-import { useClientManagement } from './useClientManagement';
-import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
+import { usePlanLimitsChecker } from '../usePlanLimitsChecker';
 
-interface ClientData {
-  name: string;
-  phone: string;
-  email: string;
-  notes: string;
-}
-
-export const useBookingSubmission = (salonId: string) => {
-  const { toast } = useToast();
-  const { user } = useAuth();
+export const useBookingSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const submissionInProgress = useRef(false);
-  const { findOrCreateClient } = useClientManagement();
-  const { checkAndEnforcePlanLimits } = usePlanLimitsChecker();
+  const { canCreateAppointment } = usePlanLimitsChecker();
 
-  const submitBooking = useCallback(async (
-    selectedService: Service | null,
-    selectedDate: Date | undefined,
-    selectedTime: string,
-    clientData: ClientData
-  ) => {
-    console.log('🚀 Starting booking submission with params:', {
-      service: selectedService?.name,
-      date: selectedDate?.toDateString(),
-      time: selectedTime,
-      clientName: clientData.name,
-      clientPhone: clientData.phone,
-      userId: user?.id,
-      userRole: user?.role,
-      isClient: !user?.role
-    });
-
-    // Validações básicas
-    if (!selectedService || !selectedDate || !selectedTime || !clientData.name.trim() || !clientData.phone.trim()) {
-      console.error('❌ Missing required fields for booking submission');
-      toast({
-        title: "Dados incompletos",
-        description: "Preencha todos os campos obrigatórios",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // Permitir agendamentos mesmo sem usuário logado (agendamento direto)
-    console.log('🔑 User authentication status:', user?.id ? 'Logged in' : 'Direct booking');
-
-    // Verificar se já há uma submissão em andamento
-    if (submissionInProgress.current || isSubmitting) {
-      console.log('⚠️ Submission already in progress');
-      return false;
-    }
-
-    submissionInProgress.current = true;
+  const submitBooking = async (bookingData: any) => {
     setIsSubmitting(true);
-
+    
     try {
-      // VERIFICAR LIMITES DO PLANO ANTES DE CONTINUAR
-      console.log('🔍 Verificando limites do plano antes de criar agendamento...');
-      const limitCheck = await checkAndEnforcePlanLimits(salonId);
-      
-      if (!limitCheck.success) {
-        toast({
-          title: "Erro de verificação",
-          description: limitCheck.message,
-          variant: "destructive"
-        });
-        return false;
+      // Verificar se pode criar agendamento (limite do plano)
+      const limitCheck = await canCreateAppointment(bookingData.salon_id);
+      if (!limitCheck.canCreate) {
+        return {
+          success: false,
+          message: limitCheck.message
+        };
       }
 
-      if (limitCheck.limitReached) {
-        toast({
-          title: "⚠️ Limite de Agendamentos Atingido",
-          description: `Este estabelecimento atingiu o limite de ${limitCheck.maxAppointments} agendamentos mensais do plano atual. Para continuar recebendo agendamentos, é necessário fazer upgrade do plano.`,
-          variant: "destructive",
-          duration: 8000
-        });
-        return false;
-      }
-
-      // SALVAMENTO DE DATA - Garantir que seja EXATAMENTE a data selecionada
-      const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth() + 1; // getMonth() é 0-indexed
-      const day = selectedDate.getDate();
-      
-      // Criar string YYYY-MM-DD usando componentes locais
-      const dateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-      
-      const { data: conflictCheck, error: conflictError } = await supabase
-        .from('appointments')
-        .select('id')
-        .eq('salon_id', salonId)
-        .eq('appointment_date', dateString)
-        .eq('appointment_time', selectedTime)
-        .in('status', ['pending', 'confirmed'])
-        .limit(1);
-
-      if (conflictError) {
-        console.error('❌ Error checking availability:', conflictError);
-        throw new Error('Erro ao verificar disponibilidade do horário');
-      }
-
-      if (conflictCheck && conflictCheck.length > 0) {
-        console.error('❌ Time slot already taken');
-        toast({
-          title: "Horário indisponível",
-          description: "Este horário foi ocupado por outro cliente. Escolha outro horário.",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      // Buscar ou criar cliente se não estiver logado ou se for agendamento direto
-      let clientAuthId: string;
-      
-      if (user?.id) {
-        // Verificar se o user.id existe na tabela client_auth
-        console.log('🔍 Checking if client exists in client_auth table for ID:', user.id);
-        
-        const { data: clientExists, error: clientCheckError } = await supabase
-          .from('client_auth')
-          .select('id')
-          .eq('id', user.id)
-          .single();
-
-        if (clientExists) {
-          console.log('✅ Client found in client_auth table:', clientExists.id);
-          clientAuthId = clientExists.id;
-        } else {
-          console.log('⚠️ Client not found in client_auth, creating new client');
-          clientAuthId = await findOrCreateClient(clientData.name, clientData.phone);
-        }
-      } else {
-        // Criar ou encontrar cliente baseado no nome e telefone
-        console.log('👤 No user logged in, finding or creating client by name/phone');
-        clientAuthId = await findOrCreateClient(clientData.name, clientData.phone);
-      }
-
-      console.log('✅ Using client_auth_id:', clientAuthId);
-
-      // Criar o agendamento
-      const appointmentData = {
-        salon_id: salonId,
-        service_id: selectedService.id,
-        client_auth_id: clientAuthId,
-        appointment_date: dateString,
-        appointment_time: selectedTime,
-        status: 'pending' as const,
-        notes: clientData.notes?.trim() || null
-      };
-
-      console.log('📝 Creating appointment with data:', appointmentData);
-
-      const { data: appointment, error: appointmentError } = await supabase
-        .from('appointments')
-        .insert(appointmentData)
-        .select(`
-          *,
-          salon:salons(id, name, address, phone),
-          service:services(id, name, price, duration_minutes),
-          client:client_auth(id, username, name, phone, email)
-        `)
+      // Verificar se o salão está aberto
+      const { data: salon } = await supabase
+        .from('salons')
+        .select('is_open')
+        .eq('id', bookingData.salon_id)
         .single();
 
-      if (appointmentError) {
-        console.error('❌ Error creating appointment:', appointmentError);
-        
-        if (appointmentError.code === '23505') {
-          toast({
-            title: "Horário ocupado",
-            description: "Este horário foi ocupado por outro cliente. Tente outro horário.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Erro no agendamento",
-            description: `Erro ao criar agendamento: ${appointmentError.message}`,
-            variant: "destructive"
-          });
-        }
-        return false;
+      if (!salon?.is_open) {
+        return {
+          success: false,
+          message: 'Este estabelecimento está fechado para novos agendamentos no momento.'
+        };
       }
 
-      console.log('✅ Appointment created successfully:', appointment?.id);
+      // Criar agendamento
+      const { data: appointment, error } = await supabase
+        .from('appointments')
+        .insert([bookingData])
+        .select()
+        .single();
 
-      // VERIFICAR NOVAMENTE OS LIMITES APÓS CRIAR O AGENDAMENTO
-      const postCreateCheck = await checkAndEnforcePlanLimits(salonId);
-      if (postCreateCheck.limitReached && postCreateCheck.salonClosed) {
-        console.log('🚫 Salão fechado automaticamente após atingir limite');
+      if (error) {
+        console.error('Erro ao criar agendamento:', error);
+        return {
+          success: false,
+          message: 'Erro ao criar agendamento. Tente novamente.'
+        };
       }
 
-      toast({
-        title: "✅ Solicitação Enviada!",
-        description: `Seu agendamento para ${selectedService.name} foi enviado e está aguardando aprovação.`,
-        duration: 6000
-      });
-
-      return true;
+      return {
+        success: true,
+        appointment
+      };
 
     } catch (error) {
-      console.error('❌ Error in booking submission:', error);
-      
-      toast({
-        title: "Erro no Agendamento",
-        description: error instanceof Error ? error.message : "Erro inesperado. Tente novamente.",
-        variant: "destructive",
-        duration: 7000
-      });
-      
-      return false;
+      console.error('Erro no processo de agendamento:', error);
+      return {
+        success: false,
+        message: 'Erro inesperado. Tente novamente.'
+      };
     } finally {
-      submissionInProgress.current = false;
       setIsSubmitting(false);
     }
-  }, [salonId, user?.id, toast]);
+  };
 
   return {
     isSubmitting,
