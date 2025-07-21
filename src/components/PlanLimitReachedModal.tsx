@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Crown, TrendingUp } from "lucide-react";
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import PlanUpgradeRequestModal from './PlanUpgradeRequestModal';
 
 interface PlanLimitReachedModalProps {
   isOpen: boolean;
@@ -10,7 +11,8 @@ interface PlanLimitReachedModalProps {
   currentPlan: string;
   currentAppointments: number;
   maxAppointments: number;
-  onUpgrade?: () => void;
+  salonId: string;
+  salonName: string;
 }
 
 const PlanLimitReachedModal = ({ 
@@ -19,10 +21,12 @@ const PlanLimitReachedModal = ({
   currentPlan, 
   currentAppointments, 
   maxAppointments,
-  onUpgrade 
+  salonId,
+  salonName 
 }: PlanLimitReachedModalProps) => {
   const { getAllPlansInfo } = usePlanConfigurations();
   const plans = getAllPlansInfo();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const getNextPlan = () => {
     const currentIndex = plans.findIndex(p => p.plan_type === currentPlan);
@@ -72,13 +76,13 @@ const PlanLimitReachedModal = ({
         </DialogHeader>
         
         <div className="flex flex-col gap-3 mt-4">
-          {onUpgrade && nextPlan && (
+          {nextPlan && (
             <Button 
-              onClick={onUpgrade} 
+              onClick={() => setShowUpgradeModal(true)} 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
               <TrendingUp className="h-4 w-4 mr-2" />
-              Fazer Upgrade para {nextPlan.name}
+              Fazer Upgrade
             </Button>
           )}
           
@@ -87,6 +91,14 @@ const PlanLimitReachedModal = ({
           </Button>
         </div>
       </DialogContent>
+
+      <PlanUpgradeRequestModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={currentPlan}
+        salonId={salonId}
+        salonName={salonName}
+      />
     </Dialog>
   );
 };

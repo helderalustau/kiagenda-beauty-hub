@@ -480,10 +480,8 @@ const CleanDashboardOverview = ({
         currentPlan={salon.plan}
         currentAppointments={appointmentStats?.currentAppointments || 0}
         maxAppointments={appointmentStats?.maxAppointments || 0}
-        onUpgrade={() => {
-          setShowLimitModal(false);
-          // Aqui você pode implementar a navegação para upgrade
-        }}
+        salonId={salon.id}
+        salonName={salon.name}
       />
     </div>
   );
