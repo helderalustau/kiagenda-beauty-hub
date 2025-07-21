@@ -80,8 +80,8 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
               : 'hover:scale-105 active:scale-95'
             }
             ${localIsOpen 
-              ? 'bg-emerald-50 border-emerald-500 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-600 dark:bg-emerald-950 dark:border-emerald-400 dark:text-emerald-300 dark:hover:bg-emerald-900' 
-              : 'bg-red-50 border-red-500 text-red-700 hover:bg-red-100 hover:border-red-600 dark:bg-red-950 dark:border-red-400 dark:text-red-300 dark:hover:bg-red-900'
+              ? 'bg-success/10 border-success text-success hover:bg-success/20 hover:border-success/80' 
+              : 'bg-destructive/10 border-destructive text-destructive hover:bg-destructive/20 hover:border-destructive/80'
             }
           `}
           onClick={handleToggleStatus}
