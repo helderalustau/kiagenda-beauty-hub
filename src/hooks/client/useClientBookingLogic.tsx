@@ -78,6 +78,12 @@ export const useClientBookingLogic = (salonSlug: string | undefined) => {
 
   // Load salon data on mount and when salonSlug changes
   useEffect(() => {
+    if (salonSlug) {
+      loadSalonData();
+    }
+  }, [salonSlug, loadSalonData]);
+
+  const handleOpenBookingModal = useCallback(() => {
     if (!user) {
       // Salvar URL atual para retornar após login
       localStorage.setItem('returnUrl', window.location.pathname);
@@ -85,16 +91,10 @@ export const useClientBookingLogic = (salonSlug: string | undefined) => {
       return;
     }
 
-    if (salonSlug) {
-      loadSalonData();
-    }
-  }, [user, salonSlug, navigate, loadSalonData]);
-
-  const handleOpenBookingModal = useCallback(() => {
     if (selectedSalon && selectedSalon.is_open) {
       setIsBookingModalOpen(true);
     }
-  }, [selectedSalon]);
+  }, [selectedSalon, user, navigate]);
 
   const handleBookingSuccess = useCallback(() => {
     // Clean up localStorage and redirect
