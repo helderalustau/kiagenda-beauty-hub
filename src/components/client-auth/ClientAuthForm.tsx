@@ -82,7 +82,15 @@ const ClientAuthForm = () => {
         title: "Sucesso",
         description: "Login realizado com sucesso!"
       });
-      window.location.href = '/client-dashboard';
+
+      // Verificar se existe URL de retorno salva
+      const returnUrl = localStorage.getItem('returnUrl');
+      if (returnUrl) {
+        localStorage.removeItem('returnUrl');
+        window.location.href = returnUrl;
+      } else {
+        window.location.href = '/client-dashboard';
+      }
     } else {
       toast({
         title: "Erro",
