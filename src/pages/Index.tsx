@@ -7,9 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 const Index = () => {
-  const {
-    getAllPlansInfo
-  } = usePlanConfigurations();
+  const { getAllPlansInfo } = usePlanConfigurations();
   const plansInfo = getAllPlansInfo();
   const navigate = useNavigate();
   const navigateToAdminLogin = () => {
@@ -68,7 +66,11 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
-            <Button onClick={navigateToAdminRegistration} size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+            <Button 
+              onClick={navigateToAdminRegistration} 
+              size="lg" 
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            >
               Começar Agora - Grátis
             </Button>
           </div>
@@ -120,51 +122,43 @@ const Index = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto">
             {plansInfo.map((plan, index) => {
-            const isPopular = plan.plan_type === 'prata';
-            const isPremium = plan.plan_type === 'gold';
-            return <Card key={plan.id} className={`bg-white/80 backdrop-blur-sm border-2 shadow-lg hover:shadow-xl transition-all duration-300 ${plan.plan_type === 'bronze' ? 'border-amber-200' : plan.plan_type === 'prata' ? 'border-gray-300 sm:transform sm:scale-105' : 'border-yellow-300'}`}>
+              const isPopular = plan.plan_type === 'prata';
+              const isPremium = plan.plan_type === 'gold';
+              
+              return (
+                <Card key={plan.id} className={`bg-white/80 backdrop-blur-sm border-2 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                  plan.plan_type === 'bronze' ? 'border-amber-200' :
+                  plan.plan_type === 'prata' ? 'border-gray-300 sm:transform sm:scale-105' :
+                  'border-yellow-300'
+                }`}>
                   <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
-                    {isPopular && <Badge className="bg-gradient-to-r from-blue-500 to-pink-500 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold mb-2">
+                    {isPopular && (
+                      <Badge className="bg-gradient-to-r from-blue-500 to-pink-500 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold mb-2">
                         MAIS POPULAR
-                      </Badge>}
-                    <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 ${plan.plan_type === 'bronze' ? 'bg-gradient-to-r from-amber-500 to-amber-600' : plan.plan_type === 'prata' ? 'bg-gradient-to-r from-gray-400 to-gray-500' : 'bg-gradient-to-r from-yellow-500 to-yellow-600'}`}>
-                      {plan.plan_type === 'bronze' ? <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" /> : plan.plan_type === 'prata' ? <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" /> : <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-white" />}
+                      </Badge>
+                    )}
+                    <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 ${
+                      plan.plan_type === 'bronze' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
+                      plan.plan_type === 'prata' ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
+                      'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                    }`}>
+                      {plan.plan_type === 'bronze' ? <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" /> :
+                       plan.plan_type === 'prata' ? <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" /> :
+                       <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-white" />}
                     </div>
                     <CardTitle className="text-xl sm:text-2xl">{plan.name}</CardTitle>
                     <div className="mt-3 sm:mt-4">
                       <span className="text-3xl sm:text-4xl font-bold text-gray-900">
                         {plan.price}
                       </span>
-                      <span className="text-sm sm:text-base text-gray-600">Assuma o controle do seu dia-a-dia
-
-Aceite agendamentos online através da sua página. Seu cliente pode agendar sozinho, você receberá notificações e poderá focar mais tempo na sua empresa.
-
-Funcionamos online
-
-Nossa base de dados é 100% online.
-
-Financeiro
-
-Envie lembrete de agendamento para seus clientes.
-
-Agendamento Online
-
-Aceite agendamentos online através da sua página, que é criada junto com sua conta.
-
-Agendamento recursivos
-
-Faça agendamentos recursivos (diários, semanais, quinzenais, etc)
-
-Multi agendas
-
-Tenha multi agendas, cadastre todos os seus funcionários (sem pagar a mais por isso).
-
-Permissões
-
-Defina permissões de acesso para cada funcionário.</span>
+                      <span className="text-sm sm:text-base text-gray-600">
+                        /mês
+                      </span>
                     </div>
                     <CardDescription className="text-sm sm:text-base">
-                      {plan.plan_type === 'bronze' ? 'Ideal para profissionais autônomos' : plan.plan_type === 'prata' ? 'Perfeito para salões' : 'Para grandes estabelecimentos'}
+                      {plan.plan_type === 'bronze' ? 'Ideal para profissionais autônomos' :
+                       plan.plan_type === 'prata' ? 'Perfeito para salões' :
+                       'Para grandes estabelecimentos'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
@@ -172,34 +166,46 @@ Defina permissões de acesso para cada funcionário.</span>
                       <div className="flex items-center space-x-2">
                         <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
                         <span className="text-sm sm:text-base">
-                          {plan.max_attendants === 1 ? '1 Atendente' : plan.max_attendants > 10 ? 'Atendentes Ilimitados' : `Até ${plan.max_attendants} Atendentes`}
+                          {plan.max_attendants === 1 ? '1 Atendente' :
+                           plan.max_attendants > 10 ? 'Atendentes Ilimitados' :
+                           `Até ${plan.max_attendants} Atendentes`}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
                         <span className="text-sm sm:text-base">
-                          {plan.max_appointments > 1000 ? 'Agendamentos Ilimitados' : `${plan.max_appointments} agendamentos por mês`}
+                          {plan.max_appointments > 1000 ? 'Agendamentos Ilimitados' :
+                           `${plan.max_appointments} agendamentos por mês`}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
                         <span className="text-sm sm:text-base">
-                          {plan.plan_type === 'bronze' ? 'Relatórios Básicos' : plan.plan_type === 'prata' ? 'Relatórios Avançados' : 'Relatórios Completos'}
+                          {plan.plan_type === 'bronze' ? 'Relatórios Básicos' :
+                           plan.plan_type === 'prata' ? 'Relatórios Avançados' :
+                           'Relatórios Completos'}
                         </span>
                       </div>
-                      {plan.plan_type !== 'bronze' && <div className="flex items-center space-x-2">
+                      {plan.plan_type !== 'bronze' && (
+                        <div className="flex items-center space-x-2">
                           <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
                           <span className="text-sm sm:text-base">
                             {plan.plan_type === 'gold' ? 'Suporte Prioritário' : 'Relatórios Completos'}
                           </span>
-                        </div>}
+                        </div>
+                      )}
                     </div>
-                    <Button onClick={() => navigateToAdminRegistrationWithPlan(plan.plan_type)} className="w-full mt-4 sm:mt-6 text-sm sm:text-base" variant={plan.plan_type === 'prata' ? 'default' : 'outline'}>
+                    <Button 
+                      onClick={() => navigateToAdminRegistrationWithPlan(plan.plan_type)} 
+                      className="w-full mt-4 sm:mt-6 text-sm sm:text-base" 
+                      variant={plan.plan_type === 'prata' ? 'default' : 'outline'}
+                    >
                       Escolher {plan.name}
                     </Button>
                   </CardContent>
-                </Card>;
-          })}
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>
