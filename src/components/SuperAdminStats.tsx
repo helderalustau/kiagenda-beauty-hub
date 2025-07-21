@@ -12,7 +12,7 @@ interface SuperAdminStatsProps {
 }
 
 const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
-  const { getAllPlansInfo, formatCurrency: formatPlanCurrency } = usePlanConfigurations();
+  const { getAllPlansInfo } = usePlanConfigurations();
   const plansInfo = getAllPlansInfo();
 
   if (loading || !stats) {
@@ -43,7 +43,23 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
   const totalSalons = stats.totalSalons || 0;
   const totalServices = stats.totalServices || 0;
   const salonsByPlan = stats.salonsByPlan || { bronze: 0, prata: 0, gold: 0 };
-  const expectedRevenue = stats.expectedRevenue || { total: 0, bronze: 0, prata: 0, gold: 0 };
+
+  // Calculate expected revenue using dynamic plan prices
+  const calculateExpectedRevenue = () => {
+    let total = 0;
+    const revenueByPlan: Record<string, number> = {};
+
+    plansInfo.forEach(plan => {
+      const salonCount = salonsByPlan[plan.plan_type as keyof typeof salonsByPlan] || 0;
+      const planRevenue = salonCount * plan.priceNumber;
+      revenueByPlan[plan.plan_type] = planRevenue;
+      total += planRevenue;
+    });
+
+    return { total, ...revenueByPlan };
+  };
+
+  const expectedRevenue = calculateExpectedRevenue();
 
   return (
     <div className="space-y-6">
@@ -75,6 +91,9 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
             <CardTitle className="text-2xl font-bold text-green-600">
               {formatCurrency(expectedRevenue.total)}
             </CardTitle>
+            <CardDescription className="text-xs text-gray-500 mt-1">
+              Baseado nos preços configurados
+            </CardDescription>
           </CardHeader>
         </Card>
 
@@ -133,47 +152,61 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
 
       {/* Detalhamento da Receita por Plano */}
       <div className="grid md:grid-cols-3 gap-6">
-        {plansInfo.map((plan) => (
-          <Card key={plan.plan_type} className={`bg-gradient-to-br ${
-            plan.plan_type === 'bronze' ? 'from-amber-50 to-amber-100 border-amber-200' :
-            plan.plan_type === 'prata' ? 'from-gray-50 to-gray-100 border-gray-200' :
-            'from-yellow-50 to-yellow-100 border-yellow-200'
-          }`}>
-            <CardHeader>
-              <CardTitle className={`${
-                plan.plan_type === 'bronze' ? 'text-amber-800' :
-                plan.plan_type === 'prata' ? 'text-gray-800' :
-                'text-yellow-800'
-              } flex items-center space-x-2`}>
-                <Badge className={plan.color}>{plan.name}</Badge>
-                <span>{plan.price}</span>
-              </CardTitle>
-              <CardDescription className={
-                plan.plan_type === 'bronze' ? 'text-amber-700' :
-                plan.plan_type === 'prata' ? 'text-gray-700' :
-                'text-yellow-700'
-              }>
-                {salonsByPlan[plan.plan_type as keyof typeof salonsByPlan] || 0} estabelecimentos
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${
-                plan.plan_type === 'bronze' ? 'text-amber-800' :
-                plan.plan_type === 'prata' ? 'text-gray-800' :
-                'text-yellow-800'
-              }`}>
-                {formatCurrency(expectedRevenue[plan.plan_type as keyof typeof expectedRevenue] || 0)}
-              </div>
-              <p className={`text-sm mt-1 ${
-                plan.plan_type === 'bronze' ? 'text-amber-600' :
-                plan.plan_type === 'prata' ? 'text-gray-600' :
-                'text-yellow-600'
-              }`}>
-                Receita mensal do plano {plan.name}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {plansInfo.map((plan) => {
+          const salonCount = salonsByPlan[plan.plan_type as keyof typeof salonsByPlan] || 0;
+          const planRevenue = expectedRevenue[plan.plan_type] || 0;
+          
+          return (
+            <Card key={plan.plan_type} className={`bg-gradient-to-br ${
+              plan.plan_type === 'bronze' ? 'from-amber-50 to-amber-100 border-amber-200' :
+              plan.plan_type === 'prata' ? 'from-gray-50 to-gray-100 border-gray-200' :
+              'from-yellow-50 to-yellow-100 border-yellow-200'
+            }`}>
+              <CardHeader>
+                <CardTitle className={`${
+                  plan.plan_type === 'bronze' ? 'text-amber-800' :
+                  plan.plan_type === 'prata' ? 'text-gray-800' :
+                  'text-yellow-800'
+                } flex items-center justify-between`}>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={plan.color}>{plan.name}</Badge>
+                    <span className="text-sm">{plan.price}</span>
+                  </div>
+                </CardTitle>
+                <CardDescription className={
+                  plan.plan_type === 'bronze' ? 'text-amber-700' :
+                  plan.plan_type === 'prata' ? 'text-gray-700' :
+                  'text-yellow-700'
+                }>
+                  {salonCount} estabelecimentos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${
+                  plan.plan_type === 'bronze' ? 'text-amber-800' :
+                  plan.plan_type === 'prata' ? 'text-gray-800' :
+                  'text-yellow-800'
+                }`}>
+                  {formatCurrency(planRevenue)}
+                </div>
+                <p className={`text-sm mt-1 ${
+                  plan.plan_type === 'bronze' ? 'text-amber-600' :
+                  plan.plan_type === 'prata' ? 'text-gray-600' :
+                  'text-yellow-600'
+                }`}>
+                  Receita mensal do plano {plan.name}
+                </p>
+                <p className={`text-xs mt-1 ${
+                  plan.plan_type === 'bronze' ? 'text-amber-500' :
+                  plan.plan_type === 'prata' ? 'text-gray-500' :
+                  'text-yellow-500'
+                }`}>
+                  {plan.price} × {salonCount} salões
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
