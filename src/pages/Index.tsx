@@ -149,10 +149,10 @@ const Index = () => {
                     <CardTitle className="text-xl sm:text-2xl">{plan.name}</CardTitle>
                     <div className="mt-3 sm:mt-4">
                       <span className="text-3xl sm:text-4xl font-bold text-gray-900">
-                        {plan.plan_type === 'bronze' ? 'GRÁTIS' : plan.price}
+                        {plan.price}
                       </span>
                       <span className="text-sm sm:text-base text-gray-600">
-                        {plan.plan_type === 'bronze' ? '/limitado' : '/mês'}
+                        /mês
                       </span>
                     </div>
                     <CardDescription className="text-sm sm:text-base">
