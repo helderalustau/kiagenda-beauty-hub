@@ -48,12 +48,11 @@ const PlanUpgradeRequestsList = () => {
     setProcessing(request.id);
     
     try {
-      // 1. Atualizar o plano do salão
+      // 1. Atualizar o plano do salão (mantém status atual)
       const { error: salonError } = await supabase
         .from('salons')
         .update({ 
           plan: request.requested_plan,
-          is_open: true,
           updated_at: new Date().toISOString()
         })
         .eq('id', request.salon_id);
@@ -88,7 +87,7 @@ const PlanUpgradeRequestsList = () => {
 
       toast({
         title: "Solicitação Aprovada",
-        description: `Plano do ${request.salon_name} atualizado para ${request.requested_plan.toUpperCase()}. O estabelecimento foi reaberto automaticamente.`,
+        description: `Plano do ${request.salon_name} atualizado para ${request.requested_plan.toUpperCase()}.`,
       });
 
       // Remover da lista

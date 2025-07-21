@@ -27,7 +27,7 @@ import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData'
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 import PlanLimitReachedModal from '@/components/PlanLimitReachedModal';
-import PlanLimitDebugPanel from './PlanLimitDebugPanel';
+
 
 interface CleanDashboardOverviewProps {
   appointments: Appointment[];
@@ -177,13 +177,6 @@ const CleanDashboardOverview = ({
         </div>
       </div>
 
-      {/* Debug Panel - Para testar limites */}
-      <PlanLimitDebugPanel 
-        salonId={salon.id}
-        salonName={salon.name}
-        currentPlan={salon.plan}
-        isOpen={salon.is_open || false}
-      />
 
       {/* Alerta de limite atingido */}
       {appointmentStats?.limitReached && (
