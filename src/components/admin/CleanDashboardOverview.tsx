@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,12 +18,15 @@ import {
   CalendarDays,
   FileText,
   BarChart3,
-  History
+  History,
+  AlertTriangle
 } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
+import PlanLimitReachedModal from '@/components/PlanLimitReachedModal';
 
 interface CleanDashboardOverviewProps {
   appointments: Appointment[];
@@ -41,6 +44,24 @@ const CleanDashboardOverview = ({
   onUpdateStatus 
 }: CleanDashboardOverviewProps) => {
   const { getPlanLimits, getPlanInfo } = usePlanConfigurations();
+  const { getSalonAppointmentStats } = usePlanLimitsChecker();
+  const [appointmentStats, setAppointmentStats] = useState<any>(null);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  
+  // Buscar estatísticas de agendamentos
+  useEffect(() => {
+    if (salon?.id) {
+      getSalonAppointmentStats(salon.id).then(stats => {
+        if (stats.success) {
+          setAppointmentStats(stats);
+          // Mostrar modal se limite foi atingido e salão está fechado
+          if (stats.limitReached && !salon.is_open) {
+            setShowLimitModal(true);
+          }
+        }
+      });
+    }
+  }, [salon?.id, getSalonAppointmentStats]);
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -152,24 +173,63 @@ const CleanDashboardOverview = ({
         </div>
       </div>
 
+      {/* Alerta de limite atingido */}
+      {appointmentStats?.limitReached && (
+        <Card className="border-red-500 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-800">Limite de Agendamentos Atingido!</h3>
+                <p className="text-sm text-red-700">
+                  Você utilizou {appointmentStats.currentAppointments}/{appointmentStats.maxAppointments} agendamentos do plano {salon.plan.toUpperCase()}.
+                  {!salon.is_open && ' Seu estabelecimento foi fechado automaticamente.'}
+                </p>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => setShowLimitModal(true)}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Fazer Upgrade
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Métricas principais */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Plano */}
-        <Card className="relative overflow-hidden">
+        <Card className={`relative overflow-hidden ${appointmentStats?.limitReached ? 'border-red-500' : appointmentStats?.nearLimit ? 'border-amber-500' : ''}`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Plano Atual</p>
                 <p className="text-2xl font-bold text-foreground">{currentPlan.name}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {monthlyAppointments} de {currentPlan.max_appointments} usados
+                <p className={`text-xs mt-1 ${appointmentStats?.limitReached ? 'text-red-600 font-medium' : appointmentStats?.nearLimit ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                  {appointmentStats ? `${appointmentStats.currentAppointments} de ${appointmentStats.maxAppointments} agendamentos` : `${monthlyAppointments} de ${currentPlan.max_appointments} usados`}
                 </p>
               </div>
-              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Star className="h-6 w-6 text-primary" />
+              <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${
+                appointmentStats?.limitReached ? 'bg-red-100' : appointmentStats?.nearLimit ? 'bg-amber-100' : 'bg-primary/10'
+              }`}>
+                {appointmentStats?.limitReached ? (
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                ) : (
+                  <Star className={`h-6 w-6 ${appointmentStats?.nearLimit ? 'text-amber-600' : 'text-primary'}`} />
+                )}
               </div>
             </div>
-            <Progress value={planUsagePercentage} className="mt-4 h-2" />
+            <Progress 
+              value={appointmentStats?.percentage || planUsagePercentage} 
+              className={`mt-4 h-2 ${appointmentStats?.limitReached ? '[&>div]:bg-red-500' : appointmentStats?.nearLimit ? '[&>div]:bg-amber-500' : ''}`}
+            />
+            {appointmentStats?.limitReached && (
+              <p className="text-xs text-red-600 font-medium mt-2">
+                Limite atingido! Faça upgrade para continuar.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -412,6 +472,19 @@ const CleanDashboardOverview = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de limite atingido */}
+      <PlanLimitReachedModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        currentPlan={salon.plan}
+        currentAppointments={appointmentStats?.currentAppointments || 0}
+        maxAppointments={appointmentStats?.maxAppointments || 0}
+        onUpgrade={() => {
+          setShowLimitModal(false);
+          // Aqui você pode implementar a navegação para upgrade
+        }}
+      />
     </div>
   );
 };

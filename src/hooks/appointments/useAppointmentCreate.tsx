@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppointmentTypes } from './useAppointmentTypes';
+import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 
 export const useAppointmentCreate = () => {
   const [loading, setLoading] = useState(false);
   const { normalizeAppointment } = useAppointmentTypes();
+  const { checkAndEnforcePlanLimits } = usePlanLimitsChecker();
 
   // Create appointment - VERSÃO CORRIGIDA FINAL
   const createAppointment = async (appointmentData: any) => {
@@ -76,6 +78,18 @@ export const useAppointmentCreate = () => {
         throw new Error('ID do cliente não fornecido. Faça login primeiro.');
       }
 
+      // VERIFICAR LIMITES DO PLANO ANTES DE CRIAR AGENDAMENTO
+      console.log('🔍 Verificando limites do plano...');
+      const limitCheck = await checkAndEnforcePlanLimits(appointmentData.salon_id);
+      
+      if (!limitCheck.success) {
+        throw new Error('Erro ao verificar limites do plano');
+      }
+
+      if (limitCheck.limitReached) {
+        throw new Error(`Limite de ${limitCheck.maxAppointments} agendamentos mensais atingido. Faça upgrade do plano para continuar.`);
+      }
+
       // Verificar se o salão existe
       const { data: salon, error: salonError } = await supabase
         .from('salons')
@@ -144,13 +158,19 @@ export const useAppointmentCreate = () => {
 
       console.log('✅ Appointment created successfully:', data);
       
+      // VERIFICAR LIMITES APÓS CRIAR O AGENDAMENTO
+      const postCreateCheck = await checkAndEnforcePlanLimits(appointmentData.salon_id);
+      if (postCreateCheck.limitReached && postCreateCheck.salonClosed) {
+        console.log('🚫 Salão fechado automaticamente após atingir limite');
+      }
+      
       // Normalizar dados do agendamento
       const normalizedAppointment = normalizeAppointment(data);
       
       return { 
         success: true, 
         appointment: normalizedAppointment,
-        message: `Agendamento criado para ${formattedDate} às ${appointmentData.appointment_time}`
+        message: `Agendamento criado para ${formattedDate} às ${appointmentData.appointment_time}${postCreateCheck.limitReached ? '. ATENÇÃO: Limite de agendamentos atingido!' : ''}`
       };
     } catch (error) {
       console.error('❌ Error in createAppointment:', error);

@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Service } from '@/hooks/useSupabaseData';
 import { useClientManagement } from './useClientManagement';
+import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 
 interface ClientData {
   name: string;
@@ -19,6 +20,7 @@ export const useBookingSubmission = (salonId: string) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionInProgress = useRef(false);
   const { findOrCreateClient } = useClientManagement();
+  const { checkAndEnforcePlanLimits } = usePlanLimitsChecker();
 
   const submitBooking = useCallback(async (
     selectedService: Service | null,
@@ -61,6 +63,29 @@ export const useBookingSubmission = (salonId: string) => {
     setIsSubmitting(true);
 
     try {
+      // VERIFICAR LIMITES DO PLANO ANTES DE CONTINUAR
+      console.log('🔍 Verificando limites do plano antes de criar agendamento...');
+      const limitCheck = await checkAndEnforcePlanLimits(salonId);
+      
+      if (!limitCheck.success) {
+        toast({
+          title: "Erro de verificação",
+          description: limitCheck.message,
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      if (limitCheck.limitReached) {
+        toast({
+          title: "⚠️ Limite de Agendamentos Atingido",
+          description: `Este estabelecimento atingiu o limite de ${limitCheck.maxAppointments} agendamentos mensais do plano atual. Para continuar recebendo agendamentos, é necessário fazer upgrade do plano.`,
+          variant: "destructive",
+          duration: 8000
+        });
+        return false;
+      }
+
       // SALVAMENTO DE DATA - Garantir que seja EXATAMENTE a data selecionada
       const year = selectedDate.getFullYear();
       const month = selectedDate.getMonth() + 1; // getMonth() é 0-indexed
@@ -165,6 +190,12 @@ export const useBookingSubmission = (salonId: string) => {
       }
 
       console.log('✅ Appointment created successfully:', appointment?.id);
+
+      // VERIFICAR NOVAMENTE OS LIMITES APÓS CRIAR O AGENDAMENTO
+      const postCreateCheck = await checkAndEnforcePlanLimits(salonId);
+      if (postCreateCheck.limitReached && postCreateCheck.salonClosed) {
+        console.log('🚫 Salão fechado automaticamente após atingir limite');
+      }
 
       toast({
         title: "✅ Solicitação Enviada!",
