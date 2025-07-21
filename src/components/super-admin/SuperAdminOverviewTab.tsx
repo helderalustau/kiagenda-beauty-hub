@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import SuperAdminStats from '@/components/SuperAdminStats';
+import PlanUpgradeRequestsList from './PlanUpgradeRequestsList';
 import { DashboardStats } from '@/hooks/useSupabaseData';
 
 interface SuperAdminOverviewTabProps {
@@ -31,6 +32,8 @@ const SuperAdminOverviewTab = ({ dashboardStats, loading, onRefresh }: SuperAdmi
       </div>
       
       <SuperAdminStats stats={dashboardStats} loading={loading} />
+      
+      <PlanUpgradeRequestsList />
     </div>
   );
 };

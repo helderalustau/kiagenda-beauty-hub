@@ -86,7 +86,14 @@ const PlanLimitReachedModal = ({
             </Button>
           )}
           
-          <Button onClick={onClose} variant="outline" className="w-full">
+          <Button 
+            onClick={() => {
+              onClose();
+              setShowUpgradeModal(false);
+            }} 
+            variant="outline" 
+            className="w-full"
+          >
             Entendi
           </Button>
         </div>

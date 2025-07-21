@@ -25,7 +25,6 @@ const PlanUpgradeRequestModal = ({
   salonName 
 }: PlanUpgradeRequestModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [justification, setJustification] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { getAllPlansInfo } = usePlanConfigurations();
   const { toast } = useToast();
@@ -38,10 +37,10 @@ const PlanUpgradeRequestModal = ({
   });
 
   const handleSubmitRequest = async () => {
-    if (!selectedPlan || !justification.trim()) {
+    if (!selectedPlan) {
       toast({
         title: "Campos obrigatórios",
-        description: "Selecione um plano e adicione uma justificativa.",
+        description: "Selecione um plano.",
         variant: "destructive"
       });
       return;
@@ -55,7 +54,7 @@ const PlanUpgradeRequestModal = ({
         p_salon_name: salonName,
         p_current_plan: currentPlan,
         p_requested_plan: selectedPlan,
-        p_justification: justification.trim()
+        p_justification: `Solicitação de upgrade automática de ${currentPlan} para ${selectedPlan}`
       });
 
       if (error) throw error;
@@ -67,7 +66,6 @@ const PlanUpgradeRequestModal = ({
 
       onClose();
       setSelectedPlan('');
-      setJustification('');
     } catch (error) {
       console.error('Erro ao enviar solicitação:', error);
       toast({
@@ -91,7 +89,7 @@ const PlanUpgradeRequestModal = ({
             Solicitar Upgrade de Plano
           </DialogTitle>
           <DialogDescription className="text-center">
-            Selecione o plano desejado e justifique sua necessidade de upgrade.
+            Selecione o plano desejado para fazer o upgrade.
           </DialogDescription>
         </DialogHeader>
 
@@ -150,22 +148,6 @@ const PlanUpgradeRequestModal = ({
             </div>
           )}
 
-          {/* Justificativa */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Justificativa para o Upgrade *
-            </label>
-            <Textarea
-              placeholder="Explique por que você precisa fazer o upgrade do seu plano..."
-              value={justification}
-              onChange={(e) => setJustification(e.target.value)}
-              rows={4}
-              className="resize-none"
-            />
-            <p className="text-xs text-gray-500">
-              Detalhe suas necessidades para acelerar a aprovação da solicitação.
-            </p>
-          </div>
 
           {/* Aviso */}
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -187,7 +169,7 @@ const PlanUpgradeRequestModal = ({
           </Button>
           <Button 
             onClick={handleSubmitRequest}
-            disabled={!selectedPlan || !justification.trim() || submitting}
+            disabled={!selectedPlan || submitting}
             className="flex-1"
           >
             {submitting ? 'Enviando...' : 'Enviar Solicitação'}
