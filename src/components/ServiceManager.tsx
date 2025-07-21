@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { Service } from '@/types/supabase-entities';
 import { useServiceData } from '@/hooks/useServiceData';
+import { useServiceToggle } from '@/hooks/useServiceToggle';
 import { useToast } from "@/components/ui/use-toast";
 import ServiceCreationModal from './service-management/ServiceCreationModal';
 import ServiceEditModal from './service-management/ServiceEditModal';
@@ -21,6 +22,7 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
   const [updating, setUpdating] = useState<string | null>(null);
 
   const { fetchSalonServices, updateService, deleteService } = useServiceData();
+  const { loading: toggleLoading, toggleServiceStatus } = useServiceToggle();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -46,36 +48,22 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
     setUpdating(serviceId);
     
     try {
-      const result = await updateService(serviceId, { active: !currentStatus });
+      const result = await toggleServiceStatus(serviceId, currentStatus);
       
       if (result.success) {
         console.log('ServiceManager - Service status updated successfully');
         // Update local state immediately
-        setServices(prev => prev.map(service => 
-          service.id === serviceId 
-            ? { ...service, active: !currentStatus }
-            : service
-        ));
-        
-        toast({
-          title: "Sucesso",
-          description: `Serviço ${!currentStatus ? 'ativado' : 'desativado'} com sucesso!`
-        });
-      } else {
-        console.error('ServiceManager - Failed to update service status:', result.message);
-        toast({
-          title: "Erro",
-          description: result.message || "Erro ao atualizar status do serviço",
-          variant: "destructive"
-        });
+        setServices(prevServices =>
+          prevServices.map(service =>
+            service.id === serviceId 
+              ? { ...service, active: result.newStatus || !currentStatus }
+              : service
+          )
+        );
+        onRefresh();
       }
     } catch (error) {
       console.error('ServiceManager - Error toggling service status:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao atualizar status do serviço",
-        variant: "destructive"
-      });
     } finally {
       setUpdating(null);
     }
@@ -178,6 +166,7 @@ const ServiceManager = ({ salonId, onRefresh }: ServiceManagerProps) => {
                     isActive={service.active}
                     onToggle={() => handleToggleStatus(service.id, service.active)}
                     disabled={updating === service.id}
+                    loading={updating === service.id}
                   />
                 </div>
               </CardHeader>

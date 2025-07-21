@@ -8,7 +8,6 @@ import ManualNotificationChecker from '@/components/admin/ManualNotificationChec
 
 interface AdminDashboardHeaderProps {
   salon: Salon;
-  salonStatus: boolean | null;
   mobileMenuOpen: boolean;
   pendingCount?: number;
   isCheckingManually?: boolean;
@@ -21,7 +20,6 @@ interface AdminDashboardHeaderProps {
 
 const AdminDashboardHeader = ({
   salon,
-  salonStatus,
   mobileMenuOpen,
   pendingCount = 0,
   isCheckingManually = false,
@@ -45,7 +43,7 @@ const AdminDashboardHeader = ({
             <div className="hidden sm:block">
               <SalonStatusToggle 
                 salonId={salon.id}
-                isOpen={salonStatus}
+                isOpen={salon.is_open}
                 onStatusChange={onStatusChange}
               />
             </div>
@@ -85,7 +83,7 @@ const AdminDashboardHeader = ({
             <div className="mb-4">
               <SalonStatusToggle 
                 salonId={salon.id}
-                isOpen={salonStatus}
+                isOpen={salon.is_open}
                 onStatusChange={onStatusChange}
               />
             </div>

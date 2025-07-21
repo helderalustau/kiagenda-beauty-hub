@@ -32,7 +32,6 @@ export const useAdminDashboardLogic = () => {
   const [showNotification, setShowNotification] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
-  const [salonStatus, setSalonStatus] = useState<boolean | null>(null);
 
   // Get salon ID first, then setup notifications
   const [currentSalonId, setCurrentSalonId] = useState<string | null>(null);
@@ -104,16 +103,13 @@ export const useAdminDashboardLogic = () => {
     }
   });
 
-  // Sincronizar o status local com o salon e verificar limites
+  // Verificar limites do plano automaticamente quando salon muda
   useEffect(() => {
     if (salon) {
-      setSalonStatus(salon.is_open);
-      
       // Verificar limites do plano automaticamente
       const checkLimitsAutomatically = async () => {
         const result = await checkAndEnforcePlanLimits(salon.id);
         if (result.success && result.limitReached && result.salonClosed) {
-          setSalonStatus(false);
           toast({
             title: "Limite Atingido",
             description: result.message,
@@ -121,7 +117,6 @@ export const useAdminDashboardLogic = () => {
           });
         }
       };
-      
       checkLimitsAutomatically();
     }
   }, [salon, checkAndEnforcePlanLimits, toast]);
@@ -245,10 +240,15 @@ export const useAdminDashboardLogic = () => {
   };
 
   const handleStatusChange = async (isOpen: boolean) => {
-    setSalonStatus(isOpen);
+    console.log('🔄 Status change called:', { isOpen, currentSalonId });
+    
     const salonId = currentSalonId || getSalonId();
     if (salonId) {
+      // Atualizar dados do salon para refletir a mudança
       await fetchSalonData(salonId);
+      
+      // Também atualizar outros dados se necessário
+      await fetchAllAppointments(salonId);
     }
   };
 
@@ -261,7 +261,6 @@ export const useAdminDashboardLogic = () => {
     newAppointment,
     showNotification,
     mobileMenuOpen,
-    salonStatus,
     pendingAppointments,
     isCheckingManually,
     setMobileMenuOpen,

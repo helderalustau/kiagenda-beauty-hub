@@ -27,6 +27,7 @@ import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData'
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 import PlanLimitReachedModal from '@/components/PlanLimitReachedModal';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 
 interface CleanDashboardOverviewProps {
@@ -184,6 +185,20 @@ const CleanDashboardOverview = ({
         </div>
       </div>
 
+      {/* Loading indicator */}
+      {isLoadingStats && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <LoadingSpinner size="sm" />
+              <div>
+                <h3 className="font-medium text-blue-800">Carregando informações</h3>
+                <p className="text-sm text-blue-700">Verificando status e limites do plano...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Alerta de limite atingido */}
       {!isLoadingStats && appointmentStats?.limitReached && (

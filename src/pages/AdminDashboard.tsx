@@ -21,7 +21,6 @@ const AdminDashboard = () => {
     newAppointment,
     showNotification,
     mobileMenuOpen,
-    salonStatus,
     pendingAppointments,
     isCheckingManually,
     setMobileMenuOpen,
@@ -77,7 +76,6 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
       <AdminDashboardHeader
         salon={salon}
-        salonStatus={salonStatus}
         mobileMenuOpen={mobileMenuOpen}
         pendingCount={pendingAppointments?.length || 0}
         isCheckingManually={isCheckingManually}

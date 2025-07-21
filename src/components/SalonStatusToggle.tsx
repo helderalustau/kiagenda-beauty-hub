@@ -38,7 +38,7 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
   }, [salonId, getSalonAppointmentStats]); // Remover isOpen das dependências
 
   const handleToggleStatus = async () => {
-    if (loading) return;
+    if (loading || isLimitReached) return;
     
     setLoading(true);
     
@@ -69,10 +69,10 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
           description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
         });
         
-        // Chamar callback para atualizar o estado no componente pai
+        // Chamar callback para atualizar o estado no componente pai PRIMEIRO
         onStatusChange?.(newStatus);
         
-        // Atualizar stats após mudança de status
+        // Então atualizar stats após mudança de status
         const updatedStats = await getSalonAppointmentStats(salonId);
         if (updatedStats.success) {
           setIsLimitReached(updatedStats.limitReached);
