@@ -1,18 +1,17 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { memo, useEffect, useState, useCallback } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Store, LockOpen, Lock, AlertTriangle } from "lucide-react";
 import { useSalonData } from '@/hooks/useSalonData';
 import { useToast } from "@/hooks/use-toast";
 import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 
-interface SalonStatusToggleProps {
+interface OptimizedSalonStatusToggleProps {
   salonId: string;
   isOpen: boolean | null;
   onStatusChange?: (isOpen: boolean) => void;
 }
 
-const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggleProps) => {
+const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: OptimizedSalonStatusToggleProps) => {
   const { toggleSalonStatus } = useSalonData();
   const { toast } = useToast();
   const { getSalonAppointmentStats } = usePlanLimitsChecker();
@@ -20,26 +19,26 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
   const [loading, setLoading] = useState(false);
   const [appointmentStats, setAppointmentStats] = useState<any>(null);
 
-  // Verificar limites quando o salonId mudar
-  useEffect(() => {
-    const checkLimits = async () => {
-      if (!salonId) return;
-      
-      try {
-        const stats = await getSalonAppointmentStats(salonId);
-        if (stats.success) {
-          setIsLimitReached(stats.limitReached);
-          setAppointmentStats(stats);
-        }
-      } catch (error) {
-        console.error('Erro ao verificar limites:', error);
+  // Verificar limites quando o salonId mudar - OTIMIZADO
+  const checkLimits = useCallback(async () => {
+    if (!salonId) return;
+    
+    try {
+      const stats = await getSalonAppointmentStats(salonId);
+      if (stats.success) {
+        setIsLimitReached(stats.limitReached);
+        setAppointmentStats(stats);
       }
-    };
-
-    checkLimits();
+    } catch (error) {
+      console.error('Erro ao verificar limites:', error);
+    }
   }, [salonId, getSalonAppointmentStats]);
 
-  const handleToggleStatus = async () => {
+  useEffect(() => {
+    checkLimits();
+  }, [checkLimits]);
+
+  const handleToggleStatus = useCallback(async () => {
     if (loading) return;
     
     setLoading(true);
@@ -50,7 +49,6 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
       const result = await toggleSalonStatus(salonId, newStatus);
       
       if (result.success) {
-        
         toast({
           title: "Status Atualizado",
           description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
@@ -60,11 +58,7 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
         onStatusChange?.(newStatus);
         
         // Atualizar stats após mudança de status
-        const updatedStats = await getSalonAppointmentStats(salonId);
-        if (updatedStats.success) {
-          setIsLimitReached(updatedStats.limitReached);
-          setAppointmentStats(updatedStats);
-        }
+        await checkLimits();
       } else {
         toast({
           title: "Erro",
@@ -82,13 +76,13 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
     } finally {
       setLoading(false);
     }
-  };
+  }, [loading, isOpen, salonId, toggleSalonStatus, toast, onStatusChange, checkLimits]);
 
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
-        <Store className="h-5 w-5 text-gray-500" />
-        <span className="text-sm text-gray-600">Status:</span>
+        <Store className="h-5 w-5 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Status:</span>
         <Badge 
           variant={isOpen ? "default" : "secondary"} 
           className={`flex items-center space-x-1 transition-colors cursor-pointer ${
@@ -122,6 +116,8 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
       </div>
     </div>
   );
-};
+});
 
-export default SalonStatusToggle;
+OptimizedSalonStatusToggle.displayName = 'OptimizedSalonStatusToggle';
+
+export default OptimizedSalonStatusToggle;

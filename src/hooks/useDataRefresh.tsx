@@ -8,9 +8,8 @@ export const useDataRefresh = () => {
   const serviceData = useServiceData();
   const dashboardData = useDashboardData();
 
-  // Enhanced refresh data function
+  // Enhanced refresh data function - OTIMIZADO
   const refreshData = async () => {
-    console.log('Refreshing all data...');
     try {
       await Promise.all([
         salonData.fetchAllSalons(),
@@ -18,7 +17,6 @@ export const useDataRefresh = () => {
         dashboardData.fetchDashboardStats(),
         dashboardData.fetchPlanConfigurations()
       ]);
-      console.log('All data refreshed successfully');
     } catch (error) {
       console.error('Error refreshing data:', error);
     }

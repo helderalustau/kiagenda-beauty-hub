@@ -18,11 +18,9 @@ export const useUnifiedRealtimeNotifications = ({
   const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([]);
   const [isCheckingManually, setIsCheckingManually] = useState(false);
 
-  // Função para buscar agendamentos pendentes
+  // Função para buscar agendamentos pendentes - OTIMIZADA
   const fetchPendingAppointments = useCallback(async () => {
     if (!salonId) return;
-
-    console.log('🔍 Verificando agendamentos pendentes para salon:', salonId);
 
     try {
       const { data, error } = await supabase
@@ -38,12 +36,16 @@ export const useUnifiedRealtimeNotifications = ({
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Erro ao buscar agendamentos pendentes:', error);
+        console.error('❌ Erro ao buscar agendamentos pendentes:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return;
       }
 
       if (data && data.length > 0) {
-        console.log('📋 Agendamentos pendentes encontrados:', data.length);
         setPendingAppointments(data as Appointment[]);
         
         // Notificar sobre novos agendamentos encontrados
@@ -53,7 +55,6 @@ export const useUnifiedRealtimeNotifications = ({
           }
         });
       } else {
-        console.log('✅ Nenhum agendamento pendente encontrado');
         setPendingAppointments([]);
       }
     } catch (error) {
@@ -251,22 +252,17 @@ export const useUnifiedRealtimeNotifications = ({
         }
       )
       .subscribe((status) => {
-        console.log('🔌 Status da inscrição realtime unificada:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Notificações em tempo real ativas');
-        } else if (status === 'CHANNEL_ERROR') {
+        if (status === 'CHANNEL_ERROR') {
           console.error('❌ Erro na conexão realtime');
         }
       });
 
-    // Verificação periódica como fallback
+    // Verificação periódica como fallback - REDUZIDA PARA MELHOR PERFORMANCE
     const interval = setInterval(() => {
-      console.log('⏰ Verificação periódica de agendamentos');
       fetchPendingAppointments();
-    }, 30000); // A cada 30 segundos
+    }, 60000); // Reduzido para 1 minuto para melhor performance
 
     return () => {
-      console.log('🔌 Limpando notificações unificadas para salon:', salonId);
       clearInterval(interval);
       supabase.removeChannel(channel);
     };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useSalonData } from './useSalonData';
 import { useAppointmentData } from './useAppointmentData';
@@ -82,7 +82,7 @@ export const useAdminDashboardLogic = () => {
     console.log('🔑 Salon ID inicializado para notificações:', salonId);
   }, []);
 
-  const loading = salonLoading || appointmentLoading || serviceLoading;
+  const loading = useMemo(() => salonLoading || appointmentLoading || serviceLoading, [salonLoading, appointmentLoading, serviceLoading]);
 
   // Setup unified realtime notifications (conditional on salon ID)
   const {
@@ -123,16 +123,14 @@ export const useAdminDashboardLogic = () => {
     }
   }, [salon, getSalonAppointmentStats]);
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     const salonId = currentSalonId || getSalonId();
     if (salonId) {
-      console.log('Refreshing data for salon:', salonId);
-      await fetchSalonData(salonId);
-      await fetchSalonServices(salonId);
-      const appointmentResult = await fetchAllAppointments(salonId);
-      if (appointmentResult && appointmentResult.success) {
-        console.log('Appointments refreshed successfully');
-      }
+      await Promise.all([
+        fetchSalonData(salonId),
+        fetchSalonServices(salonId),
+        fetchAllAppointments(salonId)
+      ]);
     } else {
       console.error('Não foi possível obter salon ID para refresh dos dados');
       toast({
@@ -142,7 +140,7 @@ export const useAdminDashboardLogic = () => {
       });
       setTimeout(() => window.location.href = '/admin-login', 2000);
     }
-  };
+  }, [currentSalonId, fetchSalonData, fetchSalonServices, fetchAllAppointments, toast]);
 
   useEffect(() => {
     const salonId = currentSalonId || getSalonId();
@@ -185,7 +183,7 @@ export const useAdminDashboardLogic = () => {
     }
   }, [appointments, showNotification, newAppointment]);
 
-  const handleAcceptAppointment = async () => {
+  const handleAcceptAppointment = useCallback(async () => {
     if (newAppointment) {
       const result = await updateAppointmentStatus(newAppointment.id, 'confirmed');
       if (result.success) {
@@ -205,9 +203,9 @@ export const useAdminDashboardLogic = () => {
         });
       }
     }
-  };
+  }, [newAppointment, updateAppointmentStatus, clearNotification, toast, refreshData]);
 
-  const handleRejectAppointment = async () => {
+  const handleRejectAppointment = useCallback(async () => {
     if (newAppointment) {
       const result = await updateAppointmentStatus(newAppointment.id, 'cancelled', 'Agendamento recusado pelo establishment');
       if (result.success) {
@@ -227,7 +225,7 @@ export const useAdminDashboardLogic = () => {
         });
       }
     }
-  };
+  }, [newAppointment, updateAppointmentStatus, clearNotification, toast, refreshData]);
 
   const handleLogout = () => {
     localStorage.removeItem('userType');
@@ -241,18 +239,16 @@ export const useAdminDashboardLogic = () => {
     window.location.href = '/';
   };
 
-  const handleStatusChange = async (isOpen: boolean) => {
-    console.log('🔄 Status change called:', { isOpen, currentSalonId });
-    
+  const handleStatusChange = useCallback(async (isOpen: boolean) => {
     const salonId = currentSalonId || getSalonId();
     if (salonId) {
       // Atualizar dados do salon para refletir a mudança
-      await fetchSalonData(salonId);
-      
-      // Também atualizar outros dados se necessário
-      await fetchAllAppointments(salonId);
+      await Promise.all([
+        fetchSalonData(salonId),
+        fetchAllAppointments(salonId)
+      ]);
     }
-  };
+  }, [currentSalonId, fetchSalonData, fetchAllAppointments]);
 
   return {
     salon,
