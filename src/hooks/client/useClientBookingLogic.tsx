@@ -79,6 +79,8 @@ export const useClientBookingLogic = (salonSlug: string | undefined) => {
   // Load salon data on mount and when salonSlug changes
   useEffect(() => {
     if (!user) {
+      // Salvar URL atual para retornar após login
+      localStorage.setItem('returnUrl', window.location.pathname);
       navigate('/client-login');
       return;
     }

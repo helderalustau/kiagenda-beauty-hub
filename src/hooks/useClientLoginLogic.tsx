@@ -56,7 +56,14 @@ export const useClientLoginLogic = () => {
         // Update auth context (this will also update localStorage)
         login(clientData);
         
-        navigate('/client-dashboard');
+        // Verificar se existe URL de retorno salva
+        const returnUrl = localStorage.getItem('returnUrl');
+        if (returnUrl) {
+          localStorage.removeItem('returnUrl');
+          navigate(returnUrl);
+        } else {
+          navigate('/client-dashboard');
+        }
       } else {
         toast({
           title: "Erro de Login",
@@ -102,7 +109,15 @@ export const useClientLoginLogic = () => {
             
             // Update auth context (this will also update localStorage)
             login(clientData);
-            navigate('/client-dashboard');
+            
+            // Verificar se existe URL de retorno salva
+            const returnUrl = localStorage.getItem('returnUrl');
+            if (returnUrl) {
+              localStorage.removeItem('returnUrl');
+              navigate(returnUrl);
+            } else {
+              navigate('/client-dashboard');
+            }
           }
         }, 1000);
       } else {
