@@ -1,3 +1,4 @@
+
 import { useSalonCRUD } from './salon/useSalonCRUD';
 import { useSalonStatus } from './salon/useSalonStatus';
 import { useSalonBanner } from './salon/useSalonBanner';
@@ -69,6 +70,7 @@ export const useSalonData = () => {
     completeSalonSetup: setupHook.completeSalonSetup,
     
     // Cleanup operations
-    cleanupSalonsWithoutAdmins: cleanupHook.cleanupSalonsWithoutAdmins
+    cleanupSalonsWithoutAdmins: cleanupHook.cleanupSalonsWithoutAdmins,
+    cleanupIncompleteSalons: cleanupHook.cleanupIncompleteSalons
   };
 };

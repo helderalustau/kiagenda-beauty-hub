@@ -624,6 +624,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_incomplete_salons: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_salons_without_admins: {
         Args: Record<PropertyKey, never>
         Returns: number

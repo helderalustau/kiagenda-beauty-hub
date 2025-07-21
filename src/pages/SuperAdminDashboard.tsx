@@ -28,6 +28,7 @@ const SuperAdminDashboard = () => {
     isSubmitting,
     handleCreateSalon,
     handleCleanupSalons,
+    handleCleanupIncompleteSalons,
     handleLogout,
     handleRefresh,
     handleBackToHome
@@ -74,6 +75,7 @@ const SuperAdminDashboard = () => {
         <SuperAdminDashboardHeader 
           onBackToHome={handleBackToHome}
           onCleanupSalons={handleCleanupSalons}
+          onCleanupIncompleteSalons={handleCleanupIncompleteSalons}
           onLogout={handleLogout}
         />
 

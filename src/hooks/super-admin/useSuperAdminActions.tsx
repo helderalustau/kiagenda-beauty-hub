@@ -8,6 +8,7 @@ export const useSuperAdminActions = () => {
   const { 
     createSalon, 
     cleanupSalonsWithoutAdmins,
+    cleanupIncompleteSalons,
     fetchAllSalons,
     fetchDashboardStats,
     fetchPlanConfigurations
@@ -99,6 +100,25 @@ export const useSuperAdminActions = () => {
     }
   };
 
+  const handleCleanupIncompleteSalons = async () => {
+    const result = await cleanupIncompleteSalons();
+    
+    if (result.success) {
+      toast({
+        title: "Sucesso",
+        description: `${result.deletedCount} estabelecimento(s) sem configuração completa foram removidos`
+      });
+      fetchAllSalons();
+      fetchDashboardStats();
+    } else {
+      toast({
+        title: "Erro",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('userType');
     localStorage.removeItem('adminData');
@@ -119,6 +139,7 @@ export const useSuperAdminActions = () => {
     isSubmitting,
     handleCreateSalon,
     handleCleanupSalons,
+    handleCleanupIncompleteSalons,
     handleLogout,
     handleRefresh,
     handleBackToHome

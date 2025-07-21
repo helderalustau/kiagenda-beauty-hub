@@ -18,7 +18,24 @@ export const useSalonCleanup = () => {
     }
   };
 
+  const cleanupIncompleteSalons = async () => {
+    try {
+      const { data, error } = await supabase.rpc('cleanup_incomplete_salons');
+
+      if (error) {
+        console.error('Error cleaning up incomplete salons:', error);
+        return { success: false, message: 'Erro ao limpar estabelecimentos incompletos' };
+      }
+
+      return { success: true, deletedCount: data };
+    } catch (error) {
+      console.error('Error cleaning up incomplete salons:', error);
+      return { success: false, message: 'Erro ao limpar estabelecimentos incompletos' };
+    }
+  };
+
   return {
-    cleanupSalonsWithoutAdmins
+    cleanupSalonsWithoutAdmins,
+    cleanupIncompleteSalons
   };
 };
