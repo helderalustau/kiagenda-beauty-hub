@@ -111,11 +111,17 @@ export const useDashboardData = () => {
     }
   };
 
-  const updatePlanConfiguration = async (planData: any) => {
+  const updatePlanConfiguration = async ({ planData }: { planData: any }) => {
     try {
       const { data, error } = await supabase
         .from('plan_configurations')
-        .update(planData)
+        .update({
+          name: planData.name,
+          plan_type: planData.plan_type,
+          price: planData.price,
+          max_users: planData.max_attendants || planData.max_users,
+          description: planData.description
+        })
         .eq('id', planData.id)
         .select()
         .single();
