@@ -48,11 +48,12 @@ const PlanUpgradeRequestsList = () => {
     setProcessing(request.id);
     
     try {
-      // 1. Atualizar o plano do salão (mantém status atual)
+      // 1. Atualizar o plano do salão (e garantir que fique aberto)
       const { error: salonError } = await supabase
         .from('salons')
         .update({ 
           plan: request.requested_plan,
+          is_open: true,
           updated_at: new Date().toISOString()
         })
         .eq('id', request.salon_id);

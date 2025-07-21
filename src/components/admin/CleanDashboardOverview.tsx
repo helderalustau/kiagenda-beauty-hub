@@ -48,24 +48,31 @@ const CleanDashboardOverview = ({
   const { getSalonAppointmentStats } = usePlanLimitsChecker();
   const [appointmentStats, setAppointmentStats] = useState<any>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
   
-  // Buscar estatísticas de agendamentos
+  // Buscar estatísticas de agendamentos com delay
   useEffect(() => {
     if (salon?.id) {
-      console.log('🔍 Buscando estatísticas para salão:', salon.id, 'Status:', salon.is_open);
-      getSalonAppointmentStats(salon.id).then(stats => {
-        console.log('📊 Estatísticas recebidas:', stats);
-        if (stats.success) {
-          setAppointmentStats(stats);
-          // Não mostrar modal automaticamente - apenas quando usuário clicar no botão
-          // if (stats.limitReached) {
-          //   console.log('🚨 Limite atingido! Abrindo modal...');
-          //   setShowLimitModal(true);
-          // }
-        }
-      });
+      setIsLoadingStats(true);
+      
+      // Adicionar um pequeno delay para evitar problema visual
+      const timer = setTimeout(() => {
+        console.log('🔍 Buscando estatísticas para salão:', salon.id, 'Status:', salon.is_open);
+        getSalonAppointmentStats(salon.id).then(stats => {
+          console.log('📊 Estatísticas recebidas:', stats);
+          if (stats.success) {
+            setAppointmentStats(stats);
+          }
+          setIsLoadingStats(false);
+        }).catch(error => {
+          console.error('Erro ao buscar estatísticas:', error);
+          setIsLoadingStats(false);
+        });
+      }, 800); // 800ms delay para melhor UX
+
+      return () => clearTimeout(timer);
     }
-  }, [salon?.id, salon?.plan, getSalonAppointmentStats]); // Adicionar salon.plan como dependência
+  }, [salon?.id, salon?.plan, getSalonAppointmentStats]);
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -179,7 +186,7 @@ const CleanDashboardOverview = ({
 
 
       {/* Alerta de limite atingido */}
-      {appointmentStats?.limitReached && (
+      {!isLoadingStats && appointmentStats?.limitReached && (
         <Card className="border-red-500 bg-red-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
