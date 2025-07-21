@@ -135,6 +135,9 @@ const CleanDashboardOverview = ({
     return isToday(appointmentDate);
   });
 
+  // Agendamentos confirmados de hoje
+  const todayConfirmedAppointments = todayAppointments.filter(apt => apt.status === 'confirmed');
+
   // Próximos agendamentos
   const upcomingAppointments = appointments
     .filter(apt => {
@@ -266,7 +269,7 @@ const CleanDashboardOverview = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Hoje</p>
-                <p className="text-2xl font-bold text-foreground">{todayAppointments.length}</p>
+                <p className="text-2xl font-bold text-foreground">{todayConfirmedAppointments.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">agendamentos</p>
               </div>
               <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
