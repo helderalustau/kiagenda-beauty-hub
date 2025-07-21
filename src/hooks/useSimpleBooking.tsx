@@ -13,7 +13,7 @@ export const useSimpleBooking = (salon: Salon) => {
   
   const bookingState = useBookingState();
   const { services, loadingServices, error: servicesError, refreshServices } = useBookingServices(salon?.id);
-  const { isSubmitting, submitBooking: submitBookingBase } = useBookingSubmission(salon?.id);
+  const { isSubmitting, submitBooking: submitBookingBase } = useBookingSubmission();
   
   // Prevent unnecessary re-renders with stable salon ID
   const salonId = useMemo(() => salon?.id, [salon?.id]);
@@ -188,12 +188,17 @@ export const useSimpleBooking = (salon: Salon) => {
       }
     });
     
-    const success = await submitBookingBase(
-      bookingState.selectedService,
-      bookingState.selectedDate,
-      bookingState.selectedTime,
-      bookingState.clientData
-    );
+    const bookingData = {
+      salon_id: salonId,
+      service_id: bookingState.selectedService?.id,
+      appointment_date: bookingState.selectedDate,
+      appointment_time: bookingState.selectedTime,
+      client_auth_id: user?.id,
+      status: 'pending',
+      notes: bookingState.clientData.notes || ''
+    };
+    const result = await submitBookingBase(bookingData);
+    const success = result.success;
     
     if (success) {
       console.log('✅ Booking submitted successfully, resetting state');

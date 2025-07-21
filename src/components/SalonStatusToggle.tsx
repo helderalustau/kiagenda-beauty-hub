@@ -48,15 +48,11 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
       const newStatus = !isOpen;
       console.log('🔄 Alterando status da loja:', { salonId, from: isOpen, to: newStatus });
       
-      // REMOVIDO: Verificação que impedia abrir quando limite atingido
-      // Agora o admin pode sempre abrir/fechar a loja manualmente
-      
       const result = await toggleSalonStatus(salonId, newStatus);
       
       if (result.success) {
         console.log('✅ Status alterado com sucesso:', result);
         
-        // Feedback de sucesso
         toast({
           title: "Status Atualizado",
           description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,

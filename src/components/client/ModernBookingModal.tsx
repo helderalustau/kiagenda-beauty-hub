@@ -46,7 +46,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, services, onBookingSuccess
     selectedService?.id
   );
 
-  const { isSubmitting, submitBooking } = useBookingSubmission(salon?.id);
+  const { isSubmitting, submitBooking } = useBookingSubmission();
 
   // Carregar dados do cliente logado
   useEffect(() => {
@@ -93,7 +93,17 @@ const ModernBookingModal = ({ isOpen, onClose, salon, services, onBookingSuccess
   };
 
   const handleSubmit = async () => {
-    const success = await submitBooking(selectedService, selectedDate, selectedTime, clientData);
+    const bookingData = {
+      salon_id: salon?.id,
+      service_id: selectedService?.id,
+      appointment_date: selectedDate,
+      appointment_time: selectedTime,
+      client_auth_id: clientInfo?.id || user?.id,
+      status: 'pending',
+      notes: clientData.notes || ''
+    };
+    const result = await submitBooking(bookingData);
+    const success = result.success;
     
     if (success) {
       onBookingSuccess();
