@@ -19,61 +19,75 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
   const [isLimitReached, setIsLimitReached] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Verificar limites ao montar o componente e quando o salonId mudar
+  // Verificar limites apenas quando o salonId mudar, não quando status mudar
   useEffect(() => {
     const checkLimits = async () => {
-      const stats = await getSalonAppointmentStats(salonId);
-      if (stats.success) {
-        setIsLimitReached(stats.limitReached);
-        
-        // Se o limite foi atingido, forçar fechamento
-        if (stats.limitReached && isOpen) {
-          await checkAndEnforcePlanLimits(salonId);
-          onStatusChange?.(false);
+      if (!salonId) return;
+      
+      try {
+        const stats = await getSalonAppointmentStats(salonId);
+        if (stats.success) {
+          setIsLimitReached(stats.limitReached);
         }
+      } catch (error) {
+        console.error('Erro ao verificar limites:', error);
       }
     };
 
-    if (salonId) {
-      checkLimits();
-    }
-  }, [salonId, isOpen, getSalonAppointmentStats, checkAndEnforcePlanLimits, onStatusChange]);
+    checkLimits();
+  }, [salonId, getSalonAppointmentStats]); // Remover isOpen das dependências
 
   const handleToggleStatus = async () => {
+    if (loading) return;
+    
     setLoading(true);
     
-    // Se está tentando abrir, verificar limites primeiro
-    if (!isOpen) {
-      const stats = await getSalonAppointmentStats(salonId);
-      if (stats.success && stats.limitReached) {
+    try {
+      // Se está tentando abrir, verificar limites primeiro
+      if (!isOpen) {
+        const stats = await getSalonAppointmentStats(salonId);
+        if (stats.success && stats.limitReached) {
+          toast({
+            title: "Limite Atingido",
+            description: "Você atingiu o limite do seu plano. Faça upgrade para reabrir a loja.",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+
+      const newStatus = !isOpen;
+      const result = await toggleSalonStatus(salonId, newStatus);
+      
+      if (result.success) {
         toast({
-          title: "Limite Atingido",
-          description: "Você atingiu o limite do seu plano. Faça upgrade para reabrir a loja.",
+          title: "Status Atualizado",
+          description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
+        });
+        onStatusChange?.(newStatus);
+        
+        // Atualizar stats após mudança de status
+        const updatedStats = await getSalonAppointmentStats(salonId);
+        if (updatedStats.success) {
+          setIsLimitReached(updatedStats.limitReached);
+        }
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao alterar status",
           variant: "destructive"
         });
-        setLoading(false);
-        return;
       }
-    }
-
-    const newStatus = !isOpen;
-    const result = await toggleSalonStatus(salonId, newStatus);
-    
-    if (result.success) {
-      toast({
-        title: "Status Atualizado",
-        description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
-      });
-      onStatusChange?.(newStatus);
-    } else {
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
       toast({
         title: "Erro",
-        description: result.message,
+        description: "Erro inesperado ao alterar status",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (

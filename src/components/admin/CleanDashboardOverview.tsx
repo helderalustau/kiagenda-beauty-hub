@@ -57,15 +57,15 @@ const CleanDashboardOverview = ({
         console.log('📊 Estatísticas recebidas:', stats);
         if (stats.success) {
           setAppointmentStats(stats);
-          // Mostrar modal se limite foi atingido
-          if (stats.limitReached) {
-            console.log('🚨 Limite atingido! Abrindo modal...');
-            setShowLimitModal(true);
-          }
+          // Não mostrar modal automaticamente - apenas quando usuário clicar no botão
+          // if (stats.limitReached) {
+          //   console.log('🚨 Limite atingido! Abrindo modal...');
+          //   setShowLimitModal(true);
+          // }
         }
       });
     }
-  }, [salon?.id, salon?.is_open, getSalonAppointmentStats]);
+  }, [salon?.id, salon?.plan, getSalonAppointmentStats]); // Adicionar salon.plan como dependência
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -481,7 +481,17 @@ const CleanDashboardOverview = ({
       {/* Modal de limite atingido */}
       <PlanLimitReachedModal
         isOpen={showLimitModal}
-        onClose={() => setShowLimitModal(false)}
+        onClose={() => {
+          setShowLimitModal(false);
+          // Atualizar stats após fechar o modal (caso tenha havido upgrade)
+          if (salon?.id) {
+            getSalonAppointmentStats(salon.id).then(stats => {
+              if (stats.success) {
+                setAppointmentStats(stats);
+              }
+            });
+          }
+        }}
         currentPlan={salon.plan}
         currentAppointments={appointmentStats?.currentAppointments || 0}
         maxAppointments={appointmentStats?.maxAppointments || 0}
