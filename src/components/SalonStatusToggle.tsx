@@ -47,10 +47,10 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
     try {
       const newStatus = !isOpen;
       
+      // Alteração direta do status sem verificação de limites
       const result = await toggleSalonStatus(salonId, newStatus);
       
       if (result.success) {
-        
         toast({
           title: "Status Atualizado",
           description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
@@ -59,11 +59,17 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
         // Callback para atualizar o estado no componente pai
         onStatusChange?.(newStatus);
         
-        // Atualizar stats após mudança de status
-        const updatedStats = await getSalonAppointmentStats(salonId);
-        if (updatedStats.success) {
-          setIsLimitReached(updatedStats.limitReached);
-          setAppointmentStats(updatedStats);
+        // Atualizar apenas as estatísticas para exibição
+        if (newStatus) {
+          const updatedStats = await getSalonAppointmentStats(salonId);
+          if (updatedStats.success) {
+            setIsLimitReached(updatedStats.limitReached);
+            setAppointmentStats(updatedStats);
+          }
+        } else {
+          // Se fechou a loja, limpar as estatísticas
+          setIsLimitReached(false);
+          setAppointmentStats(null);
         }
       } else {
         toast({

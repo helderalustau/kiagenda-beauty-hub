@@ -46,6 +46,7 @@ const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: Op
     try {
       const newStatus = !isOpen;
       
+      // Alteração direta do status sem verificação de limites
       const result = await toggleSalonStatus(salonId, newStatus);
       
       if (result.success) {
@@ -57,8 +58,14 @@ const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: Op
         // Callback para atualizar o estado no componente pai
         onStatusChange?.(newStatus);
         
-        // Atualizar stats após mudança de status
-        await checkLimits();
+        // Atualizar apenas as estatísticas para exibição se a loja foi aberta
+        if (newStatus) {
+          await checkLimits();
+        } else {
+          // Se fechou a loja, limpar as estatísticas
+          setIsLimitReached(false);
+          setAppointmentStats(null);
+        }
       } else {
         toast({
           title: "Erro",
