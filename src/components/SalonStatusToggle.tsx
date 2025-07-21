@@ -52,18 +52,24 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
             description: "Você atingiu o limite do seu plano. Faça upgrade para reabrir a loja.",
             variant: "destructive"
           });
+          setLoading(false);
           return;
         }
       }
 
       const newStatus = !isOpen;
+      console.log('🔄 Alterando status da loja:', { salonId, from: isOpen, to: newStatus });
+      
       const result = await toggleSalonStatus(salonId, newStatus);
       
       if (result.success) {
+        console.log('✅ Status alterado com sucesso:', result);
         toast({
           title: "Status Atualizado",
           description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
         });
+        
+        // Chamar callback para atualizar o estado no componente pai
         onStatusChange?.(newStatus);
         
         // Atualizar stats após mudança de status
@@ -72,6 +78,7 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
           setIsLimitReached(updatedStats.limitReached);
         }
       } else {
+        console.error('❌ Erro ao alterar status:', result);
         toast({
           title: "Erro",
           description: result.message || "Erro ao alterar status",
@@ -79,7 +86,7 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
         });
       }
     } catch (error) {
-      console.error('Erro ao alterar status:', error);
+      console.error('💥 Erro inesperado ao alterar status:', error);
       toast({
         title: "Erro",
         description: "Erro inesperado ao alterar status",
