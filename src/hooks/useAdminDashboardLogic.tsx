@@ -4,6 +4,7 @@ import { useSalonData } from './useSalonData';
 import { useAppointmentData } from './useAppointmentData';
 import { useServiceData } from './useServiceData';
 import { useUnifiedRealtimeNotifications } from './useUnifiedRealtimeNotifications';
+import { usePlanLimitsChecker } from './usePlanLimitsChecker';
 
 export const useAdminDashboardLogic = () => {
   const { 
@@ -26,6 +27,7 @@ export const useAdminDashboardLogic = () => {
   } = useServiceData();
   
   const { toast } = useToast();
+  const { checkAndEnforcePlanLimits } = usePlanLimitsChecker();
   const [newAppointment, setNewAppointment] = useState<any>(null);
   const [showNotification, setShowNotification] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -102,12 +104,27 @@ export const useAdminDashboardLogic = () => {
     }
   });
 
-  // Sincronizar o status local com o salon
+  // Sincronizar o status local com o salon e verificar limites
   useEffect(() => {
     if (salon) {
       setSalonStatus(salon.is_open);
+      
+      // Verificar limites do plano automaticamente
+      const checkLimitsAutomatically = async () => {
+        const result = await checkAndEnforcePlanLimits(salon.id);
+        if (result.success && result.limitReached && result.salonClosed) {
+          setSalonStatus(false);
+          toast({
+            title: "Limite Atingido",
+            description: result.message,
+            variant: "destructive"
+          });
+        }
+      };
+      
+      checkLimitsAutomatically();
     }
-  }, [salon]);
+  }, [salon, checkAndEnforcePlanLimits, toast]);
 
   const refreshData = async () => {
     const salonId = currentSalonId || getSalonId();
