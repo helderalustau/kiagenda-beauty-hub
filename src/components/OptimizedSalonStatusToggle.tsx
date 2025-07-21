@@ -84,13 +84,13 @@ const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: Op
         <Store className="h-5 w-5 text-muted-foreground" />
         <span className="text-sm text-muted-foreground">Status:</span>
         <Badge 
-          variant={isOpen ? "default" : "secondary"} 
-          className={`flex items-center space-x-1 transition-colors cursor-pointer ${
+          variant="outline"
+          className={`flex items-center space-x-1 transition-all duration-300 cursor-pointer border-2 ${
             loading 
               ? 'opacity-70 cursor-wait'
               : isOpen 
-                ? 'bg-green-500 hover:bg-green-600 text-white' 
-                : 'bg-red-500 hover:bg-red-600 text-white'
+                ? 'bg-green-50 border-green-500 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:border-green-400 dark:text-green-300 dark:hover:bg-green-900' 
+                : 'bg-red-50 border-red-500 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:border-red-400 dark:text-red-300 dark:hover:bg-red-900'
           }`}
           onClick={handleToggleStatus}
         >
