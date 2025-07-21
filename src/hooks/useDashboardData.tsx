@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardStats, PlanConfiguration } from './useSupabaseData';
+import { usePlanConfigurations } from './usePlanConfigurations';
 
 export const useDashboardData = () => {
+  const { planConfigurations: configuredPlans } = usePlanConfigurations();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalAppointments: 0,
     pendingAppointments: 0,
@@ -52,12 +54,19 @@ export const useDashboardData = () => {
           gold: salonsData.filter(s => s.plan === 'gold').length
         };
 
-        // Calculate expected revenue based on plan pricing
+        // Calculate expected revenue based on dynamic plan pricing
+        const getPlanPrice = (planType: string) => {
+          const plan = configuredPlans.find(p => p.plan_type === planType);
+          return plan?.price || 0;
+        };
+
         const expectedRevenue = {
-          bronze: salonsByPlan.bronze * 29.90,
-          prata: salonsByPlan.prata * 59.90,
-          gold: salonsByPlan.gold * 99.90,
-          total: (salonsByPlan.bronze * 29.90) + (salonsByPlan.prata * 59.90) + (salonsByPlan.gold * 99.90)
+          bronze: salonsByPlan.bronze * getPlanPrice('bronze'),
+          prata: salonsByPlan.prata * getPlanPrice('prata'),
+          gold: salonsByPlan.gold * getPlanPrice('gold'),
+          total: (salonsByPlan.bronze * getPlanPrice('bronze')) + 
+                 (salonsByPlan.prata * getPlanPrice('prata')) + 
+                 (salonsByPlan.gold * getPlanPrice('gold'))
         };
 
         setDashboardStats({

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Users, DollarSign, ChartBar, Calendar, Scissors } from "lucide-react";
 import { DashboardStats } from '@/hooks/useSupabaseData';
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 
 interface SuperAdminStatsProps {
   stats: DashboardStats | null;
@@ -11,6 +12,9 @@ interface SuperAdminStatsProps {
 }
 
 const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
+  const { getAllPlansInfo, formatCurrency: formatPlanCurrency } = usePlanConfigurations();
+  const plansInfo = getAllPlansInfo();
+
   if (loading || !stats) {
     return (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -33,15 +37,6 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
-  };
-
-  const getPlanColor = (plan: string) => {
-    switch (plan) {
-      case 'bronze': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'prata': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'gold': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
   };
 
   // Provide default values for optional properties
@@ -123,18 +118,14 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
               <ChartBar className="h-5 w-5 text-indigo-600" />
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Badge className={getPlanColor('bronze')}>Bronze</Badge>
-                <span className="text-sm font-semibold">{salonsByPlan.bronze}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <Badge className={getPlanColor('prata')}>Prata</Badge>
-                <span className="text-sm font-semibold">{salonsByPlan.prata}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <Badge className={getPlanColor('gold')}>Gold</Badge>
-                <span className="text-sm font-semibold">{salonsByPlan.gold}</span>
-              </div>
+              {plansInfo.map((plan) => (
+                <div key={plan.plan_type} className="flex justify-between items-center">
+                  <Badge className={plan.color}>{plan.name}</Badge>
+                  <span className="text-sm font-semibold">
+                    {salonsByPlan[plan.plan_type as keyof typeof salonsByPlan] || 0}
+                  </span>
+                </div>
+              ))}
             </div>
           </CardHeader>
         </Card>
@@ -142,65 +133,47 @@ const SuperAdminStats = ({ stats, loading }: SuperAdminStatsProps) => {
 
       {/* Detalhamento da Receita por Plano */}
       <div className="grid md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-          <CardHeader>
-            <CardTitle className="text-amber-800 flex items-center space-x-2">
-              <Badge className={getPlanColor('bronze')}>Bronze</Badge>
-              <span>R$ 29,90/mês</span>
-            </CardTitle>
-            <CardDescription className="text-amber-700">
-              {salonsByPlan.bronze} estabelecimentos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-800">
-              {formatCurrency(expectedRevenue.bronze)}
-            </div>
-            <p className="text-sm text-amber-600 mt-1">
-              Receita mensal do plano Bronze
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
-          <CardHeader>
-            <CardTitle className="text-gray-800 flex items-center space-x-2">
-              <Badge className={getPlanColor('prata')}>Prata</Badge>
-              <span>R$ 59,90/mês</span>
-            </CardTitle>
-            <CardDescription className="text-gray-700">
-              {salonsByPlan.prata} estabelecimentos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-800">
-              {formatCurrency(expectedRevenue.prata)}
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              Receita mensal do plano Prata
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-          <CardHeader>
-            <CardTitle className="text-yellow-800 flex items-center space-x-2">
-              <Badge className={getPlanColor('gold')}>Gold</Badge>
-              <span>R$ 99,90/mês</span>
-            </CardTitle>
-            <CardDescription className="text-yellow-700">
-              {salonsByPlan.gold} estabelecimentos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-800">
-              {formatCurrency(expectedRevenue.gold)}
-            </div>
-            <p className="text-sm text-yellow-600 mt-1">
-              Receita mensal do plano Gold
-            </p>
-          </CardContent>
-        </Card>
+        {plansInfo.map((plan) => (
+          <Card key={plan.plan_type} className={`bg-gradient-to-br ${
+            plan.plan_type === 'bronze' ? 'from-amber-50 to-amber-100 border-amber-200' :
+            plan.plan_type === 'prata' ? 'from-gray-50 to-gray-100 border-gray-200' :
+            'from-yellow-50 to-yellow-100 border-yellow-200'
+          }`}>
+            <CardHeader>
+              <CardTitle className={`${
+                plan.plan_type === 'bronze' ? 'text-amber-800' :
+                plan.plan_type === 'prata' ? 'text-gray-800' :
+                'text-yellow-800'
+              } flex items-center space-x-2`}>
+                <Badge className={plan.color}>{plan.name}</Badge>
+                <span>{plan.price}</span>
+              </CardTitle>
+              <CardDescription className={
+                plan.plan_type === 'bronze' ? 'text-amber-700' :
+                plan.plan_type === 'prata' ? 'text-gray-700' :
+                'text-yellow-700'
+              }>
+                {salonsByPlan[plan.plan_type as keyof typeof salonsByPlan] || 0} estabelecimentos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${
+                plan.plan_type === 'bronze' ? 'text-amber-800' :
+                plan.plan_type === 'prata' ? 'text-gray-800' :
+                'text-yellow-800'
+              }`}>
+                {formatCurrency(expectedRevenue[plan.plan_type as keyof typeof expectedRevenue] || 0)}
+              </div>
+              <p className={`text-sm mt-1 ${
+                plan.plan_type === 'bronze' ? 'text-amber-600' :
+                plan.plan_type === 'prata' ? 'text-gray-600' :
+                'text-yellow-600'
+              }`}>
+                Receita mensal do plano {plan.name}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );

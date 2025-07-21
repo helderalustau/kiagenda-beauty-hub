@@ -12,6 +12,7 @@ import AdminFormActions from './admin-signup/AdminFormActions';
 import AdminInfoSection from './admin-signup/AdminInfoSection';
 import { useSalonData } from '@/hooks/useSalonData';
 import { useLocation } from 'react-router-dom';
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 
 interface AdminSignupFormProps {
   onSuccess?: (adminData: any) => void;
@@ -67,6 +68,9 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
     const random = Math.floor(Math.random() * 1000);
     return `EST-${timestamp}-${random}`;
   };
+
+  const { getAllPlansInfo } = usePlanConfigurations();
+  const availablePlans = getAllPlansInfo();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,9 +211,10 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h3 className="font-semibold text-blue-900 mb-2">Plano Selecionado:</h3>
                 <p className="text-blue-800 capitalize">
-                  {selectedPlan === 'bronze' && 'Bronze - GRÁTIS/limitado'}
-                  {selectedPlan === 'prata' && 'Prata - R$ 99/mês'}
-                  {selectedPlan === 'gold' && 'Ouro - R$ 199/mês'}
+                  {(() => {
+                    const plan = availablePlans.find(p => p.plan_type === selectedPlan);
+                    return plan ? `${plan.name} - ${plan.price}` : 'Plano não encontrado';
+                  })()}
                 </p>
               </div>
             )}

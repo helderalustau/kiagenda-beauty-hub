@@ -23,6 +23,7 @@ import {
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData';
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 
 interface CleanDashboardOverviewProps {
   appointments: Appointment[];
@@ -39,6 +40,7 @@ const CleanDashboardOverview = ({
   adminUsers,
   onUpdateStatus 
 }: CleanDashboardOverviewProps) => {
+  const { getPlanLimits, getPlanInfo } = usePlanConfigurations();
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -82,22 +84,17 @@ const CleanDashboardOverview = ({
     }).format(value);
   };
 
-  // Configuração do plano
-  const planLimits = {
-    bronze: { appointments: 100, name: "Bronze" },
-    silver: { appointments: 300, name: "Prata" },
-    gold: { appointments: 1000, name: "Ouro" },
-    platinum: { appointments: 99999, name: "Platinum" }
-  };
-
-  const currentPlan = planLimits[salon.plan as keyof typeof planLimits] || planLimits.bronze;
+  // Configuração do plano dinâmica
+  const currentPlan = getPlanLimits(salon.plan);
+  const planInfo = getPlanInfo(salon.plan);
+  
   const monthlyAppointments = appointments.filter(apt => {
     const aptDate = new Date(apt.appointment_date);
     const now = new Date();
     return aptDate.getMonth() === now.getMonth() && aptDate.getFullYear() === now.getFullYear();
   }).length;
 
-  const planUsagePercentage = Math.min((monthlyAppointments / currentPlan.appointments) * 100, 100);
+  const planUsagePercentage = Math.min((monthlyAppointments / currentPlan.max_appointments) * 100, 100);
 
   // Agendamentos do dia
   const todayAppointments = appointments.filter(apt => {
@@ -165,7 +162,7 @@ const CleanDashboardOverview = ({
                 <p className="text-sm font-medium text-muted-foreground">Plano Atual</p>
                 <p className="text-2xl font-bold text-foreground">{currentPlan.name}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {monthlyAppointments} de {currentPlan.appointments} usados
+                  {monthlyAppointments} de {currentPlan.max_appointments} usados
                 </p>
               </div>
               <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
