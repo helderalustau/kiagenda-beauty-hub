@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LogOut, Menu } from "lucide-react";
+import { ArrowLeft, LogOut, Menu, RefreshCw } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 import SalonStatusToggle from '@/components/SalonStatusToggle';
 import ManualNotificationChecker from '@/components/admin/ManualNotificationChecker';
@@ -13,9 +12,10 @@ interface AdminDashboardHeaderProps {
   isCheckingManually?: boolean;
   onBackToHome: () => void;
   onLogout: () => void;
-  onToggleMobileMenu: () => void;
+  onToggleMenu: () => void;
   onStatusChange: (isOpen: boolean) => void;
   onCheckAppointments?: () => void;
+  onRefresh?: () => void;
 }
 
 const AdminDashboardHeader = ({
@@ -25,9 +25,10 @@ const AdminDashboardHeader = ({
   isCheckingManually = false,
   onBackToHome,
   onLogout,
-  onToggleMobileMenu,
+  onToggleMenu,
   onStatusChange,
-  onCheckAppointments
+  onCheckAppointments,
+  onRefresh
 }: AdminDashboardHeaderProps) => {
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
@@ -58,6 +59,30 @@ const AdminDashboardHeader = ({
                 />
               </div>
             )}
+
+            {/* Botão de Refresh */}
+            {onRefresh && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                className="hidden sm:flex items-center space-x-2 hover:bg-accent"
+                title="Atualizar dados"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBackToHome}
+              className="hidden sm:flex items-center space-x-1"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Início</span>
+            </Button>
+            
             <Button
               variant="outline"
               onClick={onLogout}
@@ -67,10 +92,11 @@ const AdminDashboardHeader = ({
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Sair</span>
             </Button>
+            
             <Button
               variant="ghost"
               size="sm"
-              onClick={onToggleMobileMenu}
+              onClick={onToggleMenu}
               className="sm:hidden"
             >
               <Menu className="h-5 w-5" />
@@ -87,6 +113,22 @@ const AdminDashboardHeader = ({
                 onStatusChange={onStatusChange}
               />
             </div>
+            
+            {/* Botão de Refresh no Mobile */}
+            {onRefresh && (
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onRefresh}
+                  className="w-full flex items-center space-x-2"
+                  title="Atualizar dados"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Atualizar</span>
+                </Button>
+              </div>
+            )}
             
             {/* Verificador Manual de Agendamentos no Mobile */}
             {onCheckAppointments && (

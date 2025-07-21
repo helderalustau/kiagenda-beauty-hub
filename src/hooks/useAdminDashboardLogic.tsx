@@ -10,6 +10,7 @@ import { usePlanLimitsChecker } from './usePlanLimitsChecker';
 export const useAdminDashboardLogic = () => {
   const { 
     salon, 
+    setSalon,
     fetchSalonData,
     loading: salonLoading
   } = useSalonData();
@@ -244,7 +245,7 @@ export const useAdminDashboardLogic = () => {
     if (salonId && salon) {
       // Atualizar estado local imediatamente para responsividade
       const updatedSalon = { ...salon, is_open: isOpen };
-      // Se tiver setSalon disponível, usar aqui para atualizar imediatamente
+      setSalon(updatedSalon);
       
       // Buscar dados atualizados em background
       setTimeout(async () => {
@@ -254,7 +255,7 @@ export const useAdminDashboardLogic = () => {
         ]);
       }, 100);
     }
-  }, [currentSalonId, salon, fetchSalonData, fetchAllAppointments]);
+  }, [currentSalonId, salon, setSalon, fetchSalonData, fetchAllAppointments]);
 
   return {
     salon,
