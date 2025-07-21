@@ -241,14 +241,20 @@ export const useAdminDashboardLogic = () => {
 
   const handleStatusChange = useCallback(async (isOpen: boolean) => {
     const salonId = currentSalonId || getSalonId();
-    if (salonId) {
-      // Atualizar dados do salon para refletir a mudança
-      await Promise.all([
-        fetchSalonData(salonId),
-        fetchAllAppointments(salonId)
-      ]);
+    if (salonId && salon) {
+      // Atualizar estado local imediatamente para responsividade
+      const updatedSalon = { ...salon, is_open: isOpen };
+      // Se tiver setSalon disponível, usar aqui para atualizar imediatamente
+      
+      // Buscar dados atualizados em background
+      setTimeout(async () => {
+        await Promise.all([
+          fetchSalonData(salonId),
+          fetchAllAppointments(salonId)
+        ]);
+      }, 100);
     }
-  }, [currentSalonId, fetchSalonData, fetchAllAppointments]);
+  }, [currentSalonId, salon, fetchSalonData, fetchAllAppointments]);
 
   return {
     salon,

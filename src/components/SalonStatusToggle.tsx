@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Store, LockOpen, Lock } from "lucide-react";
 import { useSalonData } from '@/hooks/useSalonData';
@@ -15,15 +15,24 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
   const { toggleSalonStatus } = useSalonData();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [localIsOpen, setLocalIsOpen] = useState(isOpen);
+
+  // Sincronizar estado local quando props mudam
+  useEffect(() => {
+    setLocalIsOpen(isOpen);
+  }, [isOpen]);
 
   const handleToggleStatus = async () => {
     if (loading) return;
     
     setLoading(true);
+    const newStatus = !localIsOpen;
+    
+    // Atualização otimista: muda visual imediatamente
+    setLocalIsOpen(newStatus);
+    onStatusChange?.(newStatus);
     
     try {
-      const newStatus = !isOpen;
-      
       const result = await toggleSalonStatus(salonId, newStatus);
       
       if (result.success) {
@@ -31,10 +40,10 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
           title: "Status Atualizado",
           description: `Loja marcada como ${newStatus ? 'aberta' : 'fechada'}`,
         });
-        
-        // Callback para atualizar o estado no componente pai
-        onStatusChange?.(newStatus);
       } else {
+        // Reverter em caso de erro
+        setLocalIsOpen(!newStatus);
+        onStatusChange?.(!newStatus);
         toast({
           title: "Erro",
           description: result.message || "Erro ao alterar status",
@@ -42,6 +51,9 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
         });
       }
     } catch (error) {
+      // Reverter em caso de erro
+      setLocalIsOpen(!newStatus);
+      onStatusChange?.(!newStatus);
       console.error('Erro ao alterar status:', error);
       toast({
         title: "Erro",
@@ -67,7 +79,7 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
               ? 'opacity-70 cursor-wait scale-95' 
               : 'hover:scale-105 active:scale-95'
             }
-            ${isOpen 
+            ${localIsOpen 
               ? 'bg-emerald-50 border-emerald-500 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-600 dark:bg-emerald-950 dark:border-emerald-400 dark:text-emerald-300 dark:hover:bg-emerald-900' 
               : 'bg-red-50 border-red-500 text-red-700 hover:bg-red-100 hover:border-red-600 dark:bg-red-950 dark:border-red-400 dark:text-red-300 dark:hover:bg-red-900'
             }
@@ -78,7 +90,7 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
           ) : (
             <div className="transition-transform duration-200">
-              {isOpen ? (
+              {localIsOpen ? (
                 <LockOpen className="h-3 w-3" />
               ) : (
                 <Lock className="h-3 w-3" />
@@ -86,7 +98,7 @@ const SalonStatusToggle = ({ salonId, isOpen, onStatusChange }: SalonStatusToggl
             </div>
           )}
           <span className="font-medium">
-            {loading ? 'Alterando...' : isOpen ? 'Aberta' : 'Fechada'}
+            {loading ? 'Alterando...' : localIsOpen ? 'Aberta' : 'Fechada'}
           </span>
         </Badge>
       </div>
