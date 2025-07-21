@@ -8,6 +8,7 @@ import SuperAdminOverviewTab from '@/components/super-admin/SuperAdminOverviewTa
 import SuperAdminSalonsTab from '@/components/super-admin/SuperAdminSalonsTab';
 import SuperAdminSettingsTab from '@/components/super-admin/SuperAdminSettingsTab';
 import SuperAdminClientsTab from '@/components/super-admin/SuperAdminClientsTab';
+import SuperAdminUsersTab from '@/components/super-admin/SuperAdminUsersTab';
 import FinancialDashboard from '@/components/super-admin/financial/FinancialDashboard';
 import { useSuperAdminActions } from '@/hooks/super-admin/useSuperAdminActions';
 import SuperAdminProtection from '@/components/SuperAdminProtection';
@@ -78,7 +79,7 @@ const SuperAdminDashboard = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
                 <span>Visão Geral</span>
@@ -90,6 +91,10 @@ const SuperAdminDashboard = () => {
               <TabsTrigger value="clients" className="flex items-center space-x-2">
                 <UserCheck className="h-4 w-4" />
                 <span>Clientes</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center space-x-2">
+                <Users className="h-4 w-4" />
+                <span>Usuários</span>
               </TabsTrigger>
               <TabsTrigger value="financial" className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4" />
@@ -121,6 +126,10 @@ const SuperAdminDashboard = () => {
 
             <TabsContent value="clients">
               <SuperAdminClientsTab />
+            </TabsContent>
+
+            <TabsContent value="users">
+              <SuperAdminUsersTab />
             </TabsContent>
 
             <TabsContent value="financial">

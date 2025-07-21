@@ -4,9 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Eye, EyeOff, Loader2, RefreshCw, TrendingUp } from "lucide-react";
+import { Users, Eye, EyeOff, Loader2, RefreshCw, TrendingUp, Trash2 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ClientFilters from './client-management/ClientFilters';
@@ -142,6 +153,40 @@ const SuperAdminClientsTab = () => {
 
   const handleRefresh = () => {
     fetchClients();
+  };
+
+  const handleDeleteClient = async (clientId: string, clientName: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_auth')
+        .delete()
+        .eq('id', clientId);
+
+      if (error) {
+        console.error('Error deleting client:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao excluir cliente",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Sucesso",
+        description: `Cliente ${clientName} excluído com sucesso`
+      });
+
+      // Refresh the clients list
+      fetchClients();
+    } catch (error) {
+      console.error('Error in handleDeleteClient:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao excluir cliente",
+        variant: "destructive"
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -308,6 +353,7 @@ const SuperAdminClientsTab = () => {
                     <TableHead>Senha</TableHead>
                     <TableHead>Cadastro</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -361,6 +407,37 @@ const SuperAdminClientsTab = () => {
                         <Badge variant="default" className="bg-green-100 text-green-800">
                           Ativo
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir o cliente <strong>{client.name}</strong>? 
+                                Esta ação não pode ser desfeita e todos os dados do cliente serão perdidos.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteClient(client.id, client.name)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Excluir Cliente
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}
