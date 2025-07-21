@@ -94,13 +94,15 @@ const OptimizedSalonStatusToggle = memo(({ salonId, isOpen, onStatusChange }: Op
           }`}
           onClick={handleToggleStatus}
         >
-          {isOpen ? (
+          {loading ? (
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+          ) : isOpen ? (
             <LockOpen className="h-3 w-3" />
           ) : (
             <Lock className="h-3 w-3" />
           )}
           <span>
-            {isOpen ? 'Aberta' : 'Fechada'}
+            {loading ? 'Alterando...' : isOpen ? 'Aberta' : 'Fechada'}
           </span>
         </Badge>
         
