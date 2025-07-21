@@ -119,7 +119,9 @@ export const useDashboardData = () => {
           name: planData.name,
           plan_type: planData.plan_type,
           price: planData.price,
-          max_users: planData.max_attendants || planData.max_users,
+          max_users: planData.max_users,
+          max_appointments: planData.max_appointments,
+          max_attendants: planData.max_attendants,
           description: planData.description
         })
         .eq('id', planData.id)
@@ -130,6 +132,13 @@ export const useDashboardData = () => {
         console.error('Error updating plan configuration:', error);
         return { success: false, message: 'Erro ao atualizar configuração do plano' };
       }
+
+      // Atualizar o estado local
+      setPlanConfigurations(prev => 
+        prev.map(config => 
+          config.id === planData.id ? { ...config, ...data } : config
+        )
+      );
 
       return { success: true, plan: data };
     } catch (error) {
