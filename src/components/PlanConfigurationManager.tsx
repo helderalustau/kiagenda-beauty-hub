@@ -25,6 +25,8 @@ const PlanConfigurationManager: React.FC<Props> = ({ configurations, onRefresh }
   const [editingPlan, setEditingPlan] = useState<EditingPlan | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  console.log('PlanConfigurationManager received configurations:', configurations);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',

@@ -93,6 +93,7 @@ export const useDashboardData = () => {
   const fetchPlanConfigurations = async () => {
     try {
       setLoading(true);
+      console.log('Fetching plan configurations...');
       const { data, error } = await supabase
         .from('plan_configurations')
         .select('*')
@@ -103,6 +104,7 @@ export const useDashboardData = () => {
         return;
       }
 
+      console.log('Plan configurations fetched:', data);
       setPlanConfigurations(data || []);
     } catch (error) {
       console.error('Error fetching plan configurations:', error);
