@@ -192,7 +192,7 @@ export const useAdminRegistrationForm = ({
     if (onCancel) {
       onCancel();
     } else {
-      // Redirecionar para tela inicial
+      // Redirecionar para tela inicial do sistema
       window.location.href = '/';
     }
   };

@@ -4,8 +4,8 @@ import AdminRegistrationForm from '@/components/AdminRegistrationForm';
 
 const AdminRegistration = () => {
   const handleCancel = () => {
-    // Voltar para dashboard do super admin
-    window.location.href = '/super-admin-dashboard';
+    // Redirecionar para tela inicial do sistema
+    window.location.href = '/';
   };
 
   return (

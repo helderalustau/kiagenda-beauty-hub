@@ -29,9 +29,19 @@ const AdminDashboard = () => {
     handleAcceptAppointment,
     handleRejectAppointment,
     handleLogout,
-    handleBackToHome,
     handleStatusChange
   } = useAdminDashboardLogic();
+
+  const handleBackToHome = () => {
+    // Redirecionar para tela inicial do sistema
+    window.location.href = '/';
+  };
+
+  const handleLogoutAndRedirect = () => {
+    handleLogout();
+    // Redirecionar para tela inicial do sistema
+    window.location.href = '/';
+  };
 
   if (loading) {
     return (
@@ -80,7 +90,7 @@ const AdminDashboard = () => {
         pendingCount={pendingAppointments?.length || 0}
         isCheckingManually={isCheckingManually}
         onBackToHome={handleBackToHome}
-        onLogout={handleLogout}
+        onLogout={handleLogoutAndRedirect}
         onToggleMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
         onStatusChange={handleStatusChange}
         onCheckAppointments={checkForNewAppointments}
