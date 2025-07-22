@@ -153,7 +153,11 @@ const SuperAdminDashboard = () => {
     );
   };
 
-  return <DashboardContent />;
+  return (
+    <SuperAdminProtection fallbackPath="/super-admin-login">
+      <DashboardContent />
+    </SuperAdminProtection>
+  );
 };
 
 export default SuperAdminDashboard;

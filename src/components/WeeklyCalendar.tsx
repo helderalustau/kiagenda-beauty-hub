@@ -2,10 +2,11 @@
 import React from 'react';
 import { Appointment } from '@/types/supabase-entities';
 import { useRealtimeAppointmentUpdates } from '@/hooks/useRealtimeAppointmentUpdates';
-import ModernWeeklySchedule from './admin/calendar/ModernWeeklySchedule';
+import ResponsiveWeeklyCalendar from './admin/calendar/ResponsiveWeeklyCalendar';
 import RealtimeBookingNotification from './admin/RealtimeBookingNotification';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useToast } from "@/hooks/use-toast";
+import AppointmentDetailsModal from './admin/AppointmentDetailsModal';
 
 interface WeeklyCalendarProps {
   appointments: Appointment[];
@@ -15,6 +16,8 @@ interface WeeklyCalendarProps {
 const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
   const { updateAppointmentStatus } = useAppointmentData();
   const { toast } = useToast();
+  const [selectedAppointment, setSelectedAppointment] = React.useState<Appointment | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = React.useState(false);
 
   // Pegar salon e admin data do localStorage
   const getSalonData = () => {
@@ -79,6 +82,11 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
     }
   };
 
+  const handleAppointmentClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsModal(true);
+  };
+
   // Verificar se temos dados válidos do salon
   if (!salonId) {
     console.error('WeeklyCalendar - No salon ID found');
@@ -113,11 +121,17 @@ const WeeklyCalendar = ({ appointments, onRefresh }: WeeklyCalendarProps) => {
 
   return (
     <>
-      <ModernWeeklySchedule 
+      <ResponsiveWeeklyCalendar 
         appointments={appointments}
         salon={salonWithDefaults}
-        onUpdateAppointment={handleUpdateAppointment}
-        isUpdating={false}
+        onAppointmentClick={handleAppointmentClick}
+      />
+
+      {/* Modal de Detalhes */}
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
       />
 
       {/* Componente de notificação em tempo real */}
