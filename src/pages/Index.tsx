@@ -1,214 +1,207 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import React from 'react';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, Mail, Calendar, Clock, Star, Building2, Scissors, ShieldCheck, Users, Crown } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from 'react-router-dom';
-import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { Calendar, Users, Scissors, Star, Shield, Crown } from "lucide-react";
+
 const Index = () => {
-  const { getAllPlansInfo } = usePlanConfigurations();
-  const plansInfo = getAllPlansInfo();
-  const navigate = useNavigate();
-  const navigateToAdminLogin = () => {
-    navigate('/admin-login');
+  const handleAdminLogin = () => {
+    window.location.href = '/admin-login';
   };
-  const navigateToClientLogin = () => {
-    navigate('/client-login');
+
+  const handleClientLogin = () => {
+    window.location.href = '/client-login';
   };
-  const navigateToAdminRegistration = () => {
-    navigate('/admin-registration');
+
+  const handleSuperAdminLogin = () => {
+    window.location.href = '/super-admin-login';
   };
-  const navigateToAdminRegistrationWithPlan = (plan: string) => {
-    navigate('/admin-registration', {
-      state: {
-        selectedPlan: plan
-      }
-    });
-  };
-  return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
-      {/* Header - Responsivo */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-50">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+
+  const features = [
+    {
+      icon: Calendar,
+      title: "Agendamento Online",
+      description: "Sistema completo de agendamentos com horários disponíveis em tempo real"
+    },
+    {
+      icon: Users,
+      title: "Gestão de Clientes",
+      description: "Cadastro e histórico completo de todos os seus clientes"
+    },
+    {
+      icon: Scissors,
+      title: "Catálogo de Serviços",
+      description: "Organize todos os serviços oferecidos com preços e durações"
+    },
+    {
+      icon: Star,
+      title: "Planos Flexíveis",
+      description: "Escolha o plano ideal para o seu estabelecimento"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
+      {/* Header */}
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="bg-gradient-to-r from-blue-600 to-pink-600 rounded-lg p-1.5 sm:p-2">
-                <Scissors className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-2 rounded-lg">
+                <Scissors className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">
-                Kiagenda
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
+                SalonManager
               </h1>
             </div>
-            
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <Button onClick={navigateToAdminLogin} variant="outline" size="sm" className="text-xs sm:text-sm">
-                <span className="hidden sm:inline">Loja</span>
-                <span className="sm:hidden">🏪</span>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handleClientLogin}
+                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Área do Cliente
               </Button>
-              <Button onClick={navigateToClientLogin} variant="outline" size="sm" className="text-xs sm:text-sm">
-                <span className="hidden sm:inline">Cliente</span>
-                <span className="sm:hidden">👤</span>
+              <Button 
+                onClick={handleAdminLogin}
+                className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600"
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Área Administrativa
               </Button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-12">
-        {/* Hero Section - Responsivo */}
-        <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 px-2">
-            Transforme seu Salão com 
-            <span className="bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent"> Tecnologia</span>
+      {/* Hero Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 text-center">
+          <Badge className="mb-6 bg-blue-100 text-blue-800 hover:bg-blue-100">
+            Sistema de Gestão Completo
+          </Badge>
+          <h2 className="text-5xl font-bold text-gray-900 mb-6">
+            Gerencie seu Salão de Beleza com
+            <span className="bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent block">
+              Eficiência e Modernidade
+            </span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto px-4">
-            Para quem transforma vidas todos os dias, chegou a tecnologia que transforma o seu negócio. Agende, gerencie e evolua com uma plataforma feita para você.
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Plataforma completa para salões de beleza, barbearias e clínicas estéticas. 
+            Gerencie agendamentos, clientes, serviços e muito mais em um só lugar.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
-              onClick={navigateToAdminRegistration} 
               size="lg" 
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              onClick={handleAdminLogin}
+              className="bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600 text-lg px-8 py-3"
             >
-              Começar Agora - Grátis
+              <Shield className="h-5 w-5 mr-2" />
+              Começar Agora
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={handleClientLogin}
+              className="border-blue-200 text-blue-700 hover:bg-blue-50 text-lg px-8 py-3"
+            >
+              <Users className="h-5 w-5 mr-2" />
+              Sou Cliente
             </Button>
           </div>
         </div>
+      </section>
 
-        {/* Features Grid - Responsivo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-16 px-3 sm:px-0">
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardHeader className="text-center pb-4 p-4 sm:p-6">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-              </div>
-              <CardTitle className="text-lg sm:text-xl">Agendamento Inteligente</CardTitle>
-              <CardDescription className="text-sm sm:text-base">Sistema automatizado de agendamentos com confirmações em tempo real.</CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardHeader className="text-center pb-4 p-4 sm:p-6">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-pink-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-              </div>
-              <CardTitle className="text-lg sm:text-xl">Gestão de Clientes</CardTitle>
-              <CardDescription className="text-sm sm:text-base">
-                Cadastro completo de clientes com histórico de serviços, preferências e dados de contato organizados.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardHeader className="text-center pb-4 p-4 sm:p-6">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-              </div>
-              <CardTitle className="text-lg sm:text-xl">Planos Flexíveis</CardTitle>
-              <CardDescription className="text-sm sm:text-base">
-                Escolha o plano ideal para seu negócio, desde freelancers até grandes estabelecimentos.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* Pricing Section - Responsivo */}
-        <div className="mb-12 sm:mb-16 px-3 sm:px-0">
-          <div className="text-center mb-8 sm:mb-12">
-            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Planos que Crescem com Você</h3>
-            <p className="text-base sm:text-lg text-gray-600 px-4">Escolha o plano perfeito para seu estabelecimento</p>
+      {/* Features Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-bold text-gray-900 mb-4">
+              Tudo que você precisa em uma plataforma
+            </h3>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Recursos pensados especificamente para profissionais da beleza
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto">
-            {plansInfo.map((plan, index) => {
-              const isPopular = plan.plan_type === 'prata';
-              const isPremium = plan.plan_type === 'gold';
-              
-              return (
-                <Card key={plan.id} className={`bg-white/80 backdrop-blur-sm border-2 shadow-lg hover:shadow-xl transition-all duration-300 ${
-                  plan.plan_type === 'bronze' ? 'border-amber-200' :
-                  plan.plan_type === 'prata' ? 'border-gray-300 sm:transform sm:scale-105' :
-                  'border-yellow-300'
-                }`}>
-                  <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
-                    {isPopular && (
-                      <Badge className="bg-gradient-to-r from-blue-500 to-pink-500 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold mb-2">
-                        MAIS POPULAR
-                      </Badge>
-                    )}
-                    <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 ${
-                      plan.plan_type === 'bronze' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
-                      plan.plan_type === 'prata' ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
-                      'bg-gradient-to-r from-yellow-500 to-yellow-600'
-                    }`}>
-                      {plan.plan_type === 'bronze' ? <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" /> :
-                       plan.plan_type === 'prata' ? <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" /> :
-                       <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-white" />}
-                    </div>
-                    <CardTitle className="text-xl sm:text-2xl">{plan.name}</CardTitle>
-                    <div className="mt-3 sm:mt-4">
-                      <span className="text-3xl sm:text-4xl font-bold text-gray-900">
-                        {plan.price}
-                      </span>
-                      <span className="text-sm sm:text-base text-gray-600">
-                        /mês
-                      </span>
-                    </div>
-                    <CardDescription className="text-sm sm:text-base">
-                      {plan.plan_type === 'bronze' ? 'Ideal para profissionais autônomos' :
-                       plan.plan_type === 'prata' ? 'Perfeito para salões' :
-                       'Para grandes estabelecimentos'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                        <span className="text-sm sm:text-base">
-                          {plan.max_attendants === 1 ? '1 Atendente' :
-                           plan.max_attendants > 10 ? 'Atendentes Ilimitados' :
-                           `Até ${plan.max_attendants} Atendentes`}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                        <span className="text-sm sm:text-base">
-                          {plan.max_appointments > 1000 ? 'Agendamentos Ilimitados' :
-                           `${plan.max_appointments} agendamentos por mês`}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                        <span className="text-sm sm:text-base">
-                          {plan.plan_type === 'bronze' ? 'Relatórios Básicos' :
-                           plan.plan_type === 'prata' ? 'Relatórios Avançados' :
-                           'Relatórios Completos'}
-                        </span>
-                      </div>
-                      {plan.plan_type !== 'bronze' && (
-                        <div className="flex items-center space-x-2">
-                          <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
-                          <span className="text-sm sm:text-base">
-                            {plan.plan_type === 'gold' ? 'Suporte Prioritário' : 'Relatórios Completos'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <Button 
-                      onClick={() => navigateToAdminRegistrationWithPlan(plan.plan_type)} 
-                      className="w-full mt-4 sm:mt-6 text-sm sm:text-base" 
-                      variant={plan.plan_type === 'prata' ? 'default' : 'outline'}
-                    >
-                      Escolher {plan.name}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <Card key={index} className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow">
+                <CardHeader>
+                  <div className="mx-auto bg-gradient-to-r from-blue-600 to-pink-500 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                    <feature.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">
+                    {feature.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
-      </div>
-    </div>;
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 text-center">
+          <Card className="max-w-4xl mx-auto border-0 shadow-2xl bg-gradient-to-r from-blue-600 to-pink-500 text-white">
+            <CardContent className="py-16">
+              <h3 className="text-4xl font-bold mb-6">
+                Pronto para transformar seu negócio?
+              </h3>
+              <p className="text-xl mb-8 opacity-90">
+                Junte-se a centenas de profissionais que já escolheram nossa plataforma
+              </p>
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={handleAdminLogin}
+                className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-3"
+              >
+                <Shield className="h-5 w-5 mr-2" />
+                Criar Conta Grátis
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center space-x-3 mb-4 md:mb-0">
+              <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-2 rounded-lg">
+                <Scissors className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold">SalonManager</span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleSuperAdminLogin}
+                className="text-gray-400 hover:text-white"
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                Super Admin
+              </Button>
+              <div className="text-sm text-gray-400">
+                © 2024 SalonManager. Todos os direitos reservados.
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 };
+
 export default Index;

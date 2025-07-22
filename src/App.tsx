@@ -13,6 +13,7 @@ import AdminRegistration from "./pages/AdminRegistration";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
 import SalonSetup from "./pages/SalonSetup";
 import BusinessSetup from "./pages/BusinessSetup";
 import PlanSelection from "./pages/PlanSelection";
@@ -42,6 +43,7 @@ function App() {
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/client-dashboard" element={<ClientDashboard />} />
               <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
+              <Route path="/super-admin-login" element={<SuperAdminLogin />} />
               <Route path="/salon-setup" element={<SalonSetup />} />
               <Route path="/business-setup" element={<BusinessSetup />} />
               <Route path="/plan-selection" element={<PlanSelection />} />

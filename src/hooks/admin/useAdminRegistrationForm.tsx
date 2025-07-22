@@ -192,7 +192,8 @@ export const useAdminRegistrationForm = ({
     if (onCancel) {
       onCancel();
     } else {
-      window.location.href = '/super-admin-dashboard';
+      // Redirecionar para tela inicial
+      window.location.href = '/';
     }
   };
 
