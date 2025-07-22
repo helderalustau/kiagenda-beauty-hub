@@ -77,6 +77,7 @@ const SuperAdminDashboard = () => {
           onCleanupSalons={handleCleanupSalons}
           onCleanupIncompleteSalons={handleCleanupIncompleteSalons}
           onLogout={handleLogout}
+          brandName="Kiagenda"
         />
 
         <div className="container mx-auto px-4 py-8">

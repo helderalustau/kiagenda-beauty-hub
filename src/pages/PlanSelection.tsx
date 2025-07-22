@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { ArrowLeft, Check, Crown, Star, Zap } from "lucide-react";
+import { ArrowLeft, Check, Crown, Star, Zap, Scissors } from "lucide-react";
 
 const PlanSelection = () => {
   const { toast } = useToast();
@@ -169,12 +169,20 @@ const PlanSelection = () => {
             Voltar ao Início
           </Button>
           
-          <div className="text-center">
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-2 rounded-lg">
+                <Scissors className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
+                Kiagenda
+              </h1>
+            </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Escolha seu Plano
             </h1>
             <p className="text-gray-600">
-              Olá {adminData.name}! Selecione o plano ideal para seu estabelecimento
+              Olá {adminData?.name}! Selecione o plano ideal para seu estabelecimento
             </p>
           </div>
         </div>

@@ -3,9 +3,13 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Scissors, Star, Shield, Crown } from "lucide-react";
+import { Calendar, Users, Scissors, Star, Shield, Crown, Check } from "lucide-react";
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 
 const Index = () => {
+  const { getAllPlansInfo, loading: plansLoading } = usePlanConfigurations();
+  const plansInfo = getAllPlansInfo();
+
   const handleAdminLogin = () => {
     window.location.href = '/admin-login';
   };
@@ -41,6 +45,19 @@ const Index = () => {
     }
   ];
 
+  const getPlanIcon = (planType: string) => {
+    switch (planType) {
+      case 'bronze':
+        return <Crown className="h-6 w-6 text-amber-600" />;
+      case 'prata':
+        return <Star className="h-6 w-6 text-gray-600" />;
+      case 'gold':
+        return <Crown className="h-6 w-6 text-yellow-600" />;
+      default:
+        return <Crown className="h-6 w-6" />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
       {/* Header */}
@@ -52,7 +69,7 @@ const Index = () => {
                 <Scissors className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
-                SalonManager
+                Kiagenda
               </h1>
             </div>
             <div className="flex gap-3">
@@ -147,6 +164,67 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Plans Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-bold text-gray-900 mb-4">
+              Escolha o Plano Ideal
+            </h3>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Planos flexíveis que crescem com o seu negócio
+            </p>
+          </div>
+
+          {plansLoading ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {plansInfo.map((plan, index) => (
+                <Card key={plan.id} className={`relative ${index === 1 ? 'scale-105 border-2 border-blue-500' : ''} hover:shadow-xl transition-all`}>
+                  {index === 1 && (
+                    <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white">
+                      Mais Popular
+                    </Badge>
+                  )}
+                  
+                  <CardHeader className="text-center pb-4">
+                    <div className="mx-auto mb-4">
+                      {getPlanIcon(plan.plan_type)}
+                    </div>
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <div className="text-3xl font-bold text-gray-900">
+                      {plan.price}
+                      <span className="text-sm text-gray-600 font-normal">/mês</span>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent>
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-center space-x-3">
+                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                          <span className="text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    <Button
+                      className="w-full bg-gradient-to-r from-blue-600 to-pink-500 hover:from-blue-700 hover:to-pink-600"
+                      onClick={handleAdminLogin}
+                    >
+                      Escolher {plan.name}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20">
         <div className="container mx-auto px-4 text-center">
@@ -180,7 +258,7 @@ const Index = () => {
               <div className="bg-gradient-to-r from-blue-600 to-pink-500 p-2 rounded-lg">
                 <Scissors className="h-6 w-6 text-white" />
               </div>
-              <span className="text-xl font-bold">SalonManager</span>
+              <span className="text-xl font-bold">Kiagenda</span>
             </div>
             
             <div className="flex items-center gap-4">
@@ -194,7 +272,7 @@ const Index = () => {
                 Super Admin
               </Button>
               <div className="text-sm text-gray-400">
-                © 2024 SalonManager. Todos os direitos reservados.
+                © 2024 Kiagenda. Todos os direitos reservados.
               </div>
             </div>
           </div>
