@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,20 +20,38 @@ interface ClientProfilePopupProps {
 const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfilePopupProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    username: client.username || '',
-    full_name: client.full_name || client.name || '',
-    email: client.email || '',
-    phone: client.phone || '',
-    street_address: client.street_address || '',
-    house_number: client.house_number || '',
-    neighborhood: client.neighborhood || '',
-    city: client.city || '',
-    state: client.state || '',
-    zip_code: client.zip_code || ''
+    username: '',
+    full_name: '',
+    email: '',
+    phone: '',
+    street_address: '',
+    house_number: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    zip_code: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { updateClientProfile } = useClientData();
+  const { updateClientProfile, clearClientHistory } = useClientData();
+
+  // Carregar dados do cliente quando o modal abrir ou quando o cliente mudar
+  useEffect(() => {
+    if (isOpen && client) {
+      setFormData({
+        username: client.username || '',
+        full_name: client.full_name || client.name || '',
+        email: client.email || '',
+        phone: client.phone || '',
+        street_address: client.street_address || '',
+        house_number: client.house_number || '',
+        neighborhood: client.neighborhood || '',
+        city: client.city || '',
+        state: client.state || '',
+        zip_code: client.zip_code || ''
+      });
+    }
+  }, [isOpen, client]);
 
   const handleSave = async () => {
     if (!formData.username.trim()) {
@@ -76,24 +94,36 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
 
   const handleClearHistory = async () => {
     if (window.confirm("Tem certeza que deseja limpar todo o histórico de agendamentos? Esta ação não pode ser desfeita.")) {
+      setIsLoading(true);
       try {
-        // Note: This would need to be implemented with a proper API call
-        // For now, we'll just show a success message
-        toast({
-          title: "Histórico limpo",
-          description: "Seu histórico de agendamentos foi removido com sucesso",
-        });
+        const result = await clearClientHistory(client.id);
+        
+        if (result.success) {
+          toast({
+            title: "Histórico limpo",
+            description: result.message || "Histórico de agendamentos removido com sucesso",
+          });
+        } else {
+          toast({
+            title: "Erro",
+            description: result.message || "Erro ao limpar histórico",
+            variant: "destructive"
+          });
+        }
       } catch (error) {
         toast({
           title: "Erro",
           description: "Erro ao limpar histórico",
           variant: "destructive"
         });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
 
   const handleCancel = () => {
+    // Restaurar dados originais do cliente
     setFormData({
       username: client.username || '',
       full_name: client.full_name || client.name || '',
@@ -110,6 +140,7 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
   };
 
   const getInitials = (name: string) => {
+    if (!name) return 'CL';
     return name
       .split(' ')
       .map(word => word[0])
@@ -264,10 +295,11 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
                 <Button
                   onClick={handleClearHistory}
                   variant="outline"
+                  disabled={isLoading}
                   className="w-full flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span>Limpar Histórico</span>
+                  <span>{isLoading ? 'Limpando...' : 'Limpar Histórico'}</span>
                 </Button>
               </>
             ) : (
