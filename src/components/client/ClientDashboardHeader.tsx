@@ -14,6 +14,7 @@ interface ClientDashboardHeaderProps {
   onRetry: () => void;
   onBackToHome: () => void;
   onLogout: () => void;
+  onUserUpdate?: (updatedUser: any) => void;
 }
 
 const ClientDashboardHeader = ({
@@ -24,14 +25,19 @@ const ClientDashboardHeader = ({
   onClearSearch,
   onRetry,
   onBackToHome,
-  onLogout
+  onLogout,
+  onUserUpdate
 }: ClientDashboardHeaderProps) => {
   const [showProfilePopup, setShowProfilePopup] = useState(false);
 
   const handleProfileUpdate = (updatedClient: any) => {
     // Update localStorage with new client data
     localStorage.setItem('clientAuth', JSON.stringify(updatedClient));
-    // You might want to refresh the page or update the user state here
+    
+    // Update the user state in the parent component
+    if (onUserUpdate) {
+      onUserUpdate(updatedClient);
+    }
   };
 
   return (
@@ -46,7 +52,7 @@ const ClientDashboardHeader = ({
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">Kiagenda</h1>
-                <p className="text-xs text-gray-600">Olá, {user?.name}</p>
+                <p className="text-xs text-gray-600">Olá, {user?.username || user?.name}</p>
               </div>
             </div>
             

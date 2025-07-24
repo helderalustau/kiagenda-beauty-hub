@@ -24,7 +24,8 @@ const ClientDashboard = () => {
     handleLogout,
     handleBackToHome,
     handleRetry,
-    clearSearch
+    clearSearch,
+    handleUserUpdate
   } = useClientDashboard();
 
   // Pegar ID do cliente do localStorage
@@ -84,6 +85,7 @@ const ClientDashboard = () => {
         onRetry={handleRetry}
         onBackToHome={handleBackToHome}
         onLogout={handleLogout}
+        onUserUpdate={handleUserUpdate}
       />
 
       <div className="min-h-screen">

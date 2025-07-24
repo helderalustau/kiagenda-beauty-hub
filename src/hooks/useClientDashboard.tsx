@@ -184,6 +184,10 @@ export const useClientDashboard = () => {
     setSearchTerm('');
   };
 
+  const handleUserUpdate = (updatedUser: any) => {
+    setClientUser(updatedUser);
+  };
+
   return {
     // State
     user: clientUser,
@@ -201,6 +205,7 @@ export const useClientDashboard = () => {
     handleLogout,
     handleBackToHome,
     handleRetry,
-    clearSearch
+    clearSearch,
+    handleUserUpdate
   };
 };
