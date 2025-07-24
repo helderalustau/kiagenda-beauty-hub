@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User, Settings } from "lucide-react";
 import { Client } from '@/types/supabase-entities';
-import ClientProfileModal from './ClientProfileModal';
+import ClientProfilePopup from './client/ClientProfilePopup';
 
 interface ClientHeaderProps {
   client: Client;
@@ -13,7 +13,7 @@ interface ClientHeaderProps {
 }
 
 const ClientHeader = ({ client, onUpdate, onLogout }: ClientHeaderProps) => {
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -22,11 +22,6 @@ const ClientHeader = ({ client, onUpdate, onLogout }: ClientHeaderProps) => {
       .join('')
       .toUpperCase()
       .slice(0, 2);
-  };
-
-  const handleProfileUpdate = (updatedData: { name: string; email?: string; phone?: string }) => {
-    const updatedClient = { ...client, ...updatedData };
-    onUpdate(updatedClient);
   };
 
   return (
@@ -40,7 +35,7 @@ const ClientHeader = ({ client, onUpdate, onLogout }: ClientHeaderProps) => {
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  AgendaFácil
+                  Kiagenda
                 </h1>
                 <p className="text-sm text-gray-500">Sistema de Agendamentos</p>
               </div>
@@ -49,7 +44,7 @@ const ClientHeader = ({ client, onUpdate, onLogout }: ClientHeaderProps) => {
             <div className="flex items-center space-x-4">
               <div 
                 className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
-                onClick={() => setShowProfileModal(true)}
+                onClick={() => setShowProfilePopup(true)}
               >
                 <Avatar className="h-10 w-10 border-2 border-blue-200 hover:border-blue-300 transition-colors">
                   <AvatarImage src={client.email ? `https://api.dicebear.com/7.x/initials/svg?seed=${client.username || client.name}` : undefined} />
@@ -80,16 +75,11 @@ const ClientHeader = ({ client, onUpdate, onLogout }: ClientHeaderProps) => {
         </div>
       </header>
 
-      <ClientProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        clientData={{
-          id: client.id,
-          name: client.username || client.name,
-          email: client.email || '',
-          phone: client.phone || ''
-        }}
-        onSave={handleProfileUpdate}
+      <ClientProfilePopup
+        isOpen={showProfilePopup}
+        onClose={() => setShowProfilePopup(false)}
+        client={client}
+        onUpdate={onUpdate}
       />
     </>
   );

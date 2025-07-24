@@ -1,7 +1,10 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, User, LogOut, RefreshCw, Search, X } from "lucide-react";
+import ClientProfilePopup from './ClientProfilePopup';
+
 interface ClientDashboardHeaderProps {
   user: any;
   searchTerm: string;
@@ -12,6 +15,7 @@ interface ClientDashboardHeaderProps {
   onBackToHome: () => void;
   onLogout: () => void;
 }
+
 const ClientDashboardHeader = ({
   user,
   searchTerm,
@@ -22,7 +26,16 @@ const ClientDashboardHeader = ({
   onBackToHome,
   onLogout
 }: ClientDashboardHeaderProps) => {
-  return <>
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+
+  const handleProfileUpdate = (updatedClient: any) => {
+    // Update localStorage with new client data
+    localStorage.setItem('clientAuth', JSON.stringify(updatedClient));
+    // You might want to refresh the page or update the user state here
+  };
+
+  return (
+    <>
       {/* Header Compacto */}
       <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-50">
         <div className="px-4 py-3">
@@ -38,6 +51,15 @@ const ClientDashboardHeader = ({
             </div>
             
             <div className="flex items-center space-x-1">
+              <Button 
+                onClick={() => setShowProfilePopup(true)} 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0"
+                title="Editar perfil"
+              >
+                <User className="h-4 w-4" />
+              </Button>
               <Button onClick={onRetry} variant="ghost" size="sm" disabled={isRefreshing} className="h-8 w-8 p-0">
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
@@ -53,13 +75,35 @@ const ClientDashboardHeader = ({
           {/* Search Bar Compacta */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input type="text" placeholder="Buscar estabelecimentos..." value={searchTerm} onChange={e => onSearchChange(e.target.value)} className="pl-10 pr-10 h-9 text-sm bg-gray-50 border-gray-200" />
-            {searchTerm && <button onClick={onClearSearch} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <Input 
+              type="text" 
+              placeholder="Buscar estabelecimentos..." 
+              value={searchTerm} 
+              onChange={e => onSearchChange(e.target.value)} 
+              className="pl-10 pr-10 h-9 text-sm bg-gray-50 border-gray-200" 
+            />
+            {searchTerm && (
+              <button 
+                onClick={onClearSearch} 
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
                 <X className="h-4 w-4" />
-              </button>}
+              </button>
+            )}
           </div>
         </div>
       </div>
-    </>;
+
+      {user && (
+        <ClientProfilePopup
+          isOpen={showProfilePopup}
+          onClose={() => setShowProfilePopup(false)}
+          client={user}
+          onUpdate={handleProfileUpdate}
+        />
+      )}
+    </>
+  );
 };
+
 export default ClientDashboardHeader;

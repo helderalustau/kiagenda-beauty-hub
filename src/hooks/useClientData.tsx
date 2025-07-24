@@ -6,7 +6,18 @@ import { Client } from '@/types/supabase-entities';
 export const useClientData = () => {
   const [loading, setLoading] = useState(false);
 
-  const updateClientProfile = async (clientId: string, profileData: { username: string; email?: string; phone?: string }) => {
+  const updateClientProfile = async (clientId: string, profileData: { 
+    username: string; 
+    full_name?: string;
+    email?: string; 
+    phone?: string;
+    street_address?: string;
+    house_number?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
+  }) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -25,6 +36,30 @@ export const useClientData = () => {
     } catch (error) {
       console.error('Error updating client profile:', error);
       return { success: false, message: 'Erro ao atualizar perfil' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearClientHistory = async (clientId: string) => {
+    try {
+      setLoading(true);
+      
+      // Delete all appointments for this client
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('client_auth_id', clientId);
+
+      if (error) {
+        console.error('Error clearing client history:', error);
+        return { success: false, message: 'Erro ao limpar histórico' };
+      }
+
+      return { success: true, message: 'Histórico limpo com sucesso' };
+    } catch (error) {
+      console.error('Error clearing client history:', error);
+      return { success: false, message: 'Erro ao limpar histórico' };
     } finally {
       setLoading(false);
     }
@@ -90,6 +125,7 @@ export const useClientData = () => {
   return {
     loading,
     updateClientProfile,
+    clearClientHistory,
     getClientByPhone,
     getOrCreateClient
   };

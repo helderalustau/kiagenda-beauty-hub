@@ -20,9 +20,10 @@ export const useInputValidation = () => {
     return cleanPhone.length >= 10 && cleanPhone.length <= 11;
   };
 
-  // Validate name (only letters and spaces)
+  // Validate name (allows letters, numbers, spaces, and special characters)
   const validateName = (name: string): boolean => {
-    const nameRegex = /^[a-zA-ZÀ-ÿ\s]+$/;
+    // Allow letters, numbers, spaces, and common special characters
+    const nameRegex = /^[a-zA-ZÀ-ÿ0-9\s\-_.@#$%&*!?]+$/;
     return nameRegex.test(name) && name.length >= 2 && name.length <= 100;
   };
 
@@ -65,7 +66,7 @@ export const useInputValidation = () => {
         return {
           value: sanitized,
           isValid: validateName(sanitized),
-          error: validateName(sanitized) ? undefined : 'Nome deve conter apenas letras e espaços'
+          error: validateName(sanitized) ? undefined : 'Nome deve ter entre 2 e 100 caracteres'
         };
       case 'salon':
         return {
