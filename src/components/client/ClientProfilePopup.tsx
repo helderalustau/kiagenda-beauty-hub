@@ -32,12 +32,14 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
     zip_code: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
   const { toast } = useToast();
-  const { updateClientProfile, clearClientHistory } = useClientData();
+  const { updateClientProfile, clearClientHistory, checkUsernameAvailability } = useClientData();
 
   // Carregar dados do cliente quando o modal abrir ou quando o cliente mudar
   useEffect(() => {
     if (isOpen && client) {
+      console.log('Loading client data:', client);
       setFormData({
         username: client.username || '',
         full_name: client.full_name || client.name || '',
@@ -50,14 +52,36 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
         state: client.state || '',
         zip_code: client.zip_code || ''
       });
+      setUsernameError('');
     }
   }, [isOpen, client]);
+
+  const handleUsernameChange = async (newUsername: string) => {
+    setFormData({ ...formData, username: newUsername });
+    setUsernameError('');
+
+    if (newUsername.trim() && newUsername !== client.username) {
+      const result = await checkUsernameAvailability(newUsername, client.id);
+      if (!result.available) {
+        setUsernameError(result.error || 'Nome de usuário não disponível');
+      }
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.username.trim()) {
       toast({
         title: "Erro",
         description: "Nome de usuário é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (usernameError) {
+      toast({
+        title: "Erro",
+        description: usernameError,
         variant: "destructive"
       });
       return;
@@ -136,6 +160,7 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
       state: client.state || '',
       zip_code: client.zip_code || ''
     });
+    setUsernameError('');
     setIsEditing(false);
   };
 
@@ -181,10 +206,14 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
                 <Input
                   id="username"
                   value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  onChange={(e) => handleUsernameChange(e.target.value)}
                   disabled={!isEditing}
                   placeholder="Nome de usuário"
+                  className={usernameError ? 'border-red-500' : ''}
                 />
+                {usernameError && (
+                  <p className="text-red-500 text-sm mt-1">{usernameError}</p>
+                )}
               </div>
               
               <div>
@@ -306,7 +335,7 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
               <div className="flex space-x-2">
                 <Button
                   onClick={handleSave}
-                  disabled={isLoading}
+                  disabled={isLoading || !!usernameError}
                   className="flex-1 flex items-center space-x-2"
                 >
                   <Save className="h-4 w-4" />

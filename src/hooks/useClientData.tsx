@@ -6,6 +6,33 @@ import { Client } from '@/types/supabase-entities';
 export const useClientData = () => {
   const [loading, setLoading] = useState(false);
 
+  const checkUsernameAvailability = async (username: string, currentClientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('client_auth')
+        .select('id')
+        .eq('username', username)
+        .neq('id', currentClientId)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        // No rows returned, username is available
+        return { available: true };
+      }
+
+      if (error) {
+        console.error('Error checking username availability:', error);
+        return { available: false, error: 'Erro ao verificar disponibilidade do nome' };
+      }
+
+      // Username already exists
+      return { available: false, error: 'Este nome de usuário já está em uso' };
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      return { available: false, error: 'Erro ao verificar disponibilidade do nome' };
+    }
+  };
+
   const updateClientProfile = async (clientId: string, profileData: { 
     username: string; 
     full_name?: string;
@@ -20,6 +47,13 @@ export const useClientData = () => {
   }) => {
     try {
       setLoading(true);
+
+      // Verificar se o username já existe para outro cliente
+      const usernameCheck = await checkUsernameAvailability(profileData.username, clientId);
+      if (!usernameCheck.available) {
+        return { success: false, message: usernameCheck.error };
+      }
+
       const { data, error } = await supabase
         .from('client_auth')
         .update(profileData)
@@ -127,6 +161,7 @@ export const useClientData = () => {
     updateClientProfile,
     clearClientHistory,
     getClientByPhone,
-    getOrCreateClient
+    getOrCreateClient,
+    checkUsernameAvailability
   };
 };
