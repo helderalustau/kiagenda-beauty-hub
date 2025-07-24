@@ -4,21 +4,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { User, Edit, Trash2, Save, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useClientData } from '@/hooks/useClientData';
-import { Client } from '@/types/supabase-entities';
+import { useToast } from "@/components/ui/use-toast";
 
 interface ClientProfilePopupProps {
   isOpen: boolean;
   onClose: () => void;
-  client: Client;
-  onUpdate: (updatedClient: Client) => void;
+  client: any;
+  onUpdate: (updatedClient: any) => void;
 }
 
 const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfilePopupProps) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const { updateClientProfile, loading } = useClientData();
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState({
     username: '',
     full_name: '',
@@ -31,18 +31,16 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
     state: '',
     zip_code: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [usernameError, setUsernameError] = useState('');
-  const { toast } = useToast();
-  const { updateClientProfile, clearClientHistory, checkUsernameAvailability } = useClientData();
 
-  // Carregar dados do cliente quando o modal abrir ou quando o cliente mudar
+  const [usernameError, setUsernameError] = useState('');
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+
   useEffect(() => {
-    if (isOpen && client) {
-      console.log('Loading client data:', client);
+    if (client && isOpen) {
+      console.log('Loading client data into form:', client);
       setFormData({
         username: client.username || '',
-        full_name: client.full_name || client.name || '',
+        full_name: client.full_name || '',
         email: client.email || '',
         phone: client.phone || '',
         street_address: client.street_address || '',
@@ -54,306 +52,199 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
       });
       setUsernameError('');
     }
-  }, [isOpen, client]);
+  }, [client, isOpen]);
 
-  const handleUsernameChange = async (newUsername: string) => {
-    setFormData({ ...formData, username: newUsername });
-    setUsernameError('');
-
-    if (newUsername.trim() && newUsername !== client.username) {
-      const result = await checkUsernameAvailability(newUsername, client.id);
-      if (!result.available) {
-        setUsernameError(result.error || 'Nome de usuário não disponível');
-      }
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    if (field === 'username') {
+      setUsernameError('');
     }
   };
 
-  const handleSave = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!formData.username.trim()) {
-      toast({
-        title: "Erro",
-        description: "Nome de usuário é obrigatório",
-        variant: "destructive"
-      });
+      setUsernameError('Nome é obrigatório');
       return;
     }
 
-    if (usernameError) {
-      toast({
-        title: "Erro",
-        description: usernameError,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
     try {
       const result = await updateClientProfile(client.id, formData);
       
       if (result.success) {
-        onUpdate(result.client);
-        setIsEditing(false);
+        // Atualizar o localStorage com os novos dados
+        const updatedClient = {
+          ...client,
+          ...result.client,
+          name: result.client.username // Garantir que o name seja atualizado
+        };
+        
+        localStorage.setItem('clientAuth', JSON.stringify(updatedClient));
+        
+        // Chamar callback para atualizar o estado do componente pai
+        onUpdate(updatedClient);
+        
         toast({
-          title: "Sucesso",
-          description: "Perfil atualizado com sucesso!"
+          title: "Sucesso!",
+          description: "Perfil atualizado com sucesso.",
         });
+        
+        onClose();
       } else {
-        toast({
-          title: "Erro",
-          description: result.message || "Erro ao atualizar perfil",
-          variant: "destructive"
-        });
+        setUsernameError(result.message || 'Erro ao atualizar perfil');
       }
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar perfil",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      console.error('Error updating profile:', error);
+      setUsernameError('Erro ao atualizar perfil');
     }
-  };
-
-  const handleClearHistory = async () => {
-    if (window.confirm("Tem certeza que deseja limpar todo o histórico de agendamentos? Esta ação não pode ser desfeita.")) {
-      setIsLoading(true);
-      try {
-        const result = await clearClientHistory(client.id);
-        
-        if (result.success) {
-          toast({
-            title: "Histórico limpo",
-            description: result.message || "Histórico de agendamentos removido com sucesso",
-          });
-        } else {
-          toast({
-            title: "Erro",
-            description: result.message || "Erro ao limpar histórico",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Erro ao limpar histórico",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const handleCancel = () => {
-    // Restaurar dados originais do cliente
-    setFormData({
-      username: client.username || '',
-      full_name: client.full_name || client.name || '',
-      email: client.email || '',
-      phone: client.phone || '',
-      street_address: client.street_address || '',
-      house_number: client.house_number || '',
-      neighborhood: client.neighborhood || '',
-      city: client.city || '',
-      state: client.state || '',
-      zip_code: client.zip_code || ''
-    });
-    setUsernameError('');
-    setIsEditing(false);
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return 'CL';
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <User className="h-5 w-5" />
-            <span>Meu Perfil</span>
-          </DialogTitle>
+          <DialogTitle>Meu Perfil</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* Profile Avatar */}
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
-              {getInitials(client.username || client.name)}
-            </div>
-            <div>
-              <p className="font-medium text-lg">{client.username || client.name}</p>
-              <p className="text-sm text-gray-500">{client.email || 'Email não informado'}</p>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Profile Fields */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label htmlFor="username">Nome de usuário *</Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => handleUsernameChange(e.target.value)}
-                  disabled={!isEditing}
-                  placeholder="Nome de usuário"
-                  className={usernameError ? 'border-red-500' : ''}
-                />
-                {usernameError && (
-                  <p className="text-red-500 text-sm mt-1">{usernameError}</p>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="full_name">Nome completo</Label>
-                <Input
-                  id="full_name"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  disabled={!isEditing}
-                  placeholder="Nome completo"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={!isEditing}
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  disabled={!isEditing}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-            </div>
-
-            {/* Address Section */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Endereço</Label>
-              <div className="grid grid-cols-1 gap-3">
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="col-span-2">
-                    <Input
-                      value={formData.street_address}
-                      onChange={(e) => setFormData({ ...formData, street_address: e.target.value })}
-                      disabled={!isEditing}
-                      placeholder="Rua, Avenida..."
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      value={formData.house_number}
-                      onChange={(e) => setFormData({ ...formData, house_number: e.target.value })}
-                      disabled={!isEditing}
-                      placeholder="Número"
-                    />
-                  </div>
-                </div>
-                
-                <Input
-                  value={formData.neighborhood}
-                  onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-                  disabled={!isEditing}
-                  placeholder="Bairro"
-                />
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="Cidade"
-                  />
-                  <Input
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="Estado"
-                  />
-                </div>
-                
-                <Input
-                  value={formData.zip_code}
-                  onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
-                  disabled={!isEditing}
-                  placeholder="CEP"
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Actions */}
-          <div className="space-y-3">
-            {!isEditing ? (
-              <>
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  className="w-full flex items-center space-x-2"
-                  variant="outline"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>Editar Perfil</span>
-                </Button>
-                
-                <Button
-                  onClick={handleClearHistory}
-                  variant="outline"
-                  disabled={isLoading}
-                  className="w-full flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>{isLoading ? 'Limpando...' : 'Limpar Histórico'}</span>
-                </Button>
-              </>
-            ) : (
-              <div className="flex space-x-2">
-                <Button
-                  onClick={handleSave}
-                  disabled={isLoading || !!usernameError}
-                  className="flex-1 flex items-center space-x-2"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>{isLoading ? 'Salvando...' : 'Salvar'}</span>
-                </Button>
-                
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className="flex-1 flex items-center space-x-2"
-                >
-                  <X className="h-4 w-4" />
-                  <span>Cancelar</span>
-                </Button>
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="username">Nome *</Label>
+            <Input
+              id="username"
+              value={formData.username}
+              onChange={(e) => handleInputChange('username', e.target.value)}
+              placeholder="Digite seu nome"
+              className={usernameError ? 'border-red-500' : ''}
+              disabled={loading}
+            />
+            {usernameError && (
+              <p className="text-red-500 text-sm mt-1">{usernameError}</p>
             )}
           </div>
-        </div>
+
+          <div>
+            <Label htmlFor="full_name">Nome Completo</Label>
+            <Input
+              id="full_name"
+              value={formData.full_name}
+              onChange={(e) => handleInputChange('full_name', e.target.value)}
+              placeholder="Digite seu nome completo"
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              placeholder="Digite seu email"
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="phone">Telefone</Label>
+            <Input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Digite seu telefone"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="street_address">Endereço</Label>
+              <Input
+                id="street_address"
+                value={formData.street_address}
+                onChange={(e) => handleInputChange('street_address', e.target.value)}
+                placeholder="Rua/Avenida"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <Label htmlFor="house_number">Número</Label>
+              <Input
+                id="house_number"
+                value={formData.house_number}
+                onChange={(e) => handleInputChange('house_number', e.target.value)}
+                placeholder="Número"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Input
+              id="neighborhood"
+              value={formData.neighborhood}
+              onChange={(e) => handleInputChange('neighborhood', e.target.value)}
+              placeholder="Digite o bairro"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="city">Cidade</Label>
+              <Input
+                id="city"
+                value={formData.city}
+                onChange={(e) => handleInputChange('city', e.target.value)}
+                placeholder="Digite a cidade"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <Label htmlFor="state">Estado</Label>
+              <Input
+                id="state"
+                value={formData.state}
+                onChange={(e) => handleInputChange('state', e.target.value)}
+                placeholder="Digite o estado"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="zip_code">CEP</Label>
+            <Input
+              id="zip_code"
+              value={formData.zip_code}
+              onChange={(e) => handleInputChange('zip_code', e.target.value)}
+              placeholder="Digite o CEP"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="flex space-x-2 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={loading || !!usernameError}
+              className="flex-1"
+            >
+              {loading ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

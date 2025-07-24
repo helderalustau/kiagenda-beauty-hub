@@ -54,9 +54,16 @@ export const useClientData = () => {
         return { success: false, message: usernameCheck.error };
       }
 
+      // Atualizar dados do cliente
+      const updateData = {
+        ...profileData,
+        name: profileData.username, // Atualizar o campo name também
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('client_auth')
-        .update(profileData)
+        .update(updateData)
         .eq('id', clientId)
         .select()
         .single();
@@ -66,6 +73,7 @@ export const useClientData = () => {
         return { success: false, message: 'Erro ao atualizar perfil' };
       }
 
+      console.log('Client profile updated successfully:', data);
       return { success: true, client: data };
     } catch (error) {
       console.error('Error updating client profile:', error);

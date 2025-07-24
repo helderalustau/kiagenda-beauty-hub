@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, User, Phone, CheckCircle2, XCircle } from "lucide-react";
 import { Appointment } from '@/types/supabase-entities';
+import AppointmentStatusManager from './AppointmentStatusManager';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -13,6 +14,8 @@ interface AppointmentCardProps {
 }
 
 const AppointmentCard = ({ appointment, onUpdateAppointment, isUpdating }: AppointmentCardProps) => {
+  const [showStatusManager, setShowStatusManager] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -40,80 +43,98 @@ const AppointmentCard = ({ appointment, onUpdateAppointment, isUpdating }: Appoi
     }).format(value);
   };
 
+  const handleStatusUpdate = (appointmentId: string, status: 'confirmed' | 'completed' | 'cancelled', notes?: string) => {
+    onUpdateAppointment(appointmentId, { status, notes });
+    setShowStatusManager(false);
+  };
+
   return (
-    <Card className="mb-3 hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-gray-900 flex items-center">
-                <User className="h-4 w-4 mr-2 text-blue-500" />
-                {appointment.client?.name || appointment.client?.username || 'Cliente'}
-              </h4>
-              <Badge className={`text-xs ${getStatusColor(appointment.status)}`}>
-                {getStatusLabel(appointment.status)}
-              </Badge>
-            </div>
-            
-            <div className="space-y-1 text-sm text-gray-600">
-              <div className="flex items-center">
-                <Clock className="h-3 w-3 mr-2" />
-                <span>{appointment.appointment_time} - {appointment.service?.name || 'Serviço'}</span>
+    <>
+      <Card className="mb-3 hover:shadow-md transition-shadow">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-gray-900 flex items-center">
+                  <User className="h-4 w-4 mr-2 text-blue-500" />
+                  {appointment.client?.name || appointment.client?.username || 'Cliente'}
+                </h4>
+                <Badge 
+                  className={`text-xs cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(appointment.status)}`}
+                  onClick={() => setShowStatusManager(true)}
+                >
+                  {getStatusLabel(appointment.status)}
+                </Badge>
               </div>
               
-              {appointment.client?.phone && (
+              <div className="space-y-1 text-sm text-gray-600">
                 <div className="flex items-center">
-                  <Phone className="h-3 w-3 mr-2" />
-                  <span>{appointment.client.phone}</span>
+                  <Clock className="h-3 w-3 mr-2" />
+                  <span>{appointment.appointment_time} - {appointment.service?.name || 'Serviço'}</span>
                 </div>
-              )}
-              
-              <div className="flex items-center font-medium text-green-600">
-                <span className="mr-2">💰</span>
-                <span>{formatCurrency(appointment.service?.price || 0)}</span>
-                <span className="text-gray-500 ml-2">({appointment.service?.duration_minutes || 0}min)</span>
+                
+                {appointment.client?.phone && (
+                  <div className="flex items-center">
+                    <Phone className="h-3 w-3 mr-2" />
+                    <span>{appointment.client.phone}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center font-medium text-green-600">
+                  <span className="mr-2">💰</span>
+                  <span>{formatCurrency(appointment.service?.price || 0)}</span>
+                  <span className="text-gray-500 ml-2">({appointment.service?.duration_minutes || 0}min)</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {appointment.status === 'pending' && (
-          <div className="flex gap-2 mt-3">
+          {appointment.status === 'pending' && (
+            <div className="flex gap-2 mt-3">
+              <Button
+                size="sm"
+                onClick={() => onUpdateAppointment(appointment.id, { status: 'confirmed' })}
+                disabled={isUpdating}
+                className="bg-green-600 hover:bg-green-700 text-white flex-1"
+              >
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Aprovar
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => onUpdateAppointment(appointment.id, { status: 'cancelled' })}
+                disabled={isUpdating}
+                className="flex-1"
+              >
+                <XCircle className="h-3 w-3 mr-1" />
+                Rejeitar
+              </Button>
+            </div>
+          )}
+
+          {appointment.status === 'confirmed' && (
             <Button
               size="sm"
-              onClick={() => onUpdateAppointment(appointment.id, { status: 'confirmed' })}
+              onClick={() => onUpdateAppointment(appointment.id, { status: 'completed' })}
               disabled={isUpdating}
-              className="bg-green-600 hover:bg-green-700 text-white flex-1"
+              className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
             >
               <CheckCircle2 className="h-3 w-3 mr-1" />
-              Aprovar
+              Finalizar Atendimento
             </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => onUpdateAppointment(appointment.id, { status: 'cancelled' })}
-              disabled={isUpdating}
-              className="flex-1"
-            >
-              <XCircle className="h-3 w-3 mr-1" />
-              Rejeitar
-            </Button>
-          </div>
-        )}
+          )}
+        </CardContent>
+      </Card>
 
-        {appointment.status === 'confirmed' && (
-          <Button
-            size="sm"
-            onClick={() => onUpdateAppointment(appointment.id, { status: 'completed' })}
-            disabled={isUpdating}
-            className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
-          >
-            <CheckCircle2 className="h-3 w-3 mr-1" />
-            Finalizar Atendimento
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+      <AppointmentStatusManager
+        appointment={appointment}
+        isOpen={showStatusManager}
+        onClose={() => setShowStatusManager(false)}
+        onUpdateStatus={handleStatusUpdate}
+        isUpdating={isUpdating}
+      />
+    </>
   );
 };
 
