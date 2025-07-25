@@ -98,18 +98,45 @@ export const useClientDashboard = () => {
     }
   }, [navigate]);
 
-  // Filter salons based on search term
+  // Filter salons based on search term and client location
   useEffect(() => {
-    if (!searchTerm.trim()) {
+    if (!salons || !clientUser) {
       setFilteredSalons(salons);
+      return;
+    }
+
+    let locationFilteredSalons = salons;
+
+    // Filter by client's city and state if available
+    if (clientUser.city && clientUser.state) {
+      locationFilteredSalons = salons.filter(salon => {
+        const salonCity = salon.city?.toLowerCase().trim();
+        const salonState = salon.state?.toLowerCase().trim();
+        const clientCity = clientUser.city?.toLowerCase().trim();
+        const clientState = clientUser.state?.toLowerCase().trim();
+
+        return salonCity === clientCity && salonState === clientState;
+      });
+
+      console.log('Client location filter applied:', {
+        clientCity: clientUser.city,
+        clientState: clientUser.state,
+        totalSalons: salons.length,
+        filteredSalons: locationFilteredSalons.length
+      });
+    }
+
+    // Apply search filter on top of location filter
+    if (!searchTerm.trim()) {
+      setFilteredSalons(locationFilteredSalons);
     } else {
-      const filtered = salons.filter(salon => 
+      const searchFiltered = locationFilteredSalons.filter(salon => 
         salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         salon.owner_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredSalons(filtered);
+      setFilteredSalons(searchFiltered);
     }
-  }, [salons, searchTerm]);
+  }, [salons, searchTerm, clientUser]);
 
   const loadData = async (userData = clientUser) => {
     try {
@@ -186,6 +213,8 @@ export const useClientDashboard = () => {
 
   const handleUserUpdate = (updatedUser: any) => {
     setClientUser(updatedUser);
+    // Update localStorage with new user data
+    localStorage.setItem('clientAuth', JSON.stringify(updatedUser));
   };
 
   return {
