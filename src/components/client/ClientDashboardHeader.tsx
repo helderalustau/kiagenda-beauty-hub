@@ -60,6 +60,9 @@ const ClientDashboardHeader = ({
     }
   };
 
+  // Garantir que sempre temos um nome para exibir
+  const displayName = currentUser?.username || currentUser?.name || user?.username || user?.name || 'Usuário';
+
   return (
     <>
       {/* Header Compacto */}
@@ -72,7 +75,7 @@ const ClientDashboardHeader = ({
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">Kiagenda</h1>
-                <p className="text-xs text-gray-600">Olá, {currentUser?.username || currentUser?.name}</p>
+                <p className="text-xs text-gray-600">Olá, {displayName}</p>
               </div>
             </div>
             
@@ -120,11 +123,11 @@ const ClientDashboardHeader = ({
         </div>
       </div>
 
-      {currentUser && (
+      {(currentUser || user) && (
         <ClientProfilePopup
           isOpen={showProfilePopup}
           onClose={() => setShowProfilePopup(false)}
-          client={currentUser}
+          client={currentUser || user}
           onUpdate={handleProfileUpdate}
         />
       )}
