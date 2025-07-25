@@ -56,8 +56,17 @@ export const useClientData = () => {
 
       // Atualizar dados do cliente
       const updateData = {
-        ...profileData,
+        username: profileData.username,
         name: profileData.username, // Atualizar o campo name também
+        full_name: profileData.full_name || null,
+        email: profileData.email || null,
+        phone: profileData.phone || null,
+        street_address: profileData.street_address || null,
+        house_number: profileData.house_number || null,
+        neighborhood: profileData.neighborhood || null,
+        city: profileData.city || null,
+        state: profileData.state || null,
+        zip_code: profileData.zip_code || null,
         updated_at: new Date().toISOString()
       };
 
@@ -78,6 +87,30 @@ export const useClientData = () => {
     } catch (error) {
       console.error('Error updating client profile:', error);
       return { success: false, message: 'Erro ao atualizar perfil' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getClientProfile = async (clientId: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('client_auth')
+        .select('*')
+        .eq('id', clientId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching client profile:', error);
+        return { success: false, message: 'Erro ao buscar perfil' };
+      }
+
+      return { success: true, client: data };
+    } catch (error) {
+      console.error('Error fetching client profile:', error);
+      return { success: false, message: 'Erro ao buscar perfil' };
     } finally {
       setLoading(false);
     }
@@ -167,6 +200,7 @@ export const useClientData = () => {
   return {
     loading,
     updateClientProfile,
+    getClientProfile,
     clearClientHistory,
     getClientByPhone,
     getOrCreateClient,

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, User, LogOut, RefreshCw, Search, X } from "lucide-react";
 import ClientProfilePopup from './ClientProfilePopup';
+import { useClientData } from '@/hooks/useClientData';
 
 interface ClientDashboardHeaderProps {
   user: any;
@@ -29,10 +30,29 @@ const ClientDashboardHeader = ({
   onUserUpdate
 }: ClientDashboardHeaderProps) => {
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [currentUser, setCurrentUser] = useState(user);
+  const { getClientProfile } = useClientData();
+
+  const handleOpenProfile = async () => {
+    // Buscar dados atualizados do perfil antes de abrir o popup
+    if (user?.id) {
+      const result = await getClientProfile(user.id);
+      if (result.success) {
+        setCurrentUser(result.client);
+        // Atualizar localStorage com dados mais recentes
+        localStorage.setItem('clientAuth', JSON.stringify(result.client));
+        if (onUserUpdate) {
+          onUserUpdate(result.client);
+        }
+      }
+    }
+    setShowProfilePopup(true);
+  };
 
   const handleProfileUpdate = (updatedClient: any) => {
     // Update localStorage with new client data
     localStorage.setItem('clientAuth', JSON.stringify(updatedClient));
+    setCurrentUser(updatedClient);
     
     // Update the user state in the parent component
     if (onUserUpdate) {
@@ -52,13 +72,13 @@ const ClientDashboardHeader = ({
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">Kiagenda</h1>
-                <p className="text-xs text-gray-600">Olá, {user?.username || user?.name}</p>
+                <p className="text-xs text-gray-600">Olá, {currentUser?.username || currentUser?.name}</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-1">
               <Button 
-                onClick={() => setShowProfilePopup(true)} 
+                onClick={handleOpenProfile} 
                 variant="ghost" 
                 size="sm" 
                 className="h-8 w-8 p-0"
@@ -100,11 +120,11 @@ const ClientDashboardHeader = ({
         </div>
       </div>
 
-      {user && (
+      {currentUser && (
         <ClientProfilePopup
           isOpen={showProfilePopup}
           onClose={() => setShowProfilePopup(false)}
-          client={user}
+          client={currentUser}
           onUpdate={handleProfileUpdate}
         />
       )}

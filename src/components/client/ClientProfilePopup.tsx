@@ -38,12 +38,14 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
   useEffect(() => {
     if (client && isOpen) {
       console.log('Loading client data into form:', client);
+      
+      // Carregar todas as informações do cliente, incluindo endereço
       setFormData({
-        username: client.username || '',
+        username: client.username || client.name || '',
         full_name: client.full_name || '',
         email: client.email || '',
         phone: client.phone || '',
-        street_address: client.street_address || '',
+        street_address: client.street_address || client.address || '',
         house_number: client.house_number || '',
         neighborhood: client.neighborhood || '',
         city: client.city || '',
@@ -78,7 +80,8 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
         const updatedClient = {
           ...client,
           ...result.client,
-          name: result.client.username // Garantir que o name seja atualizado
+          name: result.client.username, // Garantir que o name seja atualizado
+          username: result.client.username
         };
         
         localStorage.setItem('clientAuth', JSON.stringify(updatedClient));
