@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -122,12 +123,15 @@ const ClientDashboardContent = ({
   const renderNoSalonsMessage = () => {
     if (!user?.city || !user?.state) {
       return (
-        <Card>
+        <Card className="border-dashed border-2 border-gray-300">
           <CardContent className="p-8 text-center">
             <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Complete seu perfil</h3>
             <p className="text-gray-500 mb-4">
               Para ver estabelecimentos da sua região, complete as informações de cidade e estado no seu perfil.
+            </p>
+            <p className="text-sm text-blue-600 font-medium">
+              Clique no seu nome no canto superior direito para editar seu perfil.
             </p>
           </CardContent>
         </Card>
@@ -135,14 +139,21 @@ const ClientDashboardContent = ({
     }
 
     return (
-      <Card>
+      <Card className="border-dashed border-2 border-gray-300">
         <CardContent className="p-8 text-center">
           <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             Nenhum estabelecimento encontrado
           </h3>
-          <p className="text-gray-500 mb-4">
-            Não há estabelecimentos disponíveis em {user.city} - {user.state} no momento.
+          <p className="text-gray-500 mb-2">
+            Não há estabelecimentos disponíveis em:
+          </p>
+          <p className="text-blue-600 font-medium mb-4">
+            {user.city} - {user.state}
+          </p>
+          <p className="text-sm text-gray-400">
+            Novos estabelecimentos podem ser cadastrados a qualquer momento. 
+            Volte mais tarde para verificar!
           </p>
         </CardContent>
       </Card>
@@ -256,6 +267,7 @@ const ClientDashboardContent = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">{salon.name}</CardTitle>
                   <p className="text-sm text-gray-600">{salon.owner_name}</p>
+                  <p className="text-xs text-gray-500">{salon.city} - {salon.state}</p>
                 </CardHeader>
                 
                 <CardContent className="space-y-3">

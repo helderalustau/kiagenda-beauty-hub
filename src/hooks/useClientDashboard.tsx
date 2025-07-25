@@ -100,43 +100,73 @@ export const useClientDashboard = () => {
 
   // Filter salons based on search term and client location
   useEffect(() => {
-    if (!salons || !clientUser) {
-      setFilteredSalons(salons);
+    if (!salons || !Array.isArray(salons)) {
+      console.log('No salons data available for filtering');
+      setFilteredSalons([]);
       return;
     }
 
+    console.log('Filtering salons - Total salons:', salons.length);
+    console.log('Client data for filtering:', {
+      city: clientUser?.city,
+      state: clientUser?.state,
+      searchTerm: searchTerm
+    });
+
     let locationFilteredSalons = salons;
 
-    // Filter by client's city and state if available
-    if (clientUser.city && clientUser.state) {
+    // Apply location filter if client has city and state
+    if (clientUser?.city && clientUser?.state) {
       locationFilteredSalons = salons.filter(salon => {
         const salonCity = salon.city?.toLowerCase().trim();
         const salonState = salon.state?.toLowerCase().trim();
         const clientCity = clientUser.city?.toLowerCase().trim();
         const clientState = clientUser.state?.toLowerCase().trim();
 
-        return salonCity === clientCity && salonState === clientState;
+        const cityMatch = salonCity === clientCity;
+        const stateMatch = salonState === clientState;
+        
+        console.log(`Salon ${salon.name}:`, {
+          salonCity,
+          salonState,
+          clientCity,
+          clientState,
+          cityMatch,
+          stateMatch,
+          included: cityMatch && stateMatch
+        });
+
+        return cityMatch && stateMatch;
       });
 
-      console.log('Client location filter applied:', {
+      console.log('Location filter applied:', {
         clientCity: clientUser.city,
         clientState: clientUser.state,
         totalSalons: salons.length,
         filteredSalons: locationFilteredSalons.length
       });
+    } else {
+      console.log('Client location not available, showing all salons');
     }
 
     // Apply search filter on top of location filter
-    if (!searchTerm.trim()) {
-      setFilteredSalons(locationFilteredSalons);
-    } else {
+    if (searchTerm && searchTerm.trim()) {
       const searchFiltered = locationFilteredSalons.filter(salon => 
         salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         salon.owner_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      
+      console.log('Search filter applied:', {
+        searchTerm,
+        beforeSearch: locationFilteredSalons.length,
+        afterSearch: searchFiltered.length
+      });
+      
       setFilteredSalons(searchFiltered);
+    } else {
+      setFilteredSalons(locationFilteredSalons);
     }
-  }, [salons, searchTerm, clientUser]);
+  }, [salons, searchTerm, clientUser?.city, clientUser?.state]);
 
   const loadData = async (userData = clientUser) => {
     try {
@@ -212,6 +242,7 @@ export const useClientDashboard = () => {
   };
 
   const handleUserUpdate = (updatedUser: any) => {
+    console.log('Updating client user data:', updatedUser);
     setClientUser(updatedUser);
     // Update localStorage with new user data
     localStorage.setItem('clientAuth', JSON.stringify(updatedUser));
