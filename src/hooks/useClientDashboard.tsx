@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,6 +6,17 @@ import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useClientData } from '@/hooks/useClientData';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useToast } from "@/components/ui/use-toast";
+
+// Função para normalizar strings para comparação
+const normalizeString = (str: string | null | undefined): string => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/\s+/g, ' '); // Normaliza espaços
+};
 
 export const useClientDashboard = () => {
   const { 
@@ -106,8 +116,10 @@ export const useClientDashboard = () => {
       return;
     }
 
-    console.log('Filtering salons - Total salons:', salons.length);
-    console.log('Client data for filtering:', {
+    console.log('=== FILTRO DE LOCALIZACAO ===');
+    console.log('Total de salões no banco:', salons.length);
+    console.log('Dados do cliente:', {
+      name: clientUser?.name,
       city: clientUser?.city,
       state: clientUser?.state,
       searchTerm: searchTerm
@@ -117,20 +129,26 @@ export const useClientDashboard = () => {
 
     // Apply location filter if client has city and state
     if (clientUser?.city && clientUser?.state) {
-      locationFilteredSalons = salons.filter(salon => {
-        const salonCity = salon.city?.toLowerCase().trim();
-        const salonState = salon.state?.toLowerCase().trim();
-        const clientCity = clientUser.city?.toLowerCase().trim();
-        const clientState = clientUser.state?.toLowerCase().trim();
+      const clientCityNormalized = normalizeString(clientUser.city);
+      const clientStateNormalized = normalizeString(clientUser.state);
+      
+      console.log('Cliente normalizado:', {
+        city: clientCityNormalized,
+        state: clientStateNormalized
+      });
 
-        const cityMatch = salonCity === clientCity;
-        const stateMatch = salonState === clientState;
+      locationFilteredSalons = salons.filter(salon => {
+        const salonCityNormalized = normalizeString(salon.city);
+        const salonStateNormalized = normalizeString(salon.state);
         
-        console.log(`Salon ${salon.name}:`, {
-          salonCity,
-          salonState,
-          clientCity,
-          clientState,
+        const cityMatch = salonCityNormalized === clientCityNormalized;
+        const stateMatch = salonStateNormalized === clientStateNormalized;
+        
+        console.log(`Salão: ${salon.name}`, {
+          salonCity: salon.city,
+          salonState: salon.state,
+          salonCityNormalized,
+          salonStateNormalized,
           cityMatch,
           stateMatch,
           included: cityMatch && stateMatch
@@ -139,24 +157,27 @@ export const useClientDashboard = () => {
         return cityMatch && stateMatch;
       });
 
-      console.log('Location filter applied:', {
+      console.log('Resultado do filtro de localização:', {
         clientCity: clientUser.city,
         clientState: clientUser.state,
         totalSalons: salons.length,
-        filteredSalons: locationFilteredSalons.length
+        filteredSalons: locationFilteredSalons.length,
+        salonNames: locationFilteredSalons.map(s => s.name)
       });
     } else {
-      console.log('Client location not available, showing all salons');
+      console.log('Cliente não tem cidade/estado definidos, mostrando todos os salões');
     }
 
     // Apply search filter on top of location filter
     if (searchTerm && searchTerm.trim()) {
-      const searchFiltered = locationFilteredSalons.filter(salon => 
-        salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        salon.owner_name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const searchNormalized = normalizeString(searchTerm);
+      const searchFiltered = locationFilteredSalons.filter(salon => {
+        const nameMatch = normalizeString(salon.name).includes(searchNormalized);
+        const ownerMatch = normalizeString(salon.owner_name).includes(searchNormalized);
+        return nameMatch || ownerMatch;
+      });
       
-      console.log('Search filter applied:', {
+      console.log('Filtro de busca aplicado:', {
         searchTerm,
         beforeSearch: locationFilteredSalons.length,
         afterSearch: searchFiltered.length
@@ -166,6 +187,8 @@ export const useClientDashboard = () => {
     } else {
       setFilteredSalons(locationFilteredSalons);
     }
+
+    console.log('=== FIM DO FILTRO ===');
   }, [salons, searchTerm, clientUser?.city, clientUser?.state]);
 
   const loadData = async (userData = clientUser) => {
