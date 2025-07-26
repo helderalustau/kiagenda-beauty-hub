@@ -17,23 +17,6 @@ export const useSecureSuperAdminAuth = (): SecureSuperAdminAuthResult => {
   const [user, setUser] = useState<any | null>(null);
   const { toast } = useToast();
 
-  const logAuthAttempt = async (username: string, success: boolean, userType: string = 'super_admin') => {
-    try {
-      await supabase
-        .from('auth_attempts')
-        .insert({
-          username,
-          user_type: userType,
-          success,
-          ip_address: null, // Client-side can't get real IP
-          user_agent: navigator.userAgent,
-          created_at: new Date().toISOString()
-        });
-    } catch (error) {
-      console.error('Failed to log auth attempt:', error);
-    }
-  };
-
   const logSecurityEvent = async (event: string, details: any) => {
     try {
       await supabase
@@ -58,7 +41,6 @@ export const useSecureSuperAdminAuth = (): SecureSuperAdminAuthResult => {
       
       // Input validation
       if (!username?.trim() || !password?.trim()) {
-        await logAuthAttempt(username, false);
         return { success: false, message: 'Usuário e senha são obrigatórios' };
       }
 
@@ -71,40 +53,7 @@ export const useSecureSuperAdminAuth = (): SecureSuperAdminAuthResult => {
 
       localStorage.setItem(lastAttemptKey, Date.now().toString());
 
-      // Check against secure credentials table
-      const { data: configData, error: configError } = await supabase
-        .from('super_admin_config')
-        .select('*')
-        .eq('authorized_username', username)
-        .single();
-
-      if (configError || !configData) {
-        console.error('Super admin config not found:', configError);
-        await logAuthAttempt(username, false);
-        await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { 
-          reason: 'User not found in config',
-          username 
-        });
-        return { success: false, message: 'Credenciais inválidas' };
-      }
-
-      // Verify password using database function
-      const { data: passwordValid, error: passwordError } = await supabase
-        .rpc('verify_password', {
-          password: password,
-          hash: configData.password_hash
-        });
-
-      if (passwordError || !passwordValid) {
-        await logAuthAttempt(username, false);
-        await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { 
-          reason: 'Invalid password',
-          username 
-        });
-        return { success: false, message: 'Credenciais inválidas' };
-      }
-
-      // Get admin record for additional data
+      // Check against admin_auth table for super admin
       const { data: adminRecord, error: adminError } = await supabase
         .from('admin_auth')
         .select('*')
@@ -113,12 +62,37 @@ export const useSecureSuperAdminAuth = (): SecureSuperAdminAuthResult => {
         .single();
 
       if (adminError || !adminRecord) {
-        await logAuthAttempt(username, false);
+        console.error('Super admin not found:', adminError);
         await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { 
-          reason: 'Admin record not found',
+          reason: 'User not found',
           username 
         });
-        return { success: false, message: 'Acesso não autorizado' };
+        return { success: false, message: 'Credenciais inválidas' };
+      }
+
+      // Verify password using database function
+      let passwordValid = false;
+      if (adminRecord.password_hash) {
+        const { data: verifyResult, error: passwordError } = await supabase
+          .rpc('verify_password', {
+            password: password,
+            hash: adminRecord.password_hash
+          });
+        
+        if (!passwordError && verifyResult) {
+          passwordValid = true;
+        }
+      } else if (adminRecord.password === password) {
+        // Fallback to plain text comparison (should be migrated to hashed)
+        passwordValid = true;
+      }
+
+      if (!passwordValid) {
+        await logSecurityEvent('SUPER_ADMIN_ACCESS_DENIED', { 
+          reason: 'Invalid password',
+          username 
+        });
+        return { success: false, message: 'Credenciais inválidas' };
       }
 
       // Success - create secure session
@@ -140,7 +114,6 @@ export const useSecureSuperAdminAuth = (): SecureSuperAdminAuthResult => {
       setIsAuthorized(true);
       setUser(sessionData);
 
-      await logAuthAttempt(username, true);
       await logSecurityEvent('SUPER_ADMIN_ACCESS_GRANTED', { 
         username,
         sessionId: adminRecord.id,
@@ -151,7 +124,6 @@ export const useSecureSuperAdminAuth = (): SecureSuperAdminAuthResult => {
 
     } catch (error) {
       console.error('Authentication error:', error);
-      await logAuthAttempt(username, false);
       return { success: false, message: 'Erro interno do sistema' };
     } finally {
       setIsLoading(false);
