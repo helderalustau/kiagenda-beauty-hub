@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Eye, EyeOff, ArrowLeft, Crown } from "lucide-react";
+import { Shield, Eye, EyeOff, ArrowLeft, Crown, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useSecureSuperAdminAuth } from '@/hooks/useSecureSuperAdminAuth';
 
 const SuperAdminLogin = () => {
   const [credentials, setCredentials] = useState({
@@ -18,78 +18,47 @@ const SuperAdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { login } = useAuth();
-
-  const AUTHORIZED_SUPER_ADMIN = 'Helder';
-  const SUPER_ADMIN_PASSWORD = 'Hd@123@@';
+  const { authenticate } = useSecureSuperAdminAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Verificar credenciais básicas
-      if (credentials.username !== AUTHORIZED_SUPER_ADMIN) {
+      const result = await authenticate(credentials.username, credentials.password);
+      
+      if (result.success) {
+        // Also set in main auth context for compatibility
+        const userData = {
+          id: 'super-admin',
+          name: credentials.username,
+          role: 'super_admin',
+          isFirstAccess: false,
+          loginTime: new Date().toISOString()
+        };
+
+        login(userData);
+        
+        toast({
+          title: "Acesso Autorizado",
+          description: `Bem-vindo, Super Administrador ${credentials.username}!`
+        });
+
+        // Redirect to dashboard
+        setTimeout(() => {
+          window.location.href = '/super-admin-dashboard';
+        }, 1000);
+
+      } else {
         toast({
           title: "Acesso Negado",
-          description: "Usuário não autorizado para acesso de Super Administrador",
+          description: result.message || "Credenciais inválidas",
           variant: "destructive"
         });
-        return;
       }
-
-      if (credentials.password !== SUPER_ADMIN_PASSWORD) {
-        toast({
-          title: "Acesso Negado",
-          description: "Senha incorreta",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Verificar no banco de dados
-      const { data: adminRecord, error } = await supabase
-        .from('admin_auth')
-        .select('*')
-        .eq('name', AUTHORIZED_SUPER_ADMIN)
-        .eq('role', 'super_admin')
-        .single();
-
-      if (error || !adminRecord) {
-        toast({
-          title: "Erro de Autenticação",
-          description: "Super Administrador não encontrado no sistema",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Criar dados do usuário para login
-      const userData = {
-        id: adminRecord.id,
-        name: adminRecord.name,
-        email: adminRecord.email,
-        role: adminRecord.role,
-        salon_id: adminRecord.salon_id,
-        isFirstAccess: false,
-        loginTime: new Date().toISOString()
-      };
-
-      // Fazer login
-      login(userData);
-      localStorage.setItem('adminAuth', JSON.stringify(userData));
-
-      toast({
-        title: "Acesso Autorizado",
-        description: `Bem-vindo, Super Administrador ${adminRecord.name}!`
-      });
-
-      // Redirecionar para dashboard do super admin
-      setTimeout(() => {
-        window.location.href = '/super-admin-dashboard';
-      }, 1000);
 
     } catch (error) {
-      console.error('Erro no login do super admin:', error);
+      console.error('Login error:', error);
       toast({
         title: "Erro no Sistema",
         description: "Erro interno no sistema de autenticação",
@@ -117,10 +86,10 @@ const SuperAdminLogin = () => {
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
             <div className="flex items-center justify-center mb-2">
               <Shield className="h-4 w-4 text-red-600 mr-2" />
-              <span className="text-sm font-medium text-red-800">Área Restrita</span>
+              <span className="text-sm font-medium text-red-800">Área Segura</span>
             </div>
             <p className="text-xs text-red-700">
-              Acesso exclusivo para administrador do sistema
+              Autenticação criptografada com auditoria completa
             </p>
           </div>
         </CardHeader>
@@ -129,7 +98,7 @@ const SuperAdminLogin = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username" className="text-gray-700">
-                Usuário
+                Usuário Autorizado
               </Label>
               <Input
                 id="username"
@@ -139,12 +108,13 @@ const SuperAdminLogin = () => {
                 placeholder="Nome de usuário"
                 required
                 className="border-red-200 focus:border-red-500"
+                autoComplete="username"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-700">
-                Senha
+                Senha Segura
               </Label>
               <div className="relative">
                 <Input
@@ -155,6 +125,7 @@ const SuperAdminLogin = () => {
                   placeholder="Senha"
                   required
                   className="border-red-200 focus:border-red-500 pr-10"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -172,7 +143,7 @@ const SuperAdminLogin = () => {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white font-medium"
               >
-                {loading ? "Verificando..." : "Acessar Sistema"}
+                {loading ? "Verificando Segurança..." : "Acesso Seguro"}
               </Button>
               
               <Button
@@ -190,11 +161,14 @@ const SuperAdminLogin = () => {
           <div className="mt-6 pt-4 border-t border-red-100">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <div className="flex items-center mb-1">
-                <Shield className="h-3 w-3 text-yellow-600 mr-1" />
-                <span className="text-xs font-medium text-yellow-800">Segurança</span>
+                <AlertTriangle className="h-3 w-3 text-yellow-600 mr-1" />
+                <span className="text-xs font-medium text-yellow-800">Segurança Avançada</span>
               </div>
               <p className="text-xs text-yellow-700">
-                Todas as tentativas de acesso são registradas e monitoradas
+                • Senha criptografada com bcrypt<br/>
+                • Tentativas de acesso auditadas<br/>
+                • Sessão com expiração automática<br/>
+                • Validação contínua de permissões
               </p>
             </div>
           </div>
