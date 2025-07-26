@@ -9,7 +9,24 @@ export const useBookingTimeSlots = (salon: Salon) => {
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [loadingTimes, setLoadingTimes] = useState(false);
 
-  // Gerar horários disponíveis - função melhorada
+  // Função para verificar se o horário está dentro da pausa para almoço
+  const isInLunchBreak = useCallback((time: string, lunchBreak: any) => {
+    if (!lunchBreak?.enabled || !lunchBreak?.start || !lunchBreak?.end) {
+      return false;
+    }
+
+    const [timeHour, timeMinute] = time.split(':').map(Number);
+    const [startHour, startMinute] = lunchBreak.start.split(':').map(Number);
+    const [endHour, endMinute] = lunchBreak.end.split(':').map(Number);
+
+    const timeInMinutes = timeHour * 60 + timeMinute;
+    const startInMinutes = startHour * 60 + startMinute;
+    const endInMinutes = endHour * 60 + endMinute;
+
+    return timeInMinutes >= startInMinutes && timeInMinutes < endInMinutes;
+  }, []);
+
+  // Gerar horários disponíveis - função melhorada com filtro de pausa para almoço
   const generateTimeSlots = useCallback((date: Date) => {
     console.log('🕒 Generating time slots for:', date.toDateString(), 'salon:', salon?.name);
     
@@ -48,12 +65,18 @@ export const useBookingTimeSlots = (salon: Salon) => {
       const hour = Math.floor(time / 60);
       const minute = time % 60;
       const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      slots.push(timeString);
+      
+      // ✅ FILTRAR HORÁRIOS DA PAUSA PARA ALMOÇO
+      if (!isInLunchBreak(timeString, daySchedule.lunchBreak)) {
+        slots.push(timeString);
+      } else {
+        console.log(`🍽️ Slot ${timeString} removed - lunch break`);
+      }
     }
     
-    console.log(`✅ Generated ${slots.length} time slots:`, slots);
+    console.log(`✅ Generated ${slots.length} time slots (after lunch break filter):`, slots);
     return slots;
-  }, [salon?.opening_hours, salon?.name]);
+  }, [salon?.opening_hours, salon?.name, isInLunchBreak]);
 
   // Gerar horários padrão (8:00 - 18:00)
   const generateDefaultSlots = (date: Date) => {

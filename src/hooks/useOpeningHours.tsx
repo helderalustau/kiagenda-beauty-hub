@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useSalonUpdate } from '@/hooks/salon/useSalonUpdate';
 import { useToast } from '@/hooks/use-toast';
@@ -61,43 +62,64 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
     sunday: { ...defaultSchedule, closed: true }
   };
 
+  // ✅ CORRIGIR: Inicializar com dados persistidos adequadamente
   const [openingHours, setOpeningHours] = useState<OpeningHours>(() => {
+    console.log('useOpeningHours - Initializing with hours:', initialHours);
+    
     if (initialHours && typeof initialHours === 'object') {
-      console.log('useOpeningHours - Initializing with hours:', initialHours);
       // Garantir que cada dia tenha a estrutura completa com lunchBreak
       const normalizedHours = Object.keys(defaultOpeningHours).reduce((acc, day) => {
-        acc[day as keyof OpeningHours] = {
-          ...defaultSchedule,
-          ...initialHours[day],
+        const dayKey = day as keyof OpeningHours;
+        const existingDay = initialHours[dayKey];
+        
+        acc[dayKey] = {
+          open: existingDay?.open || defaultSchedule.open,
+          close: existingDay?.close || defaultSchedule.close,
+          closed: existingDay?.closed ?? defaultSchedule.closed,
           lunchBreak: {
-            ...defaultSchedule.lunchBreak,
-            ...initialHours[day]?.lunchBreak
+            enabled: existingDay?.lunchBreak?.enabled ?? false,
+            start: existingDay?.lunchBreak?.start || '12:00',
+            end: existingDay?.lunchBreak?.end || '13:00'
           }
         };
+        
         return acc;
       }, {} as OpeningHours);
+      
+      console.log('useOpeningHours - Normalized hours:', normalizedHours);
       return normalizedHours;
     }
+    
     return defaultOpeningHours;
   });
 
   const [originalHours, setOriginalHours] = useState<OpeningHours>(openingHours);
   const [originalSpecialDates, setOriginalSpecialDates] = useState<SpecialDate[]>([]);
 
+  // ✅ CORRIGIR: Atualizar quando initialHours mudar (sem perder configurações)
   useEffect(() => {
     if (initialHours && typeof initialHours === 'object') {
-      console.log('useOpeningHours - Updating hours from props:', initialHours);
+      console.log('useOpeningHours - Updating from props:', initialHours);
+      
       const normalizedHours = Object.keys(defaultOpeningHours).reduce((acc, day) => {
-        acc[day as keyof OpeningHours] = {
-          ...defaultSchedule,
-          ...initialHours[day],
+        const dayKey = day as keyof OpeningHours;
+        const existingDay = initialHours[dayKey];
+        
+        acc[dayKey] = {
+          open: existingDay?.open || defaultSchedule.open,
+          close: existingDay?.close || defaultSchedule.close,
+          closed: existingDay?.closed ?? defaultSchedule.closed,
           lunchBreak: {
-            ...defaultSchedule.lunchBreak,
-            ...initialHours[day]?.lunchBreak
+            enabled: existingDay?.lunchBreak?.enabled ?? false,
+            start: existingDay?.lunchBreak?.start || '12:00',
+            end: existingDay?.lunchBreak?.end || '13:00'
           }
         };
+        
         return acc;
       }, {} as OpeningHours);
+      
+      console.log('useOpeningHours - Setting normalized hours:', normalizedHours);
       
       setOpeningHours(normalizedHours);
       setOriginalHours(normalizedHours);
@@ -107,6 +129,9 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
         setSpecialDates(initialHours.specialDates);
         setOriginalSpecialDates(initialHours.specialDates);
       }
+      
+      // Resetar flag de mudanças quando receber novos dados
+      setHasChanges(false);
     }
   }, [initialHours]);
 
@@ -120,10 +145,12 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
         updated[day] = {
           ...prev[day],
           lunchBreak: {
-            ...prev[day].lunchBreak,
-            ...value
+            enabled: value.enabled ?? prev[day].lunchBreak?.enabled ?? false,
+            start: value.start || prev[day].lunchBreak?.start || '12:00',
+            end: value.end || prev[day].lunchBreak?.end || '13:00'
           }
         };
+        console.log('useOpeningHours - Updated lunch break:', updated[day].lunchBreak);
       } else {
         updated[day] = {
           ...prev[day],
@@ -131,8 +158,10 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
         };
       }
       
+      console.log('useOpeningHours - New state for', day, ':', updated[day]);
       return updated;
     });
+    
     setHasChanges(true);
   };
 
@@ -159,7 +188,7 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
       return { success: false, message: 'ID do estabelecimento não fornecido' };
     }
 
-    console.log('useOpeningHours - Saving hours for salon:', salonId);
+    console.log('useOpeningHours - Saving hours for salon:', salonId, openingHours);
     setSaving(true);
     
     try {
@@ -167,6 +196,8 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
         ...openingHours,
         specialDates
       };
+
+      console.log('useOpeningHours - Data to save:', JSON.stringify(dataToSave, null, 2));
 
       const result = await updateSalon({
         id: salonId,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,6 +13,23 @@ export const useAvailableTimeSlots = (
   // Use ref to prevent duplicate calls
   const lastFetchParams = useRef<string>('');
   const isCurrentlyFetching = useRef(false);
+
+  // Função para verificar se o horário está dentro da pausa para almoço
+  const isInLunchBreak = useCallback((time: string, lunchBreak: any) => {
+    if (!lunchBreak?.enabled || !lunchBreak?.start || !lunchBreak?.end) {
+      return false;
+    }
+
+    const [timeHour, timeMinute] = time.split(':').map(Number);
+    const [startHour, startMinute] = lunchBreak.start.split(':').map(Number);
+    const [endHour, endMinute] = lunchBreak.end.split(':').map(Number);
+
+    const timeInMinutes = timeHour * 60 + timeMinute;
+    const startInMinutes = startHour * 60 + startMinute;
+    const endInMinutes = endHour * 60 + endMinute;
+
+    return timeInMinutes >= startInMinutes && timeInMinutes < endInMinutes;
+  }, []);
 
   const fetchAvailableSlots = useCallback(async () => {
     console.log('🔍 fetchAvailableSlots called with:', { 
@@ -77,7 +93,7 @@ export const useAvailableTimeSlots = (
         return;
       }
 
-      // Gerar horários disponíveis baseado nos horários de funcionamento
+      // Gerar horários disponíveis baseado nos horários de funcionamento COM PAUSA
       const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
       const daySchedule = salonData.opening_hours[dayOfWeek];
 
@@ -89,8 +105,8 @@ export const useAvailableTimeSlots = (
       }
 
       // Gerar todos os slots possíveis para o dia
-      const allSlots = generateTimeSlots(daySchedule.open, daySchedule.close);
-      console.log('📅 Generated slots:', allSlots);
+      const allSlots = generateTimeSlots(daySchedule.open, daySchedule.close, daySchedule.lunchBreak);
+      console.log('📅 Generated slots (with lunch break filter):', allSlots);
 
       if (allSlots.length === 0) {
         console.log('❌ No slots generated');
@@ -135,10 +151,10 @@ export const useAvailableTimeSlots = (
       setLoading(false);
       isCurrentlyFetching.current = false;
     }
-  }, [salonId, selectedDate, serviceId]);
+  }, [salonId, selectedDate, serviceId, generateTimeSlots]);
 
-  // Gerar slots de tempo baseado em horário de abertura e fechamento
-  const generateTimeSlots = (openTime: string, closeTime: string): string[] => {
+  // Gerar slots de tempo baseado em horário de abertura e fechamento COM FILTRO de pausa
+  const generateTimeSlots = useCallback((openTime: string, closeTime: string, lunchBreak?: any): string[] => {
     const slots: string[] = [];
     const [openHour, openMinute] = openTime.split(':').map(Number);
     const [closeHour, closeMinute] = closeTime.split(':').map(Number);
@@ -151,11 +167,15 @@ export const useAvailableTimeSlots = (
       const hour = Math.floor(time / 60);
       const minute = time % 60;
       const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      slots.push(timeString);
+      
+      // ✅ FILTRAR HORÁRIOS DA PAUSA PARA ALMOÇO
+      if (!isInLunchBreak(timeString, lunchBreak)) {
+        slots.push(timeString);
+      }
     }
     
     return slots;
-  };
+  }, [isInLunchBreak]);
 
   // Filtrar slots disponíveis removendo conflitos
   const filterAvailableSlots = (
