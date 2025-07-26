@@ -1,15 +1,19 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, Bell, Palette, Shield, Info, UserX } from "lucide-react";
+import { Settings, Users, Bell, Palette, Shield, Info, UserX, Clock } from "lucide-react";
 import SalonConfigurationForm from '@/components/settings/SalonConfigurationForm';
 import SalonUsersManager from '@/components/settings/SalonUsersManager';
 import SalonAccountDeletion from '@/components/settings/SalonAccountDeletion';
+import OpeningHoursManager from '@/components/settings/OpeningHoursManager';
 import { Salon } from '@/hooks/useSupabaseData';
+
 interface SettingsPageProps {
   salon: Salon;
   onRefresh: () => Promise<void>;
 }
+
 const SettingsPage = ({
   salon,
   onRefresh
@@ -38,7 +42,9 @@ const SettingsPage = ({
     };
     return planLimits[salon.plan as keyof typeof planLimits] || 3;
   };
-  return <div className="space-y-6">
+
+  return (
+    <div className="space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 shadow-xl py-[9px] bg-gray-300">
         <div className="flex items-center space-x-4">
@@ -56,11 +62,17 @@ const SettingsPage = ({
       <Card className="shadow-xl border-0">
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-xl h-auto">
+            <TabsList className="grid w-full grid-cols-6 bg-gray-100 p-1 rounded-xl h-auto">
               <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
                 <div className="flex flex-col items-center space-y-1">
                   <Settings className="h-5 w-5" />
                   <span className="text-sm font-medium">Geral</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="hours" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
+                <div className="flex flex-col items-center space-y-1">
+                  <Clock className="h-5 w-5" />
+                  <span className="text-sm font-medium">Horários</span>
                 </div>
               </TabsTrigger>
               <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 py-3">
@@ -102,6 +114,11 @@ const SettingsPage = ({
                   <SalonConfigurationForm salon={salon} onSalonChange={handleSalonChange} />
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Tab: Horários de Funcionamento */}
+            <TabsContent value="hours" className="space-y-6">
+              <OpeningHoursManager salonId={salon.id} initialHours={salon.opening_hours} />
             </TabsContent>
 
             {/* Tab: Usuários */}
@@ -225,6 +242,8 @@ const SettingsPage = ({
           </Tabs>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default SettingsPage;
