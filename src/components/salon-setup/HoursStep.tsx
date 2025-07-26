@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useOpeningHours } from '@/hooks/useOpeningHours';
-import { Loader2, Save, RotateCcw } from 'lucide-react';
+import { Loader2, Save, RotateCcw, Coffee } from 'lucide-react';
 
 interface FormData {
   salon_name: string;
@@ -44,13 +44,11 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
     return names[day] || day;
   };
 
-  // Ordem correta dos dias da semana
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
   const handleSave = async () => {
     const result = await saveOpeningHours();
     if (result.success) {
-      // Atualizar o formData com os novos horários
       updateFormData({ opening_hours: openingHours });
     }
   };
@@ -67,7 +65,7 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
           Horários de Funcionamento
         </h3>
         <p className="text-gray-600">
-          Defina os horários em que seu estabelecimento funciona.
+          Defina os horários em que seu estabelecimento funciona, incluindo pausas.
         </p>
       </div>
 
@@ -75,46 +73,102 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
         {dayOrder.map((day) => {
           const hours = openingHours[day as keyof typeof openingHours];
           return (
-            <div key={day} className="flex items-center space-x-4 p-4 border rounded-lg bg-white shadow-sm">
-              <div className="w-24 flex-shrink-0">
-                <span className="font-medium text-gray-700">
-                  {getDayName(day)}
-                </span>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  checked={!hours.closed}
-                  onCheckedChange={(checked) => {
-                    updateDaySchedule(day as keyof typeof openingHours, 'closed', !checked);
-                  }}
-                />
-                <span className="text-sm text-gray-600">Aberto</span>
-              </div>
-              
-              {!hours.closed && (
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Das:</span>
-                    <Input
-                      type="time"
-                      value={hours.open}
-                      onChange={(e) => {
-                        updateDaySchedule(day as keyof typeof openingHours, 'open', e.target.value);
-                      }}
-                      className="w-24"
-                    />
+            <div key={day} className="border rounded-lg bg-white shadow-sm">
+              <div className="flex items-center space-x-4 p-4">
+                <div className="w-24 flex-shrink-0">
+                  <span className="font-medium text-gray-700">
+                    {getDayName(day)}
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={!hours.closed}
+                    onCheckedChange={(checked) => {
+                      updateDaySchedule(day as keyof typeof openingHours, 'closed', !checked);
+                    }}
+                  />
+                  <span className="text-sm text-gray-600">Aberto</span>
+                </div>
+                
+                {!hours.closed && (
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Das:</span>
+                      <Input
+                        type="time"
+                        value={hours.open}
+                        onChange={(e) => {
+                          updateDaySchedule(day as keyof typeof openingHours, 'open', e.target.value);
+                        }}
+                        className="w-24"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Às:</span>
+                      <Input
+                        type="time"
+                        value={hours.close}
+                        onChange={(e) => {
+                          updateDaySchedule(day as keyof typeof openingHours, 'close', e.target.value);
+                        }}
+                        className="w-24"
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Às:</span>
-                    <Input
-                      type="time"
-                      value={hours.close}
-                      onChange={(e) => {
-                        updateDaySchedule(day as keyof typeof openingHours, 'close', e.target.value);
-                      }}
-                      className="w-24"
-                    />
+                )}
+              </div>
+
+              {/* Pausa para Almoço */}
+              {!hours.closed && (
+                <div className="px-4 pb-4 border-t border-gray-100 bg-gray-50">
+                  <div className="flex items-center space-x-4 pt-3">
+                    <Coffee className="h-4 w-4 text-orange-600" />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={hours.lunchBreak?.enabled || false}
+                        onCheckedChange={(checked) => {
+                          updateDaySchedule(day as keyof typeof openingHours, 'lunchBreak', {
+                            ...hours.lunchBreak,
+                            enabled: checked
+                          });
+                        }}
+                      />
+                      <span className="text-sm text-gray-600">Pausa para almoço</span>
+                    </div>
+
+                    {hours.lunchBreak?.enabled && (
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500">Das:</span>
+                          <Input
+                            type="time"
+                            value={hours.lunchBreak?.start || '12:00'}
+                            onChange={(e) => {
+                              updateDaySchedule(day as keyof typeof openingHours, 'lunchBreak', {
+                                ...hours.lunchBreak,
+                                start: e.target.value
+                              });
+                            }}
+                            className="w-20 text-xs"
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500">Às:</span>
+                          <Input
+                            type="time"
+                            value={hours.lunchBreak?.end || '13:00'}
+                            onChange={(e) => {
+                              updateDaySchedule(day as keyof typeof openingHours, 'lunchBreak', {
+                                ...hours.lunchBreak,
+                                end: e.target.value
+                              });
+                            }}
+                            className="w-20 text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
