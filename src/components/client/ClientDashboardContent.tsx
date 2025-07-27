@@ -5,18 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X, MapPin, Calendar, Clock, Star } from "lucide-react";
 import { LocationFilter } from './LocationFilter';
-
-interface Salon {
-  id: string;
-  name: string;
-  owner_name: string;
-  address: string;
-  city: string;
-  state: string;
-  phone: string;
-  is_open: boolean;
-  banner_image_url?: string;
-}
+import { Salon } from '@/types/supabase-entities';
 
 interface ClientDashboardContentProps {
   salons: Salon[];
@@ -147,7 +136,7 @@ const ClientDashboardContent = ({
                         </p>
                         <div className="flex items-center gap-1 text-sm text-gray-500">
                           <MapPin className="h-3 w-3" />
-                          <span>{salon.city}, {salon.state}</span>
+                          <span>{salon.city || ''}, {salon.state || ''}</span>
                         </div>
                       </div>
                       
