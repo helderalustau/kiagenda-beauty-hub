@@ -37,6 +37,10 @@ export const useClientDashboard = () => {
   const [filteredSalons, setFilteredSalons] = useState(salons);
   const [clientId, setClientId] = useState<string | null>(null);
   const [clientUser, setClientUser] = useState<any>(null);
+  const [locationFilter, setLocationFilter] = useState({
+    enabled: true,
+    showOtherCities: false
+  });
 
   // Setup realtime notifications for client appointment updates
   useRealtimeNotifications({
@@ -124,13 +128,14 @@ export const useClientDashboard = () => {
       name: clientUser?.name || clientUser?.username,
       city: clientUser?.city,
       state: clientUser?.state,
-      searchTerm: searchTerm
+      searchTerm: searchTerm,
+      locationFilter: locationFilter
     });
 
     let locationFilteredSalons = salons;
 
-    // Apply location filter if client has city and state
-    if (clientUser?.city && clientUser?.state) {
+    // Apply location filter if enabled and client has city and state
+    if (locationFilter.enabled && clientUser?.city && clientUser?.state && !locationFilter.showOtherCities) {
       const clientCityNormalized = normalizeString(clientUser.city);
       const clientStateNormalized = normalizeString(clientUser.state);
       
@@ -166,8 +171,21 @@ export const useClientDashboard = () => {
         filteredSalons: locationFilteredSalons.length,
         salonNames: locationFilteredSalons.map(s => s.name)
       });
+    } else if (locationFilter.showOtherCities && clientUser?.state) {
+      // Mostrar apenas salões do mesmo estado
+      const clientStateNormalized = normalizeString(clientUser.state);
+      
+      locationFilteredSalons = salons.filter(salon => {
+        const salonStateNormalized = normalizeString(salon.state);
+        return salonStateNormalized === clientStateNormalized;
+      });
+      
+      console.log('Mostrando outras cidades do estado:', {
+        clientState: clientUser.state,
+        filteredSalons: locationFilteredSalons.length
+      });
     } else {
-      console.log('Cliente não tem cidade/estado definidos, mostrando todos os salões');
+      console.log('Filtro de localização desabilitado, mostrando todos os salões');
     }
 
     // Apply search filter on top of location filter
@@ -176,7 +194,8 @@ export const useClientDashboard = () => {
       const searchFiltered = locationFilteredSalons.filter(salon => {
         const nameMatch = normalizeString(salon.name).includes(searchNormalized);
         const ownerMatch = normalizeString(salon.owner_name).includes(searchNormalized);
-        return nameMatch || ownerMatch;
+        const cityMatch = normalizeString(salon.city).includes(searchNormalized);
+        return nameMatch || ownerMatch || cityMatch;
       });
       
       console.log('Filtro de busca aplicado:', {
@@ -191,7 +210,7 @@ export const useClientDashboard = () => {
     }
 
     console.log('=== FIM DO FILTRO ===');
-  }, [salons, searchTerm, clientUser?.city, clientUser?.state]);
+  }, [salons, searchTerm, clientUser?.city, clientUser?.state, locationFilter]);
 
   const loadData = async (userData = clientUser) => {
     try {
@@ -273,6 +292,20 @@ export const useClientDashboard = () => {
     localStorage.setItem('clientAuth', JSON.stringify(updatedUser));
   };
 
+  const toggleLocationFilter = () => {
+    setLocationFilter(prev => ({
+      ...prev,
+      enabled: !prev.enabled
+    }));
+  };
+
+  const toggleShowOtherCities = () => {
+    setLocationFilter(prev => ({
+      ...prev,
+      showOtherCities: !prev.showOtherCities
+    }));
+  };
+
   return {
     // State
     user: clientUser,
@@ -283,6 +316,7 @@ export const useClientDashboard = () => {
     isRefreshing,
     searchTerm,
     clientId: clientUser?.id,
+    locationFilter,
     
     // Actions
     setSearchTerm,
@@ -291,6 +325,8 @@ export const useClientDashboard = () => {
     handleBackToHome,
     handleRetry,
     clearSearch,
-    handleUserUpdate
+    handleUserUpdate,
+    toggleLocationFilter,
+    toggleShowOtherCities
   };
 };

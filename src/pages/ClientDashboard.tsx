@@ -1,15 +1,15 @@
 
 import React from 'react';
 import { useClientDashboard } from '@/hooks/useClientDashboard';
-import { useRealtimeAppointmentUpdates } from '@/hooks/useRealtimeAppointmentUpdates';
 import ClientDashboardHeader from '@/components/client/ClientDashboardHeader';
+import ClientDashboardContent from '@/components/client/ClientDashboardContent';
 import ClientDashboardLoading from '@/components/client/ClientDashboardLoading';
 import ClientDashboardError from '@/components/client/ClientDashboardError';
-import ClientDashboardContent from '@/components/client/ClientDashboardContent';
+import ClientAppointments from '@/components/client/ClientAppointments';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ClientDashboard = () => {
   const {
-    // State
     user,
     salons,
     appointments,
@@ -17,95 +17,65 @@ const ClientDashboard = () => {
     hasError,
     isRefreshing,
     searchTerm,
-    
-    // Actions
     setSearchTerm,
     handleBookService,
     handleLogout,
     handleBackToHome,
     handleRetry,
     clearSearch,
-    handleUserUpdate
+    handleUserUpdate,
+    locationFilter,
+    toggleLocationFilter,
+    toggleShowOtherCities
   } = useClientDashboard();
 
-  // Pegar ID do cliente do localStorage
-  const getClientId = () => {
-    const clientAuth = localStorage.getItem('clientAuth');
-    if (clientAuth) {
-      try {
-        const client = JSON.parse(clientAuth);
-        return client.id;
-      } catch (error) {
-        console.error('Error parsing clientAuth:', error);
-      }
-    }
-    return null;
-  };
-
-  const clientId = getClientId();
-
-  // Setup realtime updates for client appointments
-  useRealtimeAppointmentUpdates({
-    clientId,
-    onAppointmentUpdate: handleRetry
-  });
-
-  // Filter appointments by status - cliente vê agendamentos ativos (pending e confirmed)
-  const activeAppointments = appointments.filter(apt => 
-    apt.status === 'pending' || apt.status === 'confirmed'
-  );
-  const completedAppointments = appointments.filter(apt => apt.status === 'completed');
-
-  console.log('ClientDashboard - All appointments:', appointments);
-  console.log('ClientDashboard - Active appointments:', activeAppointments);
-  console.log('ClientDashboard - Completed appointments:', completedAppointments);
-  console.log('ClientDashboard - Available salons:', salons?.length || 0);
-  console.log('ClientDashboard - Client location:', user?.city, user?.state);
-
-  if (loading && !isRefreshing) {
+  if (loading && !user) {
     return <ClientDashboardLoading />;
   }
 
   if (hasError) {
-    return (
-      <ClientDashboardError 
-        onRetry={handleRetry}
-        onBackToHome={handleBackToHome}
-      />
-    );
+    return <ClientDashboardError onRetry={handleRetry} onBackToHome={handleBackToHome} />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <ClientDashboardHeader
         user={user}
-        searchTerm={searchTerm}
-        isRefreshing={isRefreshing}
-        onSearchChange={setSearchTerm}
-        onClearSearch={clearSearch}
-        onRetry={handleRetry}
-        onBackToHome={handleBackToHome}
         onLogout={handleLogout}
+        onBackToHome={handleBackToHome}
         onUserUpdate={handleUserUpdate}
       />
-
-      <div className="min-h-screen">
-        {isRefreshing ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Atualizando dados...</p>
-          </div>
-        ) : (
-          <ClientDashboardContent
-            salons={salons || []}
-            onBookService={handleBookService}
-            activeAppointments={activeAppointments}
-            completedAppointments={completedAppointments}
-            onAppointmentUpdate={handleRetry}
-            user={user}
-          />
-        )}
-      </div>
+      
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        <Tabs defaultValue="establishments" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="establishments">Estabelecimentos</TabsTrigger>
+            <TabsTrigger value="appointments">Meus Agendamentos</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="establishments" className="mt-6">
+            <ClientDashboardContent
+              salons={salons}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              clearSearch={clearSearch}
+              handleBookService={handleBookService}
+              loading={isRefreshing}
+              user={user}
+              locationFilter={locationFilter}
+              toggleLocationFilter={toggleLocationFilter}
+              toggleShowOtherCities={toggleShowOtherCities}
+            />
+          </TabsContent>
+          
+          <TabsContent value="appointments" className="mt-6">
+            <ClientAppointments 
+              appointments={appointments}
+              loading={isRefreshing}
+            />
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 };

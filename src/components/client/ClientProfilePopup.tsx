@@ -4,9 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useClientData } from '@/hooks/useClientData';
 import { useToast } from "@/components/ui/use-toast";
+import { StateSelect } from "@/components/ui/state-select";
+import { CitySelect } from "@/components/ui/city-select";
+import { formatCep } from '@/utils/cepFormatter';
 
 interface ClientProfilePopupProps {
   isOpen: boolean;
@@ -33,13 +35,11 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
   });
 
   const [usernameError, setUsernameError] = useState('');
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
   useEffect(() => {
     if (client && isOpen) {
       console.log('Loading client data into form:', client);
       
-      // Carregar todas as informações do cliente, incluindo endereço
       setFormData({
         username: client.username || client.name || '',
         full_name: client.full_name || '',
@@ -61,6 +61,17 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
     
     if (field === 'username') {
       setUsernameError('');
+    }
+    
+    // Limpar cidade quando estado mudar
+    if (field === 'state') {
+      setFormData(prev => ({ ...prev, city: '' }));
+    }
+    
+    // Formatar CEP automaticamente
+    if (field === 'zip_code') {
+      const formatted = formatCep(value);
+      setFormData(prev => ({ ...prev, zip_code: formatted }));
     }
   };
 
@@ -163,6 +174,27 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
 
           <div className="grid grid-cols-2 gap-2">
             <div>
+              <Label htmlFor="state">Estado *</Label>
+              <StateSelect
+                value={formData.state}
+                onValueChange={(value) => handleInputChange('state', value)}
+                placeholder="Selecione o estado"
+              />
+            </div>
+            <div>
+              <Label htmlFor="city">Cidade *</Label>
+              <CitySelect
+                value={formData.city}
+                onValueChange={(value) => handleInputChange('city', value)}
+                state={formData.state}
+                placeholder="Digite a cidade"
+                disabled={!formData.state}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
               <Label htmlFor="street_address">Endereço</Label>
               <Input
                 id="street_address"
@@ -195,37 +227,15 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="city">Cidade</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="Digite a cidade"
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <Label htmlFor="state">Estado</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                placeholder="Digite o estado"
-                disabled={loading}
-              />
-            </div>
-          </div>
-
           <div>
             <Label htmlFor="zip_code">CEP</Label>
             <Input
               id="zip_code"
               value={formData.zip_code}
               onChange={(e) => handleInputChange('zip_code', e.target.value)}
-              placeholder="Digite o CEP"
+              placeholder="00000-000"
               disabled={loading}
+              maxLength={9}
             />
           </div>
 

@@ -1,370 +1,196 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, Scissors, CheckCircle, AlertCircle, X, Building } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Salon } from '@/hooks/useSupabaseData';
-import { Appointment } from '@/types/supabase-entities';
-import { useAppointmentData } from '@/hooks/useAppointmentData';
-import { useToast } from "@/hooks/use-toast";
+import { Search, X, MapPin, Calendar, Clock, Star } from "lucide-react";
+import { LocationFilter } from './LocationFilter';
+
+interface Salon {
+  id: string;
+  name: string;
+  owner_name: string;
+  address: string;
+  city: string;
+  state: string;
+  phone: string;
+  is_open: boolean;
+  banner_image_url?: string;
+}
 
 interface ClientDashboardContentProps {
   salons: Salon[];
-  onBookService: (salon: Salon) => void;
-  activeAppointments: Appointment[];
-  completedAppointments: Appointment[];
-  onAppointmentUpdate?: () => void;
-  user?: any;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  clearSearch: () => void;
+  handleBookService: (salon: Salon) => void;
+  loading: boolean;
+  user: any;
+  locationFilter: {
+    enabled: boolean;
+    showOtherCities: boolean;
+  };
+  toggleLocationFilter: () => void;
+  toggleShowOtherCities: () => void;
 }
 
-const ClientDashboardContent = ({ 
-  salons, 
-  onBookService, 
-  activeAppointments, 
-  completedAppointments,
-  onAppointmentUpdate,
-  user 
+const ClientDashboardContent = ({
+  salons,
+  searchTerm,
+  setSearchTerm,
+  clearSearch,
+  handleBookService,
+  loading,
+  user,
+  locationFilter,
+  toggleLocationFilter,
+  toggleShowOtherCities
 }: ClientDashboardContentProps) => {
-  const { updateAppointmentStatus } = useAppointmentData();
-  const { toast } = useToast();
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
-      case 'confirmed':
-        return <Badge variant="default" className="bg-blue-100 text-blue-800">Confirmado</Badge>;
-      case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Concluído</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive">Cancelado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatAppointmentDate = (dateString: string) => {
-    if (dateString && dateString.includes('-')) {
-      const [year, month, day] = dateString.split('-');
-      const dayNum = parseInt(day, 10);
-      const monthNum = parseInt(month, 10);
-      
-      const months = [
-        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-      ];
-      
-      const monthName = months[monthNum - 1];
-      return `${dayNum} de ${monthName}`;
-    }
-    
-    return dateString;
-  };
-
-  const formatCompletedDate = (dateString: string) => {
-    if (dateString && dateString.includes('-')) {
-      const [year, month, day] = dateString.split('-');
-      const dayNum = parseInt(day, 10);
-      const monthNum = parseInt(month, 10);
-      const yearNum = parseInt(year, 10);
-      
-      const months = [
-        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-      ];
-      
-      const monthName = months[monthNum - 1];
-      return `${dayNum} de ${monthName} de ${yearNum}`;
-    }
-    
-    return dateString;
-  };
-
-  const handleCancelAppointment = async (appointmentId: string) => {
-    try {
-      const result = await updateAppointmentStatus(appointmentId, 'cancelled');
-      
-      if (result.success) {
-        toast({
-          title: "Agendamento Cancelado",
-          description: "Sua solicitação foi cancelada com sucesso.",
-        });
-        
-        if (onAppointmentUpdate) {
-          onAppointmentUpdate();
-        }
-      } else {
-        toast({
-          title: "Erro ao cancelar",
-          description: result.message || "Erro ao cancelar agendamento",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error canceling appointment:', error);
-      toast({
-        title: "Erro",
-        description: "Erro interno ao cancelar agendamento",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const renderNoSalonsMessage = () => {
-    if (!user?.city || !user?.state) {
-      return (
-        <Card className="border-dashed border-2 border-gray-300">
-          <CardContent className="p-8 text-center">
-            <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Complete seu perfil</h3>
-            <p className="text-gray-500 mb-4">
-              Para ver estabelecimentos da sua região, complete as informações de cidade e estado no seu perfil.
-            </p>
-            <p className="text-sm text-blue-600 font-medium">
-              Clique no seu nome no canto superior direito para editar seu perfil.
-            </p>
-          </CardContent>
-        </Card>
-      );
-    }
-
+  if (loading) {
     return (
-      <Card className="border-dashed border-2 border-gray-300">
-        <CardContent className="p-8 text-center">
-          <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Nenhum estabelecimento encontrado
-          </h3>
-          <p className="text-gray-500 mb-2">
-            Não há estabelecimentos disponíveis em:
-          </p>
-          <p className="text-blue-600 font-medium mb-4">
-            {user.city} - {user.state}
-          </p>
-          <p className="text-sm text-gray-400">
-            Novos estabelecimentos podem ser cadastrados a qualquer momento. 
-            Volte mais tarde para verificar!
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
-  };
+  }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-8">
-      {/* Seção de Agendamentos Ativos */}
-      {activeAppointments.length > 0 && (
-        <section>
-          <div className="flex items-center mb-4">
-            <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Agendamentos Ativos</h2>
-          </div>
-          
-          <div className="grid gap-4">
-            {activeAppointments.map((appointment) => (
-              <Card key={appointment.id} className="border-l-4 border-l-blue-500">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg flex items-center">
-                      <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                      {(appointment as any).salon?.name}
-                    </CardTitle>
-                    {getStatusBadge(appointment.status)}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-3">
-                  <div className="flex items-center text-gray-600">
-                    <Scissors className="h-4 w-4 mr-2" />
-                    <span className="font-medium">{(appointment as any).service?.name}</span>
-                    <span className="ml-2 text-sm">
-                      - {formatCurrency((appointment as any).service?.price || 0)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4 text-sm">
-                    <div className="flex items-center text-blue-600">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      <span>
-                        {formatAppointmentDate(appointment.appointment_date)}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-blue-600">
-                      <Clock className="h-4 w-4 mr-1" />
-                      <span>{appointment.appointment_time}</span>
-                    </div>
-                  </div>
+    <div className="space-y-6">
+      {/* Filtro de localização */}
+      <LocationFilter
+        clientCity={user?.city}
+        clientState={user?.state}
+        locationFilter={locationFilter}
+        onToggleLocationFilter={toggleLocationFilter}
+        onToggleShowOtherCities={toggleShowOtherCities}
+        salonsCount={salons.length}
+      />
 
-                  {appointment.notes && (
-                    <div className="bg-gray-50 p-2 rounded">
-                      <p className="text-sm text-gray-700">
-                        <strong>Observações:</strong> {appointment.notes}
-                      </p>
-                    </div>
-                  )}
-
-                  {appointment.status === 'pending' && (
-                    <div className="flex justify-end">
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleCancelAppointment(appointment.id)}
-                        className="flex items-center space-x-2"
-                      >
-                        <X className="h-4 w-4" />
-                        <span>Cancelar Solicitação</span>
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Seção de Estabelecimentos Disponíveis */}
-      <section>
-        <div className="flex items-center mb-4">
-          <Scissors className="h-5 w-5 mr-2 text-purple-600" />
-          <h2 className="text-xl font-semibold text-gray-900">
-            Estabelecimentos Disponíveis
-            {user?.city && user?.state && (
-              <span className="text-sm font-normal text-gray-500 ml-2">
-                em {user.city} - {user.state}
-              </span>
+      {/* Barra de pesquisa */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar estabelecimentos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSearch}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             )}
-          </h2>
-        </div>
-        
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista de estabelecimentos */}
+      <div className="grid gap-4">
         {salons.length === 0 ? (
-          renderNoSalonsMessage()
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {salons.map((salon) => (
-              <Card key={salon.id} className="hover:shadow-lg transition-all duration-300 group">
-                {salon.banner_image_url && (
-                  <div className="relative h-32 overflow-hidden rounded-t-lg">
-                    <img 
-                      src={salon.banner_image_url} 
-                      alt={salon.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                  </div>
-                )}
-                
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{salon.name}</CardTitle>
-                  <p className="text-sm text-gray-600">{salon.owner_name}</p>
-                  <p className="text-xs text-gray-500">{salon.city} - {salon.state}</p>
-                </CardHeader>
-                
-                <CardContent className="space-y-3">
-                  <div className="flex items-start text-sm text-gray-600">
-                    <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>{salon.address}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Badge variant={salon.is_open ? "default" : "secondary"} className={
-                      salon.is_open 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-gray-100 text-gray-800"
-                    }>
-                      {salon.is_open ? 'Aberto' : 'Fechado'}
-                    </Badge>
-                    
-                    <Button 
-                      size="sm" 
-                      onClick={() => onBookService(salon)}
-                      disabled={!salon.is_open}
-                      className="transition-all duration-200 hover:scale-105"
-                    >
-                      Agendar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Seção de Histórico de Atendimentos */}
-      <section>
-        <div className="flex items-center mb-4">
-          <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Histórico de Atendimentos</h2>
-        </div>
-        
-        {completedAppointments.length > 0 ? (
-          <div className="grid gap-4">
-            {completedAppointments.map((appointment) => (
-              <Card key={appointment.id} className="border-l-4 border-l-green-500 bg-green-50">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg flex items-center">
-                      <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                      {(appointment as any).salon?.name}
-                    </CardTitle>
-                    {getStatusBadge(appointment.status)}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-3">
-                  <div className="flex items-center text-gray-600">
-                    <Scissors className="h-4 w-4 mr-2" />
-                    <span className="font-medium">{(appointment as any).service?.name}</span>
-                    <span className="ml-2 text-sm">
-                      - {formatCurrency((appointment as any).service?.price || 0)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4 text-sm">
-                    <div className="flex items-center text-green-600">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      <span>
-                        {formatCompletedDate(appointment.appointment_date)}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-green-600">
-                      <Clock className="h-4 w-4 mr-1" />
-                      <span>{appointment.appointment_time}</span>
-                    </div>
-                  </div>
-
-                  {appointment.notes && (
-                    <div className="bg-white p-2 rounded border">
-                      <p className="text-sm text-gray-700">
-                        <strong>Observações:</strong> {appointment.notes}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
           <Card>
             <CardContent className="p-8 text-center">
-              <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum atendimento realizado</h3>
-              <p className="text-gray-500 mb-4">Você ainda não possui histórico de atendimentos.</p>
+              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Nenhum estabelecimento encontrado
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm 
+                  ? 'Tente buscar por outros termos ou ajuste os filtros.'
+                  : 'Não há estabelecimentos disponíveis na sua região no momento.'
+                }
+              </p>
+              {searchTerm && (
+                <Button variant="outline" onClick={clearSearch}>
+                  Limpar pesquisa
+                </Button>
+              )}
             </CardContent>
           </Card>
+        ) : (
+          salons.map((salon) => (
+            <Card key={salon.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-0">
+                <div className="flex">
+                  {/* Imagem do banner */}
+                  <div className="w-24 h-24 bg-gray-100 rounded-l-lg flex-shrink-0 overflow-hidden">
+                    {salon.banner_image_url ? (
+                      <img 
+                        src={salon.banner_image_url} 
+                        alt={salon.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">
+                          {salon.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Informações do estabelecimento */}
+                  <div className="flex-1 p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">
+                          {salon.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-1">
+                          {salon.owner_name}
+                        </p>
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <MapPin className="h-3 w-3" />
+                          <span>{salon.city}, {salon.state}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          salon.is_open 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {salon.is_open ? 'Aberto' : 'Fechado'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center mt-3">
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>Horário flexível</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 text-yellow-500" />
+                          <span>4.8</span>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        onClick={() => handleBookService(salon)}
+                        disabled={!salon.is_open}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Agendar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
-      </section>
+      </div>
     </div>
   );
 };
