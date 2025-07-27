@@ -6,6 +6,7 @@ import ClientDashboardContent from '@/components/client/ClientDashboardContent';
 import ClientDashboardLoading from '@/components/client/ClientDashboardLoading';
 import ClientDashboardError from '@/components/client/ClientDashboardError';
 import ClientAppointments from '@/components/client/ClientAppointments';
+import PendingAppointments from '@/components/client/PendingAppointments';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ClientDashboard = () => {
@@ -37,6 +38,9 @@ const ClientDashboard = () => {
     return <ClientDashboardError onRetry={handleRetry} onBackToHome={handleBackToHome} />;
   }
 
+  // Filtrar apenas agendamentos pendentes
+  const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
+
   return (
     <div className="min-h-screen bg-gray-50">
       <ClientDashboardHeader
@@ -54,18 +58,28 @@ const ClientDashboard = () => {
           </TabsList>
           
           <TabsContent value="establishments" className="mt-6">
-            <ClientDashboardContent
-              salons={salons}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              clearSearch={clearSearch}
-              handleBookService={handleBookService}
-              loading={isRefreshing}
-              user={user}
-              locationFilter={locationFilter}
-              toggleLocationFilter={toggleLocationFilter}
-              toggleShowOtherCities={toggleShowOtherCities}
-            />
+            <div className="space-y-6">
+              <ClientDashboardContent
+                salons={salons}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                clearSearch={clearSearch}
+                handleBookService={handleBookService}
+                loading={isRefreshing}
+                user={user}
+                locationFilter={locationFilter}
+                toggleLocationFilter={toggleLocationFilter}
+                toggleShowOtherCities={toggleShowOtherCities}
+              />
+              
+              {/* Mostrar agendamentos pendentes abaixo dos filtros */}
+              {pendingAppointments.length > 0 && (
+                <PendingAppointments
+                  clientId={user?.id}
+                  appointments={pendingAppointments}
+                />
+              )}
+            </div>
           </TabsContent>
           
           <TabsContent value="appointments" className="mt-6">
