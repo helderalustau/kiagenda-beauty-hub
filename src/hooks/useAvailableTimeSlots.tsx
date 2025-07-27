@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -30,6 +31,30 @@ export const useAvailableTimeSlots = (
 
     return timeInMinutes >= startInMinutes && timeInMinutes < endInMinutes;
   }, []);
+
+  // Gerar slots de tempo baseado em horário de abertura e fechamento COM FILTRO de pausa
+  const generateTimeSlots = useCallback((openTime: string, closeTime: string, lunchBreak?: any): string[] => {
+    const slots: string[] = [];
+    const [openHour, openMinute] = openTime.split(':').map(Number);
+    const [closeHour, closeMinute] = closeTime.split(':').map(Number);
+    
+    const openTimeInMinutes = openHour * 60 + openMinute;
+    const closeTimeInMinutes = closeHour * 60 + closeMinute;
+    
+    // Gerar slots a cada 30 minutos
+    for (let time = openTimeInMinutes; time < closeTimeInMinutes; time += 30) {
+      const hour = Math.floor(time / 60);
+      const minute = time % 60;
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      
+      // ✅ FILTRAR HORÁRIOS DA PAUSA PARA ALMOÇO
+      if (!isInLunchBreak(timeString, lunchBreak)) {
+        slots.push(timeString);
+      }
+    }
+    
+    return slots;
+  }, [isInLunchBreak]);
 
   const fetchAvailableSlots = useCallback(async () => {
     console.log('🔍 fetchAvailableSlots called with:', { 
@@ -152,30 +177,6 @@ export const useAvailableTimeSlots = (
       isCurrentlyFetching.current = false;
     }
   }, [salonId, selectedDate, serviceId, generateTimeSlots]);
-
-  // Gerar slots de tempo baseado em horário de abertura e fechamento COM FILTRO de pausa
-  const generateTimeSlots = useCallback((openTime: string, closeTime: string, lunchBreak?: any): string[] => {
-    const slots: string[] = [];
-    const [openHour, openMinute] = openTime.split(':').map(Number);
-    const [closeHour, closeMinute] = closeTime.split(':').map(Number);
-    
-    const openTimeInMinutes = openHour * 60 + openMinute;
-    const closeTimeInMinutes = closeHour * 60 + closeMinute;
-    
-    // Gerar slots a cada 30 minutos
-    for (let time = openTimeInMinutes; time < closeTimeInMinutes; time += 30) {
-      const hour = Math.floor(time / 60);
-      const minute = time % 60;
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      
-      // ✅ FILTRAR HORÁRIOS DA PAUSA PARA ALMOÇO
-      if (!isInLunchBreak(timeString, lunchBreak)) {
-        slots.push(timeString);
-      }
-    }
-    
-    return slots;
-  }, [isInLunchBreak]);
 
   // Filtrar slots disponíveis removendo conflitos
   const filterAvailableSlots = (
