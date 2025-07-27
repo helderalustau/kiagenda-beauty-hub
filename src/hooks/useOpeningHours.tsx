@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSalonUpdate } from '@/hooks/salon/useSalonUpdate';
 import { useToast } from '@/hooks/use-toast';
@@ -62,65 +61,49 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
     sunday: { ...defaultSchedule, closed: true }
   };
 
-  // ✅ CORRIGIR: Inicializar com dados persistidos adequadamente
+  // ✅ CORRIGIR: Normalizar dados iniciais com estrutura completa
+  const normalizeInitialHours = (hours: any): OpeningHours => {
+    if (!hours || typeof hours !== 'object') {
+      return defaultOpeningHours;
+    }
+
+    const normalizedHours = Object.keys(defaultOpeningHours).reduce((acc, day) => {
+      const dayKey = day as keyof OpeningHours;
+      const existingDay = hours[dayKey];
+      
+      acc[dayKey] = {
+        open: existingDay?.open || defaultSchedule.open,
+        close: existingDay?.close || defaultSchedule.close,
+        closed: existingDay?.closed ?? (dayKey === 'sunday' ? true : false),
+        lunchBreak: {
+          enabled: existingDay?.lunchBreak?.enabled ?? false,
+          start: existingDay?.lunchBreak?.start || '12:00',
+          end: existingDay?.lunchBreak?.end || '13:00'
+        }
+      };
+      
+      return acc;
+    }, {} as OpeningHours);
+
+    return normalizedHours;
+  };
+
   const [openingHours, setOpeningHours] = useState<OpeningHours>(() => {
     console.log('useOpeningHours - Initializing with hours:', initialHours);
-    
-    if (initialHours && typeof initialHours === 'object') {
-      // Garantir que cada dia tenha a estrutura completa com lunchBreak
-      const normalizedHours = Object.keys(defaultOpeningHours).reduce((acc, day) => {
-        const dayKey = day as keyof OpeningHours;
-        const existingDay = initialHours[dayKey];
-        
-        acc[dayKey] = {
-          open: existingDay?.open || defaultSchedule.open,
-          close: existingDay?.close || defaultSchedule.close,
-          closed: existingDay?.closed ?? defaultSchedule.closed,
-          lunchBreak: {
-            enabled: existingDay?.lunchBreak?.enabled ?? false,
-            start: existingDay?.lunchBreak?.start || '12:00',
-            end: existingDay?.lunchBreak?.end || '13:00'
-          }
-        };
-        
-        return acc;
-      }, {} as OpeningHours);
-      
-      console.log('useOpeningHours - Normalized hours:', normalizedHours);
-      return normalizedHours;
-    }
-    
-    return defaultOpeningHours;
+    return normalizeInitialHours(initialHours);
   });
 
   const [originalHours, setOriginalHours] = useState<OpeningHours>(openingHours);
   const [originalSpecialDates, setOriginalSpecialDates] = useState<SpecialDate[]>([]);
 
-  // ✅ CORRIGIR: Atualizar quando initialHours mudar (sem perder configurações)
+  // ✅ CORRIGIR: Sincronizar com props quando mudar (sem perder estado local)
   useEffect(() => {
     if (initialHours && typeof initialHours === 'object') {
-      console.log('useOpeningHours - Updating from props:', initialHours);
+      console.log('useOpeningHours - Syncing with new props:', initialHours);
       
-      const normalizedHours = Object.keys(defaultOpeningHours).reduce((acc, day) => {
-        const dayKey = day as keyof OpeningHours;
-        const existingDay = initialHours[dayKey];
-        
-        acc[dayKey] = {
-          open: existingDay?.open || defaultSchedule.open,
-          close: existingDay?.close || defaultSchedule.close,
-          closed: existingDay?.closed ?? defaultSchedule.closed,
-          lunchBreak: {
-            enabled: existingDay?.lunchBreak?.enabled ?? false,
-            start: existingDay?.lunchBreak?.start || '12:00',
-            end: existingDay?.lunchBreak?.end || '13:00'
-          }
-        };
-        
-        return acc;
-      }, {} as OpeningHours);
+      const normalizedHours = normalizeInitialHours(initialHours);
       
-      console.log('useOpeningHours - Setting normalized hours:', normalizedHours);
-      
+      // ✅ IMPORTANTE: Atualizar tanto o estado atual quanto o original
       setOpeningHours(normalizedHours);
       setOriginalHours(normalizedHours);
       
@@ -130,7 +113,7 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
         setOriginalSpecialDates(initialHours.specialDates);
       }
       
-      // Resetar flag de mudanças quando receber novos dados
+      // Resetar flag de mudanças quando sincronizar
       setHasChanges(false);
     }
   }, [initialHours]);
@@ -205,9 +188,11 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
       });
 
       if (result.success) {
+        // ✅ CORRIGIR: Atualizar os dados originais após salvar
         setOriginalHours(openingHours);
         setOriginalSpecialDates(specialDates);
         setHasChanges(false);
+        
         console.log('useOpeningHours - Hours saved successfully');
         toast({
           title: "✅ Horários Salvos!",
@@ -304,8 +289,46 @@ export const useOpeningHours = (salonId?: string, initialHours?: any) => {
     removeSpecialDate,
     saveOpeningHours,
     resetChanges,
-    generateTimeSlots,
-    parseTime,
-    formatTime
+    generateTimeSlots: (openingHours: any) => {
+      const defaultHours = {
+        start: '08:00',
+        end: '18:00'
+      };
+
+      let startTime = defaultHours.start;
+      let endTime = defaultHours.end;
+
+      if (openingHours && typeof openingHours === 'object') {
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        for (const day of days) {
+          if (openingHours[day] && !openingHours[day].closed) {
+            startTime = openingHours[day].open || startTime;
+            endTime = openingHours[day].close || endTime;
+            break;
+          }
+        }
+      }
+
+      const slots: string[] = [];
+      const start = parseTime(startTime);
+      const end = parseTime(endTime);
+
+      let current = start;
+      while (current < end) {
+        slots.push(formatTime(current));
+        current += 30;
+      }
+
+      return slots;
+    },
+    parseTime: (timeStr: string): number => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    },
+    formatTime: (minutes: number): string => {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    }
   };
 };
