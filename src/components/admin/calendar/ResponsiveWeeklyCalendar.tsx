@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, CalendarDays } from "lucide-react";
-import { format, addWeeks, subWeeks, startOfWeek, addDays, isToday, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getWeek } from "date-fns";
+import { format, addWeeks, subWeeks, startOfWeek, addDays, isToday, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment, Salon } from '@/types/supabase-entities';
 import CleanAppointmentCard from './CleanAppointmentCard';
@@ -109,6 +109,7 @@ const ResponsiveWeeklyCalendar = ({
 
   // Formatar data para busca
   const formatDateForLookup = (date: Date) => {
+    if (!isValid(date)) return '';
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -196,6 +197,8 @@ const ResponsiveWeeklyCalendar = ({
               
               <div className="grid grid-cols-7 gap-1 mb-4">
                 {daysToShow.map((day) => {
+                  if (!isValid(day)) return null;
+                  
                   const dateKey = formatDateForLookup(day);
                   const dayAppointments = appointmentsByDate[dateKey] || [];
                   const isSelected = selectedDate && isSameDay(selectedDate, day);
@@ -234,52 +237,55 @@ const ResponsiveWeeklyCalendar = ({
               </div>
             </>
           ) : (
-            // Vista mensal mobile
-            <div className="grid grid-cols-7 gap-1 mb-4">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
-                  {day}
-                </div>
-              ))}
-              
-              {/* Preencher dias do mês */}
-              {Array.from({ length: Math.ceil(daysToShow.length / 7) * 7 }, (_, index) => {
-                const dayIndex = index % 7;
-                const weekIndex = Math.floor(index / 7);
-                const day = daysToShow[index];
-                
-                if (!day) return <div key={index} className="p-2 min-h-[60px]"></div>;
-                
-                const dateKey = formatDateForLookup(day);
-                const dayAppointments = appointmentsByDate[dateKey] || [];
-                const isSelected = selectedDate && isSameDay(selectedDate, day);
-                
-                return (
-                  <div
-                    key={day.toString()}
-                    className={`
-                      p-2 min-h-[60px] border rounded-lg cursor-pointer transition-all duration-200
-                      ${isToday(day) 
-                        ? 'bg-blue-100 border-blue-300 font-semibold' 
-                        : 'bg-white border-gray-200 hover:bg-gray-50'
-                      }
-                      ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''}
-                    `}
-                    onClick={() => handleDateClick(day)}
-                  >
-                    <div className="text-center text-sm font-medium mb-1">
-                      {format(day, 'd')}
-                    </div>
-                    
-                    {dayAppointments.length > 0 && (
-                      <div className="flex justify-center">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      </div>
-                    )}
+            // Vista mensal mobile - com validação de data
+            <>
+              <div className="grid grid-cols-7 gap-1 mb-4">
+                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+                  <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+                    {day}
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+              
+              <div className="grid grid-cols-7 gap-1 mb-4">
+                {Array.from({ length: Math.ceil(daysToShow.length / 7) * 7 }, (_, index) => {
+                  const day = daysToShow[index];
+                  
+                  if (!day || !isValid(day)) {
+                    return <div key={`empty-${index}`} className="p-2 min-h-[60px]"></div>;
+                  }
+                  
+                  const dateKey = formatDateForLookup(day);
+                  const dayAppointments = appointmentsByDate[dateKey] || [];
+                  const isSelected = selectedDate && isSameDay(selectedDate, day);
+                  
+                  return (
+                    <div
+                      key={day.toString()}
+                      className={`
+                        p-2 min-h-[60px] border rounded-lg cursor-pointer transition-all duration-200
+                        ${isToday(day) 
+                          ? 'bg-blue-100 border-blue-300 font-semibold' 
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                        }
+                        ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''}
+                      `}
+                      onClick={() => handleDateClick(day)}
+                    >
+                      <div className="text-center text-sm font-medium mb-1">
+                        {format(day, 'd')}
+                      </div>
+                      
+                      {dayAppointments.length > 0 && (
+                        <div className="flex justify-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           {/* Selected Day Appointments */}
@@ -319,6 +325,8 @@ const ResponsiveWeeklyCalendar = ({
           <div className="space-y-4">
             {viewMode === 'week' ? (
               daysToShow.map((day) => {
+                if (!isValid(day)) return null;
+                
                 const dateKey = formatDateForLookup(day);
                 const dayAppointments = appointmentsByDate[dateKey] || [];
                 
@@ -352,10 +360,13 @@ const ResponsiveWeeklyCalendar = ({
                 );
               })
             ) : (
-              // Vista mensal desktop - agrupamento por semana
+              // Vista mensal desktop - agrupamento por semana com validação
               <>
                 {Array.from({ length: Math.ceil(daysToShow.length / 7) }, (_, weekIndex) => {
-                  const weekDays = daysToShow.slice(weekIndex * 7, (weekIndex + 1) * 7);
+                  const weekDays = daysToShow.slice(weekIndex * 7, (weekIndex + 1) * 7).filter(day => isValid(day));
+                  
+                  if (weekDays.length === 0) return null;
+                  
                   const weekAppointments = weekDays.reduce((acc, day) => {
                     const dateKey = formatDateForLookup(day);
                     return acc + (appointmentsByDate[dateKey] || []).length;
@@ -365,7 +376,7 @@ const ResponsiveWeeklyCalendar = ({
                     <div key={weekIndex} className="border rounded-lg p-4 mb-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-medium">
-                          Semana {weekIndex + 1} - {format(weekDays[0], "dd", { locale: ptBR })} a {format(weekDays[6], "dd/MM", { locale: ptBR })}
+                          Semana {weekIndex + 1} - {format(weekDays[0], "dd", { locale: ptBR })} a {format(weekDays[weekDays.length - 1], "dd/MM", { locale: ptBR })}
                         </h3>
                         <span className="text-sm text-gray-500">
                           {weekAppointments} agendamento{weekAppointments !== 1 ? 's' : ''}
@@ -373,7 +384,13 @@ const ResponsiveWeeklyCalendar = ({
                       </div>
                       
                       <div className="grid grid-cols-7 gap-2">
-                        {weekDays.map((day) => {
+                        {Array.from({ length: 7 }, (_, dayIndex) => {
+                          const day = weekDays[dayIndex];
+                          
+                          if (!day || !isValid(day)) {
+                            return <div key={`empty-${weekIndex}-${dayIndex}`} className="text-center min-h-[80px]"></div>;
+                          }
+                          
                           const dateKey = formatDateForLookup(day);
                           const dayAppointments = appointmentsByDate[dateKey] || [];
                           
