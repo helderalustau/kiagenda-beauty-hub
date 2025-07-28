@@ -24,7 +24,10 @@ export const LocationFilter = ({
   onToggleShowOtherCities,
   salonsCount
 }: LocationFilterProps) => {
-  if (!clientState) {
+  // Verificar se o cliente tem estado preenchido
+  const hasState = clientState && clientState.trim() !== '';
+  
+  if (!hasState) {
     return (
       <Card className="mb-4">
         <CardContent className="p-4">
