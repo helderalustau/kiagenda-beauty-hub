@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Client } from '@/types/supabase-entities';
@@ -38,12 +37,8 @@ export const useClientData = () => {
     full_name?: string;
     email?: string; 
     phone?: string;
-    street_address?: string;
-    house_number?: string;
-    neighborhood?: string;
     city?: string;
     state?: string;
-    zip_code?: string;
   }) => {
     try {
       setLoading(true);
@@ -61,12 +56,8 @@ export const useClientData = () => {
         full_name: profileData.full_name || null,
         email: profileData.email || null,
         phone: profileData.phone || null,
-        street_address: profileData.street_address || null,
-        house_number: profileData.house_number || null,
-        neighborhood: profileData.neighborhood || null,
         city: profileData.city || null,
         state: profileData.state || null,
-        zip_code: profileData.zip_code || null,
         updated_at: new Date().toISOString()
       };
 
