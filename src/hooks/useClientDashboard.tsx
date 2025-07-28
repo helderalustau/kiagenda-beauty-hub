@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -134,38 +133,57 @@ export const useClientDashboard = () => {
 
     let locationFilteredSalons = salons;
 
-    // Apply location filter if enabled and client has city and state
-    if (locationFilter.enabled && clientUser?.city && clientUser?.state && !locationFilter.showOtherCities) {
-      const clientCityNormalized = normalizeString(clientUser.city);
+    // Apply location filter if enabled and client has state (cidade não é obrigatória)
+    if (locationFilter.enabled && clientUser?.state && !locationFilter.showOtherCities) {
       const clientStateNormalized = normalizeString(clientUser.state);
       
       console.log('Cliente normalizado:', {
-        city: clientCityNormalized,
-        state: clientStateNormalized
+        state: clientStateNormalized,
+        city: clientUser.city || 'Não informado'
       });
 
-      locationFilteredSalons = salons.filter(salon => {
-        const salonCityNormalized = normalizeString(salon.city);
-        const salonStateNormalized = normalizeString(salon.state);
+      // Se o cliente tem cidade, filtrar por cidade e estado
+      if (clientUser.city) {
+        const clientCityNormalized = normalizeString(clientUser.city);
         
-        const cityMatch = salonCityNormalized === clientCityNormalized;
-        const stateMatch = salonStateNormalized === clientStateNormalized;
-        
-        console.log(`Salão: ${salon.name}`, {
-          salonCity: salon.city,
-          salonState: salon.state,
-          salonCityNormalized,
-          salonStateNormalized,
-          cityMatch,
-          stateMatch,
-          included: cityMatch && stateMatch
+        locationFilteredSalons = salons.filter(salon => {
+          const salonCityNormalized = normalizeString(salon.city);
+          const salonStateNormalized = normalizeString(salon.state);
+          
+          const cityMatch = salonCityNormalized === clientCityNormalized;
+          const stateMatch = salonStateNormalized === clientStateNormalized;
+          
+          console.log(`Salão: ${salon.name}`, {
+            salonCity: salon.city,
+            salonState: salon.state,
+            salonCityNormalized,
+            salonStateNormalized,
+            cityMatch,
+            stateMatch,
+            included: cityMatch && stateMatch
+          });
+
+          return cityMatch && stateMatch;
         });
+      } else {
+        // Se o cliente não tem cidade, filtrar apenas por estado
+        locationFilteredSalons = salons.filter(salon => {
+          const salonStateNormalized = normalizeString(salon.state);
+          const stateMatch = salonStateNormalized === clientStateNormalized;
+          
+          console.log(`Salão: ${salon.name}`, {
+            salonState: salon.state,
+            salonStateNormalized,
+            stateMatch,
+            included: stateMatch
+          });
 
-        return cityMatch && stateMatch;
-      });
+          return stateMatch;
+        });
+      }
 
       console.log('Resultado do filtro de localização:', {
-        clientCity: clientUser.city,
+        clientCity: clientUser.city || 'Não informado',
         clientState: clientUser.state,
         totalSalons: salons.length,
         filteredSalons: locationFilteredSalons.length,

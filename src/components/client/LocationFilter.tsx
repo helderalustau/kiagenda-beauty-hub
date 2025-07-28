@@ -24,14 +24,14 @@ export const LocationFilter = ({
   onToggleShowOtherCities,
   salonsCount
 }: LocationFilterProps) => {
-  if (!clientCity || !clientState) {
+  if (!clientState) {
     return (
       <Card className="mb-4">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-amber-600">
             <MapPin className="h-4 w-4" />
             <span className="text-sm">
-              Complete seu perfil com cidade e estado para ver estabelecimentos próximos
+              Complete seu perfil com estado para ver estabelecimentos próximos
             </span>
           </div>
         </CardContent>
@@ -49,7 +49,7 @@ export const LocationFilter = ({
               {locationFilter.enabled 
                 ? (locationFilter.showOtherCities 
                     ? `Estabelecimentos em ${clientState}` 
-                    : `Estabelecimentos em ${clientCity}, ${clientState}`)
+                    : (clientCity ? `Estabelecimentos em ${clientCity}, ${clientState}` : `Estabelecimentos em ${clientState}`))
                 : 'Todos os estabelecimentos'
               }
             </span>
@@ -59,7 +59,7 @@ export const LocationFilter = ({
           </div>
           
           <div className="flex items-center gap-2">
-            {locationFilter.enabled && (
+            {locationFilter.enabled && clientCity && (
               <Button
                 variant="outline"
                 size="sm"
