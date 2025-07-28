@@ -8,6 +8,7 @@ import { useClientData } from '@/hooks/useClientData';
 import { useToast } from "@/components/ui/use-toast";
 import { StateSelect } from "@/components/ui/state-select";
 import { CitySelect } from "@/components/ui/city-select";
+import { formatCep } from '@/utils/cepFormatter';
 
 interface ClientProfilePopupProps {
   isOpen: boolean;
@@ -25,8 +26,12 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
     full_name: '',
     email: '',
     phone: '',
+    street_address: '',
+    house_number: '',
+    neighborhood: '',
     city: '',
-    state: ''
+    state: '',
+    zip_code: ''
   });
 
   const [usernameError, setUsernameError] = useState('');
@@ -40,8 +45,12 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
         full_name: client.full_name || '',
         email: client.email || '',
         phone: client.phone || '',
+        street_address: client.street_address || client.address || '',
+        house_number: client.house_number || '',
+        neighborhood: client.neighborhood || '',
         city: client.city || '',
-        state: client.state || ''
+        state: client.state || '',
+        zip_code: client.zip_code || ''
       });
       setUsernameError('');
     }
@@ -58,6 +67,12 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
     if (field === 'state') {
       setFormData(prev => ({ ...prev, city: '' }));
     }
+    
+    // Formatar CEP automaticamente
+    if (field === 'zip_code') {
+      const formatted = formatCep(value);
+      setFormData(prev => ({ ...prev, zip_code: formatted }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,16 +80,6 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
     
     if (!formData.username.trim()) {
       setUsernameError('Nome é obrigatório');
-      return;
-    }
-
-    if (!formData.state) {
-      setUsernameError('Estado é obrigatório');
-      return;
-    }
-
-    if (!formData.city) {
-      setUsernameError('Cidade é obrigatória');
       return;
     }
 
@@ -86,7 +91,7 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
         const updatedClient = {
           ...client,
           ...result.client,
-          name: result.client.username,
+          name: result.client.username, // Garantir que o name seja atualizado
           username: result.client.username
         };
         
@@ -186,6 +191,52 @@ const ClientProfilePopup = ({ isOpen, onClose, client, onUpdate }: ClientProfile
                 disabled={!formData.state}
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="street_address">Endereço</Label>
+              <Input
+                id="street_address"
+                value={formData.street_address}
+                onChange={(e) => handleInputChange('street_address', e.target.value)}
+                placeholder="Rua/Avenida"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <Label htmlFor="house_number">Número</Label>
+              <Input
+                id="house_number"
+                value={formData.house_number}
+                onChange={(e) => handleInputChange('house_number', e.target.value)}
+                placeholder="Número"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Input
+              id="neighborhood"
+              value={formData.neighborhood}
+              onChange={(e) => handleInputChange('neighborhood', e.target.value)}
+              placeholder="Digite o bairro"
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="zip_code">CEP</Label>
+            <Input
+              id="zip_code"
+              value={formData.zip_code}
+              onChange={(e) => handleInputChange('zip_code', e.target.value)}
+              placeholder="00000-000"
+              disabled={loading}
+              maxLength={9}
+            />
           </div>
 
           <div className="flex space-x-2 pt-4">

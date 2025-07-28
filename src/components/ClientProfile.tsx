@@ -9,8 +9,6 @@ import { User, Edit } from "lucide-react";
 import { Client } from '@/types/supabase-entities';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import { StateSelect } from "@/components/ui/state-select";
-import { CitySelect } from "@/components/ui/city-select";
 
 interface ClientProfileProps {
   client: Client;
@@ -32,8 +30,12 @@ const ClientProfile = ({ client, onUpdate }: ClientProfileProps) => {
           phone: editingClient.phone,
           email: editingClient.email,
           full_name: editingClient.full_name,
+          street_address: editingClient.street_address,
+          house_number: editingClient.house_number,
+          neighborhood: editingClient.neighborhood,
           city: editingClient.city,
-          state: editingClient.state
+          state: editingClient.state,
+          zip_code: editingClient.zip_code
         })
         .eq('id', client.id)
         .select()
@@ -57,10 +59,6 @@ const ClientProfile = ({ client, onUpdate }: ClientProfileProps) => {
         variant: "destructive"
       });
     }
-  };
-
-  const handleStateChange = (state: string) => {
-    setEditingClient({ ...editingClient, state, city: '' });
   };
 
   return (
@@ -104,12 +102,26 @@ const ClientProfile = ({ client, onUpdate }: ClientProfileProps) => {
               <p className="text-gray-900">{client.email || 'Não informado'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">Estado</Label>
-              <p className="text-gray-900">{client.state || 'Não informado'}</p>
+              <Label className="text-sm font-medium text-gray-600">Endereço</Label>
+              <p className="text-gray-900">
+                {client.street_address && client.house_number 
+                  ? `${client.street_address}, ${client.house_number}`
+                  : 'Não informado'
+                }
+              </p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">Cidade</Label>
-              <p className="text-gray-900">{client.city || 'Não informado'}</p>
+              <Label className="text-sm font-medium text-gray-600">Bairro</Label>
+              <p className="text-gray-900">{client.neighborhood || 'Não informado'}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-600">Cidade/Estado</Label>
+              <p className="text-gray-900">
+                {client.city && client.state 
+                  ? `${client.city}, ${client.state}`
+                  : 'Não informado'
+                }
+              </p>
             </div>
           </div>
         </CardContent>
@@ -160,23 +172,61 @@ const ClientProfile = ({ client, onUpdate }: ClientProfileProps) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="state">Estado *</Label>
-                <StateSelect
-                  value={editingClient.state || ''}
-                  onValueChange={handleStateChange}
-                  placeholder="Selecione o estado"
+                <Label htmlFor="street">Endereço</Label>
+                <Input
+                  id="street"
+                  value={editingClient.street_address || ''}
+                  onChange={(e) => setEditingClient({...editingClient, street_address: e.target.value})}
+                  placeholder="Rua, Avenida..."
                 />
               </div>
               <div>
-                <Label htmlFor="city">Cidade *</Label>
-                <CitySelect
-                  value={editingClient.city || ''}
-                  onValueChange={(value) => setEditingClient({...editingClient, city: value})}
-                  state={editingClient.state || ''}
-                  placeholder="Digite a cidade"
-                  disabled={!editingClient.state}
+                <Label htmlFor="house_number">Número</Label>
+                <Input
+                  id="house_number"
+                  value={editingClient.house_number || ''}
+                  onChange={(e) => setEditingClient({...editingClient, house_number: e.target.value})}
+                  placeholder="123"
                 />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="neighborhood">Bairro</Label>
+              <Input
+                id="neighborhood"
+                value={editingClient.neighborhood || ''}
+                onChange={(e) => setEditingClient({...editingClient, neighborhood: e.target.value})}
+                placeholder="Nome do bairro"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city">Cidade</Label>
+                <Input
+                  id="city"
+                  value={editingClient.city || ''}
+                  onChange={(e) => setEditingClient({...editingClient, city: e.target.value})}
+                  placeholder="Cidade"
+                />
+              </div>
+              <div>
+                <Label htmlFor="state">Estado</Label>
+                <Input
+                  id="state"
+                  value={editingClient.state || ''}
+                  onChange={(e) => setEditingClient({...editingClient, state: e.target.value})}
+                  placeholder="SP"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="zip_code">CEP</Label>
+              <Input
+                id="zip_code"
+                value={editingClient.zip_code || ''}
+                onChange={(e) => setEditingClient({...editingClient, zip_code: e.target.value})}
+                placeholder="00000-000"
+              />
             </div>
           </div>
           <div className="flex space-x-2 mt-6">
