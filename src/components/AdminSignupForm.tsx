@@ -11,8 +11,10 @@ import AdminFormFields from './admin-signup/AdminFormFields';
 import AdminFormActions from './admin-signup/AdminFormActions';
 import AdminInfoSection from './admin-signup/AdminInfoSection';
 import { useSalonData } from '@/hooks/useSalonData';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface AdminSignupFormProps {
   onSuccess?: (adminData: any) => void;
@@ -25,6 +27,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
   const { createSalon } = useSalonData();
   const { createHierarchyLink } = useHierarchyData();
   const location = useLocation();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -39,6 +42,9 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
 
   const [selectedPlan, setSelectedPlan] = useState('bronze');
   const [errors, setErrors] = useState<Partial<AdminSignupData>>({});
+
+  const { getAllPlansInfo } = usePlanConfigurations();
+  const availablePlans = getAllPlansInfo();
 
   // Check if a plan was pre-selected from the homepage
   useEffect(() => {
@@ -68,9 +74,6 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
     const random = Math.floor(Math.random() * 1000);
     return `EST-${timestamp}-${random}`;
   };
-
-  const { getAllPlansInfo } = usePlanConfigurations();
-  const availablePlans = getAllPlansInfo();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,7 +176,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
         
         // Redirecionar para configuração do estabelecimento após sucesso
         setTimeout(() => {
-          window.location.href = '/salon-setup';
+          navigate('/salon-setup');
         }, 2000);
         
         onSuccess?.(result.admin);
@@ -194,7 +197,7 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
 
   const handleCancel = () => {
     // Redirecionar para tela inicial
-    window.location.href = '/';
+    navigate('/');
   };
 
   return (
@@ -206,18 +209,27 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <AdminCreationDateInfo />
             
-            {/* Show selected plan */}
-            {selectedPlan && (
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900 mb-2">Plano Selecionado:</h3>
-                <p className="text-blue-800 capitalize">
-                  {(() => {
-                    const plan = availablePlans.find(p => p.plan_type === selectedPlan);
-                    return plan ? `${plan.name} - ${plan.price}` : 'Plano não encontrado';
-                  })()}
-                </p>
-              </div>
-            )}
+            {/* Plan Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="plan-select" className="text-sm font-medium">
+                Plano Selecionado
+              </Label>
+              <Select value={selectedPlan} onValueChange={setSelectedPlan} disabled={submitting}>
+                <SelectTrigger className="focus:border-blue-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                  {availablePlans.map((plan) => (
+                    <SelectItem key={plan.plan_type} value={plan.plan_type}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{plan.name}</span>
+                        <span className="text-xs text-gray-500">{plan.price}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             <AdminFormFields
               formData={formData}
