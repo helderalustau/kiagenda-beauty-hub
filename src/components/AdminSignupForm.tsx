@@ -13,6 +13,9 @@ import AdminInfoSection from './admin-signup/AdminInfoSection';
 import { useSalonData } from '@/hooks/useSalonData';
 import { useLocation } from 'react-router-dom';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 interface AdminSignupFormProps {
   onSuccess?: (adminData: any) => void;
@@ -206,18 +209,44 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <AdminCreationDateInfo />
             
-            {/* Show selected plan */}
-            {selectedPlan && (
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900 mb-2">Plano Selecionado:</h3>
-                <p className="text-blue-800 capitalize">
-                  {(() => {
-                    const plan = availablePlans.find(p => p.plan_type === selectedPlan);
-                    return plan ? `${plan.name} - ${plan.price}` : 'Plano não encontrado';
-                  })()}
-                </p>
-              </div>
-            )}
+            {/* Seleção de Plano */}
+            <div className="space-y-4">
+              <Label className="text-lg font-semibold text-gray-800">Selecione o Plano</Label>
+              
+              {/* Show selected plan if pre-selected */}
+              {location.state?.selectedPlan && (
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h3 className="font-semibold text-blue-900 mb-2">Plano Pré-selecionado:</h3>
+                  <p className="text-blue-800 capitalize">
+                    {(() => {
+                      const plan = availablePlans.find(p => p.plan_type === location.state.selectedPlan);
+                      return plan ? `${plan.name} - ${plan.price}` : 'Plano não encontrado';
+                    })()}
+                  </p>
+                </div>
+              )}
+
+              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Escolha um plano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePlans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.plan_type}>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <Badge className={plan.color}>{plan.name}</Badge>
+                          <span className="font-semibold">{plan.price}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {plan.max_users} usuários • {plan.max_appointments} agendamentos/mês
+                        </p>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             <AdminFormFields
               formData={formData}
