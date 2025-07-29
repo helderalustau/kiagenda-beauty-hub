@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -103,7 +104,13 @@ export const useClientDashboard = () => {
         return;
       }
       
-      console.log('Client authenticated successfully:', userData);
+      console.log('Client authenticated successfully with location data:', {
+        id: userData.id,
+        name: userData.name,
+        city: userData.city,
+        state: userData.state
+      });
+      
       setClientUser(userData);
       loadData(userData);
     } catch (error) {
@@ -123,7 +130,8 @@ export const useClientDashboard = () => {
 
     console.log('=== FILTRO DE LOCALIZACAO ===');
     console.log('Total de salões no banco:', salons.length);
-    console.log('Dados do cliente:', {
+    console.log('Dados do cliente para filtro:', {
+      id: clientUser?.id,
       name: clientUser?.name || clientUser?.username,
       city: clientUser?.city,
       state: clientUser?.state,
@@ -133,7 +141,7 @@ export const useClientDashboard = () => {
 
     let locationFilteredSalons = salons;
 
-    // Apply location filter if enabled and client has state (cidade não é obrigatória)
+    // Apply location filter if enabled and client has state
     if (locationFilter.enabled && clientUser?.state && !locationFilter.showOtherCities) {
       const clientStateNormalized = normalizeString(clientUser.state);
       

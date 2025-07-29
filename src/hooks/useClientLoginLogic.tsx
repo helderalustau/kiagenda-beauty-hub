@@ -44,14 +44,20 @@ export const useClientLoginLogic = () => {
         localStorage.removeItem('adminAuth');
         localStorage.removeItem('selectedSalonId');
         
-        // Store client auth with consistent format and update auth context
+        // Store complete client auth with all data from client_auth table
         const clientData = {
           id: result.client.id,
           name: result.client.name,
+          username: result.client.username,
           phone: result.client.phone,
           email: result.client.email || null,
+          fullName: result.client.full_name || null,
+          city: result.client.city || null,
+          state: result.client.state || null,
           loginTime: new Date().toISOString()
         };
+        
+        console.log('Storing complete client data:', clientData);
         
         // Update auth context (this will also update localStorage)
         login(clientData);
@@ -99,13 +105,20 @@ export const useClientLoginLogic = () => {
             localStorage.removeItem('adminAuth');
             localStorage.removeItem('selectedSalonId');
             
+            // Store complete client auth with all data from client_auth table
             const clientData = {
               id: loginResult.client.id,
               name: loginResult.client.name,
+              username: loginResult.client.username,
               phone: loginResult.client.phone,
               email: loginResult.client.email || null,
+              fullName: loginResult.client.full_name || null,
+              city: loginResult.client.city || null,
+              state: loginResult.client.state || null,
               loginTime: new Date().toISOString()
             };
+            
+            console.log('Storing complete client data after registration:', clientData);
             
             // Update auth context (this will also update localStorage)
             login(clientData);

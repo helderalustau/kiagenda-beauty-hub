@@ -24,6 +24,13 @@ export const LocationFilter = ({
   onToggleShowOtherCities,
   salonsCount
 }: LocationFilterProps) => {
+  console.log('LocationFilter - Client location data:', {
+    clientCity,
+    clientState,
+    hasCity: !!clientCity,
+    hasState: !!clientState
+  });
+
   // Verificar se o cliente tem estado preenchido
   const hasState = clientState && clientState.trim() !== '';
   

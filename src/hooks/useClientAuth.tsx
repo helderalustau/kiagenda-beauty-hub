@@ -25,7 +25,7 @@ export const useClientAuth = () => {
         return { success: false, message: 'Senha deve ter pelo menos 6 caracteres' };
       }
 
-      // Get client record with password hash using username
+      // Get client record with ALL fields from client_auth table
       const { data: clientRecord, error: fetchError } = await supabase
         .from('client_auth')
         .select('*')
@@ -57,22 +57,16 @@ export const useClientAuth = () => {
         return { success: false, message: 'Credenciais inválidas' };
       }
 
-      // Store complete client data in localStorage
-      localStorage.setItem('clientAuth', JSON.stringify({
+      console.log('Client authenticated successfully with complete data:', {
         id: clientRecord.id,
         name: clientRecord.name,
         username: clientRecord.username,
-        phone: formatPhone(clientRecord.phone || ''),
-        email: clientRecord.email,
-        fullName: clientRecord.full_name,
         city: clientRecord.city,
         state: clientRecord.state,
-        address: clientRecord.address || clientRecord.street_address,
-        houseNumber: clientRecord.house_number,
-        neighborhood: clientRecord.neighborhood,
-        zipCode: clientRecord.zip_code
-      }));
-      
+        phone: clientRecord.phone,
+        email: clientRecord.email
+      });
+
       return { success: true, client: clientRecord };
     } catch (error) {
       console.error('Error during client authentication:', error);
@@ -157,7 +151,11 @@ export const useClientAuth = () => {
           password: 'temp', // Temporary value to satisfy required field
           password_hash: hashedPassword,
           phone: formattedPhone, // Store only digits
-          email: email ? sanitizeAndValidate(email, 'email').value : null
+          email: email ? sanitizeAndValidate(email, 'email').value : null,
+          // Initialize other fields as null - they can be filled later
+          full_name: null,
+          city: null,
+          state: null
         })
         .select()
         .single();
@@ -170,6 +168,7 @@ export const useClientAuth = () => {
         return { success: false, message: 'Erro ao registrar cliente' };
       }
 
+      console.log('Client registered successfully with data:', data);
       return { success: true, client: data };
     } catch (error) {
       console.error('Error registering client:', error);
