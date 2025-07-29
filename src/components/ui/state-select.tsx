@@ -36,11 +36,12 @@ interface StateSelectProps {
   value: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
-export const StateSelect = ({ value, onValueChange, placeholder = "Selecione o estado" }: StateSelectProps) => {
+export const StateSelect = ({ value, onValueChange, placeholder = "Selecione o estado", disabled = false }: StateSelectProps) => {
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
