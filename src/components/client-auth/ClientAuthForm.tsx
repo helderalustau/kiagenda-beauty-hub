@@ -9,9 +9,11 @@ import { Eye, EyeOff, User, Lock, Phone, Mail, MapPin, Building } from "lucide-r
 import { useClientLoginLogic } from '@/hooks/useClientLoginLogic';
 import { StateSelect } from "@/components/ui/state-select";
 import { CitySelect } from "@/components/ui/city-select";
+import { usePhoneValidation } from '@/hooks/usePhoneValidation';
 
 const ClientAuthForm = () => {
   const { handleLogin, handleRegister, loading } = useClientLoginLogic();
+  const { formatPhone, validatePhone, getPhoneDigits } = usePhoneValidation();
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -44,7 +46,7 @@ const ClientAuthForm = () => {
     await handleRegister(
       registerData.username, 
       registerData.password, 
-      registerData.phone, 
+      getPhoneDigits(registerData.phone), // Enviar apenas os dígitos
       registerData.email,
       registerData.city,
       registerData.state
@@ -52,7 +54,13 @@ const ClientAuthForm = () => {
   };
 
   const handleRegisterInputChange = (field: string, value: string) => {
-    setRegisterData(prev => ({ ...prev, [field]: value }));
+    if (field === 'phone') {
+      // Aplicar formatação no telefone
+      const formattedPhone = formatPhone(value);
+      setRegisterData(prev => ({ ...prev, [field]: formattedPhone }));
+    } else {
+      setRegisterData(prev => ({ ...prev, [field]: value }));
+    }
     
     // Clear city when state changes
     if (field === 'state') {
@@ -176,11 +184,14 @@ const ClientAuthForm = () => {
                       value={registerData.phone}
                       onChange={(e) => handleRegisterInputChange('phone', e.target.value)}
                       placeholder="(11) 99999-9999"
-                      className="pl-10"
+                      className={`pl-10 ${!validatePhone(registerData.phone) && registerData.phone ? 'border-red-500' : ''}`}
                       disabled={loading}
                       required
                     />
                   </div>
+                  {registerData.phone && !validatePhone(registerData.phone) && (
+                    <p className="text-sm text-red-500">Telefone deve ter 10 ou 11 dígitos</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">

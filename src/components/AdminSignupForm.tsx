@@ -13,6 +13,9 @@ import AdminInfoSection from './admin-signup/AdminInfoSection';
 import { useSalonData } from '@/hooks/useSalonData';
 import { useLocation } from 'react-router-dom';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Crown, Zap, Star } from "lucide-react";
 
 interface AdminSignupFormProps {
   onSuccess?: (adminData: any) => void;
@@ -39,6 +42,10 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
 
   const [selectedPlan, setSelectedPlan] = useState('bronze');
   const [errors, setErrors] = useState<Partial<AdminSignupData>>({});
+
+  // Get available plans from configurations
+  const { getAllPlansInfo } = usePlanConfigurations();
+  const availablePlans = getAllPlansInfo();
 
   // Check if a plan was pre-selected from the homepage
   useEffect(() => {
@@ -68,9 +75,6 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
     const random = Math.floor(Math.random() * 1000);
     return `EST-${timestamp}-${random}`;
   };
-
-  const { getAllPlansInfo } = usePlanConfigurations();
-  const availablePlans = getAllPlansInfo();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,6 +201,24 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
     window.location.href = '/';
   };
 
+  const getPlanIcon = (planType: string) => {
+    switch (planType) {
+      case 'bronze': return <Star className="h-4 w-4" />;
+      case 'prata': return <Zap className="h-4 w-4" />;
+      case 'gold': return <Crown className="h-4 w-4" />;
+      default: return <Star className="h-4 w-4" />;
+    }
+  };
+
+  const getPlanColor = (planType: string) => {
+    switch (planType) {
+      case 'bronze': return 'text-amber-600';
+      case 'prata': return 'text-gray-600';
+      case 'gold': return 'text-yellow-600';
+      default: return 'text-gray-600';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
@@ -206,18 +228,40 @@ const AdminSignupForm = ({ onSuccess, onCancel }: AdminSignupFormProps) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <AdminCreationDateInfo />
             
-            {/* Show selected plan */}
-            {selectedPlan && (
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900 mb-2">Plano Selecionado:</h3>
-                <p className="text-blue-800 capitalize">
-                  {(() => {
-                    const plan = availablePlans.find(p => p.plan_type === selectedPlan);
-                    return plan ? `${plan.name} - ${plan.price}` : 'Plano não encontrado';
-                  })()}
-                </p>
-              </div>
-            )}
+            {/* Plan Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="plan-select" className="flex items-center gap-2 text-sm font-medium">
+                <Crown className="h-4 w-4 text-blue-600" />
+                Selecionar Plano *
+              </Label>
+              <Select
+                value={selectedPlan}
+                onValueChange={setSelectedPlan}
+                disabled={submitting}
+              >
+                <SelectTrigger className="focus:border-blue-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                  {availablePlans.map((plan) => (
+                    <SelectItem key={plan.plan_type} value={plan.plan_type}>
+                      <div className="flex items-center gap-3">
+                        <span className={getPlanColor(plan.plan_type)}>
+                          {getPlanIcon(plan.plan_type)}
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{plan.name}</span>
+                          <span className="text-xs text-gray-500">{plan.price}</span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Escolha o plano ideal para seu estabelecimento
+              </p>
+            </div>
             
             <AdminFormFields
               formData={formData}
