@@ -9,11 +9,9 @@ import { Eye, EyeOff, User, Lock, Phone, Mail, MapPin, Building } from "lucide-r
 import { useClientLoginLogic } from '@/hooks/useClientLoginLogic';
 import { StateSelect } from "@/components/ui/state-select";
 import { CitySelect } from "@/components/ui/city-select";
-import { usePhoneValidation } from '@/hooks/usePhoneValidation';
 
 const ClientAuthForm = () => {
   const { handleLogin, handleRegister, loading } = useClientLoginLogic();
-  const { formatPhoneInput, validatePhone, getDigitsOnly } = usePhoneValidation();
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -42,22 +40,11 @@ const ClientAuthForm = () => {
 
   const onRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validar telefone antes de enviar
-    if (!validatePhone(registerData.phone)) {
-      // Toast de erro será mostrado pelo hook useClientLoginLogic
-      return;
-    }
-    
-    console.log('REGISTER FORM - Submitting registration with:', {
-      ...registerData,
-      phoneDigits: getDigitsOnly(registerData.phone)
-    });
-    
+    console.log('REGISTER FORM - Submitting registration with:', registerData);
     await handleRegister(
       registerData.username, 
       registerData.password, 
-      getDigitsOnly(registerData.phone), // Enviar apenas dígitos
+      registerData.phone, 
       registerData.email,
       registerData.city,
       registerData.state
@@ -65,11 +52,6 @@ const ClientAuthForm = () => {
   };
 
   const handleRegisterInputChange = (field: string, value: string) => {
-    if (field === 'phone') {
-      // Aplicar formatação ao telefone
-      value = formatPhoneInput(value);
-    }
-    
     setRegisterData(prev => ({ ...prev, [field]: value }));
     
     // Clear city when state changes
@@ -199,11 +181,6 @@ const ClientAuthForm = () => {
                       required
                     />
                   </div>
-                  {registerData.phone && !validatePhone(registerData.phone) && (
-                    <p className="text-sm text-red-500">
-                      Telefone deve ter 10 ou 11 dígitos
-                    </p>
-                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -245,11 +222,7 @@ const ClientAuthForm = () => {
                   </div>
                 </div>
                 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading || (registerData.phone && !validatePhone(registerData.phone))}
-                >
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Criando conta...' : 'Criar Conta'}
                 </Button>
               </form>
