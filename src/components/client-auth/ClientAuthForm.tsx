@@ -9,11 +9,9 @@ import { Eye, EyeOff, User, Lock, Phone, Mail, MapPin, Building } from "lucide-r
 import { useClientLoginLogic } from '@/hooks/useClientLoginLogic';
 import { StateSelect } from "@/components/ui/state-select";
 import { CitySelect } from "@/components/ui/city-select";
-import { usePhoneValidation } from '@/hooks/usePhoneValidation';
 
 const ClientAuthForm = () => {
   const { handleLogin, handleRegister, loading } = useClientLoginLogic();
-  const { formatPhone, validatePhone, extractDigits } = usePhoneValidation();
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -33,7 +31,6 @@ const ClientAuthForm = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
-  const [phoneError, setPhoneError] = useState('');
 
   const onLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,18 +40,11 @@ const ClientAuthForm = () => {
 
   const onRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validar telefone antes de submeter
-    if (!validatePhone(registerData.phone)) {
-      setPhoneError('Telefone deve ter 10 ou 11 dígitos');
-      return;
-    }
-    
     console.log('REGISTER FORM - Submitting registration with:', registerData);
     await handleRegister(
       registerData.username, 
       registerData.password, 
-      extractDigits(registerData.phone), // Salva apenas os dígitos
+      registerData.phone, 
       registerData.email,
       registerData.city,
       registerData.state
@@ -62,21 +52,11 @@ const ClientAuthForm = () => {
   };
 
   const handleRegisterInputChange = (field: string, value: string) => {
-    if (field === 'phone') {
-      const formattedPhone = formatPhone(value);
-      setRegisterData(prev => ({ ...prev, [field]: formattedPhone }));
-      
-      // Limpar erro quando começar a digitar
-      if (phoneError) {
-        setPhoneError('');
-      }
-    } else {
-      setRegisterData(prev => ({ ...prev, [field]: value }));
-      
-      // Clear city when state changes
-      if (field === 'state') {
-        setRegisterData(prev => ({ ...prev, city: '' }));
-      }
+    setRegisterData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear city when state changes
+    if (field === 'state') {
+      setRegisterData(prev => ({ ...prev, city: '' }));
     }
   };
 
@@ -196,14 +176,11 @@ const ClientAuthForm = () => {
                       value={registerData.phone}
                       onChange={(e) => handleRegisterInputChange('phone', e.target.value)}
                       placeholder="(11) 99999-9999"
-                      className={`pl-10 ${phoneError ? 'border-red-500' : ''}`}
+                      className="pl-10"
                       disabled={loading}
                       required
                     />
                   </div>
-                  {phoneError && (
-                    <p className="text-sm text-red-500">{phoneError}</p>
-                  )}
                 </div>
                 
                 <div className="space-y-2">

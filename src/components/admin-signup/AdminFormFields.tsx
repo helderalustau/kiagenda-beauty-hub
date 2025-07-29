@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Mail, Phone, Shield, Camera, Eye, EyeOff } from "lucide-react";
 import { AdminSignupData } from '@/utils/adminFormValidation';
-import { usePhoneValidation } from '@/hooks/usePhoneValidation';
 
 interface AdminFormFieldsProps {
   formData: AdminSignupData;
@@ -25,13 +24,6 @@ const AdminFormFields = ({
   onInputChange,
   onTogglePassword
 }: AdminFormFieldsProps) => {
-  const { formatPhone } = usePhoneValidation();
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedPhone = formatPhone(e.target.value);
-    onInputChange('phone', formattedPhone);
-  };
-
   return (
     <>
       <div className="grid md:grid-cols-2 gap-6">
@@ -129,7 +121,7 @@ const AdminFormFields = ({
             type="tel"
             placeholder="(11) 99999-9999"
             value={formData.phone}
-            onChange={handlePhoneChange}
+            onChange={(e) => onInputChange('phone', e.target.value)}
             className={`transition-all ${errors.phone ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
             disabled={submitting}
             maxLength={15}
