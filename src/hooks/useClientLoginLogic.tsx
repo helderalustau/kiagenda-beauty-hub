@@ -31,7 +31,7 @@ export const useClientLoginLogic = () => {
 
   const handleLogin = async (username: string, password: string) => {
     try {
-      console.log('Attempting client login with:', username);
+      console.log('CLIENT LOGIN LOGIC - Attempting login with:', username);
       const result = await authenticateClient(username, password);
       
       if (result.success) {
@@ -57,7 +57,7 @@ export const useClientLoginLogic = () => {
           loginTime: new Date().toISOString()
         };
         
-        console.log('Storing complete client data:', clientData);
+        console.log('CLIENT LOGIN LOGIC - Storing complete client data:', clientData);
         
         // Update auth context (this will also update localStorage)
         login(clientData);
@@ -87,9 +87,24 @@ export const useClientLoginLogic = () => {
     }
   };
 
-  const handleRegister = async (username: string, password: string, phone: string, email: string) => {
+  const handleRegister = async (
+    username: string, 
+    password: string, 
+    phone: string, 
+    email: string,
+    city?: string,
+    state?: string
+  ) => {
     try {
-      const result = await registerClient(username, password, phone, email);
+      console.log('CLIENT LOGIN LOGIC - Attempting registration with:', {
+        username, 
+        phone, 
+        email,
+        city,
+        state
+      });
+
+      const result = await registerClient(username, password, phone, email, city, state);
       
       if (result.success) {
         toast({
@@ -118,7 +133,7 @@ export const useClientLoginLogic = () => {
               loginTime: new Date().toISOString()
             };
             
-            console.log('Storing complete client data after registration:', clientData);
+            console.log('CLIENT LOGIN LOGIC - Storing complete client data after registration:', clientData);
             
             // Update auth context (this will also update localStorage)
             login(clientData);

@@ -24,17 +24,26 @@ export const LocationFilter = ({
   onToggleShowOtherCities,
   salonsCount
 }: LocationFilterProps) => {
-  console.log('LocationFilter - Client location data:', {
-    clientCity,
-    clientState,
+  console.log('LOCATION FILTER - Client location data received:', {
+    clientCity: clientCity || 'Não informado',
+    clientState: clientState || 'Não informado',
     hasCity: !!clientCity,
-    hasState: !!clientState
+    hasState: !!clientState,
+    locationFilterEnabled: locationFilter.enabled,
+    showOtherCities: locationFilter.showOtherCities
   });
 
-  // Verificar se o cliente tem estado preenchido
-  const hasState = clientState && clientState.trim() !== '';
+  // Verificar se o cliente tem estado preenchido (obrigatório para filtro)
+  const hasValidState = clientState && clientState.trim() !== '' && clientState !== 'null' && clientState !== 'undefined';
   
-  if (!hasState) {
+  console.log('LOCATION FILTER - State validation:', {
+    clientState,
+    hasValidState,
+    stateLength: clientState?.length || 0
+  });
+  
+  if (!hasValidState) {
+    console.log('LOCATION FILTER - No valid state found, showing completion message');
     return (
       <Card className="mb-4">
         <CardContent className="p-4">
@@ -49,6 +58,14 @@ export const LocationFilter = ({
     );
   }
 
+  const hasValidCity = clientCity && clientCity.trim() !== '' && clientCity !== 'null' && clientCity !== 'undefined';
+
+  console.log('LOCATION FILTER - Rendering filter with valid state:', {
+    hasValidState,
+    hasValidCity,
+    salonsCount
+  });
+
   return (
     <Card className="mb-4">
       <CardContent className="p-4">
@@ -59,7 +76,9 @@ export const LocationFilter = ({
               {locationFilter.enabled 
                 ? (locationFilter.showOtherCities 
                     ? `Estabelecimentos em ${clientState}` 
-                    : (clientCity ? `Estabelecimentos em ${clientCity}, ${clientState}` : `Estabelecimentos em ${clientState}`))
+                    : (hasValidCity 
+                        ? `Estabelecimentos em ${clientCity}, ${clientState}` 
+                        : `Estabelecimentos em ${clientState}`))
                 : 'Todos os estabelecimentos'
               }
             </span>
@@ -69,7 +88,7 @@ export const LocationFilter = ({
           </div>
           
           <div className="flex items-center gap-2">
-            {locationFilter.enabled && clientCity && (
+            {locationFilter.enabled && hasValidCity && (
               <Button
                 variant="outline"
                 size="sm"

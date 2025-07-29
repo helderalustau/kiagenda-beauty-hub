@@ -57,14 +57,15 @@ export const useClientAuth = () => {
         return { success: false, message: 'Credenciais inválidas' };
       }
 
-      console.log('Client authenticated successfully with complete data:', {
+      console.log('CLIENT AUTH - Login successful with complete data:', {
         id: clientRecord.id,
         name: clientRecord.name,
         username: clientRecord.username,
         city: clientRecord.city,
         state: clientRecord.state,
         phone: clientRecord.phone,
-        email: clientRecord.email
+        email: clientRecord.email,
+        full_name: clientRecord.full_name
       });
 
       return { success: true, client: clientRecord };
@@ -83,9 +84,24 @@ export const useClientAuth = () => {
   };
 
   // Register client with secure password hashing and phone formatting
-  const registerClient = async (username: string, password: string, phone: string, email?: string) => {
+  const registerClient = async (
+    username: string, 
+    password: string, 
+    phone: string, 
+    email?: string,
+    city?: string,
+    state?: string
+  ) => {
     try {
       setLoading(true);
+      
+      console.log('CLIENT REGISTER - Starting registration with data:', {
+        username,
+        phone,
+        email,
+        city,
+        state
+      });
       
       // Validate inputs
       const usernameValidation = sanitizeAndValidate(username, 'name');
@@ -102,7 +118,7 @@ export const useClientAuth = () => {
       }
 
       // Check if username already exists
-      const { data: existingClient, error: checkError } = await supabase
+      const { data: existingClient } = await supabase
         .from('client_auth')
         .select('id')
         .eq('username', usernameValidation.value)
@@ -113,7 +129,7 @@ export const useClientAuth = () => {
       }
 
       // Check if phone already exists
-      const { data: existingPhone, error: phoneCheckError } = await supabase
+      const { data: existingPhone } = await supabase
         .from('client_auth')
         .select('id')
         .eq('phone', formattedPhone)
@@ -143,20 +159,26 @@ export const useClientAuth = () => {
       // Hash the password
       const hashedPassword = await hashPassword(password);
       
+      // Prepare data for insertion - ensure all location data is saved
+      const insertData = {
+        username: usernameValidation.value,
+        name: usernameValidation.value, // Manter compatibilidade
+        password: 'temp', // Temporary value to satisfy required field
+        password_hash: hashedPassword,
+        phone: formattedPhone, // Store only digits
+        email: email ? sanitizeAndValidate(email, 'email').value : null,
+        full_name: null, // Can be filled later
+        city: city?.trim() || null, // Save city if provided
+        state: state?.trim() || null, // Save state if provided
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('CLIENT REGISTER - Inserting data into client_auth:', insertData);
+      
       const { data, error } = await supabase
         .from('client_auth')
-        .insert({
-          username: usernameValidation.value,
-          name: usernameValidation.value, // Manter compatibilidade
-          password: 'temp', // Temporary value to satisfy required field
-          password_hash: hashedPassword,
-          phone: formattedPhone, // Store only digits
-          email: email ? sanitizeAndValidate(email, 'email').value : null,
-          // Initialize other fields as null - they can be filled later
-          full_name: null,
-          city: null,
-          state: null
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -168,7 +190,7 @@ export const useClientAuth = () => {
         return { success: false, message: 'Erro ao registrar cliente' };
       }
 
-      console.log('Client registered successfully with data:', data);
+      console.log('CLIENT REGISTER - Registration successful:', data);
       return { success: true, client: data };
     } catch (error) {
       console.error('Error registering client:', error);

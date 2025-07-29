@@ -1,439 +1,233 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, EyeOff, User, Lock, Phone, Mail, MapPin, Building } from "lucide-react";
+import { useClientLoginLogic } from '@/hooks/useClientLoginLogic';
 import { StateSelect } from "@/components/ui/state-select";
-import { PasswordInput } from "@/components/ui/password-input";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2, User, Lock, Phone, Mail, MapPin, Home } from "lucide-react";
-import { useClientAuth } from '@/hooks/useClientAuth';
-import { useAuth } from '@/hooks/useAuth';
-import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
-import { formatCep } from '@/utils/cepFormatter';
+import { CitySelect } from "@/components/ui/city-select";
 
 const ClientAuthForm = () => {
-  const [activeTab, setActiveTab] = useState('login');
-  const [loginData, setLoginData] = useState({ username: '', password: '' });
+  const { handleLogin, handleRegister, loading } = useClientLoginLogic();
+  
+  // Login form state
+  const [loginData, setLoginData] = useState({
+    username: '',
+    password: ''
+  });
+  
+  // Register form state
   const [registerData, setRegisterData] = useState({
     username: '',
     password: '',
-    confirmPassword: '',
     phone: '',
     email: '',
-    fullName: '',
     city: '',
-    state: '',
-    address: '',
-    houseNumber: '',
-    neighborhood: '',
-    zipCode: ''
+    state: ''
   });
   
-  const { loading, authenticateClient, registerClient } = useClientAuth();
-  const { login } = useAuth();
-  const { formatPhoneNumber } = usePhoneFormatter();
-  const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setRegisterData({...registerData, phone: formatted});
-  };
-
-  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCep(e.target.value);
-    setRegisterData({...registerData, zipCode: formatted});
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const onLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!loginData.username || !loginData.password) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const result = await authenticateClient(loginData.username, loginData.password);
-    
-    if (result.success) {
-      // Clear any admin auth to prevent conflicts
-      localStorage.removeItem('adminAuth');
-      localStorage.removeItem('selectedSalonId');
-      
-      // Store client auth with consistent format and update auth context
-      const clientData = {
-        id: result.client.id,
-        name: result.client.name,
-        phone: result.client.phone,
-        email: result.client.email || null,
-        loginTime: new Date().toISOString()
-      };
-      
-      // Update auth context (this will also update localStorage)
-      login(clientData);
-      
-      toast({
-        title: "Sucesso",
-        description: "Login realizado com sucesso!"
-      });
-
-      // Verificar se existe URL de retorno salva
-      const returnUrl = localStorage.getItem('returnUrl');
-      if (returnUrl) {
-        localStorage.removeItem('returnUrl');
-        window.location.href = returnUrl;
-      } else {
-        window.location.href = '/client-dashboard';
-      }
-    } else {
-      toast({
-        title: "Erro",
-        description: result.message,
-        variant: "destructive"
-      });
-    }
+    console.log('LOGIN FORM - Submitting login with:', loginData);
+    await handleLogin(loginData.username, loginData.password);
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const onRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!registerData.username || !registerData.password || !registerData.phone) {
-      toast({
-        title: "Erro",
-        description: "Preencha os campos obrigatórios: nome de usuário, senha e telefone",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (registerData.password !== registerData.confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "As senhas não conferem",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (registerData.password.length < 6) {
-      toast({
-        title: "Erro",
-        description: "A senha deve ter pelo menos 6 caracteres",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const result = await registerClient(
-      registerData.username,
-      registerData.password,
-      registerData.phone,
-      registerData.email || undefined
+    console.log('REGISTER FORM - Submitting registration with:', registerData);
+    await handleRegister(
+      registerData.username, 
+      registerData.password, 
+      registerData.phone, 
+      registerData.email,
+      registerData.city,
+      registerData.state
     );
+  };
+
+  const handleRegisterInputChange = (field: string, value: string) => {
+    setRegisterData(prev => ({ ...prev, [field]: value }));
     
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Cadastro realizado com sucesso! Faça login para continuar."
-      });
-      setActiveTab('login');
-      setLoginData({ username: registerData.username, password: '' });
-      setRegisterData({
-        username: '',
-        password: '',
-        confirmPassword: '',
-        phone: '',
-        email: '',
-        fullName: '',
-        city: '',
-        state: '',
-        address: '',
-        houseNumber: '',
-        neighborhood: '',
-        zipCode: ''
-      });
-    } else {
-      toast({
-        title: "Erro",
-        description: result.message,
-        variant: "destructive"
-      });
+    // Clear city when state changes
+    if (field === 'state') {
+      setRegisterData(prev => ({ ...prev, city: '' }));
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-        <CardHeader className="text-center pb-6">
-          <CardTitle className="text-2xl font-bold text-slate-900">
-            Área do Cliente
-          </CardTitle>
-          <p className="text-slate-600 text-sm">
-            Faça login ou cadastre-se para agendar seus serviços
-          </p>
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-2xl font-bold text-gray-800">Área do Cliente</CardTitle>
+          <p className="text-gray-600">Faça login ou crie sua conta</p>
         </CardHeader>
         
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login" className="text-sm">Entrar</TabsTrigger>
-              <TabsTrigger value="register" className="text-sm">Cadastrar</TabsTrigger>
+              <TabsTrigger value="login">Entrar</TabsTrigger>
+              <TabsTrigger value="register">Criar Conta</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login" className="space-y-4">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label htmlFor="username" className="text-sm font-medium">Nome de usuário *</Label>
-                  <div className="relative mt-1">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <form onSubmit={onLoginSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-username">Nome de usuário</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="username"
-                      type="text"
-                      placeholder="Seu nome de usuário"
+                      id="login-username"
                       value={loginData.username}
                       onChange={(e) => setLoginData({...loginData, username: e.target.value})}
-                      className="pl-10 h-10"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="password" className="text-sm font-medium">Senha *</Label>
-                  <div className="relative mt-1">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
-                    <PasswordInput
-                      id="password"
-                      placeholder="Sua senha"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                      placeholder="Seu nome de usuário"
                       className="pl-10"
                       disabled={loading}
+                      required
                     />
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full h-10 bg-blue-600 hover:bg-blue-700" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Entrando...
-                    </>
-                  ) : (
-                    'Entrar'
-                  )}
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="login-password"
+                      type={showPassword ? "text" : "password"}
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                      placeholder="Sua senha"
+                      className="pl-10 pr-10"
+                      disabled={loading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                      disabled={loading}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
               </form>
             </TabsContent>
             
             <TabsContent value="register" className="space-y-4">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div>
-                  <Label htmlFor="reg-username" className="text-sm font-medium">Nome de usuário *</Label>
-                  <div className="relative mt-1">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <form onSubmit={onRegisterSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="register-username">Nome de usuário *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="reg-username"
-                      type="text"
-                      placeholder="Escolha um nome de usuário"
+                      id="register-username"
                       value={registerData.username}
-                      onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
-                      className="pl-10 h-10"
+                      onChange={(e) => handleRegisterInputChange('username', e.target.value)}
+                      placeholder="Escolha um nome de usuário"
+                      className="pl-10"
                       disabled={loading}
+                      required
                     />
                   </div>
                 </div>
-
-                <div>
-                  <Label htmlFor="reg-fullname" className="text-sm font-medium">Nome completo</Label>
-                  <Input
-                    id="reg-fullname"
-                    type="text"
-                    placeholder="Seu nome completo"
-                    value={registerData.fullName}
-                    onChange={(e) => setRegisterData({...registerData, fullName: e.target.value})}
-                    className="h-10 mt-1"
-                    disabled={loading}
-                  />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Senha *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="register-password"
+                      type={showPassword ? "text" : "password"}
+                      value={registerData.password}
+                      onChange={(e) => handleRegisterInputChange('password', e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      className="pl-10 pr-10"
+                      disabled={loading}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                      disabled={loading}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="reg-phone" className="text-sm font-medium">Telefone *</Label>
-                  <div className="relative mt-1">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <div className="space-y-2">
+                  <Label htmlFor="register-phone">Telefone *</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="reg-phone"
-                      type="tel"
-                      placeholder="(11) 99999-9999"
+                      id="register-phone"
                       value={registerData.phone}
-                      onChange={handlePhoneChange}
-                      className="pl-10 h-10"
+                      onChange={(e) => handleRegisterInputChange('phone', e.target.value)}
+                      placeholder="(11) 99999-9999"
+                      className="pl-10"
                       disabled={loading}
-                      maxLength={15}
+                      required
                     />
                   </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="reg-email" className="text-sm font-medium">E-mail</Label>
-                  <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">E-mail</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="reg-email"
+                      id="register-email"
                       type="email"
-                      placeholder="seu@email.com"
                       value={registerData.email}
-                      onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                      className="pl-10 h-10"
+                      onChange={(e) => handleRegisterInputChange('email', e.target.value)}
+                      placeholder="seu@email.com"
+                      className="pl-10"
                       disabled={loading}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="reg-city" className="text-sm font-medium">Cidade</Label>
-                    <div className="relative mt-1">
-                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                      <Input
-                        id="reg-city"
-                        type="text"
-                        placeholder="Sua cidade"
-                        value={registerData.city}
-                        onChange={(e) => setRegisterData({...registerData, city: e.target.value})}
-                        className="pl-10 h-10"
-                        disabled={loading}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="reg-state" className="text-sm font-medium">Estado</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-state">Estado</Label>
                     <StateSelect
                       value={registerData.state}
-                      onValueChange={(value) => setRegisterData({...registerData, state: value})}
-                      placeholder="UF"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="reg-address" className="text-sm font-medium">Endereço</Label>
-                  <div className="relative mt-1">
-                    <Home className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="reg-address"
-                      type="text"
-                      placeholder="Rua, avenida..."
-                      value={registerData.address}
-                      onChange={(e) => setRegisterData({...registerData, address: e.target.value})}
-                      className="pl-10 h-10"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <Label htmlFor="reg-house" className="text-sm font-medium">Número</Label>
-                    <Input
-                      id="reg-house"
-                      type="text"
-                      placeholder="123"
-                      value={registerData.houseNumber}
-                      onChange={(e) => setRegisterData({...registerData, houseNumber: e.target.value})}
-                      className="h-10 mt-1"
+                      onValueChange={(value) => handleRegisterInputChange('state', value)}
+                      placeholder="Selecione"
                       disabled={loading}
                     />
                   </div>
                   
-                  <div>
-                    <Label htmlFor="reg-neighborhood" className="text-sm font-medium">Bairro</Label>
-                    <Input
-                      id="reg-neighborhood"
-                      type="text"
-                      placeholder="Bairro"
-                      value={registerData.neighborhood}
-                      onChange={(e) => setRegisterData({...registerData, neighborhood: e.target.value})}
-                      className="h-10 mt-1"
-                      disabled={loading}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="reg-zip" className="text-sm font-medium">CEP</Label>
-                    <Input
-                      id="reg-zip"
-                      type="text"
-                      placeholder="00000-000"
-                      value={registerData.zipCode}
-                      onChange={handleCepChange}
-                      className="h-10 mt-1"
-                      disabled={loading}
-                      maxLength={9}
+                  <div className="space-y-2">
+                    <Label htmlFor="register-city">Cidade</Label>
+                    <CitySelect
+                      value={registerData.city}
+                      onValueChange={(value) => handleRegisterInputChange('city', value)}
+                      state={registerData.state}
+                      placeholder="Digite a cidade"
+                      disabled={!registerData.state || loading}
                     />
                   </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="reg-password" className="text-sm font-medium">Senha *</Label>
-                  <div className="relative mt-1">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
-                    <PasswordInput
-                      id="reg-password"
-                      placeholder="Mínimo 6 caracteres"
-                      value={registerData.password}
-                      onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                      className="pl-10"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="reg-confirm" className="text-sm font-medium">Confirmar senha *</Label>
-                  <div className="relative mt-1">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
-                    <PasswordInput
-                      id="reg-confirm"
-                      placeholder="Digite a senha novamente"
-                      value={registerData.confirmPassword}
-                      onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
-                      className="pl-10"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full h-10 bg-blue-600 hover:bg-blue-700" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Cadastrando...
-                    </>
-                  ) : (
-                    'Cadastrar'
-                  )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Criando conta...' : 'Criar Conta'}
                 </Button>
               </form>
             </TabsContent>
           </Tabs>
-          
-          <div className="mt-6 text-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => window.location.href = '/'}
-              className="text-sm text-slate-600 hover:text-slate-800"
-            >
-              ← Voltar ao início
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
