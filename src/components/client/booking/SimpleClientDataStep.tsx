@@ -1,15 +1,15 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, Phone, Mail, MessageSquare, Calendar, Clock, DollarSign } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, User, Phone, Mail, MessageSquare, Calendar, Clock, DollarSign, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from '@/hooks/useSupabaseData';
+import { useBookingClientData } from '@/hooks/booking/useBookingClientData';
 
 interface ClientData {
   name: string;
@@ -45,16 +45,19 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
+  // Auto-fill client data from logged user
+  useBookingClientData(clientData, onClientDataChange);
+
   const totalPrice = (selectedService?.price || 0) + 
     selectedAdditionalServices.reduce((acc, service) => acc + service.price, 0);
   
   const totalDuration = (selectedService?.duration_minutes || 0) + 
     selectedAdditionalServices.reduce((acc, service) => acc + service.duration_minutes, 0);
 
-  const handleInputChange = (field: keyof ClientData, value: string) => {
+  const handleNotesChange = (value: string) => {
     onClientDataChange({
       ...clientData,
-      [field]: value
+      notes: value
     });
   };
 
@@ -79,16 +82,19 @@ const SimpleClientDataStep = ({
       </div>
 
       <div>
-        <h3 className="text-2xl font-bold text-center mb-2">Seus Dados</h3>
+        <h3 className="text-2xl font-bold text-center mb-2">Resumo do Agendamento</h3>
         <p className="text-gray-600 text-center mb-6">
-          Preencha suas informações para finalizar o agendamento
+          Confira os detalhes do seu agendamento antes de finalizar
         </p>
       </div>
 
-      {/* Resumo Final do Agendamento */}
+      {/* Resumo dos Serviços */}
       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg text-blue-900">Resumo do Agendamento</CardTitle>
+          <CardTitle className="text-lg text-blue-900 flex items-center">
+            <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+            Serviços Selecionados
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -103,131 +109,145 @@ const SimpleClientDataStep = ({
                 <span className="text-green-600 font-semibold">{formatCurrency(service.price)}</span>
               </div>
             ))}
-            
-            <hr className="border-blue-200" />
-            
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumo da Data e Horário */}
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg text-purple-900 flex items-center">
+            <Calendar className="h-5 w-5 mr-2 text-purple-600" />
+            Data e Horário
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <div className="flex items-center text-blue-900">
+              <div className="flex items-center text-purple-900">
                 <Calendar className="h-4 w-4 mr-2" />
                 <span>Data:</span>
               </div>
-              <span className="font-medium text-blue-900">
+              <span className="font-medium text-purple-900">
                 {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: ptBR }) : ''}
               </span>
             </div>
             
             <div className="flex justify-between items-center">
-              <div className="flex items-center text-blue-900">
+              <div className="flex items-center text-purple-900">
                 <Clock className="h-4 w-4 mr-2" />
                 <span>Horário:</span>
               </div>
-              <span className="font-medium text-blue-900">{selectedTime}</span>
+              <span className="font-medium text-purple-900">{selectedTime}</span>
             </div>
             
             <div className="flex justify-between items-center">
-              <div className="flex items-center text-blue-700">
+              <div className="flex items-center text-purple-700">
                 <Clock className="h-4 w-4 mr-2" />
                 <span>Duração Total:</span>
               </div>
-              <span className="text-blue-700">{totalDuration} minutos</span>
-            </div>
-            
-            <hr className="border-blue-200" />
-            
-            <div className="flex justify-between items-center font-bold text-lg">
-              <div className="flex items-center text-blue-900">
-                <DollarSign className="h-5 w-5 mr-2" />
-                <span>Total:</span>
-              </div>
-              <span className="text-green-600">{formatCurrency(totalPrice)}</span>
+              <span className="text-purple-700">{totalDuration} minutos</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Formulário de Dados do Cliente */}
+      {/* Total do Agendamento */}
+      <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+        <CardContent className="p-4">
+          <div className="flex justify-between items-center font-bold text-xl">
+            <div className="flex items-center text-green-900">
+              <DollarSign className="h-6 w-6 mr-2" />
+              <span>Valor Total:</span>
+            </div>
+            <span className="text-green-600">{formatCurrency(totalPrice)}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dados do Cliente (Auto-preenchidos) */}
+      <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg text-amber-900 flex items-center">
+            <User className="h-5 w-5 mr-2 text-amber-600" />
+            Seus Dados (Preenchidos Automaticamente)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div className="flex items-center space-x-3">
+              <User className="h-4 w-4 text-gray-500" />
+              <div>
+                <p className="text-sm text-gray-600">Nome:</p>
+                <p className="font-medium text-gray-900">{clientData.name || 'Não informado'}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Phone className="h-4 w-4 text-gray-500" />
+              <div>
+                <p className="text-sm text-gray-600">Telefone:</p>
+                <p className="font-medium text-gray-900">{clientData.phone || 'Não informado'}</p>
+              </div>
+            </div>
+            
+            {clientData.email && (
+              <div className="flex items-center space-x-3 md:col-span-2">
+                <Mail className="h-4 w-4 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Email:</p>
+                  <p className="font-medium text-gray-900">{clientData.email}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="bg-amber-100 p-3 rounded-lg border border-amber-300">
+            <p className="text-sm text-amber-800">
+              <strong>✓ Dados confirmados:</strong> As informações acima foram preenchidas automaticamente com base no seu perfil de usuário.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Observações */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <User className="h-5 w-5 mr-2" />
-            Informações Pessoais
+            <MessageSquare className="h-5 w-5 mr-2" />
+            Observações (Opcional)
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="clientName" className="text-sm font-medium">
-                Nome Completo *
-              </Label>
-              <div className="relative mt-1">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="clientName"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  value={clientData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="clientPhone" className="text-sm font-medium">
-                Telefone *
-              </Label>
-              <div className="relative mt-1">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="clientPhone"
-                  type="tel"
-                  placeholder="(11) 99999-9999"
-                  value={clientData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="clientEmail" className="text-sm font-medium">
-              E-mail (opcional)
-            </Label>
-            <div className="relative mt-1">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="clientEmail"
-                type="email"
-                placeholder="seu@email.com"
-                value={clientData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
+        <CardContent>
           <div>
             <Label htmlFor="clientNotes" className="text-sm font-medium">
-              Observações (opcional)
+              Alguma observação adicional sobre o agendamento?
             </Label>
-            <div className="relative mt-1">
-              <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Textarea
-                id="clientNotes"
-                placeholder="Alguma observação adicional sobre o agendamento..."
-                value={clientData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                className="pl-10 min-h-[80px]"
-                rows={3}
-              />
-            </div>
+            <Textarea
+              id="clientNotes"
+              placeholder="Ex: Preferência de horário, necessidades especiais, etc..."
+              value={clientData.notes}
+              onChange={(e) => handleNotesChange(e.target.value)}
+              className="mt-1 min-h-[80px]"
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>
 
+      {/* Aviso Importante */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <p className="text-sm text-blue-800 mb-2">
+            <strong>📋 Importante:</strong> Ao confirmar, sua solicitação de agendamento será enviada para o estabelecimento.
+          </p>
+          <p className="text-xs text-blue-600">
+            Você receberá uma confirmação assim que o estabelecimento aprovar seu agendamento.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Botões de Ação */}
       <div className="flex gap-3">
         <Button
           variant="outline"
@@ -242,7 +262,7 @@ const SimpleClientDataStep = ({
           disabled={!isFormValid || isSubmitting}
           className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
         >
-          {isSubmitting ? 'Enviando...' : 'Confirmar Agendamento'}
+          {isSubmitting ? 'Enviando Solicitação...' : 'Confirmar Agendamento'}
         </Button>
       </div>
     </div>
