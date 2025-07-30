@@ -1,25 +1,30 @@
 
 import React from 'react';
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Shield, Eye, EyeOff } from "lucide-react";
-
-interface AdminFormData {
-  name: string;
-  password: string;
-  email: string;
-  phone: string;
-  role: 'admin' | 'manager' | 'collaborator';
-}
+import { Button } from "@/components/ui/button";
+import { Eye, EyeOff, User, Mail, Phone, Crown, Zap, Star } from "lucide-react";
 
 interface AdminFormFieldsProps {
-  formData: AdminFormData;
-  errors: Partial<AdminFormData>;
+  formData: {
+    name: string;
+    password: string;
+    email: string;
+    phone: string;
+    role: string;
+    selectedPlan: string;
+  };
+  errors: Record<string, string>;
   showPassword: boolean;
   submitting: boolean;
-  onInputChange: (field: keyof AdminFormData, value: string) => void;
+  availablePlans: Array<{
+    id: string;
+    name: string;
+    plan_type: string;
+    price: string;
+  }>;
+  onInputChange: (field: string, value: string) => void;
   onTogglePassword: () => void;
 }
 
@@ -28,87 +33,109 @@ const AdminFormFields = ({
   errors,
   showPassword,
   submitting,
+  availablePlans,
   onInputChange,
   onTogglePassword
 }: AdminFormFieldsProps) => {
+  const getPlanIcon = (planType: string) => {
+    switch (planType) {
+      case 'bronze': return <Star className="h-4 w-4" />;
+      case 'prata': return <Zap className="h-4 w-4" />;
+      case 'gold': return <Crown className="h-4 w-4" />;
+      default: return <Star className="h-4 w-4" />;
+    }
+  };
+
+  const getPlanColor = (planType: string) => {
+    switch (planType) {
+      case 'bronze': return 'text-amber-600';
+      case 'prata': return 'text-gray-600';
+      case 'gold': return 'text-yellow-600';
+      default: return 'text-gray-600';
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Usuário */}
+    <div className="space-y-4">
+      {/* Seleção de Plano */}
       <div className="space-y-2">
-        <Label htmlFor="name" className="flex items-center gap-2">
-          <User className="h-4 w-4" />
-          Usuário *
+        <Label htmlFor="plan-select" className="flex items-center gap-2 text-sm font-medium">
+          <Crown className="h-4 w-4 text-blue-600" />
+          Selecionar Plano *
+        </Label>
+        <Select
+          value={formData.selectedPlan}
+          onValueChange={(value) => onInputChange('selectedPlan', value)}
+          disabled={submitting}
+        >
+          <SelectTrigger className="focus:border-blue-500">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+            {availablePlans.map((plan) => (
+              <SelectItem key={plan.plan_type} value={plan.plan_type}>
+                <div className="flex items-center gap-3">
+                  <span className={getPlanColor(plan.plan_type)}>
+                    {getPlanIcon(plan.plan_type)}
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{plan.name}</span>
+                    <span className="text-xs text-gray-500">{plan.price}</span>
+                  </div>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-gray-500">
+          Escolha o plano ideal para o estabelecimento
+        </p>
+      </div>
+
+      {/* Nome */}
+      <div className="space-y-2">
+        <Label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
+          <User className="h-4 w-4 text-blue-600" />
+          Nome Completo *
         </Label>
         <Input
           id="name"
           type="text"
-          placeholder="Digite o nome de usuário"
+          placeholder="Digite o nome completo"
           value={formData.name}
           onChange={(e) => onInputChange('name', e.target.value)}
-          className={errors.name ? 'border-red-500' : ''}
           disabled={submitting}
+          className={`focus:border-blue-500 ${errors.name ? 'border-red-500' : ''}`}
         />
         {errors.name && (
-          <p className="text-sm text-red-500">{errors.name}</p>
-        )}
-      </div>
-
-      {/* Senha */}
-      <div className="space-y-2">
-        <Label htmlFor="password" className="flex items-center gap-2">
-          <Shield className="h-4 w-4" />
-          Senha *
-        </Label>
-        <div className="relative">
-          <Input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Mínimo 6 caracteres"
-            value={formData.password}
-            onChange={(e) => onInputChange('password', e.target.value)}
-            className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
-            disabled={submitting}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-0 h-full px-3"
-            onClick={onTogglePassword}
-            tabIndex={-1}
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-        </div>
-        {errors.password && (
-          <p className="text-sm text-red-500">{errors.password}</p>
+          <p className="text-red-500 text-xs">{errors.name}</p>
         )}
       </div>
 
       {/* Email */}
       <div className="space-y-2">
-        <Label htmlFor="email" className="flex items-center gap-2">
-          <Mail className="h-4 w-4" />
+        <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
+          <Mail className="h-4 w-4 text-blue-600" />
           Email *
         </Label>
         <Input
           id="email"
           type="email"
-          placeholder="email@exemplo.com"
+          placeholder="admin@exemplo.com"
           value={formData.email}
           onChange={(e) => onInputChange('email', e.target.value)}
-          className={errors.email ? 'border-red-500' : ''}
           disabled={submitting}
+          className={`focus:border-blue-500 ${errors.email ? 'border-red-500' : ''}`}
         />
         {errors.email && (
-          <p className="text-sm text-red-500">{errors.email}</p>
+          <p className="text-red-500 text-xs">{errors.email}</p>
         )}
       </div>
 
       {/* Telefone */}
       <div className="space-y-2">
-        <Label htmlFor="phone" className="flex items-center gap-2">
-          <Phone className="h-4 w-4" />
+        <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
+          <Phone className="h-4 w-4 text-blue-600" />
           Telefone *
         </Label>
         <Input
@@ -117,35 +144,47 @@ const AdminFormFields = ({
           placeholder="(11) 99999-9999"
           value={formData.phone}
           onChange={(e) => onInputChange('phone', e.target.value)}
-          className={errors.phone ? 'border-red-500' : ''}
           disabled={submitting}
-          maxLength={15}
+          className={`focus:border-blue-500 ${errors.phone ? 'border-red-500' : ''}`}
         />
         {errors.phone && (
-          <p className="text-sm text-red-500">{errors.phone}</p>
+          <p className="text-red-500 text-xs">{errors.phone}</p>
         )}
       </div>
 
-      {/* Função/Cargo */}
+      {/* Senha */}
       <div className="space-y-2">
-        <Label htmlFor="role" className="flex items-center gap-2">
-          <Shield className="h-4 w-4" />
-          Função/Cargo
+        <Label htmlFor="password" className="text-sm font-medium">
+          Senha *
         </Label>
-        <Select
-          value={formData.role}
-          onValueChange={(value) => onInputChange('role', value as 'admin' | 'manager' | 'collaborator')}
-          disabled={submitting}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="admin">Administrador</SelectItem>
-            <SelectItem value="manager">Gerente</SelectItem>
-            <SelectItem value="collaborator">Colaborador</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Digite uma senha segura"
+            value={formData.password}
+            onChange={(e) => onInputChange('password', e.target.value)}
+            disabled={submitting}
+            className={`focus:border-blue-500 pr-12 ${errors.password ? 'border-red-500' : ''}`}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+            onClick={onTogglePassword}
+            disabled={submitting}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4 text-gray-400" />
+            ) : (
+              <Eye className="h-4 w-4 text-gray-400" />
+            )}
+          </Button>
+        </div>
+        {errors.password && (
+          <p className="text-red-500 text-xs">{errors.password}</p>
+        )}
       </div>
     </div>
   );

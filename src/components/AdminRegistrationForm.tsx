@@ -22,6 +22,7 @@ const AdminRegistrationForm = ({
     showPassword,
     submitting,
     loading,
+    availablePlans,
     handleInputChange,
     handleSubmit,
     handleCancel,
@@ -40,6 +41,7 @@ const AdminRegistrationForm = ({
             errors={errors}
             showPassword={showPassword}
             submitting={submitting}
+            availablePlans={availablePlans}
             onInputChange={handleInputChange}
             onTogglePassword={() => setShowPassword(!showPassword)}
           />

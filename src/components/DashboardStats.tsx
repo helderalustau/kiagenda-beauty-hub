@@ -175,7 +175,7 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
                   className="text-blue-600 border-blue-200 hover:bg-blue-50"
                 >
                   <ArrowUp className="h-4 w-4 mr-1" />
-                  Upgrade
+                  Fazer Upgrade
                 </Button>
               )}
             </div>
@@ -214,7 +214,8 @@ const DashboardStats = ({ appointments, services, salon, adminUsers }: Dashboard
         currentPlan={salon.plan as 'bronze' | 'prata' | 'gold'}
         salonName={salon.name}
         onUpgrade={(newPlan) => {
-          console.log(`Upgrade requested from ${salon.plan} to ${newPlan}`);
+          console.log(`Upgrade solicitado de ${salon.plan} para ${newPlan}`);
+          // O modal já envia via WhatsApp automaticamente
         }}
       />
     </>

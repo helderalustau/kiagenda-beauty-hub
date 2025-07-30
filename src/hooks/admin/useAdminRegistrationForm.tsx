@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuthData } from '@/hooks/useAuthData';
 import { useSalonData } from '@/hooks/useSalonData';
 import { useAuth } from '@/hooks/useAuth';
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { validateAdminForm, formatPhone } from '@/components/admin-registration/AdminFormValidation';
 
 interface AdminFormData {
@@ -13,6 +14,7 @@ interface AdminFormData {
   phone: string;
   role: 'admin' | 'manager' | 'collaborator';
   setDateadm: string;
+  selectedPlan: string;
 }
 
 interface UseAdminRegistrationFormProps {
@@ -28,6 +30,7 @@ export const useAdminRegistrationForm = ({
   const { registerAdmin, loading } = useAuthData();
   const { createSalon } = useSalonData();
   const { login } = useAuth();
+  const { getAllPlansInfo } = usePlanConfigurations();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -37,10 +40,12 @@ export const useAdminRegistrationForm = ({
     email: '',
     phone: '',
     role: 'admin',
-    setDateadm: new Date().toISOString()
+    setDateadm: new Date().toISOString(),
+    selectedPlan: 'bronze'
   });
 
   const [errors, setErrors] = useState<Partial<AdminFormData>>({});
+  const availablePlans = getAllPlansInfo();
 
   useEffect(() => {
     setFormData(prev => ({
@@ -102,7 +107,7 @@ export const useAdminRegistrationForm = ({
         owner_name: formData.name.trim(),
         phone: formData.phone.replace(/\D/g, ''),
         address: 'Endereço será preenchido na configuração',
-        plan: 'bronze'
+        plan: formData.selectedPlan // Usar o plano selecionado
       };
 
       console.log('Criando estabelecimento:', temporarySalonData);
@@ -158,7 +163,7 @@ export const useAdminRegistrationForm = ({
 
       toast({
         title: "Cadastro Realizado com Sucesso!",
-        description: "Redirecionando para configuração da loja..."
+        description: `Plano ${formData.selectedPlan} selecionado. Redirecionando para configuração da loja...`
       });
 
       // Limpar formulário
@@ -168,7 +173,8 @@ export const useAdminRegistrationForm = ({
         email: '',
         phone: '',
         role: 'admin',
-        setDateadm: new Date().toISOString()
+        setDateadm: new Date().toISOString(),
+        selectedPlan: 'bronze'
       });
 
       // Redirecionar para configuração da loja
@@ -203,6 +209,7 @@ export const useAdminRegistrationForm = ({
     showPassword,
     submitting,
     loading,
+    availablePlans,
     handleInputChange,
     handleSubmit,
     handleCancel,
