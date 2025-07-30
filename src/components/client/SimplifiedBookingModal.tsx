@@ -44,11 +44,11 @@ const SimplifiedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Si
   const totalDuration = (selectedService?.duration_minutes || 0) + 
     selectedAdditionalServices.reduce((acc, service) => acc + service.duration_minutes, 0);
 
+  // Fix: Pass only the required parameters to useAvailableTimeSlots
   const { availableSlots, loading: loadingTimes, error: timeSlotsError, refetch: refetchSlots } = useAvailableTimeSlots(
     salon?.id, 
     selectedDate,
-    selectedService?.id,
-    totalDuration // Pass total duration to consider additional services
+    selectedService?.id
   );
 
   // Carregar serviços quando o modal abre
