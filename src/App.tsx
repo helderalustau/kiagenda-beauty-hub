@@ -1,77 +1,62 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-
-// Pages
-import Index from './pages/Index';
-import AdminLogin from './pages/AdminLogin';
-import AdminRegistration from './pages/AdminRegistration';
-import AdminDashboard from './pages/AdminDashboard';
-import ClientLogin from './pages/ClientLogin';
-import ClientDashboard from './pages/ClientDashboard';
-import ClientBooking from './pages/ClientBooking';
-import SalonSelectionPage from './pages/SalonSelectionPage';
-import SalonSelection from './pages/SalonSelection';
-import SalonSetup from './pages/SalonSetup';
-import BusinessSetup from './pages/BusinessSetup';
-import PlanSelection from './pages/PlanSelection';
-import SuperAdminLogin from './pages/SuperAdminLogin';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import SalonLink from './pages/SalonLink';
-import NotFound from './pages/NotFound';
-
-// Components
-import SalonLinkRoute from './components/SalonLinkRoute';
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import SecurityHeaders from "@/components/SecurityHeaders";
+import Index from "./pages/Index";
+import AdminLogin from "./pages/AdminLogin";
+import ClientLogin from "./pages/ClientLogin";
+import AdminRegistration from "./pages/AdminRegistration";
+import AdminDashboard from "./pages/AdminDashboard";
+import ClientDashboard from "./pages/ClientDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
+import SalonSetup from "./pages/SalonSetup";
+import BusinessSetup from "./pages/BusinessSetup";
+import PlanSelection from "./pages/PlanSelection";
+import SalonSelection from "./pages/SalonSelection";
+import ClientBooking from "./pages/ClientBooking";
+import SalonLink from "./pages/SalonLink";
+import ServicesPage from "./pages/ServicesPage";
+import SettingsPage from "./pages/SettingsPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="App">
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/select-salon" element={<SalonSelectionPage />} />
-            <Route path="/salon-selection" element={<SalonSelection />} />
-            <Route path="/plan-selection" element={<PlanSelection />} />
-            
-            {/* Authentication Routes */}
-            <Route path="/admin-login" element={<AdminLogin />} />
-            <Route path="/admin-registration" element={<AdminRegistration />} />
-            <Route path="/client-login" element={<ClientLogin />} />
-            
-            {/* Dashboard Routes */}
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/client-dashboard" element={<ClientDashboard />} />
-            
-            {/* Booking Routes */}
-            <Route path="/booking/:salonSlug" element={<ClientBooking />} />
-            
-            {/* Setup Routes */}
-            <Route path="/salon-setup" element={<SalonSetup />} />
-            <Route path="/business-setup" element={<BusinessSetup />} />
-            
-            {/* Super Admin Routes */}
-            <Route path="/super-admin-login" element={<SuperAdminLogin />} />
-            <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
-            
-            {/* Salon Link Route */}
-            <Route path="/salon/:slug" element={<SalonLink />} />
-            <Route path="/l/:slug" element={<SalonLinkRoute />} />
-            
-            {/* 404 Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          
+      <AuthProvider>
+        <TooltipProvider>
+          <SecurityHeaders />
           <Toaster />
-          <SonnerToaster />
-        </div>
-      </Router>
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/client-login" element={<ClientLogin />} />
+              <Route path="/admin-registration" element={<AdminRegistration />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/client-dashboard" element={<ClientDashboard />} />
+              <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
+              <Route path="/super-admin-login" element={<SuperAdminLogin />} />
+              <Route path="/salon-setup" element={<SalonSetup />} />
+              <Route path="/business-setup" element={<BusinessSetup />} />
+              <Route path="/plan-selection" element={<PlanSelection />} />
+              <Route path="/salon-selection" element={<SalonSelection />} />
+              <Route path="/booking/:salonSlug" element={<ClientBooking />} />
+              <Route path="/salon/:salonSlug" element={<SalonLink />} />
+              <Route path="/services" element={<ServicesPage services={[]} onRefresh={async () => {}} />} />
+              <Route path="/settings" element={<SettingsPage salon={null} onRefresh={async () => {}} />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
