@@ -7,6 +7,7 @@ import { useBookingFlow } from '@/hooks/useBookingFlow';
 import { useBookingServices } from '@/hooks/booking/useBookingServices';
 import { useAvailableTimeSlots } from '@/hooks/useAvailableTimeSlots';
 import SimpleServiceSelectionStep from './booking/SimpleServiceSelectionStep';
+import SimpleAdditionalServicesStep from './booking/SimpleAdditionalServicesStep';
 import SimpleDateTimeSelectionStep from './booking/SimpleDateTimeSelectionStep';
 import SimpleClientDataStep from './booking/SimpleClientDataStep';
 
@@ -21,24 +22,33 @@ const SimplifiedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Si
   const {
     currentStep,
     selectedService,
+    selectedAdditionalServices,
     selectedDate,
     selectedTime,
     clientData,
     isSubmitting,
     setCurrentStep,
     setSelectedService,
+    setSelectedAdditionalServices,
     setSelectedDate,
     setSelectedTime,
     setClientData,
+    toggleAdditionalService,
     submitBookingRequest,
     resetBooking
   } = useBookingFlow(salon?.id);
 
   const { services, loadingServices, loadServices } = useBookingServices(salon?.id);
+  
+  // Calculate total duration for time slot calculation
+  const totalDuration = (selectedService?.duration_minutes || 0) + 
+    selectedAdditionalServices.reduce((acc, service) => acc + service.duration_minutes, 0);
+
   const { availableSlots, loading: loadingTimes, error: timeSlotsError, refetch: refetchSlots } = useAvailableTimeSlots(
     salon?.id, 
     selectedDate,
-    selectedService?.id
+    selectedService?.id,
+    totalDuration // Pass total duration to consider additional services
   );
 
   // Carregar serviços quando o modal abre
@@ -110,8 +120,22 @@ const SimplifiedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Si
           )}
 
           {currentStep === 2 && (
+            <SimpleAdditionalServicesStep
+              services={services}
+              selectedService={selectedService}
+              selectedAdditionalServices={selectedAdditionalServices}
+              loadingServices={loadingServices}
+              onAdditionalServiceToggle={toggleAdditionalService}
+              onNext={() => setCurrentStep(3)}
+              onBack={() => setCurrentStep(1)}
+              onSkip={() => setCurrentStep(3)}
+            />
+          )}
+
+          {currentStep === 3 && (
             <SimpleDateTimeSelectionStep
               selectedService={selectedService}
+              selectedAdditionalServices={selectedAdditionalServices}
               selectedDate={selectedDate}
               selectedTime={selectedTime}
               availableTimes={availableSlots || []}
@@ -119,23 +143,24 @@ const SimplifiedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Si
               timeSlotsError={timeSlotsError}
               onDateSelect={setSelectedDate}
               onTimeSelect={setSelectedTime}
-              onNext={() => setCurrentStep(3)}
-              onBack={() => setCurrentStep(1)}
+              onNext={() => setCurrentStep(4)}
+              onBack={() => setCurrentStep(2)}
               formatCurrency={formatCurrency}
               refetchSlots={refetchSlots}
             />
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 4 && (
             <SimpleClientDataStep
               selectedService={selectedService}
+              selectedAdditionalServices={selectedAdditionalServices}
               selectedDate={selectedDate}
               selectedTime={selectedTime}
               clientData={clientData}
               isSubmitting={isSubmitting}
               onClientDataChange={setClientData}
               onSubmit={handleSubmit}
-              onBack={() => setCurrentStep(2)}
+              onBack={() => setCurrentStep(3)}
               onCancel={handleClose}
               formatCurrency={formatCurrency}
             />
