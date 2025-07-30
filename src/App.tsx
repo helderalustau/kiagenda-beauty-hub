@@ -18,8 +18,6 @@ import SalonSelection from './pages/SalonSelection';
 import SalonSetup from './pages/SalonSetup';
 import BusinessSetup from './pages/BusinessSetup';
 import PlanSelection from './pages/PlanSelection';
-import ServicesPage from './pages/ServicesPage';
-import SettingsPage from './pages/SettingsPage';
 import SuperAdminLogin from './pages/SuperAdminLogin';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import SalonLink from './pages/SalonLink';
@@ -57,10 +55,6 @@ function App() {
             {/* Setup Routes */}
             <Route path="/salon-setup" element={<SalonSetup />} />
             <Route path="/business-setup" element={<BusinessSetup />} />
-            
-            {/* Management Routes */}
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
             
             {/* Super Admin Routes */}
             <Route path="/super-admin-login" element={<SuperAdminLogin />} />
