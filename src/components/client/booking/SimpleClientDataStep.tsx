@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,8 +45,8 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
-  // Auto-fill client data from logged user
-  useBookingClientData(clientData, onClientDataChange);
+  // Auto-fill client data from database
+  const { hasAutoFilled, isLoading } = useBookingClientData(clientData, onClientDataChange);
 
   const totalPrice = (selectedService?.price || 0) + 
     selectedAdditionalServices.reduce((acc, service) => acc + service.price, 0);
@@ -62,6 +62,17 @@ const SimpleClientDataStep = ({
   };
 
   const isFormValid = clientData.name.trim() && clientData.phone.trim();
+
+  // Debug log
+  useEffect(() => {
+    console.log('SimpleClientDataStep - Current client data:', {
+      name: clientData.name,
+      phone: clientData.phone,
+      email: clientData.email,
+      hasAutoFilled,
+      isLoading
+    });
+  }, [clientData, hasAutoFilled, isLoading]);
 
   return (
     <div className="space-y-6">
@@ -165,12 +176,12 @@ const SimpleClientDataStep = ({
         </CardContent>
       </Card>
 
-      {/* Dados do Cliente (Auto-preenchidos) */}
+      {/* Dados do Cliente */}
       <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg text-amber-900 flex items-center">
             <User className="h-5 w-5 mr-2 text-amber-600" />
-            Seus Dados (Preenchidos Automaticamente)
+            Seus Dados {isLoading && <span className="text-sm ml-2">(Carregando...)</span>}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -179,7 +190,9 @@ const SimpleClientDataStep = ({
               <User className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-sm text-gray-600">Nome:</p>
-                <p className="font-medium text-gray-900">{clientData.name || 'Não informado'}</p>
+                <p className="font-medium text-gray-900">
+                  {clientData.name || 'Carregando...'}
+                </p>
               </div>
             </div>
             
@@ -187,7 +200,9 @@ const SimpleClientDataStep = ({
               <Phone className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-sm text-gray-600">Telefone:</p>
-                <p className="font-medium text-gray-900">{clientData.phone || 'Não informado'}</p>
+                <p className="font-medium text-gray-900">
+                  {clientData.phone || 'Carregando...'}
+                </p>
               </div>
             </div>
             
@@ -204,7 +219,7 @@ const SimpleClientDataStep = ({
           
           <div className="bg-amber-100 p-3 rounded-lg border border-amber-300">
             <p className="text-sm text-amber-800">
-              <strong>✓ Dados confirmados:</strong> As informações acima foram preenchidas automaticamente com base no seu perfil de usuário.
+              <strong>✓ Dados confirmados:</strong> As informações acima foram carregadas automaticamente do seu perfil.
             </p>
           </div>
         </CardContent>
@@ -259,7 +274,7 @@ const SimpleClientDataStep = ({
         </Button>
         <Button
           onClick={onSubmit}
-          disabled={!isFormValid || isSubmitting}
+          disabled={!isFormValid || isSubmitting || isLoading}
           className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
         >
           {isSubmitting ? 'Enviando Solicitação...' : 'Confirmar Agendamento'}

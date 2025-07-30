@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePhoneFormatter } from '@/hooks/usePhoneFormatter';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClientData {
   name: string;
@@ -19,14 +20,19 @@ export const useBookingClientData = (
   const hasAutoFilled = useRef(false);
   const isLoading = useRef(false);
 
-  // Auto-preencher dados do cliente logado através do localStorage
+  // Buscar dados do cliente diretamente do banco de dados
   useEffect(() => {
     const loadClientData = async () => {
-      console.log('useBookingClientData - Starting load');
+      console.log('useBookingClientData - Starting database load');
 
       // Verificações de segurança
-      if (hasAutoFilled.current || isLoading.current) {
-        console.log('useBookingClientData - Already processed or loading');
+      if (hasAutoFilled.current || isLoading.current || !isClient || !user?.id) {
+        console.log('useBookingClientData - Skipping load:', {
+          hasAutoFilled: hasAutoFilled.current,
+          isLoading: isLoading.current,
+          isClient,
+          userId: user?.id
+        });
         return;
       }
 
@@ -37,48 +43,59 @@ export const useBookingClientData = (
         return;
       }
 
-      // Tentar obter dados do localStorage (cliente logado)
-      const clientAuth = localStorage.getItem('clientAuth');
-      if (!clientAuth) {
-        console.log('useBookingClientData - No client auth in localStorage');
-        return;
-      }
-
       try {
         isLoading.current = true;
-        const loggedClient = JSON.parse(clientAuth);
-        
-        console.log('useBookingClientData - Client auth data found:', {
-          username: loggedClient.username,
-          name: loggedClient.name,
-          phone: loggedClient.phone,
-          email: loggedClient.email
-        });
-        
-        const newData = {
-          name: loggedClient.name || loggedClient.username || '',
-          phone: formatPhoneNumber(loggedClient.phone || ''),
-          email: loggedClient.email || '',
-          notes: clientData.notes || ''
-        };
+        console.log('useBookingClientData - Fetching client data from database for user:', user.id);
 
-        console.log('useBookingClientData - Setting new client data:', newData);
-        setClientData(newData);
-        hasAutoFilled.current = true;
+        // Buscar dados do cliente no banco de dados
+        const { data: clientAuthData, error } = await supabase
+          .from('client_auth')
+          .select('id, username, name, full_name, phone, email')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('useBookingClientData - Database error:', error);
+          return;
+        }
+
+        if (clientAuthData) {
+          console.log('useBookingClientData - Database data found:', {
+            id: clientAuthData.id,
+            username: clientAuthData.username,
+            name: clientAuthData.name,
+            full_name: clientAuthData.full_name,
+            phone: clientAuthData.phone,
+            email: clientAuthData.email
+          });
+
+          const newData = {
+            name: clientAuthData.full_name || clientAuthData.name || clientAuthData.username || '',
+            phone: formatPhoneNumber(clientAuthData.phone || ''),
+            email: clientAuthData.email || '',
+            notes: clientData.notes || ''
+          };
+
+          console.log('useBookingClientData - Setting new client data from database:', newData);
+          setClientData(newData);
+          hasAutoFilled.current = true;
+        } else {
+          console.log('useBookingClientData - No client data found in database');
+        }
       } catch (error) {
-        console.error('useBookingClientData - Error parsing client auth:', error);
+        console.error('useBookingClientData - Error fetching from database:', error);
       } finally {
         isLoading.current = false;
       }
     };
 
-    // Executar após um pequeno delay
+    // Executar após um pequeno delay para garantir que o user está carregado
     const timer = setTimeout(() => {
       loadClientData();
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [setClientData, formatPhoneNumber, clientData.notes]);
+  }, [user?.id, isClient, setClientData, formatPhoneNumber, clientData.notes, clientData.name, clientData.phone]);
 
   // Reset do flag quando os dados forem limpos manualmente
   useEffect(() => {
