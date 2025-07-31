@@ -1,11 +1,12 @@
 
 import React, { useMemo, useState } from 'react';
 import { Appointment } from '@/types/supabase-entities';
-import { format, startOfMonth, endOfMonth, subMonths, isSameMonth, isSameDay, subDays } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths, isSameMonth, isSameDay, subDays, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import FinancialMetricsCards from './financial/FinancialMetricsCards';
 import FinancialFilters from './financial/FinancialFilters';
 import CleanFinancialCharts from './financial/CleanFinancialCharts';
+import DailySummaryCard from './financial/DailySummaryCard';
 import { useToast } from "@/hooks/use-toast";
 
 interface FinancialDashboardProps {
@@ -41,6 +42,44 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     
     return total;
   };
+
+  // Dados do resumo diário
+  const dailySummaryData = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+
+    // Agendamentos de hoje
+    const todayAppointments = appointments.filter(apt => 
+      apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), today)
+    );
+
+    // Agendamentos de ontem
+    const yesterdayAppointments = appointments.filter(apt => 
+      apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), yesterday)
+    );
+
+    const todayRevenue = todayAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+    const yesterdayRevenue = yesterdayAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+
+    const todayData = {
+      date: format(today, 'yyyy-MM-dd'),
+      revenue: todayRevenue,
+      appointments: todayAppointments.length,
+      averageTicket: todayAppointments.length > 0 ? todayRevenue / todayAppointments.length : 0,
+      growth: 0
+    };
+
+    const yesterdayData = {
+      date: format(yesterday, 'yyyy-MM-dd'),
+      revenue: yesterdayRevenue,
+      appointments: yesterdayAppointments.length,
+      averageTicket: yesterdayAppointments.length > 0 ? yesterdayRevenue / yesterdayAppointments.length : 0,
+      growth: 0
+    };
+
+    return { todayData, yesterdayData };
+  }, [appointments, calculateAppointmentTotal]);
 
   const filteredAppointments = useMemo(() => {
     const now = new Date();
@@ -181,7 +220,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       dailyData,
       servicesData
     };
-  }, [filteredAppointments, appointments]);
+  }, [filteredAppointments, appointments, calculateAppointmentTotal]);
 
   const handleRefresh = () => {
     toast({
@@ -203,6 +242,12 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Dashboard Financeiro</h2>
         <p className="text-gray-600">Análise completa do desempenho financeiro do seu estabelecimento</p>
       </div>
+
+      {/* Resumo Diário */}
+      <DailySummaryCard 
+        todayData={dailySummaryData.todayData}
+        yesterdayData={dailySummaryData.yesterdayData}
+      />
 
       <FinancialFilters
         selectedPeriod={selectedPeriod}
