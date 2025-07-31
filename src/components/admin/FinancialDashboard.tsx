@@ -31,10 +31,10 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
   const calculateAppointmentTotal = (appointment: Appointment) => {
     let total = appointment.service?.price || 0;
     
-    // Adicionar valores dos serviços adicionais
+    // Adicionar valores dos serviços adicionais com verificação de segurança
     if (appointment.additional_services && Array.isArray(appointment.additional_services)) {
       const additionalTotal = appointment.additional_services.reduce((sum: number, additional: any) => {
-        return sum + (additional.price || 0);
+        return sum + (additional?.price || 0);
       }, 0);
       total += additionalTotal;
     }

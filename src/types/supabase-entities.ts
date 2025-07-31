@@ -67,6 +67,12 @@ export interface Appointment {
   created_at?: string;
   updated_at?: string;
   deleted_at?: string;
+  additional_services?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    duration_minutes: number;
+  }>;
   // Relations
   salon?: {
     id: string;
