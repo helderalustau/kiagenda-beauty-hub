@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Phone, Mail, MessageSquare, Calendar, Clock, DollarSign, CheckCircle } from "lucide-react";
+import { ArrowLeft, User, Phone, Mail, MessageSquare, Calendar, Clock, DollarSign, CheckCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Service } from '@/hooks/useSupabaseData';
@@ -45,7 +45,6 @@ const SimpleClientDataStep = ({
   onCancel,
   formatCurrency
 }: SimpleClientDataStepProps) => {
-  // Auto-fill client data from database
   const { hasAutoFilled, isLoading } = useBookingClientData(clientData, onClientDataChange);
 
   const totalPrice = (selectedService?.price || 0) + 
@@ -61,18 +60,17 @@ const SimpleClientDataStep = ({
     });
   };
 
-  const isFormValid = clientData.name.trim() && clientData.phone.trim();
+  // Validação: dados obrigatórios preenchidos e não está carregando
+  const isFormValid = !isLoading && clientData.name.trim() && clientData.phone.trim();
 
-  // Debug log
   useEffect(() => {
-    console.log('SimpleClientDataStep - Current client data:', {
-      name: clientData.name,
-      phone: clientData.phone,
-      email: clientData.email,
+    console.log('SimpleClientDataStep - Current state:', {
+      clientData,
       hasAutoFilled,
-      isLoading
+      isLoading,
+      isFormValid
     });
-  }, [clientData, hasAutoFilled, isLoading]);
+  }, [clientData, hasAutoFilled, isLoading, isFormValid]);
 
   return (
     <div className="space-y-6">
@@ -181,47 +179,59 @@ const SimpleClientDataStep = ({
         <CardHeader className="pb-3">
           <CardTitle className="text-lg text-amber-900 flex items-center">
             <User className="h-5 w-5 mr-2 text-amber-600" />
-            Seus Dados {isLoading && <span className="text-sm ml-2">(Carregando...)</span>}
+            Seus Dados
+            {isLoading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 mb-4">
-            <div className="flex items-center space-x-3">
-              <User className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-600">Nome:</p>
-                <p className="font-medium text-gray-900">
-                  {clientData.name || 'Carregando...'}
-                </p>
-              </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-6">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <span className="text-gray-600">Carregando seus dados...</span>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <Phone className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-600">Telefone:</p>
-                <p className="font-medium text-gray-900">
-                  {clientData.phone || 'Carregando...'}
-                </p>
-              </div>
-            </div>
-            
-            {clientData.email && (
-              <div className="flex items-center space-x-3 md:col-span-2">
-                <Mail className="h-4 w-4 text-gray-500" />
-                <div>
-                  <p className="text-sm text-gray-600">Email:</p>
-                  <p className="font-medium text-gray-900">{clientData.email}</p>
+          ) : (
+            <>
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div className="flex items-center space-x-3">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-600">Nome:</p>
+                    <p className="font-medium text-gray-900">
+                      {clientData.name || 'Nome não disponível'}
+                    </p>
+                  </div>
                 </div>
+                
+                <div className="flex items-center space-x-3">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-600">Telefone:</p>
+                    <p className="font-medium text-gray-900">
+                      {clientData.phone || 'Telefone não disponível'}
+                    </p>
+                  </div>
+                </div>
+                
+                {clientData.email && (
+                  <div className="flex items-center space-x-3 md:col-span-2">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-600">Email:</p>
+                      <p className="font-medium text-gray-900">{clientData.email}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          
-          <div className="bg-amber-100 p-3 rounded-lg border border-amber-300">
-            <p className="text-sm text-amber-800">
-              <strong>✓ Dados confirmados:</strong> As informações acima foram carregadas automaticamente do seu perfil.
-            </p>
-          </div>
+              
+              {hasAutoFilled && (
+                <div className="bg-amber-100 p-3 rounded-lg border border-amber-300">
+                  <p className="text-sm text-amber-800">
+                    <strong>✓ Dados confirmados:</strong> As informações foram carregadas automaticamente do seu perfil.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -245,6 +255,7 @@ const SimpleClientDataStep = ({
               onChange={(e) => handleNotesChange(e.target.value)}
               className="mt-1 min-h-[80px]"
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
         </CardContent>
@@ -274,10 +285,17 @@ const SimpleClientDataStep = ({
         </Button>
         <Button
           onClick={onSubmit}
-          disabled={!isFormValid || isSubmitting || isLoading}
+          disabled={!isFormValid || isSubmitting}
           className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
         >
-          {isSubmitting ? 'Enviando Solicitação...' : 'Confirmar Agendamento'}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Enviando...
+            </>
+          ) : (
+            'Confirmar Agendamento'
+          )}
         </Button>
       </div>
     </div>

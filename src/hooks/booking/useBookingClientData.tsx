@@ -20,23 +20,29 @@ export const useBookingClientData = (
   const hasAutoFilled = useRef(false);
   const isLoading = useRef(false);
 
-  // Buscar dados do cliente diretamente do banco de dados
   useEffect(() => {
     const loadClientData = async () => {
-      console.log('useBookingClientData - Starting database load');
-
-      // Verificações de segurança
-      if (hasAutoFilled.current || isLoading.current || !isClient || !user?.id) {
-        console.log('useBookingClientData - Skipping load:', {
-          hasAutoFilled: hasAutoFilled.current,
-          isLoading: isLoading.current,
-          isClient,
-          userId: user?.id
-        });
+      console.log('useBookingClientData - Starting load process');
+      
+      // Verificações básicas
+      if (!isClient || !user?.id) {
+        console.log('useBookingClientData - Not client or no user ID:', { isClient, userId: user?.id });
         return;
       }
 
-      // Se já tem dados preenchidos, não sobrescrever
+      // Se já carregou uma vez, não carregar novamente
+      if (hasAutoFilled.current) {
+        console.log('useBookingClientData - Already auto-filled, skipping');
+        return;
+      }
+
+      // Se já está carregando, não iniciar novo carregamento
+      if (isLoading.current) {
+        console.log('useBookingClientData - Already loading, skipping');
+        return;
+      }
+
+      // Se já tem dados preenchidos (exceto notes), não sobrescrever
       if (clientData.name && clientData.phone) {
         console.log('useBookingClientData - Data already exists, marking as filled');
         hasAutoFilled.current = true;
@@ -45,9 +51,8 @@ export const useBookingClientData = (
 
       try {
         isLoading.current = true;
-        console.log('useBookingClientData - Fetching client data from database for user:', user.id);
+        console.log('useBookingClientData - Fetching client data for user:', user.id);
 
-        // Buscar dados do cliente no banco de dados
         const { data: clientAuthData, error } = await supabase
           .from('client_auth')
           .select('id, username, name, full_name, phone, email')
@@ -60,7 +65,7 @@ export const useBookingClientData = (
         }
 
         if (clientAuthData) {
-          console.log('useBookingClientData - Database data found:', {
+          console.log('useBookingClientData - Client data found:', {
             id: clientAuthData.id,
             username: clientAuthData.username,
             name: clientAuthData.name,
@@ -69,38 +74,42 @@ export const useBookingClientData = (
             email: clientAuthData.email
           });
 
-          const newData = {
-            name: clientAuthData.full_name || clientAuthData.name || clientAuthData.username || '',
+          // Determinar o melhor nome disponível
+          const displayName = clientAuthData.full_name || 
+                            clientAuthData.name || 
+                            clientAuthData.username || 
+                            '';
+
+          const newData: ClientData = {
+            name: displayName,
             phone: formatPhoneNumber(clientAuthData.phone || ''),
             email: clientAuthData.email || '',
-            notes: clientData.notes || ''
+            notes: clientData.notes || '' // Preservar notes existentes
           };
 
-          console.log('useBookingClientData - Setting new client data from database:', newData);
+          console.log('useBookingClientData - Setting new client data:', newData);
           setClientData(newData);
           hasAutoFilled.current = true;
         } else {
-          console.log('useBookingClientData - No client data found in database');
+          console.log('useBookingClientData - No client data found');
         }
       } catch (error) {
-        console.error('useBookingClientData - Error fetching from database:', error);
+        console.error('useBookingClientData - Error fetching data:', error);
       } finally {
         isLoading.current = false;
       }
     };
 
-    // Executar após um pequeno delay para garantir que o user está carregado
-    const timer = setTimeout(() => {
-      loadClientData();
-    }, 200);
+    // Executar carregamento após um pequeno delay para garantir que o estado está estabilizado
+    const timer = setTimeout(loadClientData, 100);
 
     return () => clearTimeout(timer);
-  }, [user?.id, isClient, setClientData, formatPhoneNumber, clientData.notes, clientData.name, clientData.phone]);
+  }, [user?.id, isClient]); // Dependências mínimas para evitar loops
 
-  // Reset do flag quando os dados forem limpos manualmente
+  // Reset quando os dados são limpos manualmente
   useEffect(() => {
     if (!clientData.name && !clientData.phone && hasAutoFilled.current) {
-      console.log('useBookingClientData - Data cleared, resetting flag');
+      console.log('useBookingClientData - Data manually cleared, resetting flags');
       hasAutoFilled.current = false;
       isLoading.current = false;
     }
