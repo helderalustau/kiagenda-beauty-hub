@@ -5,7 +5,7 @@ import { format, startOfMonth, endOfMonth, subMonths, isSameMonth, isSameDay, su
 import { ptBR } from "date-fns/locale";
 import FinancialMetricsCards from './financial/FinancialMetricsCards';
 import FinancialFilters from './financial/FinancialFilters';
-import EnhancedFinancialCharts from './financial/EnhancedFinancialCharts';
+import CleanFinancialCharts from './financial/CleanFinancialCharts';
 import { useToast } from "@/hooks/use-toast";
 
 interface FinancialDashboardProps {
@@ -26,6 +26,21 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     }, [] as Array<{ id: string; name: string }>);
     return uniqueServices;
   }, [appointments]);
+
+  // Função para calcular o valor total do agendamento (serviço principal + adicionais)
+  const calculateAppointmentTotal = (appointment: Appointment) => {
+    let total = appointment.service?.price || 0;
+    
+    // Adicionar valores dos serviços adicionais
+    if (appointment.additional_services && Array.isArray(appointment.additional_services)) {
+      const additionalTotal = appointment.additional_services.reduce((sum: number, additional: any) => {
+        return sum + (additional.price || 0);
+      }, 0);
+      total += additionalTotal;
+    }
+    
+    return total;
+  };
 
   const filteredAppointments = useMemo(() => {
     const now = new Date();
@@ -69,21 +84,21 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     const completedAppointments = filteredAppointments.filter(apt => apt.status === 'completed');
     const confirmedAppointments = filteredAppointments.filter(apt => apt.status === 'confirmed');
     
-    // Receita total
-    const totalRevenue = completedAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+    // Receita total usando o cálculo correto
+    const totalRevenue = completedAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
     
-    // Receita pendente (agendamentos confirmados)
-    const pendingRevenue = confirmedAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+    // Receita pendente (agendamentos confirmados) usando o cálculo correto
+    const pendingRevenue = confirmedAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
     
     // Receita do mês atual
     const currentMonthRevenue = completedAppointments
       .filter(apt => isSameMonth(new Date(apt.appointment_date), now))
-      .reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+      .reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
     
     // Receita do mês anterior
     const lastMonthRevenue = appointments
       .filter(apt => apt.status === 'completed' && isSameMonth(new Date(apt.appointment_date), subMonths(now, 1)))
-      .reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+      .reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
     
     // Crescimento percentual
     const growthPercentage = lastMonthRevenue > 0 
@@ -102,7 +117,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       const monthAppointments = appointments.filter(apt => 
         apt.status === 'completed' && isSameMonth(new Date(apt.appointment_date), month)
       );
-      const revenue = monthAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+      const revenue = monthAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
       const previousMonthRevenue = i === 5 ? 0 : monthlyData[monthlyData.length - 1]?.revenue || 0;
       const growth = previousMonthRevenue > 0 ? ((revenue - previousMonthRevenue) / previousMonthRevenue) * 100 : 0;
       
@@ -114,42 +129,34 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       });
     }
     
-    // Dados diários enriquecidos (últimos 30 dias)
+    // Dados diários (últimos 30 dias)
     const dailyData = [];
     for (let i = 29; i >= 0; i--) {
       const day = subDays(now, i);
       const dayCompletedAppointments = appointments.filter(apt => 
         apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), day)
       );
-      const dayAllAppointments = appointments.filter(apt => 
-        isSameDay(new Date(apt.appointment_date), day)
-      );
-      const revenue = dayCompletedAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
-      const totalAppointments = dayAllAppointments.length;
+      const revenue = dayCompletedAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
       const completedCount = dayCompletedAppointments.length;
-      const cancelledCount = dayAllAppointments.filter(apt => apt.status === 'cancelled').length;
       
       dailyData.push({
         day: format(day, 'dd/MM', { locale: ptBR }),
         revenue,
         appointments: completedCount,
-        totalAppointments,
-        averageTicket: completedCount > 0 ? revenue / completedCount : 0,
-        completedAppointments: completedCount,
-        cancelledAppointments: cancelledCount
+        averageTicket: completedCount > 0 ? revenue / completedCount : 0
       });
     }
     
-    // Serviços mais populares
+    // Serviços mais populares com cálculo correto
     const serviceStats = completedAppointments.reduce((acc, apt) => {
       const serviceName = apt.service?.name || 'Serviço não identificado';
-      const servicePrice = apt.service?.price || 0;
+      const appointmentTotal = calculateAppointmentTotal(apt);
       
       if (!acc[serviceName]) {
         acc[serviceName] = { count: 0, revenue: 0 };
       }
       acc[serviceName].count++;
-      acc[serviceName].revenue += servicePrice;
+      acc[serviceName].revenue += appointmentTotal;
       return acc;
     }, {} as Record<string, { count: number; revenue: number }>);
     
@@ -184,7 +191,6 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
   };
 
   const handleExport = () => {
-    // Implementar exportação para CSV/PDF
     toast({
       title: "Exportação iniciada",
       description: "O relatório está sendo gerado. Você receberá uma notificação quando estiver pronto.",
@@ -217,7 +223,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         pendingRevenue={financialData.pendingRevenue}
       />
 
-      <EnhancedFinancialCharts
+      <CleanFinancialCharts
         revenueData={financialData.monthlyData}
         servicesData={financialData.servicesData}
         dailyData={financialData.dailyData}
