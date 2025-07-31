@@ -5,7 +5,7 @@ import { format, startOfMonth, endOfMonth, subMonths, isSameMonth, isSameDay, su
 import { ptBR } from "date-fns/locale";
 import FinancialMetricsCards from './financial/FinancialMetricsCards';
 import FinancialFilters from './financial/FinancialFilters';
-import FinancialCharts from './financial/FinancialCharts';
+import EnhancedFinancialCharts from './financial/EnhancedFinancialCharts';
 import { useToast } from "@/hooks/use-toast";
 
 interface FinancialDashboardProps {
@@ -114,19 +114,29 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       });
     }
     
-    // Dados diários (últimos 30 dias)
+    // Dados diários enriquecidos (últimos 30 dias)
     const dailyData = [];
     for (let i = 29; i >= 0; i--) {
       const day = subDays(now, i);
-      const dayAppointments = appointments.filter(apt => 
+      const dayCompletedAppointments = appointments.filter(apt => 
         apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), day)
       );
-      const revenue = dayAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+      const dayAllAppointments = appointments.filter(apt => 
+        isSameDay(new Date(apt.appointment_date), day)
+      );
+      const revenue = dayCompletedAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+      const totalAppointments = dayAllAppointments.length;
+      const completedCount = dayCompletedAppointments.length;
+      const cancelledCount = dayAllAppointments.filter(apt => apt.status === 'cancelled').length;
       
       dailyData.push({
         day: format(day, 'dd/MM', { locale: ptBR }),
         revenue,
-        appointments: dayAppointments.length
+        appointments: completedCount,
+        totalAppointments,
+        averageTicket: completedCount > 0 ? revenue / completedCount : 0,
+        completedAppointments: completedCount,
+        cancelledAppointments: cancelledCount
       });
     }
     
@@ -207,7 +217,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         pendingRevenue={financialData.pendingRevenue}
       />
 
-      <FinancialCharts
+      <EnhancedFinancialCharts
         revenueData={financialData.monthlyData}
         servicesData={financialData.servicesData}
         dailyData={financialData.dailyData}
