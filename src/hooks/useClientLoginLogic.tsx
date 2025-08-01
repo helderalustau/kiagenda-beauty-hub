@@ -91,7 +91,7 @@ export const useClientLoginLogic = () => {
     username: string, 
     password: string, 
     phone: string, 
-    email: string,
+    email?: string,
     city?: string,
     state?: string
   ) => {

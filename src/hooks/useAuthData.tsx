@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
@@ -62,9 +63,7 @@ export const useAuthData = () => {
         email: data.email,
         phone: data.phone,
         role: data.role,
-        salon_id: data.salon_id,
-        created_at: '',
-        updated_at: ''
+        salon_id: data.salon_id
       };
 
       console.log('AuthData: Authentication successful for admin:', adminUser.name);
@@ -106,37 +105,53 @@ export const useAuthData = () => {
     }
   };
 
-  const registerAdmin = async (adminData: any) => {
+  const registerAdmin = async (
+    salon_id: string,
+    name: string,
+    password: string,
+    email: string,
+    phone: string,
+    role: string
+  ) => {
     try {
       setLoading(true);
-      console.log('AuthData: Registering new admin:', adminData.name);
-  
+      console.log('AuthData: Registering new admin:', name);
+
+      const adminData = {
+        salon_id,
+        name: name.trim(),
+        password,
+        email: email.trim(),
+        phone: phone.replace(/\D/g, ''),
+        role
+      };
+
       // Check if admin already exists
       const { data: existingAdmin } = await supabase
         .from('admin_auth')
         .select('name')
         .or(`name.eq.${adminData.name},email.eq.${adminData.email},phone.eq.${adminData.phone}`)
         .single();
-  
+
       if (existingAdmin) {
         console.log('AuthData: Admin already exists');
         return { success: false, message: 'Administrador já cadastrado com este nome, email ou telefone' };
       }
-  
+
       const { data, error } = await supabase
         .from('admin_auth')
         .insert([adminData])
         .select()
         .single();
-  
+
       if (error) {
         console.error('AuthData: Error registering admin:', error);
         return { success: false, message: 'Erro ao registrar administrador' };
       }
-  
+
       console.log('AuthData: Admin registered successfully:', data.name);
       return { success: true, admin: data };
-  
+
     } catch (error) {
       console.error('AuthData: Unexpected error in registerAdmin:', error);
       return { success: false, message: 'Erro interno do servidor' };
@@ -272,10 +287,27 @@ export const useAuthData = () => {
     }
   };
 
-  const registerClient = async (clientData: any) => {
+  const registerClient = async (
+    username: string, 
+    password: string, 
+    phone: string, 
+    email?: string,
+    city?: string,
+    state?: string
+  ) => {
     try {
       setLoading(true);
-      console.log('AuthData: Registering new client:', clientData.name);
+      console.log('AuthData: Registering new client:', username);
+
+      const clientData = {
+        username: username.trim(),
+        name: username.trim(), // Usar username como name também
+        password,
+        phone: phone.replace(/\D/g, ''),
+        email: email?.trim() || null,
+        city: city?.trim() || null,
+        state: state?.trim() || null
+      };
 
       // Check if client already exists
       const { data: existingClient } = await supabase

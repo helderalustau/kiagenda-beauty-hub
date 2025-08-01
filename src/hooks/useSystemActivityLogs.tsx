@@ -26,7 +26,14 @@ export const useSystemActivityLogs = () => {
       }
 
       console.log('Activity logs fetched successfully:', data?.length || 0);
-      setActivityLogs(data || []);
+      
+      // Converter os dados para o tipo correto
+      const formattedLogs: SystemActivityLog[] = (data || []).map(log => ({
+        ...log,
+        metadata: log.metadata as Record<string, any> || {}
+      }));
+      
+      setActivityLogs(formattedLogs);
     } catch (error) {
       console.error('Error in fetchActivityLogs:', error);
       toast({
@@ -72,7 +79,11 @@ export const useSystemActivityLogs = () => {
         },
         (payload) => {
           console.log('New activity log received:', payload.new);
-          const newLog = payload.new as SystemActivityLog;
+          const newLog = {
+            ...payload.new,
+            metadata: payload.new.metadata as Record<string, any> || {}
+          } as SystemActivityLog;
+          
           setActivityLogs(prev => [newLog, ...prev.slice(0, 99)]); // Manter apenas 100 registros
           
           // Mostrar toast para atividades importantes
