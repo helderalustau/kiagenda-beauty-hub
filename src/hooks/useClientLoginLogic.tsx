@@ -19,8 +19,18 @@ export const useClientLoginLogic = () => {
         const userData = JSON.parse(clientAuth);
         // More robust validation
         if (userData.id && userData.name && !userData.role) {
-          console.log('Client already authenticated, redirecting to dashboard');
-          navigate('/client-dashboard');
+          console.log('Client already authenticated, checking for return URL');
+          
+          // Verificar se existe URL de retorno
+          const returnUrl = localStorage.getItem('returnUrl');
+          if (returnUrl) {
+            console.log('Redirecting to return URL:', returnUrl);
+            localStorage.removeItem('returnUrl');
+            navigate(returnUrl);
+          } else {
+            console.log('No return URL, redirecting to dashboard');
+            navigate('/client-dashboard');
+          }
         }
       } catch (error) {
         console.error('Error parsing client auth:', error);
@@ -62,12 +72,14 @@ export const useClientLoginLogic = () => {
         // Update auth context (this will also update localStorage)
         login(clientData);
         
-        // Verificar se existe URL de retorno salva
+        // Verificar se existe URL de retorno salva (prioridade para agendamento)
         const returnUrl = localStorage.getItem('returnUrl');
         if (returnUrl) {
+          console.log('CLIENT LOGIN - Redirecting to return URL after login:', returnUrl);
           localStorage.removeItem('returnUrl');
           navigate(returnUrl);
         } else {
+          console.log('CLIENT LOGIN - No return URL, going to dashboard');
           navigate('/client-dashboard');
         }
       } else {
@@ -138,12 +150,14 @@ export const useClientLoginLogic = () => {
             // Update auth context (this will also update localStorage)
             login(clientData);
             
-            // Verificar se existe URL de retorno salva
+            // Verificar se existe URL de retorno salva (prioridade para agendamento)
             const returnUrl = localStorage.getItem('returnUrl');
             if (returnUrl) {
+              console.log('CLIENT REGISTER - Redirecting to return URL after registration:', returnUrl);
               localStorage.removeItem('returnUrl');
               navigate(returnUrl);
             } else {
+              console.log('CLIENT REGISTER - No return URL, going to dashboard');
               navigate('/client-dashboard');
             }
           }
@@ -166,6 +180,8 @@ export const useClientLoginLogic = () => {
   };
 
   const handleBackToHome = () => {
+    // Limpar URL de retorno se estiver saindo do login
+    localStorage.removeItem('returnUrl');
     navigate('/');
   };
 

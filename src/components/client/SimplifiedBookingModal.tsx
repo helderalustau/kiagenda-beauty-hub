@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import SimpleServiceSelectionStep from './booking/SimpleServiceSelectionStep';
 import SimpleAdditionalServicesStep from './booking/SimpleAdditionalServicesStep';
 import SimpleDateTimeSelectionStep from './booking/SimpleDateTimeSelectionStep';
 import SimpleClientDataStep from './booking/SimpleClientDataStep';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SimplifiedBookingModalProps {
   isOpen: boolean;
@@ -39,6 +39,7 @@ const SimplifiedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Si
   } = useBookingFlow(salon?.id);
 
   const { services, loadingServices, loadServices } = useBookingServices(salon?.id);
+  const { user, isClient } = useAuth();
   
   // Calculate total duration for time slot calculation
   const totalDuration = (selectedService?.duration_minutes || 0) + 
@@ -73,6 +74,12 @@ const SimplifiedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Si
   };
 
   const handleSubmit = async () => {
+    // Verificação adicional de autenticação antes do submit
+    if (!user || !isClient) {
+      console.log('🚫 User not authenticated during submit, should not happen');
+      return;
+    }
+
     const success = await submitBookingRequest();
     if (success) {
       onBookingSuccess();
@@ -81,6 +88,15 @@ const SimplifiedBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Si
       }, 2000);
     }
   };
+
+  // Verificação de autenticação - não deveria abrir se não estiver logado
+  if (!user || !isClient) {
+    console.log('🚫 Modal opened without proper authentication, closing...');
+    if (isOpen) {
+      onClose();
+    }
+    return null;
+  }
 
   if (!salon?.is_open) {
     return (
