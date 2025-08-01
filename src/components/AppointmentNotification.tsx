@@ -1,8 +1,9 @@
+
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Calendar, Clock, User, Phone, MapPin, Star, Scissors } from "lucide-react";
+import { X, Calendar, Clock, User, Phone, MapPin, Star, Scissors, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/types/supabase-entities';
@@ -82,6 +83,38 @@ const AppointmentNotification = ({
     }).format(value);
   };
 
+  const parseAdditionalServices = (notes: string): Array<{name: string, duration: number, price: number}> => {
+    if (!notes) return [];
+    
+    const additionalServicesMatch = notes.match(/Serviços Adicionais:\s*(.+?)(?:\n\n|$)/s);
+    if (!additionalServicesMatch) return [];
+    
+    const servicesText = additionalServicesMatch[1];
+    const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/g);
+    
+    if (!serviceMatches) return [];
+    
+    return serviceMatches.map(match => {
+      const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/);
+      if (!parts) return null;
+      
+      return {
+        name: parts[1].trim(),
+        duration: parseInt(parts[2]),
+        price: parseFloat(parts[3].replace(',', ''))
+      };
+    }).filter(Boolean);
+  };
+
+  const getClientNotes = (notes: string): string => {
+    if (!notes) return '';
+    
+    const additionalServicesIndex = notes.indexOf('Serviços Adicionais:');
+    if (additionalServicesIndex === -1) return notes;
+    
+    return notes.substring(0, additionalServicesIndex).trim();
+  };
+
   if (!isOpen || !appointment) return null;
 
   const getClientName = () => {
@@ -102,6 +135,14 @@ const AppointmentNotification = ({
     if ((appointment as any).client_auth?.email) return (appointment as any).client_auth.email;
     return null;
   };
+
+  const additionalServices = parseAdditionalServices(appointment.notes || '');
+  const clientNotes = getClientNotes(appointment.notes || '');
+  const mainServicePrice = (appointment.service as any)?.price || 0;
+  const additionalServicesTotal = additionalServices.reduce((sum, service) => sum + service.price, 0);
+  const totalPrice = mainServicePrice + additionalServicesTotal;
+  const totalDuration = ((appointment.service as any)?.duration_minutes || 0) + 
+    additionalServices.reduce((sum, service) => sum + service.duration, 0);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
@@ -169,85 +210,158 @@ const AppointmentNotification = ({
             </div>
           </div>
 
-          {/* Detalhes do Agendamento */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className={`font-medium text-slate-700 flex items-center gap-2 ${
-                isMobile ? 'text-sm' : 'text-base'
-              }`}>
-                <Scissors className="h-4 w-4 flex-shrink-0" />
-                Serviço:
-              </span>
-              <span className={`font-semibold text-slate-900 text-right ${
-                isMobile ? 'text-sm max-w-[50%] truncate' : 'text-base'
-              }`}>
-                {(appointment as any).service?.name || 'Serviço'}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className={`font-medium text-slate-700 ${
-                isMobile ? 'text-sm' : 'text-base'
-              }`}>Valor:</span>
-              <span className={`font-semibold text-green-600 ${
-                isMobile ? 'text-sm' : 'text-base'
-              }`}>
-                {formatCurrency((appointment as any).service?.price || 0)}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className={`font-medium text-slate-700 ${
-                isMobile ? 'text-sm' : 'text-base'
-              }`}>Duração:</span>
-              <span className={`text-slate-900 ${
-                isMobile ? 'text-sm' : 'text-base'
-              }`}>
-                {(appointment as any).service?.duration_minutes || 0} min
-              </span>
-            </div>
-            
-            {/* Data e Horário do Agendamento */}
-            <div className={`bg-blue-50 rounded-lg border border-blue-200 ${
-              isMobile ? 'p-3' : 'p-4'
+          {/* Serviços Solicitados */}
+          <div className={`bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200 ${
+            isMobile ? 'p-3' : 'p-4'
+          }`}>
+            <h3 className={`font-semibold text-purple-900 flex items-center gap-2 mb-3 ${
+              isMobile ? 'text-sm' : 'text-base'
             }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-blue-600" />
-                <span className={`font-semibold text-blue-800 ${
-                  isMobile ? 'text-sm' : 'text-base'
-                }`}>Data e Horário:</span>
-              </div>
-              <div className="space-y-1">
-                <div className={`font-bold text-blue-900 ${
-                  isMobile ? 'text-lg' : 'text-xl'
-                }`}>
-                  {(() => {
-                    const [year, month, day] = appointment.appointment_date.split('-');
-                    return `${day}/${month}/${year}`;
-                  })()}
+              <Scissors className="h-4 w-4" />
+              Serviços Solicitados
+            </h3>
+            
+            {/* Serviço Principal */}
+            <div className="bg-white rounded-lg p-3 border border-purple-100 mb-3">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h4 className={`font-medium text-purple-900 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                    {(appointment.service as any)?.name || 'Serviço'}
+                  </h4>
+                  <div className={`text-purple-600 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    {(appointment.service as any)?.duration_minutes || 0} minutos
+                  </div>
                 </div>
-                <div className={`flex items-center gap-2 font-semibold text-blue-800 ${
-                  isMobile ? 'text-base' : 'text-lg'
-                }`}>
-                  <Clock className="h-4 w-4" />
-                  {appointment.appointment_time}
+                <div className="text-right">
+                  <div className={`font-bold text-green-600 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                    {formatCurrency(mainServicePrice)}
+                  </div>
                 </div>
               </div>
             </div>
-            
-            {appointment.notes && (
-              <div className={`bg-gray-50 rounded-lg border ${
-                isMobile ? 'p-2' : 'p-3'
-              }`}>
-                <span className={`font-medium text-gray-700 ${
-                  isMobile ? 'text-sm' : 'text-base'
-                }`}>Observações:</span>
-                <p className={`text-gray-900 mt-1 ${
-                  isMobile ? 'text-sm' : 'text-base'
-                }`}>{appointment.notes}</p>
+
+            {/* Serviços Adicionais */}
+            {additionalServices.length > 0 && (
+              <div className="space-y-2">
+                <h4 className={`font-medium text-purple-800 flex items-center gap-1 ${
+                  isMobile ? 'text-xs' : 'text-sm'
+                }`}>
+                  <Plus className="h-3 w-3" />
+                  Serviços Adicionais
+                </h4>
+                {additionalServices.map((service, index) => (
+                  <div key={index} className="bg-white rounded-lg p-2 border border-purple-100">
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <span className={`font-medium text-purple-800 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                          {service.name}
+                        </span>
+                        <div className={`text-purple-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                          {service.duration} minutos
+                        </div>
+                      </div>
+                      <div className={`font-semibold text-green-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                        {formatCurrency(service.price)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
+
+          {/* Data e Horário do Agendamento */}
+          <div className={`bg-blue-50 rounded-lg border border-blue-200 ${
+            isMobile ? 'p-3' : 'p-4'
+          }`}>
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="h-4 w-4 text-blue-600" />
+              <span className={`font-semibold text-blue-800 ${
+                isMobile ? 'text-sm' : 'text-base'
+              }`}>Data e Horário:</span>
+            </div>
+            <div className="space-y-1">
+              <div className={`font-bold text-blue-900 ${
+                isMobile ? 'text-lg' : 'text-xl'
+              }`}>
+                {(() => {
+                  const [year, month, day] = appointment.appointment_date.split('-');
+                  return `${day}/${month}/${year}`;
+                })()}
+              </div>
+              <div className={`flex items-center gap-2 font-semibold text-blue-800 ${
+                isMobile ? 'text-base' : 'text-lg'
+              }`}>
+                <Clock className="h-4 w-4" />
+                {appointment.appointment_time}
+              </div>
+            </div>
+          </div>
+
+          {/* Resumo Financeiro */}
+          <div className={`bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 ${
+            isMobile ? 'p-3' : 'p-4'
+          }`}>
+            <h3 className={`font-semibold text-green-900 mb-3 ${isMobile ? 'text-sm' : 'text-base'}`}>
+              Resumo Financeiro
+            </h3>
+            
+            <div className="space-y-2">
+              {/* Serviço Principal */}
+              <div className="flex justify-between items-center">
+                <span className={`text-green-800 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                  Serviço principal
+                </span>
+                <span className={`font-semibold text-green-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                  {formatCurrency(mainServicePrice)}
+                </span>
+              </div>
+
+              {/* Serviços Adicionais */}
+              {additionalServices.length > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className={`text-green-800 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    Serviços adicionais ({additionalServices.length})
+                  </span>
+                  <span className={`font-semibold text-green-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    {formatCurrency(additionalServicesTotal)}
+                  </span>
+                </div>
+              )}
+
+              {/* Linha divisória */}
+              <div className="border-t border-green-300 my-2"></div>
+
+              {/* Total */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className={`font-bold text-green-900 ${isMobile ? 'text-sm' : 'text-lg'}`}>
+                    Total
+                  </span>
+                  <div className={`text-green-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    Duração: {totalDuration} min
+                  </div>
+                </div>
+                <span className={`font-bold text-green-600 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                  {formatCurrency(totalPrice)}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Observações do Cliente */}
+          {clientNotes && (
+            <div className={`bg-gray-50 rounded-lg border ${
+              isMobile ? 'p-2' : 'p-3'
+            }`}>
+              <span className={`font-medium text-gray-700 ${
+                isMobile ? 'text-sm' : 'text-base'
+              }`}>Observações:</span>
+              <p className={`text-gray-900 mt-1 ${
+                isMobile ? 'text-sm' : 'text-base'
+              }`}>{clientNotes}</p>
+            </div>
+          )}
 
           <Badge variant="secondary" className={`w-full justify-center bg-yellow-100 text-yellow-800 ${
             isMobile ? 'py-1 text-sm' : 'py-2'
