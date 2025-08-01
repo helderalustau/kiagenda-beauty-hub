@@ -1,36 +1,32 @@
 
 import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
-import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData';
-import WeeklyCalendar from '@/components/WeeklyCalendar';
-import CleanDashboardOverview from '@/components/admin/CleanDashboardOverview';
-import FinancialDashboard from '@/components/admin/FinancialDashboard';
-import ServicesPage from '@/pages/ServicesPage';
-import SettingsPage from '@/pages/SettingsPage';
-import { useAppointmentData } from '@/hooks/useAppointmentData';
+import { Appointment, Service } from '@/hooks/useSupabaseData';
+import { Salon } from '@/types/supabase-entities';
+import WeeklyCalendar from './WeeklyCalendar';
+import FinancialDashboard from './admin/FinancialDashboard';
+import ServiceManager from './ServiceManager';
+import SalonInfoManager from './settings/SalonInfoManager';
+import OpeningHoursManager from './settings/OpeningHoursManager';
+import AdminAppointmentsSummary from './AdminAppointmentsSummary';
+import SalonUsersManager from './settings/SalonUsersManager';
+import CleanDashboardOverview from './admin/CleanDashboardOverview';
 
 interface AdminDashboardContentProps {
   appointments: Appointment[];
   services: Service[];
   salon: Salon;
-  adminUsers: AdminUser[];
+  adminUsers: any[];
   onRefresh: () => Promise<void>;
 }
 
-const AdminDashboardContent = ({
-  appointments,
-  services,
+const AdminDashboardContent = ({ 
+  appointments, 
+  services, 
   salon,
   adminUsers,
-  onRefresh
+  onRefresh 
 }: AdminDashboardContentProps) => {
-  const { updateAppointmentStatus } = useAppointmentData();
-
-  const handleUpdateAppointmentStatus = async (appointmentId: string, status: 'confirmed' | 'completed' | 'cancelled') => {
-    await updateAppointmentStatus(appointmentId, status);
-    await onRefresh();
-  };
-
   return (
     <>
       <TabsContent value="overview" className="space-y-6">
@@ -38,12 +34,27 @@ const AdminDashboardContent = ({
           appointments={appointments}
           services={services}
           salon={salon}
-          adminUsers={adminUsers}
-          onUpdateStatus={handleUpdateAppointmentStatus}
+          onRefresh={onRefresh}
         />
       </TabsContent>
 
-      <TabsContent value="calendar" className="space-y-6">
+      <TabsContent value="agenda" className="space-y-6">
+        {/* Agenda de Hoje - apenas agendamentos de hoje */}
+        <AdminAppointmentsSummary
+          appointments={appointments}
+          selectedDate={new Date()}
+          loading={false}
+          showFutureOnly={false}
+        />
+        
+        {/* Próximos Agendamentos - apenas agendamentos futuros */}
+        <AdminAppointmentsSummary
+          appointments={appointments}
+          selectedDate={new Date()}
+          loading={false}
+          showFutureOnly={true}
+        />
+        
         <WeeklyCalendar 
           appointments={appointments}
           onRefresh={onRefresh}
@@ -55,15 +66,19 @@ const AdminDashboardContent = ({
       </TabsContent>
 
       <TabsContent value="services" className="space-y-6">
-        <ServicesPage 
+        <ServiceManager
           services={services}
+          salonId={salon.id}
           onRefresh={onRefresh}
         />
       </TabsContent>
 
       <TabsContent value="settings" className="space-y-6">
-        <SettingsPage 
-          salon={salon}
+        <SalonInfoManager salon={salon} onUpdate={onRefresh} />
+        <OpeningHoursManager salon={salon} onUpdate={onRefresh} />
+        <SalonUsersManager 
+          salonId={salon.id}
+          users={adminUsers}
           onRefresh={onRefresh}
         />
       </TabsContent>
