@@ -30,7 +30,13 @@ export const useSystemActivityLogs = () => {
       // Converter os dados para o tipo correto
       const formattedLogs: SystemActivityLog[] = (data || []).map(log => ({
         ...log,
-        metadata: log.metadata as Record<string, any> || {}
+        metadata: log.metadata as Record<string, any> || {},
+        ip_address: log.ip_address ? String(log.ip_address) : undefined,
+        description: log.description || undefined,
+        entity_id: log.entity_id || undefined,
+        user_id: log.user_id || undefined,
+        salon_id: log.salon_id || undefined,
+        user_agent: log.user_agent || undefined
       }));
       
       setActivityLogs(formattedLogs);
@@ -81,7 +87,13 @@ export const useSystemActivityLogs = () => {
           console.log('New activity log received:', payload.new);
           const newLog = {
             ...payload.new,
-            metadata: payload.new.metadata as Record<string, any> || {}
+            metadata: payload.new.metadata as Record<string, any> || {},
+            ip_address: payload.new.ip_address ? String(payload.new.ip_address) : undefined,
+            description: payload.new.description || undefined,
+            entity_id: payload.new.entity_id || undefined,
+            user_id: payload.new.user_id || undefined,
+            salon_id: payload.new.salon_id || undefined,
+            user_agent: payload.new.user_agent || undefined
           } as SystemActivityLog;
           
           setActivityLogs(prev => [newLog, ...prev.slice(0, 99)]); // Manter apenas 100 registros
