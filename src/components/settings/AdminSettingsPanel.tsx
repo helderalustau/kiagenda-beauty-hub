@@ -25,37 +25,37 @@ const AdminSettingsPanel = ({ salon, onRefresh }: AdminSettingsPanelProps) => {
       id: 'establishment',
       label: 'Estabelecimento',
       icon: Home,
-      component: <SalonInfoCard salon={salon} onRefresh={onRefresh} />
+      component: <SalonInfoCard salon={salon} onUpdate={onRefresh} />
     },
     {
       id: 'hours',
       label: 'Horários',
       icon: Clock,
-      component: <OpeningHoursCard salon={salon} onRefresh={onRefresh} />
+      component: <OpeningHoursCard salonId={salon.id} />
     },
     {
       id: 'users',
       label: 'Usuários',
       icon: Users,
-      component: <SalonUsersCard salon={salon} onRefresh={onRefresh} />
+      component: <SalonUsersCard salonId={salon.id} maxUsers={10} />
     },
     {
       id: 'banner',
       label: 'Banner',
       icon: Image,
-      component: <BannerUploadCard salon={salon} onRefresh={onRefresh} />
+      component: <BannerUploadCard salon={salon} onUpdate={onRefresh} />
     },
     {
       id: 'notifications',
       label: 'Notificações',
       icon: Bell,
-      component: <NotificationSettingsCard salon={salon} onRefresh={onRefresh} />
+      component: <NotificationSettingsCard salon={salon} />
     },
     {
       id: 'theme',
       label: 'Aparência',
       icon: Palette,
-      component: <ThemeSettingsCard salon={salon} onRefresh={onRefresh} />
+      component: <ThemeSettingsCard salon={salon} />
     },
     {
       id: 'advanced',
