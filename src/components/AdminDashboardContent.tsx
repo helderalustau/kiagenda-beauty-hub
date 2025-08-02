@@ -34,7 +34,6 @@ const AdminDashboardContent = ({
           appointments={appointments}
           services={services}
           salon={salon}
-          onRefresh={onRefresh}
         />
       </TabsContent>
 
@@ -67,7 +66,6 @@ const AdminDashboardContent = ({
 
       <TabsContent value="services" className="space-y-6">
         <ServiceManager
-          services={services}
           salonId={salon.id}
           onRefresh={onRefresh}
         />
@@ -75,10 +73,9 @@ const AdminDashboardContent = ({
 
       <TabsContent value="settings" className="space-y-6">
         <SalonInfoManager salon={salon} onUpdate={onRefresh} />
-        <OpeningHoursManager salon={salon} onUpdate={onRefresh} />
+        <OpeningHoursManager salonId={salon.id} onUpdate={onRefresh} />
         <SalonUsersManager 
           salonId={salon.id}
-          users={adminUsers}
           onRefresh={onRefresh}
         />
       </TabsContent>
