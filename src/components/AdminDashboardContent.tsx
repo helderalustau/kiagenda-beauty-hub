@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { Appointment, Service } from '@/hooks/useSupabaseData';
@@ -34,6 +33,8 @@ const AdminDashboardContent = ({
           appointments={appointments}
           services={services}
           salon={salon}
+          adminUsers={adminUsers}
+          onUpdateStatus={onRefresh}
         />
       </TabsContent>
 
@@ -73,10 +74,9 @@ const AdminDashboardContent = ({
 
       <TabsContent value="settings" className="space-y-6">
         <SalonInfoManager salon={salon} onUpdate={onRefresh} />
-        <OpeningHoursManager salonId={salon.id} onUpdate={onRefresh} />
+        <OpeningHoursManager salonId={salon.id} />
         <SalonUsersManager 
           salonId={salon.id}
-          onRefresh={onRefresh}
         />
       </TabsContent>
     </>
