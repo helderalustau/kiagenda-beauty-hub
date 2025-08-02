@@ -38,8 +38,8 @@ const AdminDashboardContent = ({
   };
 
   return (
-    <>
-      <TabsContent value="overview" className="space-y-6">
+    <div className="space-y-4">
+      <TabsContent value="overview" className="space-y-4">
         <CleanDashboardOverview 
           appointments={appointments}
           services={services}
@@ -49,7 +49,7 @@ const AdminDashboardContent = ({
         />
       </TabsContent>
 
-      <TabsContent value="agenda" className="space-y-6">
+      <TabsContent value="agenda" className="space-y-4">
         {/* Resumo dos Agendamentos de Hoje */}
         <AdminAppointmentsSummary
           appointments={appointments}
@@ -75,24 +75,24 @@ const AdminDashboardContent = ({
         />
       </TabsContent>
 
-      <TabsContent value="financial" className="space-y-6">
+      <TabsContent value="financial" className="space-y-4">
         <FinancialDashboard appointments={appointments} />
       </TabsContent>
 
-      <TabsContent value="services" className="space-y-6">
+      <TabsContent value="services" className="space-y-4">
         <ServiceManager
           salonId={salon.id}
           onRefresh={onRefresh}
         />
       </TabsContent>
 
-      <TabsContent value="settings" className="space-y-6">
+      <TabsContent value="settings" className="space-y-4">
         <AdminSettingsPanel 
           salon={salon}
           onRefresh={onRefresh}
         />
       </TabsContent>
-    </>
+    </div>
   );
 };
 
