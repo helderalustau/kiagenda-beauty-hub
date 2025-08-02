@@ -26,7 +26,7 @@ const SalonInfoCard = ({ salon, onUpdate }: SalonInfoCardProps) => {
     address: salon.address || '',
     city: salon.city || '',
     state: salon.state || '',
-    plan: salon.plan || 'bronze'
+    plan: salon.plan || 'bronze' as 'bronze' | 'prata' | 'gold'
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,7 +105,7 @@ const SalonInfoCard = ({ salon, onUpdate }: SalonInfoCardProps) => {
             <Label htmlFor="plan">Plano Atual</Label>
             <Select
               value={formData.plan}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, plan: value }))}
+              onValueChange={(value: 'bronze' | 'prata' | 'gold') => setFormData(prev => ({ ...prev, plan: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
