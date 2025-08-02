@@ -30,16 +30,18 @@ const AdminDashboardContent = ({
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
+      console.log('🔄 Updating appointment status:', { id, status });
       await updateAppointmentStatus(id, status as any);
-      onRefresh();
+      console.log('✅ Status updated, refreshing data...');
+      await onRefresh();
     } catch (error) {
-      console.error('Error updating appointment status:', error);
+      console.error('❌ Error updating appointment status:', error);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <TabsContent value="overview" className="space-y-4">
+    <div className="space-y-2 sm:space-y-4">
+      <TabsContent value="overview" className="space-y-2 sm:space-y-4 mt-2 sm:mt-4">
         <CleanDashboardOverview 
           appointments={appointments}
           services={services}
@@ -49,7 +51,7 @@ const AdminDashboardContent = ({
         />
       </TabsContent>
 
-      <TabsContent value="agenda" className="space-y-4">
+      <TabsContent value="agenda" className="space-y-2 sm:space-y-4 mt-2 sm:mt-4">
         {/* Resumo dos Agendamentos de Hoje */}
         <AdminAppointmentsSummary
           appointments={appointments}
@@ -75,18 +77,18 @@ const AdminDashboardContent = ({
         />
       </TabsContent>
 
-      <TabsContent value="financial" className="space-y-4">
+      <TabsContent value="financial" className="space-y-2 sm:space-y-4 mt-2 sm:mt-4">
         <FinancialDashboard appointments={appointments} />
       </TabsContent>
 
-      <TabsContent value="services" className="space-y-4">
+      <TabsContent value="services" className="space-y-2 sm:space-y-4 mt-2 sm:mt-4">
         <ServiceManager
           salonId={salon.id}
           onRefresh={onRefresh}
         />
       </TabsContent>
 
-      <TabsContent value="settings" className="space-y-4">
+      <TabsContent value="settings" className="space-y-2 sm:space-y-4 mt-2 sm:mt-4">
         <AdminSettingsPanel 
           salon={salon}
           onRefresh={onRefresh}

@@ -24,6 +24,7 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
 
   useEffect(() => {
     if (salonId) {
+      console.log('📅 AdminCalendarView carregando para salon:', salonId);
       loadAppointments();
     }
   }, [salonId, currentWeek]);
@@ -31,9 +32,11 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
   const loadAppointments = async () => {
     setLoading(true);
     try {
+      console.log('📅 Carregando agendamentos...');
       await fetchAllAppointments(salonId);
+      console.log('✅ Agendamentos carregados:', appointments.length);
     } catch (error) {
-      console.error('Error loading appointments:', error);
+      console.error('❌ Erro ao carregar agendamentos:', error);
     } finally {
       setLoading(false);
     }
@@ -41,10 +44,13 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
 
   const handleStatusChange = async (appointmentId: string, newStatus: AppointmentStatus) => {
     try {
+      console.log('🔄 Atualizando status no calendar:', { appointmentId, newStatus });
       await updateAppointmentStatus(appointmentId, newStatus);
+      console.log('✅ Status atualizado, recarregando...');
       await loadAppointments();
+      onRefresh();
     } catch (error) {
-      console.error('Error updating appointment status:', error);
+      console.error('❌ Erro ao atualizar status:', error);
     }
   };
 
@@ -99,51 +105,57 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
   const weekDays = getWeekDays(currentWeek);
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
+  console.log('📅 Renderizando calendar com:', { 
+    appointmentsCount: appointments.length, 
+    filteredCount: filteredAppointments.length,
+    loading 
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Controls */}
       <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
+        <CardHeader className="pb-2 sm:pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               Agenda Semanal
             </CardTitle>
-            <Button onClick={onRefresh} size="sm" variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <Button onClick={onRefresh} size="sm" variant="outline" className="text-xs sm:text-sm">
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Atualizar
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2 sm:space-y-4">
           {/* Week Navigation */}
           <div className="flex items-center justify-between">
-            <Button onClick={() => navigateWeek('prev')} variant="outline" size="sm">
-              <ChevronLeft className="h-4 w-4" />
+            <Button onClick={() => navigateWeek('prev')} variant="outline" size="sm" className="text-xs sm:text-sm">
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
-            <h3 className="font-semibold text-lg">
+            <h3 className="font-semibold text-sm sm:text-lg text-center">
               {weekDays[0].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {' '}
               {weekDays[6].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
             </h3>
-            <Button onClick={() => navigateWeek('next')} variant="outline" size="sm">
-              <ChevronRight className="h-4 w-4" />
+            <Button onClick={() => navigateWeek('next')} variant="outline" size="sm" className="text-xs sm:text-sm">
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
 
           {/* Filters */}
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
               <Input
                 placeholder="Buscar por cliente ou serviço..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-xs sm:text-sm"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-full sm:w-48">
+                <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <SelectValue placeholder="Filtrar por status" />
               </SelectTrigger>
               <SelectContent>
@@ -159,7 +171,7 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
       </Card>
 
       {/* Weekly Calendar Grid */}
-      <div className="grid grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2 sm:gap-4">
         {weekDays.map((day, index) => {
           const dayAppointments = filteredAppointments.filter(apt => {
             const aptDate = new Date(apt.appointment_date);
@@ -168,24 +180,24 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
 
           return (
             <Card key={day.toISOString()} className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2 sm:pb-3">
                 <div className="text-center">
-                  <p className="text-sm font-medium text-gray-600">{dayNames[index]}</p>
-                  <p className="text-lg font-bold text-gray-900">{day.getDate()}</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">{dayNames[index]}</p>
+                  <p className="text-lg sm:text-xl font-bold text-gray-900">{day.getDate()}</p>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 sm:space-y-3">
                 {dayAppointments.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">Nenhum agendamento</p>
+                  <p className="text-xs sm:text-sm text-gray-400 text-center py-2 sm:py-4">Nenhum agendamento</p>
                 ) : (
                   dayAppointments.map((appointment) => (
-                    <div key={appointment.id} className="bg-gray-50 rounded-lg p-3 space-y-2">
+                    <div key={appointment.id} className="bg-gray-50 rounded-lg p-2 sm:p-3 space-y-1 sm:space-y-2">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           <Clock className="h-3 w-3 text-gray-500" />
-                          <span className="text-sm font-medium">{appointment.appointment_time}</span>
+                          <span className="text-xs sm:text-sm font-medium">{appointment.appointment_time}</span>
                         </div>
-                        <Badge className={getStatusColor(appointment.status)} variant="secondary">
+                        <Badge className={`${getStatusColor(appointment.status)} text-xs`} variant="secondary">
                           {appointment.status === 'pending' && 'Pendente'}
                           {appointment.status === 'confirmed' && 'Confirmado'}
                           {appointment.status === 'completed' && 'Concluído'}
@@ -193,31 +205,33 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
                         </Badge>
                       </div>
                       
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                      <div className="space-y-0.5 sm:space-y-1">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           <User className="h-3 w-3 text-gray-500" />
-                          <span className="text-sm font-medium">{appointment.client?.name}</span>
+                          <span className="text-xs sm:text-sm font-medium truncate">{appointment.client?.name}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3 w-3 text-gray-500" />
-                          <span className="text-xs text-gray-600">{appointment.client?.phone}</span>
-                        </div>
+                        {appointment.client?.phone && (
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <Phone className="h-3 w-3 text-gray-500" />
+                            <span className="text-xs text-gray-600">{appointment.client.phone}</span>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="pt-2 border-t border-gray-200">
-                        <p className="text-sm font-medium">{appointment.service?.name}</p>
+                      <div className="pt-1 sm:pt-2 border-t border-gray-200">
+                        <p className="text-xs sm:text-sm font-medium truncate">{appointment.service?.name}</p>
                         <p className="text-xs text-gray-600">{appointment.service?.duration_minutes}min</p>
-                        <p className="text-sm font-bold text-green-600">
+                        <p className="text-xs sm:text-sm font-bold text-green-600">
                           {formatCurrency(appointment.service?.price || 0)}
                         </p>
                       </div>
 
                       {appointment.status === 'pending' && (
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex gap-1 sm:gap-2 pt-1 sm:pt-2">
                           <Button 
                             size="sm" 
                             onClick={() => handleStatusChange(appointment.id, 'confirmed')}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs h-6 sm:h-8"
                           >
                             Confirmar
                           </Button>
@@ -225,7 +239,7 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
                             size="sm" 
                             variant="outline"
                             onClick={() => handleStatusChange(appointment.id, 'cancelled')}
-                            className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                            className="flex-1 text-red-600 border-red-200 hover:bg-red-50 text-xs h-6 sm:h-8"
                           >
                             Cancelar
                           </Button>
@@ -236,9 +250,9 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
                         <Button 
                           size="sm" 
                           onClick={() => handleStatusChange(appointment.id, 'completed')}
-                          className="w-full bg-green-600 hover:bg-green-700"
+                          className="w-full bg-green-600 hover:bg-green-700 text-xs h-6 sm:h-8"
                         >
-                          Marcar como Concluído
+                          Concluir
                         </Button>
                       )}
                     </div>
@@ -251,9 +265,9 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
       </div>
 
       {loading && (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando agendamentos...</p>
+        <div className="text-center py-4 sm:py-8">
+          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-2 sm:mb-4"></div>
+          <p className="text-gray-600 text-xs sm:text-sm">Carregando agendamentos...</p>
         </div>
       )}
     </div>

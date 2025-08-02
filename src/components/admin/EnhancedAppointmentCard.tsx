@@ -87,7 +87,11 @@ const EnhancedAppointmentCard = ({
     
     setIsUpdating(true);
     try {
+      console.log('🔄 Atualizando status do card:', { appointmentId: appointment.id, newStatus });
       await onUpdateStatus(appointment.id, newStatus);
+      console.log('✅ Status atualizado com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao atualizar status:', error);
     } finally {
       setIsUpdating(false);
     }
@@ -99,18 +103,16 @@ const EnhancedAppointmentCard = ({
     appointment.additional_services.length > 0;
 
   return (
-    <Card className={`border-l-4 border-l-blue-500 hover:shadow-sm transition-shadow ${
-      appointment.status === 'confirmed' ? 'ring-1 ring-blue-100' : ''
-    }`}>
-      <CardContent className="p-3 space-y-2">
+    <Card className="border-l-4 border-l-blue-500 hover:shadow-sm transition-shadow">
+      <CardContent className="p-2 sm:p-3 space-y-1 sm:space-y-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <h4 className="font-semibold text-sm text-gray-900 flex items-center truncate">
+              <h4 className="font-medium text-xs sm:text-sm text-gray-900 flex items-center truncate">
                 <User className="h-3 w-3 mr-1 text-blue-500 flex-shrink-0" />
                 {appointment.client?.name || appointment.client?.username || 'Cliente'}
               </h4>
-              <Badge className={`${getStatusColor(appointment.status)} text-xs px-2 py-0.5 ml-2 flex-shrink-0`}>
+              <Badge className={`${getStatusColor(appointment.status)} text-xs px-1 py-0.5 ml-1 flex-shrink-0`}>
                 <div className="flex items-center space-x-1">
                   {getStatusIcon(appointment.status)}
                   <span className="text-xs">{getStatusLabel(appointment.status)}</span>
@@ -118,11 +120,11 @@ const EnhancedAppointmentCard = ({
               </Badge>
             </div>
             
-            <div className="space-y-1 text-xs text-gray-600">
+            <div className="space-y-0.5 text-xs text-gray-600">
               <div className="flex items-center space-x-2">
                 <div className="flex items-center">
                   <Clock className="h-3 w-3 mr-1 text-blue-600" />
-                  <span className="font-semibold text-blue-900 text-xs">
+                  <span className="font-medium text-blue-900 text-xs">
                     {appointment.appointment_time}
                   </span>
                 </div>
@@ -144,22 +146,22 @@ const EnhancedAppointmentCard = ({
         </div>
 
         {/* Serviços - Compacto */}
-        <div className="bg-gray-50 p-2 rounded text-xs space-y-1">
+        <div className="bg-gray-50 p-1.5 sm:p-2 rounded text-xs space-y-0.5 sm:space-y-1">
           {/* Serviço Principal */}
           <div className="flex items-center justify-between">
             <div className="flex items-center min-w-0 flex-1">
               <Star className="h-3 w-3 mr-1 text-yellow-500 flex-shrink-0" />
-              <span className="font-medium truncate">{appointment.service?.name || 'Serviço'}</span>
-              <span className="text-gray-500 ml-1 flex-shrink-0">({appointment.service?.duration_minutes || 0}min)</span>
+              <span className="font-medium truncate text-xs">{appointment.service?.name || 'Serviço'}</span>
+              <span className="text-gray-500 ml-1 flex-shrink-0 text-xs">({appointment.service?.duration_minutes || 0}min)</span>
             </div>
-            <span className="font-semibold text-green-600 text-xs ml-2 flex-shrink-0">
+            <span className="font-medium text-green-600 text-xs ml-1 flex-shrink-0">
               {formatCurrency(appointment.service?.price || 0)}
             </span>
           </div>
 
           {/* Serviços Adicionais - Compacto */}
           {hasAdditionalServices && (
-            <div className="border-t pt-1 space-y-0.5">
+            <div className="border-t pt-0.5 space-y-0.5">
               <div className="flex items-center text-xs text-gray-600">
                 <Plus className="h-2 w-2 mr-1" />
                 <span>Adicionais:</span>
@@ -176,7 +178,7 @@ const EnhancedAppointmentCard = ({
           )}
 
           {/* Valor Total - Compacto */}
-          <div className="flex items-center justify-between border-t pt-1 font-bold">
+          <div className="flex items-center justify-between border-t pt-0.5 font-bold">
             <span className="text-gray-900 text-xs">Total:</span>
             <span className="text-green-600 text-sm">
               {formatCurrency(totalValue)}
@@ -186,7 +188,7 @@ const EnhancedAppointmentCard = ({
 
         {/* Observações - Compacto */}
         {appointment.notes && (
-          <div className="p-1.5 bg-blue-50 rounded text-xs">
+          <div className="p-1 bg-blue-50 rounded text-xs">
             <strong>Obs:</strong> {appointment.notes}
           </div>
         )}
@@ -195,12 +197,12 @@ const EnhancedAppointmentCard = ({
         {showActions && (
           <div className="space-y-1 pt-1">
             {appointment.status === 'pending' && (
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <Button
                   size="sm"
                   onClick={() => handleStatusUpdate('confirmed')}
                   disabled={isUpdating}
-                  className="bg-green-600 hover:bg-green-700 text-white flex-1 h-8 text-xs"
+                  className="bg-green-600 hover:bg-green-700 text-white flex-1 h-7 text-xs"
                 >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Confirmar
@@ -210,7 +212,7 @@ const EnhancedAppointmentCard = ({
                   variant="destructive"
                   onClick={() => handleStatusUpdate('cancelled')}
                   disabled={isUpdating}
-                  className="flex-1 h-8 text-xs"
+                  className="flex-1 h-7 text-xs"
                 >
                   <XCircle className="h-3 w-3 mr-1" />
                   Cancelar
@@ -220,25 +222,25 @@ const EnhancedAppointmentCard = ({
 
             {appointment.status === 'confirmed' && (
               <Button
-                size="lg"
+                size="sm"
                 onClick={() => handleStatusUpdate('completed')}
                 disabled={isUpdating}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 shadow-lg transform hover:scale-105 transition-all duration-200 animate-pulse"
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 shadow-md transform hover:scale-105 transition-all duration-200"
               >
-                <CheckCircle2 className="h-5 w-5 mr-2" />
-                🎉 CONCLUIR ATENDIMENTO 🎉
-                <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded font-bold">
+                <CheckCircle2 className="h-4 w-4 mr-1" />
+                🎉 CONCLUIR 🎉
+                <span className="ml-1 text-xs bg-white/20 px-1 py-0.5 rounded font-bold">
                   {formatCurrency(totalValue)}
                 </span>
               </Button>
             )}
 
             {appointment.status === 'completed' && (
-              <div className="text-center py-2">
-                <div className="flex items-center justify-center gap-2 text-green-600 font-semibold text-sm">
+              <div className="text-center py-1">
+                <div className="flex items-center justify-center gap-2 text-green-600 font-medium text-sm">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>Atendimento Concluído</span>
-                  <span className="bg-green-100 px-2 py-1 rounded text-xs">
+                  <span>Concluído</span>
+                  <span className="bg-green-100 px-2 py-0.5 rounded text-xs">
                     {formatCurrency(totalValue)}
                   </span>
                 </div>
