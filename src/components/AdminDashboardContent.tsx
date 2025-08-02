@@ -3,14 +3,13 @@ import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { Appointment, Service } from '@/hooks/useSupabaseData';
 import { Salon } from '@/types/supabase-entities';
-import WeeklyCalendar from './WeeklyCalendar';
+import AdminCalendarView from './admin/AdminCalendarView';
 import FinancialDashboard from './admin/FinancialDashboard';
 import ServiceManager from './ServiceManager';
-import SalonInfoManager from './settings/SalonInfoManager';
-import OpeningHoursManager from './settings/OpeningHoursManager';
 import AdminAppointmentsSummary from './AdminAppointmentsSummary';
-import SalonUsersManager from './settings/SalonUsersManager';
 import CleanDashboardOverview from './admin/CleanDashboardOverview';
+import AdminSettingsPanel from './settings/AdminSettingsPanel';
+import { useAppointmentData } from '@/hooks/useAppointmentData';
 
 interface AdminDashboardContentProps {
   appointments: Appointment[];
@@ -27,25 +26,15 @@ const AdminDashboardContent = ({
   adminUsers,
   onRefresh 
 }: AdminDashboardContentProps) => {
-  // Get plan-based limits
-  const getPlanLimits = (plan: string) => {
-    switch (plan) {
-      case 'bronze':
-        return { maxUsers: 2 };
-      case 'prata':
-        return { maxUsers: 5 };
-      case 'gold':
-        return { maxUsers: 10 };
-      default:
-        return { maxUsers: 2 };
+  const { updateAppointmentStatus } = useAppointmentData();
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      await updateAppointmentStatus(id, status as any);
+      onRefresh();
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
     }
-  };
-
-  const { maxUsers } = getPlanLimits(salon.plan);
-
-  const handleUpgrade = () => {
-    // Handle plan upgrade logic
-    console.log('Plan upgrade requested');
   };
 
   return (
@@ -61,24 +50,27 @@ const AdminDashboardContent = ({
       </TabsContent>
 
       <TabsContent value="agenda" className="space-y-6">
-        {/* Agenda de Hoje - apenas agendamentos de hoje */}
+        {/* Resumo dos Agendamentos de Hoje */}
         <AdminAppointmentsSummary
           appointments={appointments}
           selectedDate={new Date()}
           loading={false}
           showFutureOnly={false}
+          onUpdateStatus={handleUpdateStatus}
         />
         
-        {/* Próximos Agendamentos - apenas agendamentos futuros */}
+        {/* Próximos Agendamentos */}
         <AdminAppointmentsSummary
           appointments={appointments}
           selectedDate={new Date()}
           loading={false}
           showFutureOnly={true}
+          onUpdateStatus={handleUpdateStatus}
         />
         
-        <WeeklyCalendar 
-          appointments={appointments}
+        {/* Agenda Principal - Calendário Semanal Completo */}
+        <AdminCalendarView 
+          salonId={salon.id}
           onRefresh={onRefresh}
         />
       </TabsContent>
@@ -95,15 +87,9 @@ const AdminDashboardContent = ({
       </TabsContent>
 
       <TabsContent value="settings" className="space-y-6">
-        <SalonInfoManager salon={salon} onUpdate={onRefresh} />
-        <OpeningHoursManager 
-          salonId={salon.id} 
-          initialHours={salon.opening_hours}
-        />
-        <SalonUsersManager 
-          salonId={salon.id}
-          maxUsers={maxUsers}
-          onUpgrade={handleUpgrade}
+        <AdminSettingsPanel 
+          salon={salon}
+          onRefresh={onRefresh}
         />
       </TabsContent>
     </>

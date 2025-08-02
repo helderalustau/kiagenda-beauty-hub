@@ -2,23 +2,26 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, Phone, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { format, isToday, isFuture } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/hooks/useSupabaseData';
+import EnhancedAppointmentCard from './admin/EnhancedAppointmentCard';
 
 interface AdminAppointmentsSummaryProps {
   appointments: Appointment[];
   selectedDate: Date;
   loading: boolean;
-  showFutureOnly?: boolean; // Nova prop para controlar se mostra apenas futuros
+  showFutureOnly?: boolean;
+  onUpdateStatus?: (id: string, status: string) => void;
 }
 
 const AdminAppointmentsSummary = ({ 
   appointments, 
   selectedDate, 
   loading, 
-  showFutureOnly = false 
+  showFutureOnly = false,
+  onUpdateStatus
 }: AdminAppointmentsSummaryProps) => {
   // Filtrar agendamentos baseado na prop showFutureOnly
   const filteredAppointments = React.useMemo(() => {
@@ -36,45 +39,6 @@ const AdminAppointmentsSummary = ({
       });
     }
   }, [appointments, showFutureOnly]);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
-      case 'cancelled':
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      case 'completed':
-        return <CheckCircle2 className="h-4 w-4 text-blue-600" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'Confirmado';
-      case 'cancelled':
-        return 'Cancelado';
-      case 'completed':
-        return 'Concluído';
-      default:
-        return 'Pendente';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-yellow-100 text-yellow-800';
-    }
-  };
 
   if (loading) {
     return (
@@ -97,7 +61,7 @@ const AdminAppointmentsSummary = ({
 
   const titleText = showFutureOnly 
     ? 'Próximos Agendamentos' 
-    : `Agendamentos para ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}`;
+    : `Agendamentos para Hoje - ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}`;
 
   return (
     <Card>
@@ -133,59 +97,13 @@ const AdminAppointmentsSummary = ({
                 return a.appointment_time.localeCompare(b.appointment_time);
               })
               .map((appointment) => (
-                <Card key={appointment.id} className="border-l-4 border-l-blue-500">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          {showFutureOnly && (
-                            <span className="text-sm font-medium text-gray-500">
-                              {format(new Date(appointment.appointment_date), "dd/MM", { locale: ptBR })}
-                            </span>
-                          )}
-                          <Clock className="h-4 w-4 text-blue-600" />
-                          <span className="font-semibold text-blue-900">
-                            {appointment.appointment_time}
-                          </span>
-                          <Badge className={getStatusColor(appointment.status)}>
-                            <div className="flex items-center space-x-1">
-                              {getStatusIcon(appointment.status)}
-                              <span>{getStatusLabel(appointment.status)}</span>
-                            </div>
-                          </Badge>
-                        </div>
-                        
-                        <div className="space-y-1 text-sm">
-                          <div className="flex items-center space-x-2">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium">{appointment.client?.name}</span>
-                          </div>
-                          
-                          {appointment.client?.phone && (
-                            <div className="flex items-center space-x-2">
-                              <Phone className="h-4 w-4 text-gray-400" />
-                              <span>{appointment.client.phone}</span>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle2 className="h-4 w-4 text-gray-400" />
-                            <span>{appointment.service?.name}</span>
-                            <span className="text-green-600 font-medium">
-                              R$ {appointment.service?.price.toFixed(2)}
-                            </span>
-                          </div>
-                          
-                          {appointment.notes && (
-                            <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                              <strong>Observações:</strong> {appointment.notes}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EnhancedAppointmentCard
+                  key={appointment.id}
+                  appointment={appointment}
+                  onUpdateStatus={onUpdateStatus}
+                  showActions={true}
+                  compact={showFutureOnly}
+                />
               ))}
             
             {!showFutureOnly && (
