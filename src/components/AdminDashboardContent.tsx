@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { Appointment, Service } from '@/hooks/useSupabaseData';
@@ -26,6 +27,27 @@ const AdminDashboardContent = ({
   adminUsers,
   onRefresh 
 }: AdminDashboardContentProps) => {
+  // Get plan-based limits
+  const getPlanLimits = (plan: string) => {
+    switch (plan) {
+      case 'bronze':
+        return { maxUsers: 2 };
+      case 'prata':
+        return { maxUsers: 5 };
+      case 'gold':
+        return { maxUsers: 10 };
+      default:
+        return { maxUsers: 2 };
+    }
+  };
+
+  const { maxUsers } = getPlanLimits(salon.plan);
+
+  const handleUpgrade = () => {
+    // Handle plan upgrade logic
+    console.log('Plan upgrade requested');
+  };
+
   return (
     <>
       <TabsContent value="overview" className="space-y-6">
@@ -74,9 +96,14 @@ const AdminDashboardContent = ({
 
       <TabsContent value="settings" className="space-y-6">
         <SalonInfoManager salon={salon} onUpdate={onRefresh} />
-        <OpeningHoursManager salonId={salon.id} />
+        <OpeningHoursManager 
+          salonId={salon.id} 
+          initialHours={salon.opening_hours}
+        />
         <SalonUsersManager 
           salonId={salon.id}
+          maxUsers={maxUsers}
+          onUpgrade={handleUpgrade}
         />
       </TabsContent>
     </>
