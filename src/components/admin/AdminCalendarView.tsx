@@ -24,31 +24,34 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
 
-  console.log('🗓️ AdminCalendarView - Estado atual:', {
+  console.log('🗓️ AdminCalendarView - Renderizando:', {
     salonId,
     appointmentsCount: appointments.length,
     loading
   });
 
-  // Carrega os dados sempre que o componente é montado ou salonId muda
+  // Carrega os dados quando o componente é montado
   useEffect(() => {
     if (salonId) {
-      console.log('📅 Carregando agendamentos para salon:', salonId);
+      console.log('📅 Iniciando carregamento de agendamentos para salon:', salonId);
       loadAppointments();
     }
   }, [salonId]);
 
   const loadAppointments = async () => {
     if (!salonId) {
-      console.warn('❌ SalonId não encontrado');
+      console.warn('❌ SalonId não encontrado para carregar agendamentos');
       return;
     }
 
     setLoading(true);
     try {
-      console.log('📅 Buscando agendamentos...');
+      console.log('📅 Fazendo fetch de agendamentos...');
       const result = await fetchAllAppointments(salonId);
-      console.log('✅ Resultado da busca:', result);
+      console.log('✅ Agendamentos carregados:', {
+        success: result.success,
+        count: result.data?.length || 0
+      });
     } catch (error) {
       console.error('❌ Erro ao carregar agendamentos:', error);
     } finally {
@@ -57,21 +60,21 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
   };
 
   const handleStatusChange = async (appointmentId: string, newStatus: string) => {
-    console.log('🔄 Calendar: Iniciando mudança de status:', { appointmentId, newStatus });
+    console.log('🔄 Atualizando status do agendamento:', { appointmentId, newStatus });
     
     try {
       const result = await updateAppointmentStatus(appointmentId, newStatus as AppointmentStatus);
-      console.log('📋 Resultado da atualização:', result);
+      console.log('📋 Resultado da atualização de status:', result);
       
       if (result.success) {
-        console.log('✅ Status atualizado - recarregando dados...');
+        console.log('✅ Status atualizado com sucesso - recarregando dados...');
         await loadAppointments();
         onRefresh();
       } else {
-        console.error('❌ Falha ao atualizar:', result.message);
+        console.error('❌ Falha ao atualizar status:', result.message);
       }
     } catch (error) {
-      console.error('❌ Erro na atualização:', error);
+      console.error('❌ Erro na atualização de status:', error);
     }
   };
 
@@ -94,6 +97,7 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
     const newDate = new Date(currentWeek);
     newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
     setCurrentWeek(newDate);
+    console.log('📅 Navegando para nova semana:', newDate);
   };
 
   const filteredAppointments = appointments.filter(apt => {
@@ -109,8 +113,15 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
   const weekDays = getWeekDays(currentWeek);
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
+  console.log('📅 Dados do calendário:', {
+    weekDays: weekDays.length,
+    filteredAppointments: filteredAppointments.length,
+    currentWeek: currentWeek.toDateString()
+  });
+
   return (
     <div className="space-y-4">
+      {/* Header */}
       <Card className="bg-white shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -131,8 +142,8 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <h3 className="font-semibold text-center">
-              {weekDays[0].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {' '}
-              {weekDays[6].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+              {weekDays[0]?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {' '}
+              {weekDays[6]?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
             </h3>
             <Button onClick={() => navigateWeek('next')} variant="outline" size="sm">
               <ChevronRight className="h-4 w-4" />
@@ -166,12 +177,19 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
         </CardContent>
       </Card>
 
-      {/* Grade do Calendário Semanal */}
+      {/* Grade do Calendário Semanal - SEMPRE RENDERIZADA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
         {weekDays.map((day, index) => {
+          if (!day) return null;
+          
           const dayAppointments = filteredAppointments.filter(apt => {
-            const aptDate = new Date(apt.appointment_date);
-            return aptDate.toDateString() === day.toDateString();
+            try {
+              const aptDate = new Date(apt.appointment_date);
+              return aptDate.toDateString() === day.toDateString();
+            } catch (error) {
+              console.error('Erro ao processar data do agendamento:', error);
+              return false;
+            }
           });
 
           return (
@@ -188,7 +206,11 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2 p-3 pt-0">
-                {dayAppointments.length === 0 ? (
+                {loading ? (
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : dayAppointments.length === 0 ? (
                   <p className="text-xs text-gray-400 text-center py-4">Sem agendamentos</p>
                 ) : (
                   dayAppointments.map((appointment) => (
@@ -206,11 +228,15 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
         })}
       </div>
 
-      {/* Loading indicator */}
-      {loading && (
-        <div className="flex justify-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        </div>
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="bg-gray-50 border-gray-200">
+          <CardContent className="p-3">
+            <p className="text-xs text-gray-600">
+              Debug: SalonId={salonId}, Appointments={appointments.length}, Filtered={filteredAppointments.length}, Loading={loading.toString()}
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

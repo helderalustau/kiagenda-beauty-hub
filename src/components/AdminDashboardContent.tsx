@@ -28,29 +28,42 @@ const AdminDashboardContent = ({
 }: AdminDashboardContentProps) => {
   const { updateAppointmentStatus } = useAppointmentData();
 
-  console.log('📊 AdminDashboardContent - Renderizando:', {
+  console.log('📊 AdminDashboardContent - Dados atuais:', {
     appointmentsCount: appointments.length,
     servicesCount: services.length,
-    salonId: salon.id,
-    salonName: salon.name
+    salonId: salon?.id,
+    salonName: salon?.name
   });
 
   const handleUpdateStatus = async (id: string, status: string): Promise<void> => {
     try {
-      console.log('🔄 Dashboard: Updating status:', { id, status });
+      console.log('🔄 Dashboard: Atualizando status:', { id, status });
       const result = await updateAppointmentStatus(id, status as any);
       if (result.success) {
-        console.log('✅ Dashboard: Status updated successfully');
+        console.log('✅ Dashboard: Status atualizado com sucesso');
         await onRefresh();
       } else {
-        console.error('❌ Dashboard: Failed to update status:', result.message);
+        console.error('❌ Dashboard: Falha ao atualizar status:', result.message);
         throw new Error(result.message || 'Erro ao atualizar status');
       }
     } catch (error) {
-      console.error('❌ Dashboard: Error updating status:', error);
+      console.error('❌ Dashboard: Erro ao atualizar status:', error);
       throw error;
     }
   };
+
+  // Verificação de dados essenciais
+  if (!salon?.id) {
+    console.error('❌ Erro crítico: Dados do salon não encontrados');
+    return (
+      <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+        <h2 className="text-red-800 font-semibold mb-2">Erro nos Dados do Estabelecimento</h2>
+        <p className="text-red-600 text-sm">
+          Não foi possível carregar os dados do estabelecimento. Tente recarregar a página ou faça login novamente.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">
@@ -66,29 +79,22 @@ const AdminDashboardContent = ({
 
       <TabsContent value="agenda" className="space-y-2 mt-2">
         <div className="space-y-4">
-          {/* Verificação de dados */}
-          {!salon.id ? (
-            <div className="bg-red-50 border border-red-200 rounded p-3">
-              <p className="text-red-600 text-sm">⚠️ Erro: ID do salon não encontrado</p>
-            </div>
-          ) : (
-            <>
-              {/* Resumo dos Agendamentos */}
-              <AdminAppointmentsSummary
-                appointments={appointments}
-                selectedDate={new Date()}
-                loading={false}
-                showFutureOnly={false}
-                onUpdateStatus={handleUpdateStatus}
-              />
-              
-              {/* Calendário Principal */}
-              <AdminCalendarView 
-                salonId={salon.id}
-                onRefresh={onRefresh}
-              />
-            </>
-          )}
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Agenda do Estabelecimento</h2>
+          
+          {/* Resumo dos Agendamentos */}
+          <AdminAppointmentsSummary
+            appointments={appointments}
+            selectedDate={new Date()}
+            loading={false}
+            showFutureOnly={false}
+            onUpdateStatus={handleUpdateStatus}
+          />
+          
+          {/* Calendário Principal - SEMPRE RENDERIZADO */}
+          <AdminCalendarView 
+            salonId={salon.id}
+            onRefresh={onRefresh}
+          />
         </div>
       </TabsContent>
 
