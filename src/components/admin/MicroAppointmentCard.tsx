@@ -42,8 +42,13 @@ const MicroAppointmentCard = ({
   };
 
   const handleStatusUpdate = async (newStatus: string) => {
-    if (!onUpdateStatus || isUpdating) {
-      console.warn('⚠️ Update não disponível ou já processando');
+    if (!onUpdateStatus) {
+      console.warn('⚠️ onUpdateStatus function not available');
+      return;
+    }
+
+    if (isUpdating) {
+      console.warn('⚠️ Already updating, please wait');
       return;
     }
     
@@ -100,23 +105,21 @@ const MicroAppointmentCard = ({
         </div>
 
         {/* Botões de Ação Ultra Compactos */}
-        {showActions && (
+        {showActions && !isUpdating && (
           <>
             {appointment.status === 'pending' && (
               <div className="flex gap-0.5">
                 <Button
                   size="sm"
                   onClick={() => handleStatusUpdate('confirmed')}
-                  disabled={isUpdating}
                   className="bg-green-600 hover:bg-green-700 text-white flex-1 h-4 text-xs px-1 py-0"
                 >
-                  {isUpdating ? '⏳' : <CheckCircle2 className="h-2 w-2" />}
+                  <CheckCircle2 className="h-2 w-2" />
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
                   onClick={() => handleStatusUpdate('cancelled')}
-                  disabled={isUpdating}
                   className="flex-1 h-4 text-xs px-1 py-0"
                 >
                   <XCircle className="h-2 w-2" />
@@ -128,24 +131,32 @@ const MicroAppointmentCard = ({
               <Button
                 size="sm"
                 onClick={() => handleStatusUpdate('completed')}
-                disabled={isUpdating}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white h-4 text-xs font-bold py-0"
               >
-                {isUpdating ? '⏳' : (
-                  <>
-                    <CheckCircle2 className="h-2 w-2 mr-0.5" />
-                    FINALIZAR
-                  </>
-                )}
+                <CheckCircle2 className="h-2 w-2 mr-0.5" />
+                FINALIZAR
               </Button>
             )}
 
             {appointment.status === 'completed' && (
               <div className="text-center">
-                <span className="text-xs text-green-600 font-bold">✅</span>
+                <span className="text-xs text-green-600 font-bold">✅ CONCLUÍDO</span>
+              </div>
+            )}
+
+            {appointment.status === 'cancelled' && (
+              <div className="text-center">
+                <span className="text-xs text-red-600 font-bold">❌ CANCELADO</span>
               </div>
             )}
           </>
+        )}
+
+        {isUpdating && (
+          <div className="flex items-center justify-center py-1">
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+            <span className="ml-1 text-xs text-blue-600">Atualizando...</span>
+          </div>
         )}
       </CardContent>
     </Card>

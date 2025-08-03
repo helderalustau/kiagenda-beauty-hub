@@ -23,23 +23,20 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   console.log('🗓️ AdminCalendarView - Estado atual:', {
     salonId,
     appointmentsCount: appointments.length,
-    isInitialized,
-    loading,
-    appointments: appointments.slice(0, 3)
+    loading
   });
 
+  // Carrega os dados sempre que o componente é montado ou salonId muda
   useEffect(() => {
-    console.log('🔄 useEffect triggered:', { salonId, isInitialized });
-    if (salonId && !isInitialized) {
-      console.log('📅 Inicializando calendar para salon:', salonId);
+    if (salonId) {
+      console.log('📅 Carregando agendamentos para salon:', salonId);
       loadAppointments();
     }
-  }, [salonId, isInitialized]);
+  }, [salonId]);
 
   const loadAppointments = async () => {
     if (!salonId) {
@@ -49,10 +46,9 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
 
     setLoading(true);
     try {
-      console.log('📅 Carregando agendamentos...');
-      await fetchAllAppointments(salonId);
-      setIsInitialized(true);
-      console.log('✅ Agendamentos carregados:', appointments.length);
+      console.log('📅 Buscando agendamentos...');
+      const result = await fetchAllAppointments(salonId);
+      console.log('✅ Resultado da busca:', result);
     } catch (error) {
       console.error('❌ Erro ao carregar agendamentos:', error);
     } finally {
@@ -113,24 +109,6 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
   const weekDays = getWeekDays(currentWeek);
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-  console.log('📊 Dados para render:', {
-    weekDays: weekDays.length,
-    filteredAppointments: filteredAppointments.length,
-    loading,
-    isInitialized
-  });
-
-  if (!isInitialized && loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando calendário...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <Card className="bg-white shadow-sm">
@@ -188,15 +166,13 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
         </CardContent>
       </Card>
 
-      {/* Grade do Calendário Semanal - SEMPRE VISÍVEL */}
+      {/* Grade do Calendário Semanal */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
         {weekDays.map((day, index) => {
           const dayAppointments = filteredAppointments.filter(apt => {
             const aptDate = new Date(apt.appointment_date);
             return aptDate.toDateString() === day.toDateString();
           });
-
-          console.log(`📅 Dia ${day.toDateString()}:`, dayAppointments.length, 'agendamentos');
 
           return (
             <Card key={day.toISOString()} className="bg-white shadow-sm min-h-[200px]">
@@ -230,16 +206,12 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
         })}
       </div>
 
-      {/* Debug Info - Temporário para verificação */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-3">
-          <p className="text-xs text-blue-800">
-            <strong>🔧 Debug:</strong> SalonId: {salonId} | Total: {appointments.length} | 
-            Filtrados: {filteredAppointments.length} | Inicializado: {isInitialized ? '✅' : '❌'} |
-            Carregando: {loading ? '⏳' : '✅'}
-          </p>
-        </CardContent>
-      </Card>
+      {/* Loading indicator */}
+      {loading && (
+        <div className="flex justify-center py-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        </div>
+      )}
     </div>
   );
 };

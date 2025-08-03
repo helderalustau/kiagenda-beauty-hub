@@ -44,9 +44,11 @@ const AdminDashboardContent = ({
         await onRefresh();
       } else {
         console.error('❌ Dashboard: Failed to update status:', result.message);
+        throw new Error(result.message || 'Erro ao atualizar status');
       }
     } catch (error) {
       console.error('❌ Dashboard: Error updating status:', error);
+      throw error;
     }
   };
 
@@ -80,7 +82,7 @@ const AdminDashboardContent = ({
                 onUpdateStatus={handleUpdateStatus}
               />
               
-              {/* Calendário Principal - SEMPRE renderizado se houver salon.id */}
+              {/* Calendário Principal */}
               <AdminCalendarView 
                 salonId={salon.id}
                 onRefresh={onRefresh}
