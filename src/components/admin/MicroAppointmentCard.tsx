@@ -8,7 +8,7 @@ import { Appointment } from '@/types/supabase-entities';
 
 interface MicroAppointmentCardProps {
   appointment: Appointment;
-  onUpdateStatus?: (id: string, status: string) => void;
+  onUpdateStatus?: (id: string, status: string) => Promise<void>;
   showActions?: boolean;
 }
 
@@ -18,6 +18,12 @@ const MicroAppointmentCard = ({
   showActions = true 
 }: MicroAppointmentCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
+
+  console.log('🎯 MicroAppointmentCard - Renderizando:', {
+    appointmentId: appointment.id,
+    currentStatus: appointment.status,
+    hasUpdateFunction: !!onUpdateStatus
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -36,13 +42,23 @@ const MicroAppointmentCard = ({
   };
 
   const handleStatusUpdate = async (newStatus: string) => {
-    if (!onUpdateStatus || isUpdating) return;
+    if (!onUpdateStatus || isUpdating) {
+      console.warn('⚠️ Update não disponível ou já processando');
+      return;
+    }
+    
+    console.log('🔄 MicroCard: Iniciando update de status:', { 
+      appointmentId: appointment.id, 
+      currentStatus: appointment.status, 
+      newStatus 
+    });
     
     setIsUpdating(true);
     try {
       await onUpdateStatus(appointment.id, newStatus);
+      console.log('✅ MicroCard: Status atualizado com sucesso');
     } catch (error) {
-      console.error('❌ Erro ao atualizar status:', error);
+      console.error('❌ MicroCard: Erro ao atualizar status:', error);
     } finally {
       setIsUpdating(false);
     }
@@ -94,7 +110,7 @@ const MicroAppointmentCard = ({
                   disabled={isUpdating}
                   className="bg-green-600 hover:bg-green-700 text-white flex-1 h-4 text-xs px-1 py-0"
                 >
-                  <CheckCircle2 className="h-2 w-2" />
+                  {isUpdating ? '⏳' : <CheckCircle2 className="h-2 w-2" />}
                 </Button>
                 <Button
                   size="sm"
@@ -115,8 +131,12 @@ const MicroAppointmentCard = ({
                 disabled={isUpdating}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white h-4 text-xs font-bold py-0"
               >
-                <CheckCircle2 className="h-2 w-2 mr-0.5" />
-                FINALIZAR
+                {isUpdating ? '⏳' : (
+                  <>
+                    <CheckCircle2 className="h-2 w-2 mr-0.5" />
+                    FINALIZAR
+                  </>
+                )}
               </Button>
             )}
 
