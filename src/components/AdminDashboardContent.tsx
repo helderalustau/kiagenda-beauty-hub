@@ -28,18 +28,25 @@ const AdminDashboardContent = ({
 }: AdminDashboardContentProps) => {
   const { updateAppointmentStatus } = useAppointmentData();
 
+  console.log('📊 AdminDashboardContent - Props received:', {
+    appointmentsCount: appointments.length,
+    servicesCount: services.length,
+    salonId: salon.id,
+    adminUsersCount: adminUsers.length
+  });
+
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
-      console.log('🔄 Updating appointment status:', { id, status });
+      console.log('🔄 AdminDashboardContent: Updating appointment status:', { id, status });
       const result = await updateAppointmentStatus(id, status as any);
       if (result.success) {
-        console.log('✅ Status updated successfully');
+        console.log('✅ AdminDashboardContent: Status updated successfully');
         await onRefresh();
       } else {
-        console.error('❌ Failed to update status:', result.message);
+        console.error('❌ AdminDashboardContent: Failed to update status:', result.message);
       }
     } catch (error) {
-      console.error('❌ Error updating appointment status:', error);
+      console.error('❌ AdminDashboardContent: Error updating appointment status:', error);
     }
   };
 
@@ -56,7 +63,7 @@ const AdminDashboardContent = ({
       </TabsContent>
 
       <TabsContent value="agenda" className="space-y-2 mt-2">
-        {/* Resumo dos Agendamentos de Hoje */}
+        {/* Resumo dos Agendamentos */}
         <AdminAppointmentsSummary
           appointments={appointments}
           selectedDate={new Date()}
@@ -65,16 +72,7 @@ const AdminDashboardContent = ({
           onUpdateStatus={handleUpdateStatus}
         />
         
-        {/* Próximos Agendamentos */}
-        <AdminAppointmentsSummary
-          appointments={appointments}
-          selectedDate={new Date()}
-          loading={false}
-          showFutureOnly={true}
-          onUpdateStatus={handleUpdateStatus}
-        />
-        
-        {/* Agenda Principal - Calendário Semanal */}
+        {/* Calendário Principal */}
         <AdminCalendarView 
           salonId={salon.id}
           onRefresh={onRefresh}
