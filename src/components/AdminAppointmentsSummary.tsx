@@ -13,7 +13,7 @@ interface AdminAppointmentsSummaryProps {
   selectedDate: Date;
   loading: boolean;
   showFutureOnly?: boolean;
-  onUpdateStatus: (id: string, status: string) => void;
+  onUpdateStatus: (id: string, status: string) => Promise<void>;
 }
 
 const AdminAppointmentsSummary = ({ 

@@ -35,7 +35,7 @@ const AdminDashboardContent = ({
     salonName: salon.name
   });
 
-  const handleUpdateStatus = async (id: string, status: string) => {
+  const handleUpdateStatus = async (id: string, status: string): Promise<void> => {
     try {
       console.log('🔄 Dashboard: Updating status:', { id, status });
       const result = await updateAppointmentStatus(id, status as any);

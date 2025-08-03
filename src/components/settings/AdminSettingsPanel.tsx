@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Home, Clock, Users, Image, Bell, Palette, Settings } from "lucide-react";
+import { Home, Clock, Users, Image, Bell, Settings } from "lucide-react";
 import { Salon } from '@/types/supabase-entities';
 import SalonInfoCard from './SalonInfoCard';
 import OpeningHoursCard from './OpeningHoursCard';
@@ -50,12 +50,6 @@ const AdminSettingsPanel = ({ salon, onRefresh }: AdminSettingsPanelProps) => {
       label: 'Notificações',
       icon: Bell,
       component: <NotificationSettingsCard salon={salon} />
-    },
-    {
-      id: 'theme',
-      label: 'Aparência',
-      icon: Palette,
-      component: <ThemeSettingsCard salon={salon} />
     },
     {
       id: 'advanced',
