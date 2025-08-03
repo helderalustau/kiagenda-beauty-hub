@@ -2,18 +2,18 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "lucide-react";
-import { format, isToday, isFuture } from "date-fns";
+import { Calendar, Clock, CheckCircle, AlertCircle, XCircle, TrendingUp } from "lucide-react";
+import { format, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/hooks/useSupabaseData';
-import EnhancedAppointmentCard from './admin/EnhancedAppointmentCard';
+import MicroAppointmentCard from './admin/MicroAppointmentCard';
 
 interface AdminAppointmentsSummaryProps {
   appointments: Appointment[];
   selectedDate: Date;
   loading: boolean;
   showFutureOnly?: boolean;
-  onUpdateStatus?: (id: string, status: string) => void;
+  onUpdateStatus: (id: string, status: string) => void;
 }
 
 const AdminAppointmentsSummary = ({ 
@@ -21,125 +21,125 @@ const AdminAppointmentsSummary = ({
   selectedDate, 
   loading, 
   showFutureOnly = false,
-  onUpdateStatus
+  onUpdateStatus 
 }: AdminAppointmentsSummaryProps) => {
-  // Filtrar agendamentos baseado na prop showFutureOnly
-  const filteredAppointments = React.useMemo(() => {
-    if (showFutureOnly) {
-      // Para próximos agendamentos: apenas datas futuras
-      return appointments.filter(apt => {
-        const aptDate = new Date(apt.appointment_date);
-        return isFuture(aptDate);
-      });
-    } else {
-      // Para agenda de hoje: apenas agendamentos de hoje
-      return appointments.filter(apt => {
-        const aptDate = new Date(apt.appointment_date);
-        return isToday(aptDate);
-      });
-    }
-  }, [appointments, showFutureOnly]);
+  
+  console.log('📊 AdminAppointmentsSummary - Dados recebidos:', {
+    appointmentsCount: appointments.length,
+    selectedDate: format(selectedDate, 'dd/MM/yyyy'),
+    showFutureOnly
+  });
+
+  // Filtrar agendamentos do dia selecionado
+  const todayAppointments = appointments.filter(apt => {
+    const aptDate = new Date(apt.appointment_date);
+    return aptDate.toDateString() === selectedDate.toDateString();
+  });
+
+  // Próximos agendamentos (hoje e amanhã)
+  const upcomingAppointments = appointments.filter(apt => {
+    const aptDate = new Date(apt.appointment_date);
+    return (isToday(aptDate) || isTomorrow(aptDate)) && apt.status !== 'cancelled';
+  }).slice(0, 6);
+
+  // Estatísticas
+  const stats = {
+    pending: appointments.filter(apt => apt.status === 'pending').length,
+    confirmed: appointments.filter(apt => apt.status === 'confirmed').length,
+    completed: appointments.filter(apt => apt.status === 'completed').length,
+    cancelled: appointments.filter(apt => apt.status === 'cancelled').length
+  };
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Calendar className="h-5 w-5 mr-2" />
-            {showFutureOnly ? 'Próximos Agendamentos' : 'Agendamentos de Hoje'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Carregando agendamentos...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[1,2,3,4].map(i => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-3">
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     );
   }
 
-  const titleText = showFutureOnly 
-    ? 'Próximos Agendamentos' 
-    : `Agendamentos para Hoje - ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}`;
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Calendar className="h-5 w-5 mr-2" />
-            {titleText}
-          </div>
-          <Badge variant="outline" className="ml-2">
-            {filteredAppointments.length} agendamento{filteredAppointments.length !== 1 ? 's' : ''}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {filteredAppointments.length === 0 ? (
-          <div className="text-center py-8">
-            <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">
-              {showFutureOnly ? 'Nenhum agendamento futuro' : 'Nenhum agendamento para hoje'}
-            </h3>
-            <p className="text-gray-500">
-              {showFutureOnly ? 'Não há agendamentos futuros no momento.' : 'Você está livre para hoje! 🎉'}
+    <div className="space-y-3">
+      {/* Cards de Estatísticas Compactos */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardContent className="p-2 text-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <AlertCircle className="h-3 w-3 text-yellow-600" />
+              <span className="text-xs font-medium text-yellow-800">Pendentes</span>
+            </div>
+            <p className="text-lg font-bold text-yellow-900">{stats.pending}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-2 text-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Clock className="h-3 w-3 text-blue-600" />
+              <span className="text-xs font-medium text-blue-800">Confirmados</span>
+            </div>
+            <p className="text-lg font-bold text-blue-900">{stats.confirmed}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-2 text-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <CheckCircle className="h-3 w-3 text-green-600" />
+              <span className="text-xs font-medium text-green-800">Concluídos</span>
+            </div>
+            <p className="text-lg font-bold text-green-900">{stats.completed}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="p-2 text-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <XCircle className="h-3 w-3 text-red-600" />
+              <span className="text-xs font-medium text-red-800">Cancelados</span>
+            </div>
+            <p className="text-lg font-bold text-red-900">{stats.cancelled}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Próximos Agendamentos */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+            Próximos Agendamentos ({upcomingAppointments.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-3">
+          {upcomingAppointments.length === 0 ? (
+            <p className="text-xs text-gray-500 text-center py-4">
+              Nenhum agendamento próximo
             </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredAppointments
-              .sort((a, b) => {
-                // Ordenar por data e depois por horário
-                const dateCompare = new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime();
-                if (dateCompare !== 0) return dateCompare;
-                return a.appointment_time.localeCompare(b.appointment_time);
-              })
-              .map((appointment) => (
-                <EnhancedAppointmentCard
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+              {upcomingAppointments.map((appointment) => (
+                <MicroAppointmentCard
                   key={appointment.id}
                   appointment={appointment}
                   onUpdateStatus={onUpdateStatus}
                   showActions={true}
-                  compact={showFutureOnly}
                 />
               ))}
-            
-            {!showFutureOnly && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {filteredAppointments.filter(apt => apt.status === 'confirmed').length}
-                    </div>
-                    <div className="text-sm text-blue-800">Confirmados</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {filteredAppointments.filter(apt => apt.status === 'pending').length}
-                    </div>
-                    <div className="text-sm text-yellow-800">Pendentes</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-green-600">
-                      {filteredAppointments.filter(apt => apt.status === 'completed').length}
-                    </div>
-                    <div className="text-sm text-green-800">Concluídos</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-red-600">
-                      {filteredAppointments.filter(apt => apt.status === 'cancelled').length}
-                    </div>
-                    <div className="text-sm text-red-800">Cancelados</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

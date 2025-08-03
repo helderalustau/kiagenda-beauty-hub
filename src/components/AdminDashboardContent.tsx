@@ -28,25 +28,25 @@ const AdminDashboardContent = ({
 }: AdminDashboardContentProps) => {
   const { updateAppointmentStatus } = useAppointmentData();
 
-  console.log('📊 AdminDashboardContent - Props received:', {
+  console.log('📊 AdminDashboardContent - Dados recebidos:', {
     appointmentsCount: appointments.length,
     servicesCount: services.length,
     salonId: salon.id,
-    adminUsersCount: adminUsers.length
+    salonName: salon.name
   });
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
-      console.log('🔄 AdminDashboardContent: Updating appointment status:', { id, status });
+      console.log('🔄 Atualizando status do agendamento:', { id, status });
       const result = await updateAppointmentStatus(id, status as any);
       if (result.success) {
-        console.log('✅ AdminDashboardContent: Status updated successfully');
+        console.log('✅ Status atualizado com sucesso');
         await onRefresh();
       } else {
-        console.error('❌ AdminDashboardContent: Failed to update status:', result.message);
+        console.error('❌ Falha ao atualizar status:', result.message);
       }
     } catch (error) {
-      console.error('❌ AdminDashboardContent: Error updating appointment status:', error);
+      console.error('❌ Erro ao atualizar status:', error);
     }
   };
 
@@ -63,6 +63,13 @@ const AdminDashboardContent = ({
       </TabsContent>
 
       <TabsContent value="agenda" className="space-y-2 mt-2">
+        {/* Debug: Verificar se o salon tem ID */}
+        {!salon.id && (
+          <div className="bg-red-50 border border-red-200 rounded p-3">
+            <p className="text-red-600 text-sm">⚠️ Erro: ID do salon não encontrado</p>
+          </div>
+        )}
+        
         {/* Resumo dos Agendamentos */}
         <AdminAppointmentsSummary
           appointments={appointments}
@@ -72,11 +79,13 @@ const AdminDashboardContent = ({
           onUpdateStatus={handleUpdateStatus}
         />
         
-        {/* Calendário Principal */}
-        <AdminCalendarView 
-          salonId={salon.id}
-          onRefresh={onRefresh}
-        />
+        {/* Calendário Principal - Só renderiza se tiver salon.id */}
+        {salon.id && (
+          <AdminCalendarView 
+            salonId={salon.id}
+            onRefresh={onRefresh}
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="financial" className="space-y-2 mt-2">
