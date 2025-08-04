@@ -297,6 +297,54 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_transactions: {
+        Row: {
+          amount: number
+          appointment_id: string | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          payment_method: string | null
+          salon_id: string
+          status: string
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          appointment_id?: string | null
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          salon_id: string
+          status?: string
+          transaction_date?: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          salon_id?: string
+          status?: string
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plan_configurations: {
         Row: {
           created_at: string

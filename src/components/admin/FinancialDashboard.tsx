@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Appointment } from '@/types/supabase-entities';
 import { format, startOfMonth, endOfMonth, subMonths, isSameMonth, isSameDay, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -8,6 +8,7 @@ import FinancialFilters from './financial/FinancialFilters';
 import CleanFinancialCharts from './financial/CleanFinancialCharts';
 import DailySummaryCard from './financial/DailySummaryCard';
 import { useToast } from "@/hooks/use-toast";
+import { useFinancialTransactions } from '@/hooks/useFinancialTransactions';
 
 interface FinancialDashboardProps {
   appointments: Appointment[];
@@ -18,7 +19,28 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState('current-month');
   const [selectedService, setSelectedService] = useState('all');
 
-  console.log('💰 FinancialDashboard - Appointments:', appointments.length);
+  // Get salon ID for financial transactions
+  const getSalonId = () => {
+    const adminAuth = localStorage.getItem('adminAuth');
+    if (adminAuth) {
+      try {
+        const admin = JSON.parse(adminAuth);
+        return admin.salon_id;
+      } catch (error) {
+        console.error('Error parsing adminAuth:', error);
+      }
+    }
+    return '';
+  };
+
+  const salonId = getSalonId();
+  const { transactions, financialMetrics, loading: transactionsLoading } = useFinancialTransactions({ salonId });
+
+  console.log('💰 FinancialDashboard - Dados:', {
+    appointments: appointments.length,
+    transactions: transactions.length,
+    metrics: financialMetrics
+  });
 
   const services = useMemo(() => {
     const uniqueServices = appointments.reduce((acc, apt) => {
@@ -125,12 +147,18 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     
     console.log('💰 Financial calculation - Status breakdown:', {
       completed: completedAppointments.length,
-      confirmed: confirmedAppointments.length
+      confirmed: confirmedAppointments.length,
+      transactions: transactions.length
     });
     
-    const totalRevenue = completedAppointments.reduce((sum, apt) => {
-      return sum + calculateAppointmentTotal(apt);
-    }, 0);
+    // Calcular receita total usando as transações financeiras quando disponível
+    const totalRevenue = transactions.length > 0 
+      ? transactions
+          .filter(t => t.transaction_type === 'income' && t.status === 'completed')
+          .reduce((sum, t) => sum + Number(t.amount), 0)
+      : completedAppointments.reduce((sum, apt) => {
+          return sum + calculateAppointmentTotal(apt);
+        }, 0);
     
     const pendingRevenue = confirmedAppointments.reduce((sum, apt) => {
       return sum + calculateAppointmentTotal(apt);
@@ -225,7 +253,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       dailyData,
       servicesData
     };
-  }, [filteredAppointments, appointments]);
+  }, [filteredAppointments, appointments, transactions]);
 
   const handleRefresh = () => {
     console.log('🔄 Atualizando dados financeiros...');

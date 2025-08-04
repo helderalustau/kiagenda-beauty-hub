@@ -1,14 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, ChevronLeft, ChevronRight, Search, RefreshCw } from "lucide-react";
-import { useAppointmentData } from '@/hooks/useAppointmentData';
+import { useAdminCalendar } from '@/hooks/useAdminCalendar';
 import MicroAppointmentCard from './MicroAppointmentCard';
-import { Appointment } from '@/types/supabase-entities';
 
 interface AdminCalendarViewProps {
   salonId: string;
@@ -18,104 +17,39 @@ interface AdminCalendarViewProps {
 type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
-  const { appointments, fetchAllAppointments, updateAppointmentStatus } = useAppointmentData();
-  const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [loading, setLoading] = useState(false);
+  const {
+    appointments,
+    weekDays,
+    currentWeek,
+    searchTerm,
+    statusFilter,
+    loading,
+    setSearchTerm,
+    setStatusFilter,
+    loadAppointments,
+    handleStatusChange,
+    navigateWeek,
+    getAppointmentsForDay,
+    totalAppointments
+  } = useAdminCalendar({ salonId });
 
   console.log('🗓️ AdminCalendarView - Renderizando:', {
     salonId,
     appointmentsCount: appointments.length,
-    loading
+    loading,
+    weekDaysCount: weekDays.length
   });
 
-  // Carrega os dados quando o componente é montado
-  useEffect(() => {
-    if (salonId) {
-      console.log('📅 Iniciando carregamento de agendamentos para salon:', salonId);
-      loadAppointments();
-    }
-  }, [salonId]);
-
-  const loadAppointments = async () => {
-    if (!salonId) {
-      console.warn('❌ SalonId não encontrado para carregar agendamentos');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      console.log('📅 Fazendo fetch de agendamentos...');
-      const result = await fetchAllAppointments(salonId);
-      console.log('✅ Agendamentos carregados:', {
-        success: result.success,
-        count: result.data?.length || 0
-      });
-    } catch (error) {
-      console.error('❌ Erro ao carregar agendamentos:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (appointmentId: string, newStatus: string) => {
-    console.log('🔄 Atualizando status do agendamento:', { appointmentId, newStatus });
-    
-    try {
-      const result = await updateAppointmentStatus(appointmentId, newStatus as AppointmentStatus);
-      console.log('📋 Resultado da atualização de status:', result);
-      
-      if (result.success) {
-        console.log('✅ Status atualizado com sucesso - recarregando dados...');
-        await loadAppointments();
-        onRefresh();
-      } else {
-        console.error('❌ Falha ao atualizar status:', result.message);
-      }
-    } catch (error) {
-      console.error('❌ Erro na atualização de status:', error);
-    }
-  };
-
-  const getWeekDays = (date: Date) => {
-    const week = [];
-    const startOfWeek = new Date(date);
-    const day = startOfWeek.getDay();
-    const diff = startOfWeek.getDate() - day;
-    startOfWeek.setDate(diff);
-
-    for (let i = 0; i < 7; i++) {
-      const dayDate = new Date(startOfWeek);
-      dayDate.setDate(startOfWeek.getDate() + i);
-      week.push(dayDate);
-    }
-    return week;
-  };
-
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentWeek);
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-    setCurrentWeek(newDate);
-    console.log('📅 Navegando para nova semana:', newDate);
-  };
-
-  const filteredAppointments = appointments.filter(apt => {
-    const matchesSearch = !searchTerm || 
-      apt.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.service?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const weekDays = getWeekDays(currentWeek);
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  const handleRefreshClick = async () => {
+    await loadAppointments();
+    onRefresh();
+  };
 
   console.log('📅 Dados do calendário:', {
     weekDays: weekDays.length,
-    filteredAppointments: filteredAppointments.length,
+    totalAppointments,
     currentWeek: currentWeek.toDateString()
   });
 
@@ -127,9 +61,9 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calendar className="h-5 w-5 text-blue-600" />
-              Calendário Semanal ({filteredAppointments.length} agendamentos)
+              Calendário Semanal ({totalAppointments} agendamentos)
             </CardTitle>
-            <Button onClick={loadAppointments} size="sm" variant="outline" disabled={loading}>
+            <Button onClick={handleRefreshClick} size="sm" variant="outline" disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
@@ -182,15 +116,7 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
         {weekDays.map((day, index) => {
           if (!day) return null;
           
-          const dayAppointments = filteredAppointments.filter(apt => {
-            try {
-              const aptDate = new Date(apt.appointment_date);
-              return aptDate.toDateString() === day.toDateString();
-            } catch (error) {
-              console.error('Erro ao processar data do agendamento:', error);
-              return false;
-            }
-          });
+          const dayAppointments = getAppointmentsForDay(day);
 
           return (
             <Card key={day.toISOString()} className="bg-white shadow-sm min-h-[200px]">
@@ -233,7 +159,7 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
         <Card className="bg-gray-50 border-gray-200">
           <CardContent className="p-3">
             <p className="text-xs text-gray-600">
-              Debug: SalonId={salonId}, Appointments={appointments.length}, Filtered={filteredAppointments.length}, Loading={loading.toString()}
+              Debug: SalonId={salonId}, Appointments={appointments.length}, Total={totalAppointments}, Loading={loading.toString()}
             </p>
           </CardContent>
         </Card>
