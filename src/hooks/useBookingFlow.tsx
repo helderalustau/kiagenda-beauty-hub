@@ -20,7 +20,6 @@ export const useBookingFlow = (salonId: string) => {
   
   // Estados do booking
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedAdditionalServices, setSelectedAdditionalServices] = useState<Service[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState('');
   const [clientData, setClientData] = useState<ClientData>({
@@ -30,21 +29,9 @@ export const useBookingFlow = (salonId: string) => {
     notes: ''
   });
 
-  const toggleAdditionalService = useCallback((service: Service) => {
-    setSelectedAdditionalServices(prev => {
-      const exists = prev.find(s => s.id === service.id);
-      if (exists) {
-        return prev.filter(s => s.id !== service.id);
-      } else {
-        return [...prev, service];
-      }
-    });
-  }, []);
-
   const submitBookingRequest = useCallback(async () => {
     console.log('🚀 Starting booking submission:', {
       selectedService: selectedService?.name,
-      additionalServices: selectedAdditionalServices.map(s => s.name),
       selectedDate: selectedDate?.toDateString(),
       selectedTime,
       clientData: clientData.name,
@@ -79,11 +66,7 @@ export const useBookingFlow = (salonId: string) => {
       const localDay = selectedDate.getDate();
       const dateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
       
-      // Calcular duração total considerando serviços adicionais
-      const totalDuration = selectedService.duration_minutes + 
-        selectedAdditionalServices.reduce((acc, service) => acc + service.duration_minutes, 0);
-
-      // Verificar se o horário ainda está disponível considerando a duração total
+      // Verificar se o horário ainda está disponível
       const { data: conflictCheck, error: conflictError } = await supabase
         .from('appointments')
         .select('id')
@@ -107,18 +90,6 @@ export const useBookingFlow = (salonId: string) => {
         return false;
       }
 
-      // Preparar as notas incluindo serviços adicionais
-      let notesWithServices = clientData.notes?.trim() || '';
-      if (selectedAdditionalServices.length > 0) {
-        const additionalServicesText = selectedAdditionalServices
-          .map(service => `${service.name} (${service.duration_minutes}min - R$ ${service.price})`)
-          .join(', ');
-        
-        notesWithServices = notesWithServices 
-          ? `${notesWithServices}\n\nServiços Adicionais: ${additionalServicesText}`
-          : `Serviços Adicionais: ${additionalServicesText}`;
-      }
-
       // Criar o agendamento com status 'pending'
       const appointmentData = {
         salon_id: salonId,
@@ -127,7 +98,7 @@ export const useBookingFlow = (salonId: string) => {
         appointment_date: dateString,
         appointment_time: selectedTime,
         status: 'pending' as const,
-        notes: notesWithServices || null
+        notes: clientData.notes?.trim() || null
       };
 
       console.log('📝 Creating appointment with data:', appointmentData);
@@ -164,12 +135,9 @@ export const useBookingFlow = (salonId: string) => {
 
       console.log('✅ Appointment created successfully:', appointment?.id);
 
-      const totalPrice = selectedService.price + 
-        selectedAdditionalServices.reduce((acc, service) => acc + service.price, 0);
-
       toast({
         title: "✅ Solicitação Enviada!",
-        description: `Sua solicitação para ${selectedService.name}${selectedAdditionalServices.length > 0 ? ` + ${selectedAdditionalServices.length} adicional(is)` : ''} foi enviada e está aguardando aprovação do estabelecimento. Total: R$ ${totalPrice.toFixed(2)}`,
+        description: `Sua solicitação para ${selectedService.name} foi enviada e está aguardando aprovação do estabelecimento.`,
         duration: 6000
       });
 
@@ -189,11 +157,10 @@ export const useBookingFlow = (salonId: string) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [salonId, user?.id, selectedService, selectedAdditionalServices, selectedDate, selectedTime, clientData, toast]);
+  }, [salonId, user?.id, selectedService, selectedDate, selectedTime, clientData, toast]);
 
   const resetBooking = useCallback(() => {
     setSelectedService(null);
-    setSelectedAdditionalServices([]);
     setSelectedDate(undefined);
     setSelectedTime('');
     setClientData({
@@ -209,7 +176,6 @@ export const useBookingFlow = (salonId: string) => {
     // Estados
     currentStep,
     selectedService,
-    selectedAdditionalServices,
     selectedDate,
     selectedTime,
     clientData,
@@ -218,13 +184,11 @@ export const useBookingFlow = (salonId: string) => {
     // Setters
     setCurrentStep,
     setSelectedService,
-    setSelectedAdditionalServices,
     setSelectedDate,
     setSelectedTime,
     setClientData,
     
     // Ações
-    toggleAdditionalService,
     submitBookingRequest,
     resetBooking
   };

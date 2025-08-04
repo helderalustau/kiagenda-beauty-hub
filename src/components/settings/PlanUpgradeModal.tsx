@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,7 @@ const plans = {
     icon: Star,
     color: "text-amber-600 bg-amber-50"
   },
-  prata: { 
+  silver: { 
     name: "Prata", 
     price: 89.90, 
     appointments: 300, 
@@ -59,15 +58,8 @@ const PlanUpgradeModal = ({ currentPlan, salonId, salonName, onUpgradeRequest }:
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Get the current plan data safely
-  const getCurrentPlan = () => {
-    return plans[currentPlan as keyof typeof plans] || plans.bronze;
-  };
-
-  const currentPlanData = getCurrentPlan();
   const currentPlanIndex = Object.keys(plans).indexOf(currentPlan);
-  const validCurrentPlanIndex = currentPlanIndex >= 0 ? currentPlanIndex : 0;
-  const availablePlans = Object.entries(plans).slice(validCurrentPlanIndex + 1);
+  const availablePlans = Object.entries(plans).slice(currentPlanIndex + 1);
 
   const handleSubmitUpgrade = async () => {
     if (!selectedPlan || !justification.trim()) {
@@ -141,8 +133,8 @@ const PlanUpgradeModal = ({ currentPlan, salonId, salonName, onUpgradeRequest }:
         <DialogHeader>
           <DialogTitle className="text-xl">Upgrade de Plano</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Plano atual: <Badge className={currentPlanData.color}>
-              {currentPlanData.name}
+            Plano atual: <Badge className={plans[currentPlan as keyof typeof plans].color}>
+              {plans[currentPlan as keyof typeof plans].name}
             </Badge>
           </p>
         </DialogHeader>
@@ -201,62 +193,48 @@ const PlanUpgradeModal = ({ currentPlan, salonId, salonName, onUpgradeRequest }:
             </div>
           </div>
 
-          {availablePlans.length === 0 && (
-            <div className="text-center py-8">
-              <Crown className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Você já tem o melhor plano!</h3>
-              <p className="text-muted-foreground">
-                Seu plano atual ({currentPlanData.name}) já é o mais avançado disponível.
-              </p>
-            </div>
-          )}
-
           {/* Justificativa */}
-          {availablePlans.length > 0 && (
-            <div>
-              <Label htmlFor="justification" className="text-base font-semibold">
-                Justificativa para o upgrade:
-              </Label>
-              <Textarea
-                id="justification"
-                placeholder="Explique por que precisa fazer o upgrade do plano (crescimento do negócio, mais clientes, necessidades específicas, etc.)"
-                value={justification}
-                onChange={(e) => setJustification(e.target.value)}
-                className="mt-2 min-h-[100px]"
-                maxLength={500}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {justification.length}/500 caracteres
-              </p>
-            </div>
-          )}
+          <div>
+            <Label htmlFor="justification" className="text-base font-semibold">
+              Justificativa para o upgrade:
+            </Label>
+            <Textarea
+              id="justification"
+              placeholder="Explique por que precisa fazer o upgrade do plano (crescimento do negócio, mais clientes, necessidades específicas, etc.)"
+              value={justification}
+              onChange={(e) => setJustification(e.target.value)}
+              className="mt-2 min-h-[100px]"
+              maxLength={500}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {justification.length}/500 caracteres
+            </p>
+          </div>
 
           {/* Ações */}
-          {availablePlans.length > 0 && (
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsOpen(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleSubmitUpgrade}
-                disabled={!selectedPlan || !justification.trim() || isSubmitting}
-                className="min-w-[120px]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Enviando...
-                  </>
-                ) : (
-                  'Solicitar Upgrade'
-                )}
-              </Button>
-            </div>
-          )}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSubmitUpgrade}
+              disabled={!selectedPlan || !justification.trim() || isSubmitting}
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Enviando...
+                </>
+              ) : (
+                'Solicitar Upgrade'
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

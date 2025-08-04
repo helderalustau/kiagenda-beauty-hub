@@ -1,14 +1,12 @@
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Appointment } from '@/types/supabase-entities';
 import { format, startOfMonth, endOfMonth, subMonths, isSameMonth, isSameDay, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import FinancialMetricsCards from './financial/FinancialMetricsCards';
 import FinancialFilters from './financial/FinancialFilters';
-import CleanFinancialCharts from './financial/CleanFinancialCharts';
-import DailySummaryCard from './financial/DailySummaryCard';
+import FinancialCharts from './financial/FinancialCharts';
 import { useToast } from "@/hooks/use-toast";
-import { useFinancialTransactions } from '@/hooks/useFinancialTransactions';
 
 interface FinancialDashboardProps {
   appointments: Appointment[];
@@ -18,29 +16,6 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
   const { toast } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('current-month');
   const [selectedService, setSelectedService] = useState('all');
-
-  // Get salon ID for financial transactions
-  const getSalonId = () => {
-    const adminAuth = localStorage.getItem('adminAuth');
-    if (adminAuth) {
-      try {
-        const admin = JSON.parse(adminAuth);
-        return admin.salon_id;
-      } catch (error) {
-        console.error('Error parsing adminAuth:', error);
-      }
-    }
-    return '';
-  };
-
-  const salonId = getSalonId();
-  const { transactions, financialMetrics, loading: transactionsLoading } = useFinancialTransactions({ salonId });
-
-  console.log('💰 FinancialDashboard - Dados:', {
-    appointments: appointments.length,
-    transactions: transactions.length,
-    metrics: financialMetrics
-  });
 
   const services = useMemo(() => {
     const uniqueServices = appointments.reduce((acc, apt) => {
@@ -52,27 +27,11 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     return uniqueServices;
   }, [appointments]);
 
-  const calculateAppointmentTotal = (appointment: Appointment) => {
-    let total = 0;
-    
-    if (appointment.service?.price) {
-      total += Number(appointment.service.price);
-    }
-    
-    if (appointment.additional_services && Array.isArray(appointment.additional_services)) {
-      const additionalTotal = appointment.additional_services.reduce((sum: number, additional: any) => {
-        return sum + (Number(additional?.price || 0));
-      }, 0);
-      total += additionalTotal;
-    }
-    
-    return total;
-  };
-
   const filteredAppointments = useMemo(() => {
     const now = new Date();
     let filtered = appointments;
 
+    // Filtro por período
     switch (selectedPeriod) {
       case 'current-month':
         filtered = filtered.filter(apt => isSameMonth(new Date(apt.appointment_date), now));
@@ -97,130 +56,90 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         break;
     }
 
+    // Filtro por serviço
     if (selectedService !== 'all') {
       filtered = filtered.filter(apt => apt.service_id === selectedService);
     }
 
-    console.log('🔍 Filtered appointments for financial:', filtered.length);
     return filtered;
   }, [appointments, selectedPeriod, selectedService]);
 
-  const dailySummaryData = useMemo(() => {
-    const today = new Date();
-    const yesterday = subDays(today, 1);
-
-    const todayAppointments = appointments.filter(apt => 
-      apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), today)
-    );
-
-    const yesterdayAppointments = appointments.filter(apt => 
-      apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), yesterday)
-    );
-
-    const todayRevenue = todayAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
-    const yesterdayRevenue = yesterdayAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
-
-    const todayData = {
-      date: format(today, 'yyyy-MM-dd'),
-      revenue: todayRevenue,
-      appointments: todayAppointments.length,
-      averageTicket: todayAppointments.length > 0 ? todayRevenue / todayAppointments.length : 0,
-      growth: yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0
-    };
-
-    const yesterdayData = {
-      date: format(yesterday, 'yyyy-MM-dd'),
-      revenue: yesterdayRevenue,
-      appointments: yesterdayAppointments.length,
-      averageTicket: yesterdayAppointments.length > 0 ? yesterdayRevenue / yesterdayAppointments.length : 0,
-      growth: 0
-    };
-
-    return { todayData, yesterdayData };
-  }, [appointments]);
-
   const financialData = useMemo(() => {
     const now = new Date();
-    
     const completedAppointments = filteredAppointments.filter(apt => apt.status === 'completed');
     const confirmedAppointments = filteredAppointments.filter(apt => apt.status === 'confirmed');
     
-    console.log('💰 Financial calculation - Status breakdown:', {
-      completed: completedAppointments.length,
-      confirmed: confirmedAppointments.length,
-      transactions: transactions.length
-    });
+    // Receita total
+    const totalRevenue = completedAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
     
-    // Calcular receita total usando as transações financeiras quando disponível
-    const totalRevenue = transactions.length > 0 
-      ? transactions
-          .filter(t => t.transaction_type === 'income' && t.status === 'completed')
-          .reduce((sum, t) => sum + Number(t.amount), 0)
-      : completedAppointments.reduce((sum, apt) => {
-          return sum + calculateAppointmentTotal(apt);
-        }, 0);
+    // Receita pendente (agendamentos confirmados)
+    const pendingRevenue = confirmedAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
     
-    const pendingRevenue = confirmedAppointments.reduce((sum, apt) => {
-      return sum + calculateAppointmentTotal(apt);
-    }, 0);
+    // Receita do mês atual
+    const currentMonthRevenue = completedAppointments
+      .filter(apt => isSameMonth(new Date(apt.appointment_date), now))
+      .reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
     
-    const currentMonthRevenue = appointments
-      .filter(apt => apt.status === 'completed' && isSameMonth(new Date(apt.appointment_date), now))
-      .reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
-    
+    // Receita do mês anterior
     const lastMonthRevenue = appointments
       .filter(apt => apt.status === 'completed' && isSameMonth(new Date(apt.appointment_date), subMonths(now, 1)))
-      .reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+      .reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
     
+    // Crescimento percentual
     const growthPercentage = lastMonthRevenue > 0 
       ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
-      : currentMonthRevenue > 0 ? 100 : 0;
+      : 0;
     
+    // Ticket médio
     const averageTicket = completedAppointments.length > 0 
       ? totalRevenue / completedAppointments.length 
       : 0;
     
+    // Dados mensais para gráficos
     const monthlyData = [];
     for (let i = 5; i >= 0; i--) {
       const month = subMonths(now, i);
       const monthAppointments = appointments.filter(apt => 
         apt.status === 'completed' && isSameMonth(new Date(apt.appointment_date), month)
       );
-      const revenue = monthAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+      const revenue = monthAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+      const previousMonthRevenue = i === 5 ? 0 : monthlyData[monthlyData.length - 1]?.revenue || 0;
+      const growth = previousMonthRevenue > 0 ? ((revenue - previousMonthRevenue) / previousMonthRevenue) * 100 : 0;
       
       monthlyData.push({
         month: format(month, 'MMM/yy', { locale: ptBR }),
         revenue,
         appointments: monthAppointments.length,
-        growth: 0
+        growth
       });
     }
     
+    // Dados diários (últimos 30 dias)
     const dailyData = [];
     for (let i = 29; i >= 0; i--) {
       const day = subDays(now, i);
       const dayAppointments = appointments.filter(apt => 
         apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), day)
       );
-      const revenue = dayAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+      const revenue = dayAppointments.reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
       
       dailyData.push({
         day: format(day, 'dd/MM', { locale: ptBR }),
         revenue,
-        appointments: dayAppointments.length,
-        averageTicket: dayAppointments.length > 0 ? revenue / dayAppointments.length : 0
+        appointments: dayAppointments.length
       });
     }
     
+    // Serviços mais populares
     const serviceStats = completedAppointments.reduce((acc, apt) => {
       const serviceName = apt.service?.name || 'Serviço não identificado';
-      const appointmentTotal = calculateAppointmentTotal(apt);
+      const servicePrice = apt.service?.price || 0;
       
       if (!acc[serviceName]) {
         acc[serviceName] = { count: 0, revenue: 0 };
       }
       acc[serviceName].count++;
-      acc[serviceName].revenue += appointmentTotal;
+      acc[serviceName].revenue += servicePrice;
       return acc;
     }, {} as Record<string, { count: number; revenue: number }>);
     
@@ -229,18 +148,10 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         name,
         revenue: stats.revenue,
         count: stats.count,
-        percentage: totalRevenue > 0 ? (stats.revenue / totalRevenue) * 100 : 0
+        percentage: (stats.revenue / totalRevenue) * 100
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
-    
-    console.log('💰 Final financial data:', {
-      totalRevenue,
-      currentMonthRevenue,
-      growthPercentage,
-      averageTicket,
-      completedCount: completedAppointments.length
-    });
     
     return {
       totalRevenue,
@@ -253,10 +164,9 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       dailyData,
       servicesData
     };
-  }, [filteredAppointments, appointments, transactions]);
+  }, [filteredAppointments, appointments]);
 
   const handleRefresh = () => {
-    console.log('🔄 Atualizando dados financeiros...');
     toast({
       title: "Dados atualizados",
       description: "Os dados financeiros foram atualizados com sucesso",
@@ -264,24 +174,19 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
   };
 
   const handleExport = () => {
-    console.log('📤 Exportando dados financeiros...');
+    // Implementar exportação para CSV/PDF
     toast({
       title: "Exportação iniciada",
-      description: "O relatório está sendo gerado...",
+      description: "O relatório está sendo gerado. Você receberá uma notificação quando estiver pronto.",
     });
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Dashboard Financeiro</h2>
-        <p className="text-gray-600 text-sm">Análise do desempenho financeiro</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Dashboard Financeiro</h2>
+        <p className="text-gray-600">Análise completa do desempenho financeiro do seu estabelecimento</p>
       </div>
-
-      <DailySummaryCard 
-        todayData={dailySummaryData.todayData}
-        yesterdayData={dailySummaryData.yesterdayData}
-      />
 
       <FinancialFilters
         selectedPeriod={selectedPeriod}
@@ -302,7 +207,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         pendingRevenue={financialData.pendingRevenue}
       />
 
-      <CleanFinancialCharts
+      <FinancialCharts
         revenueData={financialData.monthlyData}
         servicesData={financialData.servicesData}
         dailyData={financialData.dailyData}

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useCallback, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Users, Settings, UserCheck, DollarSign, Activity } from "lucide-react";
+import { BarChart3, Users, Settings, UserCheck, DollarSign } from "lucide-react";
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import SuperAdminDashboardHeader from '@/components/SuperAdminDashboardHeader';
 import SuperAdminOverviewTab from '@/components/super-admin/SuperAdminOverviewTab';
@@ -9,7 +9,6 @@ import SuperAdminSalonsTab from '@/components/super-admin/SuperAdminSalonsTab';
 import SuperAdminSettingsTab from '@/components/super-admin/SuperAdminSettingsTab';
 import SuperAdminClientsTab from '@/components/super-admin/SuperAdminClientsTab';
 import SuperAdminUsersTab from '@/components/super-admin/SuperAdminUsersTab';
-import SuperAdminActivityPanel from '@/components/super-admin/SuperAdminActivityPanel';
 import FinancialDashboard from '@/components/super-admin/financial/FinancialDashboard';
 import { useSuperAdminActions } from '@/hooks/super-admin/useSuperAdminActions';
 import SuperAdminProtection from '@/components/SuperAdminProtection';
@@ -83,14 +82,10 @@ const SuperAdminDashboard = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
                 <span>Visão Geral</span>
-              </TabsTrigger>
-              <TabsTrigger value="activity" className="flex items-center space-x-2">
-                <Activity className="h-4 w-4" />
-                <span>Atividades</span>
               </TabsTrigger>
               <TabsTrigger value="salons" className="flex items-center space-x-2">
                 <Users className="h-4 w-4" />
@@ -120,10 +115,6 @@ const SuperAdminDashboard = () => {
                 loading={loading}
                 onRefresh={handleRefresh}
               />
-            </TabsContent>
-
-            <TabsContent value="activity">
-              <SuperAdminActivityPanel />
             </TabsContent>
 
             <TabsContent value="salons">

@@ -33,20 +33,22 @@ const AdminDashboard = () => {
   } = useAdminDashboardLogic();
 
   const handleBackToHome = () => {
+    // Redirecionar para tela inicial do sistema
     window.location.href = '/';
   };
 
   const handleLogoutAndRedirect = () => {
     handleLogout();
+    // Redirecionar para tela inicial do sistema
     window.location.href = '/';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-sm sm:text-base">Carregando dados do estabelecimento...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando dados do estabelecimento...</p>
         </div>
       </div>
     );
@@ -57,20 +59,20 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-red-600 text-lg">
-              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
+            <CardTitle className="flex items-center space-x-2 text-red-600">
+              <AlertTriangle className="h-6 w-6" />
               <span>Estabelecimento não encontrado</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 mb-4 text-sm sm:text-base">
+            <p className="text-gray-600 mb-4">
               Não foi possível encontrar os dados do seu estabelecimento. Verifique se você completou a configuração inicial.
             </p>
             <div className="space-y-2">
-              <Button onClick={() => window.location.href = '/salon-setup'} className="w-full text-sm">
+              <Button onClick={() => window.location.href = '/salon-setup'} className="w-full">
                 Configurar Estabelecimento
               </Button>
-              <Button onClick={handleBackToHome} variant="outline" className="w-full text-sm">
+              <Button onClick={handleBackToHome} variant="outline" className="w-full">
                 Voltar ao Login
               </Button>
             </div>
@@ -95,8 +97,8 @@ const AdminDashboard = () => {
         onRefresh={refreshData}
       />
 
-      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 lg:py-8">
-        <Tabs defaultValue="overview" className="space-y-2 sm:space-y-4">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
           <AdminDashboardTabs />
           <AdminDashboardContent
             appointments={appointments}
@@ -116,6 +118,7 @@ const AdminDashboard = () => {
         onReject={handleRejectAppointment}
       />
 
+      {/* Suporte Flutuante */}
       <FloatingSupport />
     </div>
   );

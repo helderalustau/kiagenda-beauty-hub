@@ -93,11 +93,6 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
     return validation.isValid && !isSubmitting;
   };
 
-  // Mock refetch function since useSimpleBooking doesn't provide it
-  const refetchSlots = () => {
-    console.log('Refetch not implemented in useSimpleBooking');
-  };
-
   // Handle authentication issues
   if (!user) {
     return (
@@ -208,7 +203,6 @@ const SimpleBookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: Simple
               }}
               onBack={() => setCurrentStep(1)}
               formatCurrency={formatCurrency}
-              refetchSlots={refetchSlots}
             />
           )}
 
