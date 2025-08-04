@@ -7,7 +7,7 @@ import { Salon } from '@/hooks/useSupabaseData';
 
 export const useClientBookingLogic = (salonSlug: string | undefined) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isClient } = useAuth();
   const { fetchSalonBySlug, fetchSalonData } = useSupabaseData();
   
   const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
@@ -84,21 +84,42 @@ export const useClientBookingLogic = (salonSlug: string | undefined) => {
   }, [salonSlug, loadSalonData]);
 
   const handleOpenBookingModal = useCallback(() => {
-    if (!user) {
+    console.log('🔐 Checking authentication before opening booking modal');
+    console.log('User:', user);
+    console.log('Is client:', isClient);
+
+    // Verificar se o usuário está logado e é um cliente
+    if (!user || !isClient) {
+      console.log('🚫 User not authenticated or not a client, redirecting to login');
+      
       // Salvar URL atual para retornar após login
-      localStorage.setItem('returnUrl', window.location.pathname);
+      const currentPath = window.location.pathname;
+      localStorage.setItem('returnUrl', currentPath);
+      
+      // Salvar dados do salão para usar após o login
+      if (selectedSalon) {
+        localStorage.setItem('selectedSalonForBooking', JSON.stringify(selectedSalon));
+      }
+      
+      // Redirecionar para login
       navigate('/client-login');
       return;
     }
 
+    // Usuário autenticado, verificar se o salão está aberto
     if (selectedSalon && selectedSalon.is_open) {
+      console.log('✅ User authenticated and salon is open, opening booking modal');
       setIsBookingModalOpen(true);
+    } else {
+      console.log('❌ Salon is closed or not available');
     }
-  }, [selectedSalon, user, navigate]);
+  }, [selectedSalon, user, isClient, navigate]);
 
   const handleBookingSuccess = useCallback(() => {
+    console.log('✅ Booking successful, cleaning up and redirecting');
     // Clean up localStorage and redirect
     localStorage.removeItem('selectedSalonForBooking');
+    localStorage.removeItem('returnUrl');
     navigate('/client-dashboard');
   }, [navigate]);
 

@@ -1,4 +1,3 @@
-
 // Centralized type definitions for Supabase entities
 export interface Salon {
   id: string;
@@ -67,6 +66,12 @@ export interface Appointment {
   created_at?: string;
   updated_at?: string;
   deleted_at?: string;
+  additional_services?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    duration_minutes: number;
+  }>;
   // Relations
   salon?: {
     id: string;
@@ -151,4 +156,19 @@ export interface DashboardStats {
     prata: number;
     gold: number;
   };
+}
+
+export interface SystemActivityLog {
+  id: string;
+  activity_type: string;
+  entity_type: string;
+  entity_id?: string;
+  user_id?: string;
+  salon_id?: string;
+  title: string;
+  description?: string;
+  metadata?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
 }

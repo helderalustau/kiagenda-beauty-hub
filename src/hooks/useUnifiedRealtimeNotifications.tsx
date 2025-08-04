@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -18,9 +19,14 @@ export const useUnifiedRealtimeNotifications = ({
   const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([]);
   const [isCheckingManually, setIsCheckingManually] = useState(false);
 
-  // Função para buscar agendamentos pendentes - OTIMIZADA
+  // Função para buscar agendamentos pendentes com logs detalhados
   const fetchPendingAppointments = useCallback(async () => {
-    if (!salonId) return;
+    if (!salonId) {
+      console.log('❌ SalonId não fornecido para buscar agendamentos pendentes');
+      return;
+    }
+
+    console.log('📋 Buscando agendamentos pendentes para salon:', salonId);
 
     try {
       const { data, error } = await supabase
@@ -33,6 +39,7 @@ export const useUnifiedRealtimeNotifications = ({
         `)
         .eq('salon_id', salonId)
         .eq('status', 'pending')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -40,21 +47,39 @@ export const useUnifiedRealtimeNotifications = ({
           message: error.message,
           details: error.details,
           hint: error.hint,
-          code: error.code
+          code: error.code,
+          salonId
         });
         return;
       }
 
+      console.log('✅ Agendamentos pendentes encontrados:', {
+        count: data?.length || 0,
+        appointments: data,
+        salonId
+      });
+
       if (data && data.length > 0) {
-        setPendingAppointments(data as Appointment[]);
+        const validAppointments = data.filter(apt => apt.service && apt.client);
+        console.log('✅ Agendamentos válidos:', validAppointments.length);
+        
+        setPendingAppointments(validAppointments as Appointment[]);
         
         // Notificar sobre novos agendamentos encontrados
-        data.forEach(appointment => {
+        validAppointments.forEach(appointment => {
+          console.log('📝 Processando agendamento:', {
+            id: appointment.id,
+            serviceName: appointment.service?.name,
+            clientName: appointment.client?.name || appointment.client?.username,
+            status: appointment.status
+          });
+          
           if (onNewAppointment) {
             onNewAppointment(appointment as Appointment);
           }
         });
       } else {
+        console.log('📋 Nenhum agendamento pendente encontrado');
         setPendingAppointments([]);
       }
     } catch (error) {
@@ -64,6 +89,7 @@ export const useUnifiedRealtimeNotifications = ({
 
   // Verificação manual de agendamentos
   const checkForNewAppointments = useCallback(async () => {
+    console.log('🔍 Verificação manual iniciada para salon:', salonId);
     setIsCheckingManually(true);
     
     try {
@@ -75,6 +101,7 @@ export const useUnifiedRealtimeNotifications = ({
         duration: 3000,
       });
     } catch (error) {
+      console.error('❌ Erro na verificação manual:', error);
       toast({
         title: "❌ Erro na Verificação",
         description: "Não foi possível verificar novos agendamentos",
@@ -84,12 +111,11 @@ export const useUnifiedRealtimeNotifications = ({
     } finally {
       setIsCheckingManually(false);
     }
-  }, [fetchPendingAppointments, pendingAppointments.length, toast]);
+  }, [fetchPendingAppointments, pendingAppointments.length, toast, salonId]);
 
   // Tocar som de notificação
   const playNotificationSound = useCallback((soundType: string = 'default') => {
     try {
-      // Usar Web Audio API para criar som
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -97,7 +123,6 @@ export const useUnifiedRealtimeNotifications = ({
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
 
-      // Diferentes frequências para diferentes tipos de som
       const frequencies = {
         default: 800,
         bell: 1000,
@@ -111,7 +136,6 @@ export const useUnifiedRealtimeNotifications = ({
       );
       oscillator.type = 'sine';
 
-      // Envelope para suavizar o som
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
       gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
@@ -126,10 +150,12 @@ export const useUnifiedRealtimeNotifications = ({
   // Setup realtime subscription
   useEffect(() => {
     if (!salonId || salonId.trim() === '') {
+      console.log('⚠️ SalonId inválido para notificações:', salonId);
       return;
     }
 
     console.log('🔔 Configurando notificações unificadas para salon:', salonId);
+    console.log('🔔 Admin atual: Juliana');
 
     // Buscar agendamentos pendentes ao iniciar
     fetchPendingAppointments();
@@ -167,7 +193,13 @@ export const useUnifiedRealtimeNotifications = ({
             }
 
             if (appointment && appointment.status === 'pending') {
-              console.log('✅ Processando novo agendamento pendente:', appointment);
+              console.log('✅ Processando novo agendamento pendente:', {
+                id: appointment.id,
+                serviceName: appointment.service?.name,
+                clientName: appointment.client?.name || appointment.client?.username,
+                appointmentDate: appointment.appointment_date,
+                appointmentTime: appointment.appointment_time
+              });
               
               // Adicionar à lista de pendentes
               setPendingAppointments(prev => [appointment as Appointment, ...prev]);
@@ -222,7 +254,11 @@ export const useUnifiedRealtimeNotifications = ({
             }
 
             if (appointment) {
-              console.log('✅ Processando agendamento atualizado:', appointment);
+              console.log('✅ Processando agendamento atualizado:', {
+                id: appointment.id,
+                oldStatus: payload.old.status,
+                newStatus: appointment.status
+              });
               
               // Remover da lista de pendentes se status mudou
               if (appointment.status !== 'pending') {
@@ -251,17 +287,20 @@ export const useUnifiedRealtimeNotifications = ({
         }
       )
       .subscribe((status) => {
+        console.log('🔌 Status da conexão realtime:', status);
         if (status === 'CHANNEL_ERROR') {
           console.error('❌ Erro na conexão realtime');
         }
       });
 
-    // Verificação periódica como fallback - REDUZIDA PARA MELHOR PERFORMANCE
+    // Verificação periódica como fallback
     const interval = setInterval(() => {
+      console.log('⏰ Verificação periódica de agendamentos pendentes');
       fetchPendingAppointments();
-    }, 60000); // Reduzido para 1 minuto para melhor performance
+    }, 60000);
 
     return () => {
+      console.log('🔌 Limpando conexão realtime e intervalo');
       clearInterval(interval);
       supabase.removeChannel(channel);
     };
@@ -269,11 +308,13 @@ export const useUnifiedRealtimeNotifications = ({
 
   // Limpar notificação específica
   const clearNotification = useCallback((appointmentId: string) => {
+    console.log('🗑️ Removendo notificação:', appointmentId);
     setPendingAppointments(prev => prev.filter(n => n.id !== appointmentId));
   }, []);
 
   // Limpar todas as notificações
   const clearAllNotifications = useCallback(() => {
+    console.log('🗑️ Removendo todas as notificações');
     setPendingAppointments([]);
   }, []);
 
