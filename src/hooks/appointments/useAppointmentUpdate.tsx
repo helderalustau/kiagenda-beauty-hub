@@ -9,9 +9,19 @@ export const useAppointmentUpdate = () => {
 
   // Update appointment status - Fixed signature
   const updateAppointmentStatus = async (appointmentId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled', reason?: string) => {
+    if (loading) {
+      console.warn('⚠️ Update already in progress, skipping...');
+      return { success: false, message: 'Atualização já em andamento' };
+    }
+
     try {
       setLoading(true);
-      console.log('🔄 Updating appointment status:', { appointmentId, status, reason });
+      console.log('🔄 useAppointmentUpdate: Updating appointment status:', { appointmentId, status, reason });
+      
+      if (!appointmentId || !status) {
+        console.error('❌ Missing required parameters:', { appointmentId, status });
+        return { success: false, message: 'Parâmetros obrigatórios não fornecidos' };
+      }
       
       const updateData: any = { 
         status,
@@ -21,6 +31,8 @@ export const useAppointmentUpdate = () => {
       if (reason) {
         updateData.notes = reason;
       }
+
+      console.log('📝 useAppointmentUpdate: Sending update with data:', updateData);
 
       const { data, error } = await supabase
         .from('appointments')
@@ -35,18 +47,24 @@ export const useAppointmentUpdate = () => {
         .single();
 
       if (error) {
-        console.error('❌ Error updating appointment status:', error);
-        return { success: false, message: error.message };
+        console.error('❌ useAppointmentUpdate: Error updating appointment status:', error);
+        return { success: false, message: error.message || 'Erro na atualização do banco de dados' };
       }
 
-      console.log('✅ Appointment status updated successfully:', data);
+      if (!data) {
+        console.error('❌ useAppointmentUpdate: No data returned from update');
+        return { success: false, message: 'Nenhum dado retornado da atualização' };
+      }
+
+      console.log('✅ useAppointmentUpdate: Appointment status updated successfully:', data);
 
       // Return normalized data
       const normalizedAppointment = normalizeAppointment(data);
+      console.log('✅ useAppointmentUpdate: Normalized appointment:', normalizedAppointment);
       return { success: true, appointment: normalizedAppointment };
     } catch (error) {
-      console.error('❌ Error updating appointment status:', error);
-      return { success: false, message: 'Erro ao atualizar o status do agendamento' };
+      console.error('❌ useAppointmentUpdate: Unexpected error:', error);
+      return { success: false, message: error instanceof Error ? error.message : 'Erro inesperado ao atualizar o status do agendamento' };
     } finally {
       setLoading(false);
     }

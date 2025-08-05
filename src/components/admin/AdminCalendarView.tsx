@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, ChevronLeft, ChevronRight, Search, RefreshCw } from "lucide-react";
-import { useAdminCalendar } from '@/hooks/useAdminCalendar';
+import { useAppointmentData } from '@/hooks/useAppointmentData';
+import { useToast } from '@/hooks/use-toast';
 import MicroAppointmentCard from './MicroAppointmentCard';
 
 interface AdminCalendarViewProps {
@@ -17,21 +18,147 @@ interface AdminCalendarViewProps {
 type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
+  const { toast } = useToast();
+  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [localLoading, setLocalLoading] = useState(false);
+
   const {
     appointments,
-    weekDays,
-    currentWeek,
-    searchTerm,
-    statusFilter,
-    loading,
-    setSearchTerm,
-    setStatusFilter,
-    loadAppointments,
-    handleStatusChange,
-    navigateWeek,
-    getAppointmentsForDay,
-    totalAppointments
-  } = useAdminCalendar({ salonId });
+    fetchAllAppointments,
+    updateAppointmentStatus,
+    loading: appointmentLoading
+  } = useAppointmentData();
+
+  const loading = localLoading || appointmentLoading;
+
+  // Load appointments when component mounts or salon changes
+  const loadAppointments = useCallback(async () => {
+    if (!salonId) {
+      console.warn('❌ SalonId não encontrado para carregar agendamentos');
+      return;
+    }
+
+    setLocalLoading(true);
+    try {
+      console.log('📅 Carregando agendamentos para salon:', salonId);
+      const result = await fetchAllAppointments(salonId);
+      console.log('✅ Agendamentos carregados:', {
+        success: result.success,
+        count: result.data?.length || 0
+      });
+    } catch (error) {
+      console.error('❌ Erro ao carregar agendamentos:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar agendamentos",
+        variant: "destructive"
+      });
+    } finally {
+      setLocalLoading(false);
+    }
+  }, [salonId, fetchAllAppointments, toast]);
+
+  useEffect(() => {
+    loadAppointments();
+  }, [loadAppointments]);
+
+  // Handle status updates
+  const handleStatusChange = useCallback(async (appointmentId: string, newStatus: string) => {
+    console.log('🔄 AdminCalendarView: Atualizando status do agendamento:', { appointmentId, newStatus });
+    
+    try {
+      const result = await updateAppointmentStatus(appointmentId, newStatus as any);
+      console.log('📋 AdminCalendarView: Resultado da atualização de status:', result);
+      
+      if (result.success) {
+        console.log('✅ AdminCalendarView: Status atualizado com sucesso');
+        
+        // Show appropriate toast message
+        const statusMessages = {
+          'confirmed': 'Agendamento confirmado com sucesso',
+          'completed': 'Atendimento marcado como concluído',
+          'cancelled': 'Agendamento cancelado'
+        };
+
+        toast({
+          title: "Sucesso",
+          description: statusMessages[newStatus as keyof typeof statusMessages] || "Status atualizado",
+        });
+
+        // Refresh data
+        await loadAppointments();
+        await onRefresh();
+      } else {
+        console.error('❌ AdminCalendarView: Falha ao atualizar status:', result.message);
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao atualizar status",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ AdminCalendarView: Erro na atualização de status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao atualizar status",
+        variant: "destructive"
+      });
+    }
+  }, [updateAppointmentStatus, loadAppointments, onRefresh, toast]);
+
+  // Calendar navigation functions
+  const getWeekDays = useCallback((date: Date) => {
+    const week = [];
+    const startOfWeek = new Date(date);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day;
+    startOfWeek.setDate(diff);
+
+    for (let i = 0; i < 7; i++) {
+      const dayDate = new Date(startOfWeek);
+      dayDate.setDate(startOfWeek.getDate() + i);
+      week.push(dayDate);
+    }
+    return week;
+  }, []);
+
+  const navigateWeek = useCallback((direction: 'prev' | 'next') => {
+    const newDate = new Date(currentWeek);
+    newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+    setCurrentWeek(newDate);
+    console.log('📅 Navegando para nova semana:', newDate);
+  }, [currentWeek]);
+
+  // Filter appointments
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter(apt => {
+      const matchesSearch = !searchTerm || 
+        apt.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        apt.service?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [appointments, searchTerm, statusFilter]);
+
+  // Get appointments for a specific day
+  const getAppointmentsForDay = useCallback((day: Date) => {
+    return filteredAppointments.filter(apt => {
+      try {
+        const aptDate = new Date(apt.appointment_date);
+        return aptDate.toDateString() === day.toDateString();
+      } catch (error) {
+        console.error('Erro ao processar data do agendamento:', error);
+        return false;
+      }
+    });
+  }, [filteredAppointments]);
+
+  const weekDays = useMemo(() => getWeekDays(currentWeek), [getWeekDays, currentWeek]);
+  const totalAppointments = filteredAppointments.length;
 
   console.log('🗓️ AdminCalendarView - Renderizando:', {
     salonId,
@@ -44,7 +171,7 @@ const AdminCalendarView = ({ salonId, onRefresh }: AdminCalendarViewProps) => {
 
   const handleRefreshClick = async () => {
     await loadAppointments();
-    onRefresh();
+    await onRefresh();
   };
 
   console.log('📅 Dados do calendário:', {

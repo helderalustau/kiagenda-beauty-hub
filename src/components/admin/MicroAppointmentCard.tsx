@@ -42,13 +42,26 @@ const MicroAppointmentCard = ({
   };
 
   const handleStatusUpdate = async (newStatus: string) => {
+    console.log('🎯 MicroCard: handleStatusUpdate chamado:', {
+      appointmentId: appointment.id,
+      currentStatus: appointment.status,
+      newStatus,
+      hasUpdateFunction: !!onUpdateStatus,
+      isUpdating
+    });
+
     if (!onUpdateStatus) {
-      console.warn('⚠️ onUpdateStatus function not available');
+      console.error('❌ MicroCard: onUpdateStatus function not available');
       return;
     }
 
     if (isUpdating) {
-      console.warn('⚠️ Already updating, please wait');
+      console.warn('⚠️ MicroCard: Already updating, please wait');
+      return;
+    }
+
+    if (!appointment.id) {
+      console.error('❌ MicroCard: Appointment ID is missing');
       return;
     }
     
@@ -60,11 +73,13 @@ const MicroAppointmentCard = ({
     
     setIsUpdating(true);
     try {
+      console.log('📤 MicroCard: Calling onUpdateStatus...');
       await onUpdateStatus(appointment.id, newStatus);
       console.log('✅ MicroCard: Status atualizado com sucesso');
     } catch (error) {
       console.error('❌ MicroCard: Erro ao atualizar status:', error);
     } finally {
+      console.log('🏁 MicroCard: Finalizando update...');
       setIsUpdating(false);
     }
   };
