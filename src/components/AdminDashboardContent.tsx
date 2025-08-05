@@ -3,7 +3,7 @@ import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { Appointment, Service } from '@/hooks/useSupabaseData';
 import { Salon } from '@/types/supabase-entities';
-import AdminCalendarView from './admin/AdminCalendarView';
+import SimpleCalendarView from './admin/SimpleCalendarView';
 import FinancialDashboard from './admin/FinancialDashboard';
 import ServiceManager from './ServiceManager';
 import AdminAppointmentsSummary from './AdminAppointmentsSummary';
@@ -91,7 +91,7 @@ const AdminDashboardContent = ({
           />
           
           {/* Calendário Principal - SEMPRE RENDERIZADO */}
-          <AdminCalendarView 
+          <SimpleCalendarView 
             salonId={salon.id}
             onRefresh={onRefresh}
           />

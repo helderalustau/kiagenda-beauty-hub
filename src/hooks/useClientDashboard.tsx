@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAppointmentData } from '@/hooks/useAppointmentData';
 import { useClientData } from '@/hooks/useClientData';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+// Removed useRealtimeNotifications as it was deleted
 import { useToast } from "@/components/ui/use-toast";
 
 // Função para normalizar strings para comparação
@@ -42,40 +42,7 @@ export const useClientDashboard = () => {
     showOtherCities: false
   });
 
-  // Setup realtime notifications for client appointment updates
-  useRealtimeNotifications({
-    salonId: '', // Cliente não precisa filtrar por salon específico
-    onAppointmentStatusChange: (appointment) => {
-      // Atualizar appointments em tempo real quando status mudar
-      if (appointment.client_auth_id === clientUser?.id) {
-        setAppointments(prev => prev.map(apt => 
-          apt.id === appointment.id ? appointment : apt
-        ));
-        
-        // Mostrar notificação para o cliente
-        if (appointment.status === 'confirmed') {
-          toast({
-            title: "✅ Agendamento Confirmado!",
-            description: `Seu agendamento em ${appointment.salon?.name} foi confirmado`,
-            duration: 8000,
-          });
-        } else if (appointment.status === 'completed') {
-          toast({
-            title: "🎉 Atendimento Concluído!",
-            description: `Seu atendimento em ${appointment.salon?.name} foi finalizado`,
-            duration: 8000,
-          });
-        } else if (appointment.status === 'cancelled') {
-          toast({
-            title: "❌ Agendamento Cancelado",
-            description: `Seu agendamento em ${appointment.salon?.name} foi cancelado`,
-            duration: 8000,
-            variant: "destructive"
-          });
-        }
-      }
-    }
-  });
+  // Realtime notifications removed - notifications will be handled by the system
 
   // Improved client authentication check
   useEffect(() => {
