@@ -80,8 +80,37 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
         return;
       }
 
-      console.log('✅ SimpleAppointmentManager: Appointments fetched successfully:', data?.length || 0);
-      setAppointments((data as AppointmentWithRelations[]) || []);
+      console.log('✅ SimpleAppointmentManager: Raw data received:', {
+        dataLength: data?.length || 0,
+        sampleData: data?.slice(0, 2)
+      });
+
+      if (!data) {
+        console.warn('⚠️ SimpleAppointmentManager: No data returned from query');
+        setAppointments([]);
+        return;
+      }
+
+      // Convert and validate the data
+      const validAppointments = data.filter(apt => {
+        const isValid = apt.id && apt.status && apt.appointment_date;
+        if (!isValid) {
+          console.warn('⚠️ Invalid appointment data:', apt);
+        }
+        return isValid;
+      });
+
+      console.log('✅ SimpleAppointmentManager: Valid appointments processed:', {
+        total: validAppointments.length,
+        byStatus: {
+          pending: validAppointments.filter(a => a.status === 'pending').length,
+          confirmed: validAppointments.filter(a => a.status === 'confirmed').length,
+          completed: validAppointments.filter(a => a.status === 'completed').length,
+          cancelled: validAppointments.filter(a => a.status === 'cancelled').length
+        }
+      });
+
+      setAppointments(validAppointments as AppointmentWithRelations[]);
     } catch (error) {
       console.error('❌ SimpleAppointmentManager: Unexpected error:', error);
       toast({
@@ -117,13 +146,15 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
         newStatus
       });
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('appointments')
         .update({ 
           status: newStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', appointmentId);
+        .eq('id', appointmentId)
+        .select('*')
+        .single();
 
       if (error) {
         console.error('❌ SimpleAppointmentManager: Error updating status:', error);
@@ -135,7 +166,22 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
         return false;
       }
 
-      console.log('✅ SimpleAppointmentManager: Status updated successfully');
+      if (!data) {
+        console.error('❌ SimpleAppointmentManager: No data returned from update');
+        toast({
+          title: "Erro",
+          description: "Erro: Nenhum dado retornado da atualização",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      console.log('✅ SimpleAppointmentManager: Status updated successfully:', {
+        appointmentId,
+        oldStatus: appointments.find(a => a.id === appointmentId)?.status,
+        newStatus,
+        updatedData: data
+      });
       
       // Update local state immediately for better UX
       setAppointments(prev => prev.map(apt => 
@@ -147,7 +193,7 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
       // Show success message
       const statusMessages = {
         'confirmed': 'Agendamento confirmado com sucesso',
-        'completed': 'Atendimento marcado como concluído',
+        'completed': 'Atendimento marcado como concluído ✅',
         'cancelled': 'Agendamento cancelado',
         'pending': 'Agendamento revertido para pendente'
       };
@@ -157,10 +203,11 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
         description: statusMessages[newStatus],
       });
 
-      // Refresh data from server
+      // Refresh data from server after a short delay
       setTimeout(() => {
+        console.log('🔄 SimpleAppointmentManager: Refreshing data after status update');
         fetchAppointments();
-      }, 500);
+      }, 1000);
 
       return true;
     } catch (error) {

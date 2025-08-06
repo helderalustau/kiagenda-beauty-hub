@@ -30,7 +30,14 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
     salonId,
     appointmentsCount: appointments.length,
     loading,
-    updating
+    updating,
+    sampleAppointments: appointments.slice(0, 3).map(a => ({
+      id: a.id,
+      date: a.appointment_date,
+      time: a.appointment_time,
+      status: a.status,
+      clientName: a.client?.name || a.client?.username
+    }))
   });
 
   // Calendar navigation
@@ -74,10 +81,22 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
   // Get appointments for a specific day
   const getAppointmentsForDay = (day: Date) => {
     const targetDate = day.toISOString().split('T')[0];
-    return filteredAppointments.filter(apt => {
+    const dayAppointments = filteredAppointments.filter(apt => {
       const aptDate = new Date(apt.appointment_date).toISOString().split('T')[0];
       return aptDate === targetDate;
     });
+    
+    console.log(`📅 Appointments for ${targetDate}:`, {
+      total: dayAppointments.length,
+      appointments: dayAppointments.map(a => ({
+        id: a.id,
+        time: a.appointment_time,
+        status: a.status,
+        client: a.client?.name || a.client?.username
+      }))
+    });
+    
+    return dayAppointments;
   };
 
   const handleRefreshClick = async () => {
@@ -107,10 +126,23 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
               <Calendar className="h-5 w-5 text-blue-600" />
               Calendário Semanal ({totalAppointments} agendamentos)
             </CardTitle>
-            <Button onClick={handleRefreshClick} size="sm" variant="outline" disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleRefreshClick} size="sm" variant="outline" disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button 
+                onClick={() => {
+                  console.log('🔍 DEBUG: Full appointments data:', appointments);
+                  console.log('🔍 DEBUG: Filtered appointments:', filteredAppointments);
+                  console.log('🔍 DEBUG: Current week days:', weekDays.map(d => d.toISOString().split('T')[0]));
+                }} 
+                size="sm" 
+                variant="secondary"
+              >
+                Debug
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -195,15 +227,25 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
                 ) : (
                   dayAppointments
                     .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
-                    .map((appointment) => (
-                      <SimpleAppointmentCard
-                        key={appointment.id}
-                        appointment={appointment}
-                        onUpdateStatus={handleStatusUpdate}
-                        isUpdating={updating === appointment.id}
-                        compact={true}
-                      />
-                    ))
+                    .map((appointment) => {
+                      console.log('🎯 Rendering appointment card:', {
+                        id: appointment.id,
+                        status: appointment.status,
+                        time: appointment.appointment_time,
+                        client: appointment.client?.name,
+                        isUpdatingThis: updating === appointment.id
+                      });
+                      
+                      return (
+                        <SimpleAppointmentCard
+                          key={appointment.id}
+                          appointment={appointment}
+                          onUpdateStatus={handleStatusUpdate}
+                          isUpdating={updating === appointment.id}
+                          compact={true}
+                        />
+                      );
+                    })
                 )}
               </CardContent>
             </Card>

@@ -37,10 +37,17 @@ const SimpleAppointmentCard = ({
     console.log('🎯 SimpleAppointmentCard: Updating status:', {
       appointmentId: appointment.id,
       currentStatus: appointment.status,
-      newStatus
+      newStatus,
+      isUpdating
     });
+
+    if (isUpdating) {
+      console.warn('⚠️ SimpleAppointmentCard: Already updating, ignoring click');
+      return;
+    }
     
-    await onUpdateStatus(appointment.id, newStatus);
+    const success = await onUpdateStatus(appointment.id, newStatus);
+    console.log('🎯 SimpleAppointmentCard: Update result:', success);
   };
 
   const getStatusColor = (status: string) => {
@@ -143,10 +150,11 @@ const SimpleAppointmentCard = ({
                 <Button
                   size="sm"
                   onClick={() => handleStatusUpdate('completed')}
+                  disabled={isUpdating}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white h-7 text-xs font-bold"
                 >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  FINALIZAR ATENDIMENTO
+                  {isUpdating ? 'FINALIZANDO...' : 'FINALIZAR'}
                 </Button>
               )}
             </div>
@@ -230,10 +238,11 @@ const SimpleAppointmentCard = ({
             {appointment.status === 'confirmed' && (
               <Button
                 onClick={() => handleStatusUpdate('completed')}
+                disabled={isUpdating}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-3"
               >
                 <CheckCircle2 className="h-5 w-5 mr-2" />
-                FINALIZAR ATENDIMENTO
+                {isUpdating ? 'FINALIZANDO ATENDIMENTO...' : 'FINALIZAR ATENDIMENTO'}
               </Button>
             )}
 
