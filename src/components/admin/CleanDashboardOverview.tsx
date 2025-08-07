@@ -321,9 +321,28 @@ const CleanDashboardOverview = ({
         {/* Agenda de Hoje */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <CalendarDays className="h-5 w-5" />
-              Agenda de Hoje
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5" />
+                Agenda de Hoje
+              </div>
+              {todayConfirmedAppointments.length > 0 && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    // Concluir todos os agendamentos confirmados de hoje
+                    todayConfirmedAppointments.forEach(apt => {
+                      if (apt.status === 'confirmed') {
+                        onUpdateStatus(apt.id, 'completed');
+                      }
+                    });
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white h-7 px-3 text-xs font-bold"
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Concluir Todos
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
