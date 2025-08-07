@@ -128,22 +128,33 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
     appointmentId: string, 
     newStatus: 'pending' | 'confirmed' | 'completed' | 'cancelled'
   ) => {
+    console.log('🔧 useSimpleAppointmentManager: INICIANDO updateAppointmentStatus:', {
+      appointmentId,
+      newStatus,
+      currentUpdating: updating,
+      timestamp: new Date().toISOString()
+    });
     if (!appointmentId || !newStatus) {
-      console.error('❌ SimpleAppointmentManager: Missing required parameters');
+      console.error('❌ useSimpleAppointmentManager: PARÂMETROS INVÁLIDOS:', { appointmentId, newStatus });
       return false;
     }
 
     if (updating === appointmentId) {
-      console.warn('⚠️ SimpleAppointmentManager: Already updating this appointment');
+      console.warn('⚠️ useSimpleAppointmentManager: JÁ ATUALIZANDO ESTE AGENDAMENTO:', appointmentId);
       return false;
     }
 
+    console.log('✅ useSimpleAppointmentManager: Parâmetros válidos, iniciando atualização...');
     setUpdating(appointmentId);
     
     try {
-      console.log('🔄 SimpleAppointmentManager: Updating appointment status:', {
+      console.log('🚀 useSimpleAppointmentManager: CHAMANDO SUPABASE UPDATE:', {
         appointmentId,
-        newStatus
+        newStatus,
+        updatePayload: { 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        }
       });
 
       const { data, error } = await supabase

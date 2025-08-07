@@ -34,11 +34,12 @@ const SimpleAppointmentCard = ({
 }: SimpleAppointmentCardProps) => {
   
   const handleStatusUpdate = async (newStatus: 'pending' | 'confirmed' | 'completed' | 'cancelled') => {
-    console.log('🎯 SimpleAppointmentCard: Updating status:', {
+    console.log('🎯 SimpleAppointmentCard: INICIANDO ATUALIZAÇÃO DE STATUS:', {
       appointmentId: appointment.id,
       currentStatus: appointment.status,
       newStatus,
-      isUpdating
+      isUpdating,
+      timestamp: new Date().toISOString()
     });
 
     if (isUpdating) {
@@ -46,8 +47,22 @@ const SimpleAppointmentCard = ({
       return;
     }
     
-    const success = await onUpdateStatus(appointment.id, newStatus);
-    console.log('🎯 SimpleAppointmentCard: Update result:', success);
+    try {
+      console.log('🚀 SimpleAppointmentCard: Chamando onUpdateStatus...');
+      const success = await onUpdateStatus(appointment.id, newStatus);
+      console.log('✅ SimpleAppointmentCard: RESULTADO DA ATUALIZAÇÃO:', {
+        success,
+        appointmentId: appointment.id,
+        newStatus,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (!success) {
+        console.error('❌ SimpleAppointmentCard: FALHA NA ATUALIZAÇÃO - success = false');
+      }
+    } catch (error) {
+      console.error('❌ SimpleAppointmentCard: ERRO DURANTE ATUALIZAÇÃO:', error);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -147,7 +162,10 @@ const SimpleAppointmentCard = ({
               {appointment.status === 'confirmed' && (
                 <Button
                   size="sm"
-                  onClick={() => handleStatusUpdate('completed')}
+                  onClick={() => {
+                    console.log('🔥 BOTÃO CONCLUIR CLICADO!', { appointmentId: appointment.id, status: appointment.status });
+                    handleStatusUpdate('completed');
+                  }}
                   disabled={isUpdating}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white h-6 text-xs font-bold"
                 >
