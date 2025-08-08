@@ -73,7 +73,7 @@ const AdminDashboardContent = ({
           services={services}
           salon={salon}
           adminUsers={adminUsers}
-          onUpdateStatus={onRefresh}
+          onUpdateStatus={handleUpdateStatus}
         />
       </TabsContent>
 
