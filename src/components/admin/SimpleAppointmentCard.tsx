@@ -179,6 +179,13 @@ const SimpleAppointmentCard = ({
                   </Button>
                   <Button
                     size="sm"
+                    onClick={() => handleStatusUpdate('completed')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white flex-1 h-6 text-[10px] px-1"
+                  >
+                    Concluir
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="destructive"
                     onClick={() => handleStatusUpdate('cancelled')}
                     className="flex-1 h-6 text-xs px-1"
@@ -293,18 +300,27 @@ const SimpleAppointmentCard = ({
         {!isUpdating && (
           <div className="space-y-2">
             {appointment.status === 'pending' && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => handleStatusUpdate('confirmed')}
-                  className="bg-green-600 hover:bg-green-700 text-white flex-1"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Confirmar Agendamento
-                </Button>
+              <div className="flex gap-2 flex-col sm:flex-row">
+                <div className="flex gap-2 w-full">
+                  <Button
+                    onClick={() => handleStatusUpdate('confirmed')}
+                    className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Confirmar
+                  </Button>
+                  <Button
+                    onClick={() => handleStatusUpdate('completed')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Concluir
+                  </Button>
+                </div>
                 <Button
                   variant="destructive"
                   onClick={() => handleStatusUpdate('cancelled')}
-                  className="flex-1"
+                  className="w-full sm:w-auto"
                 >
                   <XCircle className="h-4 w-4 mr-2" />
                   Cancelar
