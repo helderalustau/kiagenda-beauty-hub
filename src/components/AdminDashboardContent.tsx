@@ -77,7 +77,7 @@ const AdminDashboardContent = ({
         />
       </TabsContent>
 
-      <TabsContent value="agenda" className="space-y-2 mt-2">
+      <TabsContent value="calendar" className="space-y-2 mt-2">
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Agenda do Estabelecimento</h2>
           
