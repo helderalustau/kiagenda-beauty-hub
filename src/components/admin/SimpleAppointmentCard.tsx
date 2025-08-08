@@ -10,6 +10,7 @@ interface SimpleAppointmentCardProps {
     status: string;
     appointment_date: string;
     appointment_time: string;
+    notes?: string;
     client?: {
       name: string;
       username: string;
@@ -105,6 +106,27 @@ const SimpleAppointmentCard = ({
     });
   };
 
+  // Parse "Serviços Adicionais" da nota do agendamento
+  const parseAdditionalServices = (notes?: string): Array<{ name: string; duration: number; price: number }> => {
+    if (!notes) return [];
+    const additionalServicesMatch = notes.match(/Serviços Adicionais:\s*(.+?)(?:\n\n|$)/s);
+    if (!additionalServicesMatch) return [];
+    const servicesText = additionalServicesMatch[1];
+    const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/g);
+    if (!serviceMatches) return [];
+    return (serviceMatches.map((match) => {
+      const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/);
+      if (!parts) return null as any;
+      return {
+        name: parts[1].trim(),
+        duration: parseInt(parts[2]),
+        price: parseFloat(parts[3].replace(',', '')),
+      };
+    }).filter(Boolean) as Array<{ name: string; duration: number; price: number }>);
+  };
+
+  const additionalServices = parseAdditionalServices(appointment.notes);
+  const additionalTotal = additionalServices.reduce((sum, s) => sum + s.price, 0);
   if (compact) {
     return (
       <Card className={`border shadow-sm mb-1 hover:shadow-md transition-all ${getStatusColor(appointment.status)}`}>
@@ -132,9 +154,16 @@ const SimpleAppointmentCard = ({
           </div>
 
           {/* Nome do serviço */}
-          <div className="text-xs text-gray-600 mb-2 truncate">
+          <div className="text-xs text-gray-600 truncate">
             {appointment.service?.name}
           </div>
+          {/* Resumo de adicionais */}
+          {additionalServices.length > 0 && (
+            <div className="flex items-center justify-between mt-1 mb-2 text-[10px]">
+              <span className="text-gray-700">+ {additionalServices.length} serviço(s) adicional(is)</span>
+              <span className="text-green-700 font-semibold">+ {formatCurrency(additionalTotal)}</span>
+            </div>
+          )}
 
           {/* Botões de ação compactos */}
           {!isUpdating && (
@@ -239,6 +268,26 @@ const SimpleAppointmentCard = ({
             </p>
           </div>
         </div>
+
+        {/* Additional services */}
+        {additionalServices.length > 0 && (
+          <div className="bg-white rounded-lg p-3 border border-blue-100 mb-3">
+            <p className="font-medium text-blue-900 mb-2">Serviços Adicionais</p>
+            <div className="space-y-1">
+              {additionalServices.map((s, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700">{s.name} ({s.duration} min)</span>
+                  <span className="text-green-700 font-semibold">{formatCurrency(s.price)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between mt-2 text-sm font-semibold">
+              <span>Total adicionais</span>
+              <span>{formatCurrency(additionalTotal)}</span>
+            </div>
+          </div>
+        )}
+
 
         {/* Action buttons */}
         {!isUpdating && (
