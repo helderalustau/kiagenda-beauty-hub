@@ -112,15 +112,17 @@ const SimpleAppointmentCard = ({
     const additionalServicesMatch = notes.match(/Serviços Adicionais:\s*(.+?)(?:\n\n|$)/s);
     if (!additionalServicesMatch) return [];
     const servicesText = additionalServicesMatch[1];
-    const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/g);
+    const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,\.]+)\)/g);
     if (!serviceMatches) return [];
     return (serviceMatches.map((match) => {
-      const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/);
+      const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,\.]+)\)/);
       if (!parts) return null as any;
+      const raw = parts[3];
+      const normalized = raw.replace(/\./g, '').replace(',', '.');
       return {
         name: parts[1].trim(),
         duration: parseInt(parts[2]),
-        price: parseFloat(parts[3].replace(',', '')),
+        price: parseFloat(normalized),
       };
     }).filter(Boolean) as Array<{ name: string; duration: number; price: number }>);
   };
