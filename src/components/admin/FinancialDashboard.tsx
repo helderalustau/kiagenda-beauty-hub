@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Appointment } from '@/types/supabase-entities';
 import { format, startOfMonth, endOfMonth, subMonths, isSameMonth, isSameDay, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -68,6 +68,43 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     
     return total;
   };
+
+  // Criar transação financeira automaticamente quando appointment for concluído
+  const createFinancialTransaction = useCallback(async (appointment: Appointment) => {
+    if (appointment.status === 'completed' && salonId) {
+      const total = calculateAppointmentTotal(appointment);
+      
+      try {
+        await fetch('/api/supabase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create_financial_transaction',
+            data: {
+              salon_id: salonId,
+              appointment_id: appointment.id,
+              transaction_type: 'income',
+              amount: total,
+              description: `Serviço: ${appointment.service?.name || 'Serviço'} - Cliente: ${appointment.client?.name || 'Cliente'}`,
+              category: 'service',
+              payment_method: 'cash',
+              transaction_date: appointment.appointment_date,
+              status: 'completed',
+              metadata: {
+                auto_generated: true,
+                appointment_id: appointment.id,
+                service_name: appointment.service?.name,
+                client_name: appointment.client?.name
+              }
+            }
+          })
+        });
+        console.log('💰 Transação financeira criada para appointment:', appointment.id);
+      } catch (error) {
+        console.error('Erro ao criar transação financeira:', error);
+      }
+    }
+  }, [salonId]);
 
   const filteredAppointments = useMemo(() => {
     const now = new Date();
@@ -151,7 +188,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       transactions: transactions.length
     });
     
-    // Calcular receita total usando as transações financeiras quando disponível
+    // Calcular receita total prioritizando transações financeiras se existirem
     const totalRevenue = transactions.length > 0 
       ? transactions
           .filter(t => t.transaction_type === 'income' && t.status === 'completed')

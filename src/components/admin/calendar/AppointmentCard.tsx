@@ -50,13 +50,13 @@ const AppointmentCard = ({ appointment, onUpdateAppointment, isUpdating }: Appoi
 
   return (
     <>
-      <Card className="mb-3 hover:shadow-md transition-shadow">
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-3">
+      <Card className="mb-4 hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-gray-900 flex items-center">
-                  <User className="h-4 w-4 mr-2 text-blue-500" />
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-lg font-bold text-foreground flex items-center">
+                  <User className="h-5 w-5 mr-3 text-primary" />
                   {appointment.client?.name || appointment.client?.username || 'Cliente'}
                 </h4>
                 <Badge 
@@ -67,47 +67,47 @@ const AppointmentCard = ({ appointment, onUpdateAppointment, isUpdating }: Appoi
                 </Badge>
               </div>
               
-              <div className="space-y-1 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <Clock className="h-3 w-3 mr-2" />
-                  <span>{appointment.appointment_time} - {appointment.service?.name || 'Serviço'}</span>
+              <div className="space-y-3 text-base text-muted-foreground">
+                <div className="flex items-center bg-muted/50 p-3 rounded-lg">
+                  <Clock className="h-4 w-4 mr-3 text-primary" />
+                  <span className="font-medium">{appointment.appointment_time} - {appointment.service?.name || 'Serviço'}</span>
                 </div>
                 
                 {appointment.client?.phone && (
-                  <div className="flex items-center">
-                    <Phone className="h-3 w-3 mr-2" />
-                    <span>{appointment.client.phone}</span>
+                  <div className="flex items-center bg-muted/30 p-2 rounded-lg">
+                    <Phone className="h-4 w-4 mr-3 text-primary" />
+                    <span className="font-medium">{appointment.client.phone}</span>
                   </div>
                 )}
                 
-                <div className="flex items-center font-medium text-green-600">
-                  <span className="mr-2">💰</span>
-                  <span>{formatCurrency(appointment.service?.price || 0)}</span>
-                  <span className="text-gray-500 ml-2">({appointment.service?.duration_minutes || 0}min)</span>
+                <div className="flex items-center font-bold text-lg bg-success/10 p-3 rounded-lg">
+                  <span className="mr-3 text-xl">💰</span>
+                  <span className="text-success">{formatCurrency(appointment.service?.price || 0)}</span>
+                  <span className="text-muted-foreground ml-3 text-sm">({appointment.service?.duration_minutes || 0}min)</span>
                 </div>
               </div>
             </div>
           </div>
 
           {appointment.status === 'pending' && (
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-3 mt-4">
               <Button
-                size="sm"
+                size="lg"
                 onClick={() => onUpdateAppointment(appointment.id, { status: 'confirmed' })}
                 disabled={isUpdating}
-                className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                className="bg-success hover:bg-success/90 text-white flex-1 font-semibold py-3"
               >
-                <CheckCircle2 className="h-3 w-3 mr-1" />
+                <CheckCircle2 className="h-4 w-4 mr-2" />
                 Aprovar
               </Button>
               <Button
-                size="sm"
+                size="lg"
                 variant="destructive"
                 onClick={() => onUpdateAppointment(appointment.id, { status: 'cancelled' })}
                 disabled={isUpdating}
-                className="flex-1"
+                className="flex-1 font-semibold py-3"
               >
-                <XCircle className="h-3 w-3 mr-1" />
+                <XCircle className="h-4 w-4 mr-2" />
                 Rejeitar
               </Button>
             </div>
@@ -115,12 +115,12 @@ const AppointmentCard = ({ appointment, onUpdateAppointment, isUpdating }: Appoi
 
           {appointment.status === 'confirmed' && (
             <Button
-              size="sm"
+              size="lg"
               onClick={() => onUpdateAppointment(appointment.id, { status: 'completed' })}
               disabled={isUpdating}
-              className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
+              className="w-full mt-4 bg-primary hover:bg-primary/90 font-semibold py-3 text-lg"
             >
-              <CheckCircle2 className="h-3 w-3 mr-1" />
+              <CheckCircle2 className="h-4 w-4 mr-2" />
               Finalizar Atendimento
             </Button>
           )}
