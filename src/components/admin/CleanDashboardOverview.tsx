@@ -179,34 +179,56 @@ const CleanDashboardOverview = ({
   const [monthlyRevenue, setMonthlyRevenue] = useState(0);
   const [monthlyTransactionsCount, setMonthlyTransactionsCount] = useState(0);
 
-  // Buscar transações financeiras do mês
+  // Buscar transações financeiras do mês - MESMA LÓGICA DO DASHBOARD FINANCEIRO
   useEffect(() => {
     const fetchFinancialData = async () => {
-      if (!salon?.id) return;
+      if (!salon?.id) {
+        console.log('⚠️ CleanDashboard - Salon ID não encontrado');
+        return;
+      }
+      
+      console.log('🔍 CleanDashboard - Buscando dados financeiros para:', salon.id);
       
       try {
-        const { data: transactions } = await supabase
+        // USAR EXATAMENTE A MESMA QUERY DO SimpleFinancialDashboard
+        const { data: transactions, error } = await supabase
           .from('financial_transactions')
-          .select('amount')
+          .select('*')
           .eq('salon_id', salon.id)
-          .eq('transaction_type', 'income')
-          .eq('status', 'completed')
-          .gte('transaction_date', format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd'))
-          .lte('transaction_date', format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), 'yyyy-MM-dd'));
+          .eq('transaction_type', 'income');
 
-        if (transactions) {
-          const revenue = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
-          setMonthlyRevenue(revenue);
-          setMonthlyTransactionsCount(transactions.length);
-          console.log('💰 CleanDashboard - Receita corrigida:', { 
-            revenue, 
-            count: transactions.length, 
-            salonId: salon.id,
-            formattedRevenue: formatCurrency(revenue)
+        if (error) {
+          console.error('❌ CleanDashboard - Erro na query:', error);
+          return;
+        }
+
+        console.log('💰 CleanDashboard - Transações encontradas:', transactions?.length || 0);
+
+        if (transactions && transactions.length > 0) {
+          const currentMonth = format(new Date(), 'yyyy-MM');
+          
+          // Transações do mês - MESMA LÓGICA
+          const monthTransactions = transactions.filter(t => t.transaction_date.startsWith(currentMonth));
+          const monthTotal = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+
+          setMonthlyRevenue(monthTotal);
+          setMonthlyTransactionsCount(monthTransactions.length);
+          
+          console.log('📊 CleanDashboard - Dados calculados:', {
+            totalTransactions: transactions.length,
+            monthTransactions: monthTransactions.length,
+            monthTotal: monthTotal,
+            formattedRevenue: formatCurrency(monthTotal),
+            currentMonth,
+            salonId: salon.id
           });
+        } else {
+          console.log('⚠️ CleanDashboard - Nenhuma transação encontrada');
+          setMonthlyRevenue(0);
+          setMonthlyTransactionsCount(0);
         }
       } catch (error) {
-        console.error('Erro ao buscar dados financeiros:', error);
+        console.error('❌ CleanDashboard - Erro ao buscar dados financeiros:', error);
       }
     };
 
