@@ -145,64 +145,64 @@ const AppointmentNotification = ({
     additionalServices.reduce((sum, service) => sum + service.duration, 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
-      <Card className={`w-full bg-white shadow-2xl border-2 border-blue-200 animate-in fade-in-0 zoom-in-95 duration-300 ${
-        isMobile ? 'max-w-sm max-h-[90vh] overflow-y-auto' : 'max-w-lg'
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 md:p-4">
+      <Card className={`w-full bg-background shadow-2xl border-2 border-primary/20 animate-in fade-in-0 zoom-in-95 duration-300 ${
+        isMobile ? 'max-w-sm max-h-[90vh] overflow-y-auto' : 'max-w-md'
       }`}>
-        <CardHeader className={`bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg ${
-          isMobile ? 'p-3' : 'p-6'
+        <CardHeader className={`bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-t-lg ${
+          isMobile ? 'p-2.5' : 'p-4'
         }`}>
           <div className="flex items-center justify-between">
-            <CardTitle className={`flex items-center gap-2 ${
-              isMobile ? 'text-lg' : 'text-xl'
+            <CardTitle className={`flex items-center gap-2 font-bold ${
+              isMobile ? 'text-base' : 'text-lg'
             }`}>
-              <Star className={`text-yellow-300 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`} />
-              Novo Agendamento!
+              <Star className={`text-warning ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+              🔔 Novo Agendamento!
             </CardTitle>
             <Button
               variant="ghost"
               size="sm"
               onClick={onReject}
-              className="text-white hover:bg-blue-600"
+              className="text-primary-foreground hover:bg-primary/20 h-6 w-6 p-0"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
             </Button>
           </div>
         </CardHeader>
         
-        <CardContent className={`space-y-4 ${isMobile ? 'p-3' : 'p-6'}`}>
+        <CardContent className={`space-y-3 ${isMobile ? 'p-2.5' : 'p-4'}`}>
           {/* Informações do Cliente */}
-          <div className={`bg-slate-50 rounded-lg space-y-2 ${isMobile ? 'p-3' : 'p-4'}`}>
-            <h3 className={`font-semibold text-slate-900 flex items-center gap-2 ${
-              isMobile ? 'text-sm' : 'text-base'
+          <div className={`bg-secondary/20 rounded-lg space-y-2 ${isMobile ? 'p-2' : 'p-3'}`}>
+            <h3 className={`font-semibold text-foreground flex items-center gap-1.5 ${
+              isMobile ? 'text-xs' : 'text-sm'
             }`}>
-              <User className="h-4 w-4 text-blue-500" />
-              Informações do Cliente
+              <User className="h-3 w-3 text-primary" />
+              Cliente
             </h3>
             
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <User className="h-3 w-3 text-slate-500 flex-shrink-0" />
-                <span className={`font-medium text-slate-900 truncate ${
-                  isMobile ? 'text-sm' : 'text-base'
+              <div className="flex items-center gap-1.5">
+                <User className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
+                <span className={`font-medium text-foreground truncate ${
+                  isMobile ? 'text-xs' : 'text-sm'
                 }`}>
                   {getClientName()}
                 </span>
               </div>
               
               {getClientPhone() && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-3 w-3 text-slate-500 flex-shrink-0" />
-                  <span className={`text-slate-700 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                <div className="flex items-center gap-1.5">
+                  <Phone className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
+                  <span className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     {getClientPhone()}
                   </span>
                 </div>
               )}
               
               {getClientEmail() && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3 w-3 text-slate-500 flex-shrink-0" />
-                  <span className={`text-slate-700 truncate ${isMobile ? 'text-sm' : 'text-base'}`}>
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="h-2.5 w-2.5 text-muted-foreground flex-shrink-0" />
+                  <span className={`text-muted-foreground truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     {getClientEmail()}
                   </span>
                 </div>
@@ -211,29 +211,29 @@ const AppointmentNotification = ({
           </div>
 
           {/* Serviços Solicitados */}
-          <div className={`bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200 ${
-            isMobile ? 'p-3' : 'p-4'
+          <div className={`bg-accent/10 rounded-lg border border-accent/20 ${
+            isMobile ? 'p-2' : 'p-3'
           }`}>
-            <h3 className={`font-semibold text-purple-900 flex items-center gap-2 mb-3 ${
-              isMobile ? 'text-sm' : 'text-base'
+            <h3 className={`font-semibold text-foreground flex items-center gap-1.5 mb-2 ${
+              isMobile ? 'text-xs' : 'text-sm'
             }`}>
-              <Scissors className="h-4 w-4" />
-              Serviços Solicitados
+              <Scissors className="h-3 w-3 text-accent" />
+              Serviços
             </h3>
             
             {/* Serviço Principal */}
-            <div className="bg-white rounded-lg p-3 border border-purple-100 mb-3">
+            <div className="bg-background rounded-lg p-2 border border-border mb-2">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h4 className={`font-medium text-purple-900 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                  <h4 className={`font-medium text-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     {(appointment.service as any)?.name || 'Serviço'}
                   </h4>
-                  <div className={`text-purple-600 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    {(appointment.service as any)?.duration_minutes || 0} minutos
+                  <div className={`text-muted-foreground mt-0.5 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+                    {(appointment.service as any)?.duration_minutes || 0} min
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`font-bold text-green-600 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                  <div className={`font-bold text-primary ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     {formatCurrency(mainServicePrice)}
                   </div>
                 </div>
@@ -242,25 +242,25 @@ const AppointmentNotification = ({
 
             {/* Serviços Adicionais */}
             {additionalServices.length > 0 && (
-              <div className="space-y-2">
-                <h4 className={`font-medium text-purple-800 flex items-center gap-1 ${
-                  isMobile ? 'text-xs' : 'text-sm'
+              <div className="space-y-1.5">
+                <h4 className={`font-medium text-foreground flex items-center gap-1 ${
+                  isMobile ? 'text-[10px]' : 'text-xs'
                 }`}>
-                  <Plus className="h-3 w-3" />
-                  Serviços Adicionais
+                  <Plus className="h-2.5 w-2.5" />
+                  Adicionais
                 </h4>
                 {additionalServices.map((service, index) => (
-                  <div key={index} className="bg-white rounded-lg p-2 border border-purple-100">
+                  <div key={index} className="bg-background rounded-lg p-1.5 border border-border">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <span className={`font-medium text-purple-800 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                        <span className={`font-medium text-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                           {service.name}
                         </span>
-                        <div className={`text-purple-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                          {service.duration} minutos
+                        <div className={`text-muted-foreground ${isMobile ? 'text-[9px]' : 'text-[10px]'}`}>
+                          {service.duration} min
                         </div>
                       </div>
-                      <div className={`font-semibold text-green-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      <div className={`font-semibold text-primary ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                         {formatCurrency(service.price)}
                       </div>
                     </div>
@@ -271,48 +271,48 @@ const AppointmentNotification = ({
           </div>
 
           {/* Data e Horário do Agendamento */}
-          <div className={`bg-blue-50 rounded-lg border border-blue-200 ${
-            isMobile ? 'p-3' : 'p-4'
+          <div className={`bg-primary/10 rounded-lg border border-primary/20 ${
+            isMobile ? 'p-2' : 'p-3'
           }`}>
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="h-4 w-4 text-blue-600" />
-              <span className={`font-semibold text-blue-800 ${
-                isMobile ? 'text-sm' : 'text-base'
-              }`}>Data e Horário:</span>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Calendar className="h-3 w-3 text-primary" />
+              <span className={`font-semibold text-foreground ${
+                isMobile ? 'text-xs' : 'text-sm'
+              }`}>Data e Horário</span>
             </div>
             <div className="space-y-1">
-              <div className={`font-bold text-blue-900 ${
-                isMobile ? 'text-lg' : 'text-xl'
+              <div className={`font-bold text-foreground ${
+                isMobile ? 'text-sm' : 'text-base'
               }`}>
                 {(() => {
                   const [year, month, day] = appointment.appointment_date.split('-');
                   return `${day}/${month}/${year}`;
                 })()}
               </div>
-              <div className={`flex items-center gap-2 font-semibold text-blue-800 ${
-                isMobile ? 'text-base' : 'text-lg'
+              <div className={`flex items-center gap-1.5 font-semibold text-primary ${
+                isMobile ? 'text-xs' : 'text-sm'
               }`}>
-                <Clock className="h-4 w-4" />
+                <Clock className="h-3 w-3" />
                 {appointment.appointment_time}
               </div>
             </div>
           </div>
 
           {/* Resumo Financeiro */}
-          <div className={`bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 ${
-            isMobile ? 'p-3' : 'p-4'
+          <div className={`bg-accent/10 rounded-lg border border-accent/30 ${
+            isMobile ? 'p-2' : 'p-3'
           }`}>
-            <h3 className={`font-semibold text-green-900 mb-3 ${isMobile ? 'text-sm' : 'text-base'}`}>
-              Resumo Financeiro
+            <h3 className={`font-semibold text-foreground mb-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              💰 Total
             </h3>
             
-            <div className="space-y-2">
+            <div className="space-y-1">
               {/* Serviço Principal */}
               <div className="flex justify-between items-center">
-                <span className={`text-green-800 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                <span className={`text-muted-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                   Serviço principal
                 </span>
-                <span className={`font-semibold text-green-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                <span className={`font-semibold text-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                   {formatCurrency(mainServicePrice)}
                 </span>
               </div>
@@ -320,29 +320,29 @@ const AppointmentNotification = ({
               {/* Serviços Adicionais */}
               {additionalServices.length > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className={`text-green-800 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    Serviços adicionais ({additionalServices.length})
+                  <span className={`text-muted-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+                    Adicionais ({additionalServices.length})
                   </span>
-                  <span className={`font-semibold text-green-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                  <span className={`font-semibold text-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                     {formatCurrency(additionalServicesTotal)}
                   </span>
                 </div>
               )}
 
               {/* Linha divisória */}
-              <div className="border-t border-green-300 my-2"></div>
+              <div className="border-t border-border my-1"></div>
 
               {/* Total */}
               <div className="flex justify-between items-center">
                 <div>
-                  <span className={`font-bold text-green-900 ${isMobile ? 'text-sm' : 'text-lg'}`}>
-                    Total
+                  <span className={`font-bold text-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    TOTAL
                   </span>
-                  <div className={`text-green-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    Duração: {totalDuration} min
+                  <div className={`text-muted-foreground ${isMobile ? 'text-[9px]' : 'text-[10px]'}`}>
+                    {totalDuration} min
                   </div>
                 </div>
-                <span className={`font-bold text-green-600 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                <span className={`font-bold text-primary ${isMobile ? 'text-sm' : 'text-lg'}`}>
                   {formatCurrency(totalPrice)}
                 </span>
               </div>
@@ -351,47 +351,47 @@ const AppointmentNotification = ({
           
           {/* Observações do Cliente */}
           {clientNotes && (
-            <div className={`bg-gray-50 rounded-lg border ${
-              isMobile ? 'p-2' : 'p-3'
+            <div className={`bg-muted/30 rounded-lg border ${
+              isMobile ? 'p-1.5' : 'p-2'
             }`}>
-              <span className={`font-medium text-gray-700 ${
-                isMobile ? 'text-sm' : 'text-base'
+              <span className={`font-medium text-foreground ${
+                isMobile ? 'text-xs' : 'text-sm'
               }`}>Observações:</span>
-              <p className={`text-gray-900 mt-1 ${
-                isMobile ? 'text-sm' : 'text-base'
+              <p className={`text-muted-foreground mt-0.5 ${
+                isMobile ? 'text-xs' : 'text-sm'
               }`}>{clientNotes}</p>
             </div>
           )}
 
-          <Badge variant="secondary" className={`w-full justify-center bg-yellow-100 text-yellow-800 ${
-            isMobile ? 'py-1 text-sm' : 'py-2'
+          <Badge variant="secondary" className={`w-full justify-center bg-warning/20 text-warning-foreground border-warning/30 ${
+            isMobile ? 'py-1 text-xs' : 'py-1.5 text-sm'
           }`}>
-            Aguardando sua aprovação
+            ⏳ Aguardando aprovação
           </Badge>
 
           {/* Botões de Ação */}
-          <div className={`flex gap-2 ${isMobile ? 'pt-2' : 'pt-4'}`}>
+          <div className={`flex gap-2 ${isMobile ? 'pt-1' : 'pt-2'}`}>
             <Button 
               onClick={onReject}
               variant="outline" 
-              className={`flex-1 border-red-200 text-red-600 hover:bg-red-50 ${
-                isMobile ? 'text-sm py-2' : ''
+              className={`flex-1 border-destructive/20 text-destructive hover:bg-destructive/10 ${
+                isMobile ? 'text-xs py-1.5 h-8' : 'text-sm py-2 h-9'
               }`}
             >
-              Recusar
+              ❌ Recusar
             </Button>
             <Button 
               onClick={onAccept}
-              className={`flex-1 bg-green-600 hover:bg-green-700 text-white ${
-                isMobile ? 'text-sm py-2' : ''
+              className={`flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold ${
+                isMobile ? 'text-xs py-1.5 h-8' : 'text-sm py-2 h-9'
               }`}
             >
-              {isMobile ? 'Aceitar' : 'Aceitar Agendamento'}
+              {isMobile ? '✅ Aceitar' : '✅ Aceitar Agendamento'}
             </Button>
           </div>
           
-          <p className={`text-gray-500 text-center ${
-            isMobile ? 'text-xs pt-1' : 'text-xs pt-2'
+          <p className={`text-muted-foreground text-center ${
+            isMobile ? 'text-[10px] pt-1' : 'text-xs pt-1'
           }`}>
             Solicitado em {format(new Date(appointment.created_at || ''), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </p>
