@@ -201,10 +201,10 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
           : apt
       ));
 
-      // Show success message
+      // Show success message with financial integration info
       const statusMessages = {
         'confirmed': 'Agendamento confirmado com sucesso',
-        'completed': 'Atendimento marcado como concluído ✅',
+        'completed': 'Atendimento concluído! ✅\nReceita registrada automaticamente no módulo financeiro.',
         'cancelled': 'Agendamento cancelado',
         'pending': 'Agendamento revertido para pendente'
       };
@@ -212,6 +212,7 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
       toast({
         title: "Sucesso",
         description: statusMessages[newStatus],
+        duration: newStatus === 'completed' ? 6000 : 3000, // Mostra por mais tempo quando concluído
       });
 
       // Refresh data from server after a short delay

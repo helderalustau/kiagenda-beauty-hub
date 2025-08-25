@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -727,25 +727,25 @@ export type Database = {
       }
       create_admin_hierarchy_link: {
         Args: {
-          p_salon_id: string
           p_admin_id: string
-          p_salon_name: string
           p_admin_name: string
+          p_salon_id: string
+          p_salon_name: string
         }
         Returns: Json
       }
       create_plan_upgrade_request: {
         Args: {
+          p_current_plan: string
+          p_justification: string
+          p_requested_plan: string
           p_salon_id: string
           p_salon_name: string
-          p_current_plan: string
-          p_requested_plan: string
-          p_justification: string
         }
         Returns: string
       }
       generate_unique_code: {
-        Args: { prefix: string; length?: number }
+        Args: { length?: number; prefix: string }
         Returns: string
       }
       generate_unique_slug: {
@@ -753,7 +753,7 @@ export type Database = {
         Returns: string
       }
       get_available_time_slots: {
-        Args: { p_salon_id: string; p_date: string; p_service_id?: string }
+        Args: { p_date: string; p_salon_id: string; p_service_id?: string }
         Returns: {
           time_slot: string
         }[]
@@ -765,18 +765,18 @@ export type Database = {
       log_system_activity: {
         Args: {
           p_activity_type: string
-          p_entity_type: string
+          p_description?: string
           p_entity_id?: string
-          p_user_id?: string
+          p_entity_type: string
+          p_metadata?: Json
           p_salon_id?: string
           p_title?: string
-          p_description?: string
-          p_metadata?: Json
+          p_user_id?: string
         }
         Returns: string
       }
       verify_password: {
-        Args: { password: string; hash: string }
+        Args: { hash: string; password: string }
         Returns: boolean
       }
     }
