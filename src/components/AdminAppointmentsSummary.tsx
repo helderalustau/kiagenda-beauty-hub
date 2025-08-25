@@ -7,6 +7,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/hooks/useSupabaseData';
 import EnhancedAppointmentCard from './admin/calendar/EnhancedAppointmentCard';
+import FinancialSummaryCards from './admin/FinancialSummaryCards';
 
 interface AdminAppointmentsSummaryProps {
   appointments: Appointment[];
@@ -24,10 +25,27 @@ const AdminAppointmentsSummary = ({
   onUpdateStatus 
 }: AdminAppointmentsSummaryProps) => {
   
+  // Obter salon_id do localStorage
+  const getSalonId = () => {
+    const adminAuth = localStorage.getItem('adminAuth');
+    if (adminAuth) {
+      try {
+        const admin = JSON.parse(adminAuth);
+        return admin.salon_id;
+      } catch (error) {
+        console.error('Error parsing adminAuth:', error);
+      }
+    }
+    return null;
+  };
+
+  const salonId = getSalonId();
+  
   console.log('📊 AdminAppointmentsSummary - Dados recebidos:', {
     appointmentsCount: appointments.length,
     selectedDate: format(selectedDate, 'dd/MM/yyyy'),
-    showFutureOnly
+    showFutureOnly,
+    salonId
   });
 
   // Filtrar agendamentos do dia selecionado
@@ -69,6 +87,9 @@ const AdminAppointmentsSummary = ({
 
   return (
     <div className="space-y-3">
+      {/* Cards Financeiros */}
+      {salonId && <FinancialSummaryCards salonId={salonId} />}
+
       {/* Cards de Estatísticas Compactos */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <Card className="bg-yellow-50 border-yellow-200">
