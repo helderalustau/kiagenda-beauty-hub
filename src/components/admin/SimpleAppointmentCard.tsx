@@ -60,6 +60,8 @@ const SimpleAppointmentCard = ({
       
       if (!success) {
         console.error('❌ SimpleAppointmentCard: FALHA NA ATUALIZAÇÃO - success = false');
+      } else {
+        console.log('🎉 SimpleAppointmentCard: ATUALIZAÇÃO BEM-SUCEDIDA!');
       }
     } catch (error) {
       console.error('❌ SimpleAppointmentCard: ERRO DURANTE ATUALIZAÇÃO:', error);
@@ -172,14 +174,22 @@ const SimpleAppointmentCard = ({
                 <div className="flex gap-1">
                   <Button
                     size="sm"
-                    onClick={() => handleStatusUpdate('confirmed')}
+                    onClick={() => {
+                      console.log('🟢 CONFIRMAR CLICADO!', { appointmentId: appointment.id, status: appointment.status });
+                      handleStatusUpdate('confirmed');
+                    }}
+                    disabled={isUpdating}
                     className="bg-green-600 hover:bg-green-700 text-white flex-1 h-6 text-xs px-1"
                   >
                     <CheckCircle2 className="h-3 w-3" />
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => handleStatusUpdate('completed')}
+                    onClick={() => {
+                      console.log('🔵 CONCLUIR DIRETO CLICADO!', { appointmentId: appointment.id, status: appointment.status });
+                      handleStatusUpdate('completed');
+                    }}
+                    disabled={isUpdating}
                     className="bg-blue-600 hover:bg-blue-700 text-white flex-1 h-6 text-[10px] px-1"
                   >
                     Concluir
@@ -187,7 +197,11 @@ const SimpleAppointmentCard = ({
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => handleStatusUpdate('cancelled')}
+                    onClick={() => {
+                      console.log('🔴 CANCELAR CLICADO!', { appointmentId: appointment.id, status: appointment.status });
+                      handleStatusUpdate('cancelled');
+                    }}
+                    disabled={isUpdating}
                     className="flex-1 h-6 text-xs px-1"
                   >
                     <XCircle className="h-3 w-3" />
@@ -199,14 +213,19 @@ const SimpleAppointmentCard = ({
                 <Button
                   size="sm"
                   onClick={() => {
-                    console.log('🔥 BOTÃO CONCLUIR CLICADO!', { appointmentId: appointment.id, status: appointment.status });
+                    console.log('🔥 BOTÃO CONCLUIR CONFIRMADO CLICADO!', { 
+                      appointmentId: appointment.id, 
+                      status: appointment.status,
+                      isUpdating,
+                      timestamp: new Date().toISOString()
+                    });
                     handleStatusUpdate('completed');
                   }}
                   disabled={isUpdating}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white h-6 text-xs font-bold"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white h-6 text-xs font-bold disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  CONCLUIR
+                  {isUpdating ? 'PROCESSANDO...' : 'CONCLUIR'}
                 </Button>
               )}
 
@@ -330,9 +349,17 @@ const SimpleAppointmentCard = ({
 
             {appointment.status === 'confirmed' && (
               <Button
-                onClick={() => handleStatusUpdate('completed')}
+                onClick={() => {
+                  console.log('🔥 BOTÃO CONCLUIR GRANDE CLICADO!', { 
+                    appointmentId: appointment.id, 
+                    status: appointment.status,
+                    isUpdating,
+                    timestamp: new Date().toISOString()
+                  });
+                  handleStatusUpdate('completed');
+                }}
                 disabled={isUpdating}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-3"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-3 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 <CheckCircle2 className="h-5 w-5 mr-2" />
                 {isUpdating ? 'FINALIZANDO ATENDIMENTO...' : 'FINALIZAR ATENDIMENTO'}
