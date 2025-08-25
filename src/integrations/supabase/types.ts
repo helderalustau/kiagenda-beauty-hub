@@ -721,6 +721,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      calculate_appointment_total_value: {
+        Args: { notes: string; service_price: number }
+        Returns: number
+      }
       cleanup_incomplete_salons: {
         Args: Record<PropertyKey, never>
         Returns: number
