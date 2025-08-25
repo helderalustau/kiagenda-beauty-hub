@@ -66,7 +66,7 @@ const CleanFinancialCharts = ({ revenueData, servicesData, dailyData }: CleanFin
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
-                <AreaChart data={revenueData}>
+                <BarChart data={revenueData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis tickFormatter={(value) => formatCurrency(value)} />
@@ -74,14 +74,8 @@ const CleanFinancialCharts = ({ revenueData, servicesData, dailyData }: CleanFin
                     formatter={(value: number) => [formatCurrency(value), 'Receita']}
                     labelFormatter={(label) => `Período: ${label}`}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#0088FE" 
-                    fill="#0088FE" 
-                    fillOpacity={0.6}
-                  />
-                </AreaChart>
+                  <Bar dataKey="revenue" fill="#0088FE" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>

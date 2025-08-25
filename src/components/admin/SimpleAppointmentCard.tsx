@@ -87,7 +87,7 @@ const SimpleAppointmentCard = ({
     
     const variant = variants[status as keyof typeof variants] || variants.pending;
     return (
-      <Badge className={`${variant.color} text-[9px] px-1 py-0`}>
+      <Badge className={`${variant.color} text-[8px] px-1 py-0`}>
         {variant.label}
       </Badge>
     );
@@ -137,20 +137,20 @@ const SimpleAppointmentCard = ({
           <div className="flex items-center justify-between mb-0.5">
             <div className="flex items-center gap-0.5">
               <Clock className="h-2 w-2 text-primary" />
-              <span className="font-semibold text-[9px]">{appointment.appointment_time}</span>
+              <span className="font-semibold text-[8px]">{appointment.appointment_time}</span>
             </div>
             {getStatusBadge(appointment.status)}
           </div>
 
           {/* Informações do cliente e serviço em linha única */}
-          <div className="flex items-center justify-between mb-0.5 text-[9px]">
+          <div className="flex items-center justify-between mb-0.5 text-[8px]">
             <div className="flex items-center gap-0.5 flex-1 min-w-0">
               <User className="h-2 w-2 text-muted-foreground flex-shrink-0" />
               <span className="font-medium truncate">
                 {appointment.client?.name || appointment.client?.username || 'Cliente'}
               </span>
             </div>
-            <span className="font-bold text-primary text-[9px] ml-1">
+            <span className="font-bold text-primary text-[8px] ml-1">
               {formatCurrency(appointment.service?.price || 0)}
             </span>
           </div>

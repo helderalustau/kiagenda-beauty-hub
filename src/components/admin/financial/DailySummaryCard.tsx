@@ -2,7 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, TrendingUp, TrendingDown, DollarSign, Users } from "lucide-react";
-import { format } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface DailySummaryData {
@@ -16,11 +17,32 @@ interface DailySummaryData {
 interface DailySummaryCardProps {
   todayData: DailySummaryData;
   yesterdayData: DailySummaryData;
+  financialTransactions?: Array<{
+    id: string;
+    amount: number;
+    transaction_type: string;
+    transaction_date: string;
+    status: string;
+  }>;
 }
 
-const DailySummaryCard = ({ todayData, yesterdayData }: DailySummaryCardProps) => {
+const DailySummaryCard = ({ todayData, yesterdayData, financialTransactions = [] }: DailySummaryCardProps) => {
+  // Recalcular receita de hoje usando transações financeiras quando disponível
+  const actualTodayRevenue = React.useMemo(() => {
+    if (financialTransactions.length === 0) return todayData.revenue;
+    
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    return financialTransactions
+      .filter(t => 
+        t.transaction_type === 'income' && 
+        t.status === 'completed' &&
+        format(new Date(t.transaction_date), 'yyyy-MM-dd') === todayStr
+      )
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+  }, [financialTransactions, todayData.revenue]);
+
   const revenueGrowth = yesterdayData.revenue > 0 
-    ? ((todayData.revenue - yesterdayData.revenue) / yesterdayData.revenue) * 100 
+    ? ((actualTodayRevenue - yesterdayData.revenue) / yesterdayData.revenue) * 100 
     : 0;
 
   const appointmentsGrowth = yesterdayData.appointments > 0
@@ -33,6 +55,37 @@ const DailySummaryCard = ({ todayData, yesterdayData }: DailySummaryCardProps) =
       currency: 'BRL'
     }).format(value);
   };
+
+  // Calcular dados dos últimos 7 dias para o gráfico
+  const last7DaysData = React.useMemo(() => {
+    const today = new Date();
+    const data = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(today, i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      
+      // Calcular receita do dia usando transações financeiras quando disponível
+      const dayRevenue = financialTransactions.length > 0
+        ? financialTransactions
+            .filter(t => 
+              t.transaction_type === 'income' && 
+              t.status === 'completed' &&
+              format(new Date(t.transaction_date), 'yyyy-MM-dd') === dateStr
+            )
+            .reduce((sum, t) => sum + Number(t.amount), 0)
+        : (i === 0 ? todayData.revenue : (i === 1 ? yesterdayData.revenue : 0));
+      
+      data.push({
+        day: format(date, 'dd/MM'),
+        revenue: dayRevenue,
+        fullDate: dateStr
+      });
+    }
+    
+    return data;
+  }, [financialTransactions, todayData.revenue, yesterdayData.revenue]);
+
 
   return (
     <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
@@ -53,7 +106,7 @@ const DailySummaryCard = ({ todayData, yesterdayData }: DailySummaryCardProps) =
               <div>
                 <p className="text-sm text-gray-600">Receita Hoje</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(todayData.revenue)}
+                  {formatCurrency(actualTodayRevenue)}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
@@ -134,15 +187,32 @@ const DailySummaryCard = ({ todayData, yesterdayData }: DailySummaryCardProps) =
           </div>
         </div>
 
+        {/* Gráfico de Evolução dos Últimos 7 Dias */}
+        <div className="bg-white rounded-lg p-4 border">
+          <h4 className="font-semibold text-gray-900 mb-3">📊 Evolução da Receita (Últimos 7 dias)</h4>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={last7DaysData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="day" />
+              <YAxis tickFormatter={(value) => formatCurrency(value)} />
+              <Tooltip 
+                formatter={(value: number) => [formatCurrency(value), 'Receita']}
+                labelFormatter={(label) => `Dia: ${label}`}
+              />
+              <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
         {/* Insights */}
         <div className="bg-white rounded-lg p-4 border">
           <h4 className="font-semibold text-gray-900 mb-2">💡 Insights do Dia</h4>
           <div className="space-y-2 text-sm text-gray-600">
-            {todayData.revenue > yesterdayData.revenue ? (
+            {actualTodayRevenue > yesterdayData.revenue ? (
               <p className="text-green-600">
                 ✅ Receita {revenueGrowth.toFixed(1)}% superior ao dia anterior
               </p>
-            ) : todayData.revenue < yesterdayData.revenue ? (
+            ) : actualTodayRevenue < yesterdayData.revenue ? (
               <p className="text-orange-600">
                 ⚠️ Receita {Math.abs(revenueGrowth).toFixed(1)}% inferior ao dia anterior
               </p>
