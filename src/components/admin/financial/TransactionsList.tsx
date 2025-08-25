@@ -176,8 +176,11 @@ const TransactionsList = ({ transactions, isLoading }: TransactionsListProps) =>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <CardTitle className="flex items-center">
             <DollarSign className="h-5 w-5 mr-2" />
-            📋 Histórico de Transações
+            📋 Histórico Detalhado - Linha por Transação
           </CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Cada linha representa uma transação individual. Serviços principais e adicionais aparecem separadamente.
+          </p>
           
           <div className="flex gap-2 text-sm">
             <Badge variant="outline">{filteredStats.count} transações</Badge>
@@ -265,7 +268,7 @@ const TransactionsList = ({ transactions, isLoading }: TransactionsListProps) =>
                   </Button>
                 </TableHead>
                 <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Cliente/Serviço</TableHead>
+                <TableHead className="text-center">Cliente & Serviço</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -290,11 +293,23 @@ const TransactionsList = ({ transactions, isLoading }: TransactionsListProps) =>
                         <div className="font-medium text-sm truncate" title={transaction.description}>
                           {transaction.description}
                         </div>
-                        {transaction.metadata?.auto_generated && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            🤖 Gerada automaticamente
-                          </div>
-                        )}
+                        <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                          {transaction.metadata?.auto_generated && (
+                            <div className="flex items-center">
+                              🤖 Gerada automaticamente
+                            </div>
+                          )}
+                          {transaction.metadata?.additional && (
+                            <div className="flex items-center text-orange-600">
+                              ➕ Serviço adicional
+                            </div>
+                          )}
+                          {transaction.appointment_id && (
+                            <div className="flex items-center text-blue-600">
+                              📋 ID: {transaction.appointment_id.slice(0, 8)}...
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     
@@ -320,7 +335,7 @@ const TransactionsList = ({ transactions, isLoading }: TransactionsListProps) =>
                     
                     <TableCell className="text-center">
                       {transaction.metadata && (
-                        <div className="text-sm">
+                        <div className="text-sm space-y-1">
                           {transaction.metadata.client_name && (
                             <div className="font-medium flex items-center justify-center">
                               <User className="h-3 w-3 mr-1" />
@@ -328,11 +343,22 @@ const TransactionsList = ({ transactions, isLoading }: TransactionsListProps) =>
                             </div>
                           )}
                           {transaction.metadata.service_name && (
-                            <div className="text-muted-foreground">{transaction.metadata.service_name}</div>
+                            <div className="text-muted-foreground">
+                              {transaction.metadata.service_name}
+                            </div>
                           )}
-                          {transaction.metadata.additional && (
-                            <Badge variant="secondary" className="text-xs mt-1">Adicional</Badge>
-                          )}
+                          <div className="flex justify-center gap-1 mt-1">
+                            {transaction.metadata.additional && (
+                              <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
+                                ➕ Adicional
+                              </Badge>
+                            )}
+                            {!transaction.metadata.additional && transaction.metadata.service_name && (
+                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                                🎯 Principal
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       )}
                     </TableCell>

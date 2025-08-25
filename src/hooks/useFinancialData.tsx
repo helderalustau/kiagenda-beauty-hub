@@ -196,28 +196,27 @@ export const useFinancialData = (salonId: string) => {
     return total;
   };
 
-  // Calcular métricas financeiras precisas
+  // Calcular métricas financeiras baseadas APENAS em transações do banco
   const metrics: FinancialMetrics = useMemo(() => {
     const now = new Date();
     const today = format(now, 'yyyy-MM-dd');
     const currentMonth = startOfMonth(now);
     const lastMonth = subMonths(currentMonth, 1);
 
-    console.log('🧮 Calculando métricas financeiras...', {
+    console.log('🧮 Calculando métricas baseadas em transações reais...', {
       totalTransactions: transactions.length,
-      totalAppointments: appointments.length,
       today,
-      currentMonth: format(currentMonth, 'yyyy-MM-dd'),
-      lastMonth: format(lastMonth, 'yyyy-MM-dd')
+      currentMonth: format(currentMonth, 'yyyy-MM-dd')
     });
 
-    // Filtrar transações concluídas
+    // Todas as receitas e despesas vêm diretamente das transações
     const completedTransactions = transactions.filter(t => t.status === 'completed');
     const incomeTransactions = completedTransactions.filter(t => t.transaction_type === 'income');
     const expenseTransactions = completedTransactions.filter(t => t.transaction_type === 'expense');
 
-    // Receitas
+    // Receitas baseadas exclusivamente em transações
     const totalRevenue = incomeTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+    
     const todayRevenue = incomeTransactions
       .filter(t => t.transaction_date === today)
       .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -236,7 +235,7 @@ export const useFinancialData = (salonId: string) => {
       })
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    // Receita pendente - AGORA INCLUINDO SERVIÇOS ADICIONAIS
+    // Receita pendente - appointments sem transações correspondentes
     const pendingAndConfirmedAppointments = appointments.filter(a => 
       (a.status === 'pending' || a.status === 'confirmed') && 
       !transactions.some(t => t.appointment_id === a.id)
@@ -246,17 +245,6 @@ export const useFinancialData = (salonId: string) => {
       const totalValue = calculateAppointmentTotalValue(a);
       return sum + totalValue;
     }, 0);
-    
-    console.log('💰 Receita pendente detalhada:', {
-      appointments_count: pendingAndConfirmedAppointments.length,
-      appointments: pendingAndConfirmedAppointments.map(a => ({
-        id: a.id,
-        status: a.status,
-        service_price: a.service?.price,
-        total_value: calculateAppointmentTotalValue(a)
-      })),
-      total_pending: pendingRevenue
-    });
 
     // Despesas
     const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
@@ -267,13 +255,14 @@ export const useFinancialData = (salonId: string) => {
       })
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    // Lucro
-    const netProfit = totalRevenue - totalExpenses;
-    const monthNetProfit = monthRevenue - monthExpenses;
-
-    // Contadores
-    const completedAppointments = appointments.filter(a => a.status === 'completed').length;
-    const pendingAppointments = appointments.filter(a => a.status === 'pending').length;
+    // Contadores baseados em transações
+    const completedAppointmentIds = new Set(
+      incomeTransactions
+        .filter(t => t.appointment_id)
+        .map(t => t.appointment_id)
+    );
+    const completedAppointments = completedAppointmentIds.size;
+    const pendingAppointments = pendingAndConfirmedAppointments.length;
 
     // Médias
     const averageTicket = completedAppointments > 0 ? totalRevenue / completedAppointments : 0;
@@ -292,8 +281,8 @@ export const useFinancialData = (salonId: string) => {
       pendingRevenue,
       totalExpenses,
       monthExpenses,
-      netProfit,
-      monthNetProfit,
+      netProfit: totalRevenue - totalExpenses,
+      monthNetProfit: monthRevenue - monthExpenses,
       totalTransactions: transactions.length,
       completedAppointments,
       pendingAppointments,
@@ -302,7 +291,13 @@ export const useFinancialData = (salonId: string) => {
       monthlyGrowth
     };
 
-    console.log('✅ Métricas calculadas:', calculatedMetrics);
+    console.log('✅ Métricas calculadas baseadas em transações reais:', {
+      ...calculatedMetrics,
+      incomeTransactionsCount: incomeTransactions.length,
+      expenseTransactionsCount: expenseTransactions.length,
+      completedTransactionsCount: completedTransactions.length
+    });
+    
     return calculatedMetrics;
   }, [transactions, appointments]);
 
