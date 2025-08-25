@@ -107,10 +107,17 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
   };
 
   const handleStatusUpdate = async (appointmentId: string, newStatus: 'pending' | 'confirmed' | 'completed' | 'cancelled') => {
+    console.log('🔄 SimpleCalendarView: Atualizando status:', { appointmentId, newStatus });
     const success = await updateAppointmentStatus(appointmentId, newStatus);
-    if (success && onRefresh) {
-      onRefresh();
+    
+    if (success) {
+      console.log('✅ SimpleCalendarView: Status atualizado - sistema realtime sincronizará automaticamente');
+      // REMOVIDO: onRefresh() - O sistema realtime já cuida das atualizações
+      // Evita refresh desnecessário que pode causar mudança de aba
+    } else {
+      console.error('❌ SimpleCalendarView: Falha ao atualizar status');
     }
+    
     return success;
   };
 
