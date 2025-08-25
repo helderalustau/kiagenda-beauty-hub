@@ -1,10 +1,14 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAppointmentFinancialSync } from '../useAppointmentFinancialSync';
 import { useAppointmentTypes } from './useAppointmentTypes';
 
 export const useAppointmentUpdate = () => {
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const { processAppointmentCompletion } = useAppointmentFinancialSync();
   const { normalizeAppointment } = useAppointmentTypes();
 
   // Update appointment status - Fixed signature
@@ -57,6 +61,36 @@ export const useAppointmentUpdate = () => {
       }
 
       console.log('✅ useAppointmentUpdate: Appointment status updated successfully:', data);
+
+      // Se foi concluído, processar dados financeiros via edge function
+      if (status === 'completed') {
+        console.log('💰 Appointment concluído, processando dados financeiros...');
+        const financialResult = await processAppointmentCompletion(appointmentId);
+        
+        if (!financialResult.success) {
+          console.error('❌ Falha no processamento financeiro:', financialResult.error);
+          toast({
+            title: "Aviso",
+            description: "Status atualizado, mas houve erro no processamento financeiro",
+            variant: "destructive"
+          });
+        } else {
+          console.log('✅ Dados financeiros processados com sucesso');
+        }
+      }
+
+      // Mostrar toast de sucesso
+      const statusMessages = {
+        'pending': 'marcado como pendente',
+        'confirmed': 'confirmado',
+        'completed': 'concluído',
+        'cancelled': 'cancelado'
+      };
+
+      toast({
+        title: "Status atualizado",
+        description: `Agendamento ${statusMessages[status]} com sucesso`,
+      });
 
       // Return normalized data
       const normalizedAppointment = normalizeAppointment(data);
