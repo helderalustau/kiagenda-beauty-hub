@@ -6,7 +6,7 @@ import { Calendar, Clock, CheckCircle, AlertCircle, XCircle, TrendingUp } from "
 import { format, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/hooks/useSupabaseData';
-import SimpleAppointmentCard from './admin/SimpleAppointmentCard';
+import EnhancedAppointmentCard from './admin/calendar/EnhancedAppointmentCard';
 
 interface AdminAppointmentsSummaryProps {
   appointments: Appointment[];
@@ -128,14 +128,11 @@ const AdminAppointmentsSummary = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {upcomingAppointments.map((appointment) => (
-              <SimpleAppointmentCard
+              <EnhancedAppointmentCard
                 key={appointment.id}
                 appointment={appointment}
-                onUpdateStatus={async (id, status) => {
-                  await onUpdateStatus(id, status);
-                  return true;
-                }}
-                compact={true}
+                onUpdateAppointment={(id, updates) => onUpdateStatus(id, updates.status)}
+                isUpdating={false}
               />
               ))}
             </div>

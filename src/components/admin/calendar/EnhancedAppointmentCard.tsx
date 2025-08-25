@@ -80,23 +80,23 @@ const EnhancedAppointmentCard = ({ appointment, onUpdateAppointment, isUpdating 
                   </div>
                 )}
 
-                {/* Lista de Serviços em formato de pedido */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                  <div className="flex items-center mb-3">
-                    <Scissors className="h-5 w-5 mr-2 text-blue-600" />
-                    <span className="font-semibold text-blue-900">Serviços Contratados</span>
+                {/* Lista de Serviços em formato de pedido - SEMPRE VISÍVEL */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+                  <div className="flex items-center mb-2">
+                    <Scissors className="h-4 w-4 mr-2 text-blue-600" />
+                    <span className="font-semibold text-blue-900 text-sm">Serviços do Agendamento</span>
                   </div>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {parsedAppointment.services.map((service, index) => (
-                      <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
+                      <div key={index} className="flex justify-between items-center bg-white p-2 rounded border text-sm">
                         <div className="flex items-center">
-                          <span className={`inline-block w-2 h-2 rounded-full mr-3 ${
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${
                             service.type === 'main' ? 'bg-blue-500' : 'bg-green-500'
                           }`} />
                           <div>
                             <span className="font-medium text-gray-900">{service.name}</span>
-                            <span className="text-sm text-gray-500 ml-2">({service.duration}min)</span>
+                            <span className="text-xs text-gray-500 ml-1">({service.duration}min)</span>
                           </div>
                         </div>
                         <span className="font-bold text-green-600">
@@ -107,15 +107,15 @@ const EnhancedAppointmentCard = ({ appointment, onUpdateAppointment, isUpdating 
                   </div>
 
                   {/* Total Consolidado */}
-                  <div className="mt-3 pt-3 border-t border-blue-200">
-                    <div className="flex justify-between items-center bg-green-50 p-3 rounded border border-green-200">
+                  <div className="mt-2 pt-2 border-t border-blue-200">
+                    <div className="flex justify-between items-center bg-green-50 p-2 rounded border border-green-200">
                       <div>
-                        <span className="font-bold text-green-900 text-lg">Total do Pedido</span>
-                        <div className="text-sm text-green-700">
+                        <span className="font-bold text-green-900 text-sm">TOTAL</span>
+                        <div className="text-xs text-green-700">
                           {parsedAppointment.services.length} serviço{parsedAppointment.services.length > 1 ? 's' : ''} • {parsedAppointment.totalDuration}min
                         </div>
                       </div>
-                      <span className="font-bold text-green-600 text-2xl">
+                      <span className="font-bold text-green-600 text-lg">
                         {formatCurrency(parsedAppointment.totalPrice)}
                       </span>
                     </div>
