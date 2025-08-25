@@ -7,6 +7,8 @@ import FinancialMetricsCards from './financial/FinancialMetricsCards';
 import FinancialFilters from './financial/FinancialFilters';
 import CleanFinancialCharts from './financial/CleanFinancialCharts';
 import DailySummaryCard from './financial/DailySummaryCard';
+import DetailedFinancialTable from './financial/DetailedFinancialTable';
+import FinancialSummaryCard from './financial/FinancialSummaryCard';
 import { useToast } from "@/hooks/use-toast";
 import { useFinancialTransactions } from '@/hooks/useFinancialTransactions';
 
@@ -422,6 +424,18 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         }}
       />
 
+      <FinancialSummaryCard 
+        data={{
+          totalRevenue: financialData.totalRevenue,
+          totalExpenses: financialMetrics.totalExpenses,
+          netProfit: financialData.totalRevenue - financialMetrics.totalExpenses,
+          pendingRevenue: financialData.pendingRevenue,
+          monthlyGrowth: financialData.growthPercentage,
+          transactionsCount: transactions.length,
+          averageTicket: financialData.averageTicket
+        }}
+      />
+
       <FinancialMetricsCards
         totalRevenue={financialData.totalRevenue}
         currentMonthRevenue={financialData.currentMonthRevenue}
@@ -435,6 +449,11 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         revenueData={financialData.monthlyData}
         servicesData={financialData.servicesData}
         dailyData={financialData.dailyData}
+      />
+
+      <DetailedFinancialTable 
+        transactions={transactions}
+        isLoading={transactionsLoading}
       />
     </div>
   );

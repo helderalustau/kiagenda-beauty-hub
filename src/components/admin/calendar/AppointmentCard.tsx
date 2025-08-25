@@ -55,8 +55,8 @@ const AppointmentCard = ({ appointment, onUpdateAppointment, isUpdating }: Appoi
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-lg font-bold text-foreground flex items-center">
-                  <User className="h-5 w-5 mr-3 text-primary" />
+                <h4 className="text-xl font-bold text-foreground flex items-center">
+                  <User className="h-6 w-6 mr-3 text-primary" />
                   {appointment.client?.name || appointment.client?.username || 'Cliente'}
                 </h4>
                 <Badge 
@@ -67,23 +67,23 @@ const AppointmentCard = ({ appointment, onUpdateAppointment, isUpdating }: Appoi
                 </Badge>
               </div>
               
-              <div className="space-y-3 text-base text-muted-foreground">
+              <div className="space-y-3 text-lg text-muted-foreground">
                 <div className="flex items-center bg-muted/50 p-3 rounded-lg">
-                  <Clock className="h-4 w-4 mr-3 text-primary" />
-                  <span className="font-medium">{appointment.appointment_time} - {appointment.service?.name || 'Serviço'}</span>
+                  <Clock className="h-5 w-5 mr-3 text-primary" />
+                  <span className="font-bold text-lg">{appointment.appointment_time} - {appointment.service?.name || 'Serviço'}</span>
                 </div>
                 
                 {appointment.client?.phone && (
-                  <div className="flex items-center bg-muted/30 p-2 rounded-lg">
-                    <Phone className="h-4 w-4 mr-3 text-primary" />
-                    <span className="font-medium">{appointment.client.phone}</span>
+                  <div className="flex items-center bg-muted/30 p-3 rounded-lg">
+                    <Phone className="h-5 w-5 mr-3 text-primary" />
+                    <span className="font-bold text-lg">{appointment.client.phone}</span>
                   </div>
                 )}
                 
-                <div className="flex items-center font-bold text-lg bg-success/10 p-3 rounded-lg">
-                  <span className="mr-3 text-xl">💰</span>
-                  <span className="text-success">{formatCurrency(appointment.service?.price || 0)}</span>
-                  <span className="text-muted-foreground ml-3 text-sm">({appointment.service?.duration_minutes || 0}min)</span>
+                <div className="flex items-center font-bold text-xl bg-success/10 p-4 rounded-lg">
+                  <span className="mr-3 text-2xl">💰</span>
+                  <span className="text-success text-xl">{formatCurrency(appointment.service?.price || 0)}</span>
+                  <span className="text-muted-foreground ml-3 text-base font-medium">({appointment.service?.duration_minutes || 0}min)</span>
                 </div>
               </div>
             </div>
