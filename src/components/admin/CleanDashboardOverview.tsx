@@ -358,16 +358,16 @@ const CleanDashboardOverview = ({
                 {todayAppointments
                   .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
                   .map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
+                  <div key={appointment.id} className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium text-primary">
                           {appointment.appointment_time.substring(0, 5)}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{getClientName(appointment)}</p>
-                        <p className="text-xs text-muted-foreground">{getServiceName(appointment)}</p>
+                        <p className="font-medium text-xs">{getClientName(appointment)}</p>
+                        <p className="text-[10px] text-muted-foreground">{getServiceName(appointment)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -384,9 +384,14 @@ const CleanDashboardOverview = ({
                       {appointment.status === 'confirmed' && (
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => onUpdateStatus(appointment.id, 'completed')}
-                          className="h-7 px-2 text-xs"
+                          onClick={() => {
+                            console.log('🔥 CleanDashboard CONCLUIR CLICADO!', { 
+                              appointmentId: appointment.id, 
+                              status: appointment.status 
+                            });
+                            onUpdateStatus(appointment.id, 'completed');
+                          }}
+                          className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white"
                         >
                           Concluir
                         </Button>
