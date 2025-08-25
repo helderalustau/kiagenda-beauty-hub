@@ -203,19 +203,19 @@ const ModernWeeklySchedule = ({
   // Componente de Agendamento estilo Google Agenda - MELHORADO
   const AppointmentBlock = ({ appointment }: { appointment: Appointment }) => (
     <div 
-      className={`p-2 m-1 rounded-lg border cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 ${getStatusColor(appointment.status)}`}
+      className={`p-3 m-1 rounded-lg border cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 ${getStatusColor(appointment.status)}`}
       onClick={() => handleAppointmentClick(appointment)}
     >
-      <div className="text-xs font-semibold truncate mb-1">
+      <div className="text-sm font-bold truncate mb-2">
         {getClientName(appointment)}
       </div>
-      <div className="text-xs truncate opacity-90 mb-1">
+      <div className="text-sm truncate opacity-90 mb-2 font-medium">
         {getServiceName(appointment)}
       </div>
-      <div className="text-xs opacity-70 font-medium">
+      <div className="text-sm opacity-70 font-bold">
         {appointment.appointment_time}
       </div>
-      <div className="text-xs opacity-60 mt-1">
+      <div className="text-sm opacity-60 mt-2 font-medium">
         {appointment.status === 'pending' ? '⏳ Pendente' : 
          appointment.status === 'confirmed' ? '✅ Confirmado' :
          appointment.status === 'completed' ? '🎉 Concluído' :
@@ -262,9 +262,9 @@ const ModernWeeklySchedule = ({
               return (
                 <div 
                   key={timeSlot} 
-                  className="flex items-center border-b border-gray-100 hover:bg-gray-50 transition-colors min-h-[50px]"
+                  className="flex items-center border-b border-gray-100 hover:bg-gray-50 transition-colors min-h-[60px]"
                 >
-                  <div className="w-20 text-sm font-medium text-gray-600 px-3">
+                  <div className="w-24 text-base font-bold text-gray-600 px-4">
                     {timeSlot}
                   </div>
                   
@@ -272,7 +272,7 @@ const ModernWeeklySchedule = ({
                     {appointment ? (
                       <AppointmentBlock appointment={appointment} />
                     ) : (
-                      <div className="text-sm text-gray-400 italic p-3">Horário disponível</div>
+                      <div className="text-base text-gray-400 italic p-4">Horário disponível</div>
                     )}
                   </div>
                 </div>
@@ -344,9 +344,9 @@ const ModernWeeklySchedule = ({
             {/* Grid de horários com agendamentos */}
             <div className="space-y-1">
               {timeSlots.map((timeSlot) => (
-                <div key={timeSlot} className="grid grid-cols-8 gap-1 min-h-[60px]">
-                  <div className="p-2 text-sm font-medium text-gray-600 flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
+                <div key={timeSlot} className="grid grid-cols-8 gap-1 min-h-[80px]">
+                  <div className="p-3 text-base font-bold text-gray-600 flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
                     {timeSlot}
                   </div>
                   
@@ -356,14 +356,14 @@ const ModernWeeklySchedule = ({
                     return (
                       <div 
                         key={`${day.toString()}-${timeSlot}`}
-                        className={`border border-gray-200 rounded bg-white hover:bg-gray-50 transition-colors min-h-[80px] relative ${
+                        className={`border border-gray-200 rounded bg-white hover:bg-gray-50 transition-colors min-h-[100px] relative ${
                           appointment ? 'bg-blue-50' : ''
                         }`}
                       >
                         {appointment ? (
                           <AppointmentBlock appointment={appointment} />
                         ) : (
-                          <div className="p-2 text-xs text-gray-400 h-full flex items-center justify-center">
+                          <div className="p-3 text-sm text-gray-400 h-full flex items-center justify-center">
                             Disponível
                           </div>
                         )}

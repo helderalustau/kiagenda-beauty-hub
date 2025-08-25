@@ -210,19 +210,19 @@ const ModernAdminCalendarView = ({
                     {dayAppointments.slice(0, 3).map(appointment => (
                       <div
                         key={appointment.id}
-                        className={`text-xs p-1 rounded border ${getStatusColor(appointment.status)}`}
+                        className={`text-sm p-2 rounded border ${getStatusColor(appointment.status)}`}
                       >
-                        <div className="font-medium truncate">
+                        <div className="font-bold text-base truncate">
                           {appointment.appointment_time} - {appointment.client?.name || appointment.client?.username}
                         </div>
-                        <div className="truncate opacity-75">
+                        <div className="truncate opacity-75 font-medium text-sm">
                           {appointment.service?.name}
                         </div>
                       </div>
                     ))}
                     
                     {dayAppointments.length > 3 && (
-                      <div className="text-xs text-gray-500 text-center">
+                      <div className="text-sm text-gray-500 text-center font-medium">
                         +{dayAppointments.length - 3} mais
                       </div>
                     )}

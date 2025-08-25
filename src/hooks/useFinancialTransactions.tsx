@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,10 +28,15 @@ export const useFinancialTransactions = ({ salonId }: UseFinancialTransactionsPr
   const { toast } = useToast();
 
   const fetchTransactions = useCallback(async () => {
-    if (!salonId) return;
+    if (!salonId) {
+      console.log('💰 fetchTransactions - SalonId vazio:', salonId);
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log('💰 fetchTransactions - Buscando para salon:', salonId);
+      
       const { data, error } = await supabase
         .from('financial_transactions')
         .select('*')
@@ -39,18 +44,29 @@ export const useFinancialTransactions = ({ salonId }: UseFinancialTransactionsPr
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao carregar transações financeiras:', error);
+        console.error('❌ Erro ao carregar transações financeiras:', error);
         toast({
           title: "Erro",
           description: "Erro ao carregar dados financeiros",
           variant: "destructive"
         });
       } else {
-        setTransactions((data || []) as FinancialTransaction[]);
-        console.log('💰 Transações financeiras carregadas:', data?.length || 0);
+        const transactionsData = (data || []) as FinancialTransaction[];
+        setTransactions(transactionsData);
+        console.log('✅ Transações financeiras carregadas:', {
+          total: transactionsData.length,
+          salonId,
+          sample: transactionsData.slice(0, 3).map(t => ({
+            id: t.id,
+            type: t.transaction_type,
+            amount: t.amount,
+            status: t.status,
+            date: t.transaction_date
+          }))
+        });
       }
     } catch (error) {
-      console.error('Erro ao processar transações:', error);
+      console.error('❌ Erro ao processar transações:', error);
     } finally {
       setLoading(false);
     }
@@ -173,30 +189,40 @@ export const useFinancialTransactions = ({ salonId }: UseFinancialTransactionsPr
   }, [fetchTransactions]);
 
   // Calculate financial metrics
-  const financialMetrics = {
-    totalRevenue: transactions
-      .filter(t => t.transaction_type === 'income' && t.status === 'completed')
-      .reduce((sum, t) => sum + Number(t.amount), 0),
-    
-    totalExpenses: transactions
-      .filter(t => t.transaction_type === 'expense' && t.status === 'completed')
-      .reduce((sum, t) => sum + Number(t.amount), 0),
-    
-    pendingRevenue: transactions
-      .filter(t => t.transaction_type === 'income' && t.status === 'pending')
-      .reduce((sum, t) => sum + Number(t.amount), 0),
-    
-    transactionsCount: transactions.length,
-    
-    todayRevenue: transactions
-      .filter(t => {
-        const today = new Date().toISOString().split('T')[0];
-        return t.transaction_type === 'income' && 
-               t.status === 'completed' && 
-               t.transaction_date === today;
-      })
-      .reduce((sum, t) => sum + Number(t.amount), 0)
-  };
+  const financialMetrics = useMemo(() => {
+    console.log('💰 Calculando métricas financeiras:', {
+      totalTransactions: transactions.length,
+      salonId
+    });
+
+    const metrics = {
+      totalRevenue: transactions
+        .filter(t => t.transaction_type === 'income' && t.status === 'completed')
+        .reduce((sum, t) => sum + Number(t.amount), 0),
+      
+      totalExpenses: transactions
+        .filter(t => t.transaction_type === 'expense' && t.status === 'completed')
+        .reduce((sum, t) => sum + Number(t.amount), 0),
+      
+      pendingRevenue: transactions
+        .filter(t => t.transaction_type === 'income' && t.status === 'pending')
+        .reduce((sum, t) => sum + Number(t.amount), 0),
+      
+      transactionsCount: transactions.length,
+      
+      todayRevenue: transactions
+        .filter(t => {
+          const today = new Date().toISOString().split('T')[0];
+          return t.transaction_type === 'income' && 
+                 t.status === 'completed' && 
+                 t.transaction_date === today;
+        })
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+    };
+
+    console.log('💰 Métricas calculadas:', metrics);
+    return metrics;
+  }, [transactions, salonId]);
 
   return {
     transactions,
