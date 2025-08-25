@@ -97,7 +97,15 @@ export const useFinancialData = (salonId: string) => {
         total: transactionsData.length,
         income: transactionsData.filter(t => t.transaction_type === 'income').length,
         expense: transactionsData.filter(t => t.transaction_type === 'expense').length,
-        completed: transactionsData.filter(t => t.status === 'completed').length
+        completed: transactionsData.filter(t => t.status === 'completed').length,
+        details: transactionsData.map(t => ({
+          id: t.id,
+          amount: t.amount,
+          type: t.transaction_type,
+          status: t.status,
+          date: t.transaction_date,
+          appointment_id: t.appointment_id
+        }))
       });
 
     } catch (error) {
@@ -261,6 +269,8 @@ export const useFinancialData = (salonId: string) => {
   useEffect(() => {
     if (!salonId) return;
 
+    console.log('🔌 Configurando canais realtime para financeiro - Salon:', salonId);
+
     // Carregar dados iniciais
     syncData();
 
@@ -282,25 +292,36 @@ export const useFinancialData = (salonId: string) => {
       )
       .subscribe();
 
-    // Configurar canal de tempo real para appointments
+    // Configurar canal de tempo real para appointments - escutar TODOS os eventos
     const appointmentsChannel = supabase
-      .channel(`appointments-${salonId}`)
+      .channel(`appointments-financial-${salonId}`)
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'appointments',
           filter: `salon_id=eq.${salonId}`
         },
         (payload) => {
-          console.log('🔄 Appointment atualizado em tempo real:', payload);
-          fetchAppointments();
+          console.log('🔄 Appointment atualizado (financeiro):', payload);
+          
+          // Se appointment foi completed, forçar sincronização
+          if (payload.eventType === 'UPDATE' && payload.new?.status === 'completed') {
+            console.log('✅ Appointment concluído, sincronizando dados financeiros...');
+            setTimeout(() => {
+              fetchTransactions();
+              fetchAppointments();
+            }, 1000); // Aguardar trigger executar
+          } else {
+            fetchAppointments();
+          }
         }
       )
       .subscribe();
 
     return () => {
+      console.log('🔌 Removendo canais realtime financeiro');
       supabase.removeChannel(transactionsChannel);
       supabase.removeChannel(appointmentsChannel);
     };

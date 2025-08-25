@@ -6,6 +6,7 @@ import { RefreshCw, Download, CheckCircle, AlertTriangle } from "lucide-react";
 import { useFinancialData } from '@/hooks/useFinancialData';
 import FinancialStatsCards from './FinancialStatsCards';
 import TransactionsList from './TransactionsList';
+import FinancialSyncButton from './FinancialSyncButton';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -65,6 +66,11 @@ const CleanFinancialDashboard = ({ salonId }: CleanFinancialDashboardProps) => {
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 {loading ? 'Atualizando...' : 'Atualizar'}
               </Button>
+              
+              <FinancialSyncButton 
+                salonId={salonId}
+                onSyncComplete={syncData}
+              />
               
               <Button
                 onClick={handleExport}
