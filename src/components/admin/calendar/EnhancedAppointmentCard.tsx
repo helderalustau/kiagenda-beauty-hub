@@ -17,6 +17,7 @@ const EnhancedAppointmentCard = ({ appointment, onUpdateAppointment, isUpdating 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { parseAppointment, formatCurrency } = useAppointmentParser();
   
+  console.log('🎯 EnhancedAppointmentCard - Rendering for appointment:', appointment.id);
   const parsedAppointment = parseAppointment(appointment);
 
   const getStatusColor = (status: string) => {

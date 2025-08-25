@@ -54,8 +54,13 @@ export const useAppointmentParser = () => {
   };
 
   const parseAppointment = (appointment: any): ParsedAppointment => {
+    console.log('🔍 parseAppointment - Appointment data:', appointment);
+    
     const additionalServices = parseAdditionalServices(appointment.notes || '');
     const clientNotes = getClientNotes(appointment.notes || '');
+    
+    console.log('🔍 parseAppointment - Additional services:', additionalServices);
+    console.log('🔍 parseAppointment - Client notes:', clientNotes);
     
     const mainService: Service = {
       name: appointment.service?.name || 'Serviço',
@@ -67,6 +72,13 @@ export const useAppointmentParser = () => {
     const services = [mainService, ...additionalServices];
     const totalPrice = services.reduce((sum, service) => sum + service.price, 0);
     const totalDuration = services.reduce((sum, service) => sum + service.duration, 0);
+
+    console.log('🔍 parseAppointment - Final parsed data:', {
+      id: appointment.id,
+      services,
+      totalPrice,
+      totalDuration
+    });
 
     return {
       id: appointment.id,
