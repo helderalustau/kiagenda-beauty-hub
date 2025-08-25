@@ -44,12 +44,11 @@ const DirectFinancialDashboard = ({ salonId }: DirectFinancialDashboardProps) =>
     try {
       console.log('💰 Buscando transações DIRETAMENTE do banco para salon:', salonId);
       
+      // Buscar TODAS as transações do salão (sem filtrar por status ou tipo)
       const { data, error } = await supabase
         .from('financial_transactions')
         .select('*')
         .eq('salon_id', salonId)
-        .eq('status', 'completed')
-        .eq('transaction_type', 'income')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -58,14 +57,21 @@ const DirectFinancialDashboard = ({ salonId }: DirectFinancialDashboardProps) =>
       }
 
       console.log('✅ Transações encontradas:', data?.length || 0);
-      console.log('📊 Detalhes das transações:', data);
+      console.log('📊 Detalhes das transações:', data?.slice(0, 5)); // Log das primeiras 5
 
-      setTransactions(data || []);
+      // Filtrar apenas receitas concluídas para exibição
+      const incomeTransactions = (data || []).filter(t => 
+        t.transaction_type === 'income' && t.status === 'completed'
+      );
+
+      console.log('💰 Transações de receita:', incomeTransactions.length);
+
+      setTransactions(incomeTransactions);
       setLastUpdate(new Date());
       
       toast({
         title: "Dados atualizados",
-        description: `${data?.length || 0} transações carregadas diretamente do banco`,
+        description: `${incomeTransactions.length} transações de receita encontradas`,
       });
 
     } catch (error) {
@@ -80,7 +86,70 @@ const DirectFinancialDashboard = ({ salonId }: DirectFinancialDashboardProps) =>
     }
   };
 
-  // Calcular métricas diretamente das transações
+  // Verificar também todos os agendamentos concluídos sem transação
+  const checkMissingTransactions = async () => {
+    if (!salonId) return;
+    
+    try {
+      const { data: appointments, error } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          appointment_date,
+          appointment_time,
+          status,
+          notes,
+          services(name, price),
+          client_auth(name)
+        `)
+        .eq('salon_id', salonId)
+        .eq('status', 'completed')
+        .eq('appointment_date', '2025-08-25');
+
+      if (error) throw error;
+
+      console.log('📋 Agendamentos concluídos hoje:', appointments?.length || 0);
+      
+      // Verificar quantos têm transações
+      const appointmentIds = appointments?.map(a => a.id) || [];
+      
+      if (appointmentIds.length > 0) {
+        const { data: existingTransactions, error: txError } = await supabase
+          .from('financial_transactions')
+          .select('appointment_id')
+          .eq('salon_id', salonId)
+          .in('appointment_id', appointmentIds);
+
+        if (txError) throw txError;
+
+        const appointmentsWithTransactions = existingTransactions?.map(t => t.appointment_id) || [];
+        const missingTransactions = appointments?.filter(a => !appointmentsWithTransactions.includes(a.id)) || [];
+
+        console.log('⚠️ Agendamentos SEM transações:', missingTransactions.length);
+        console.log('📊 Resumo:', {
+          totalConcluidos: appointments?.length || 0,
+          comTransacoes: appointmentsWithTransactions.length,
+          semTransacoes: missingTransactions.length,
+          agendamentosSemTransacao: missingTransactions.map(a => ({
+            id: a.id,
+            time: a.appointment_time,
+            client: a.client_auth?.name,
+            service: a.services?.name
+          }))
+        });
+
+        if (missingTransactions.length > 0) {
+          toast({
+            title: "⚠️ Transações em falta",
+            description: `${missingTransactions.length} agendamentos concluídos sem transação financeira`,
+            variant: "destructive"
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erro ao verificar transações:', error);
+    }
+  };
   const metrics = React.useMemo(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const currentMonth = format(new Date(), 'yyyy-MM');
@@ -105,6 +174,7 @@ const DirectFinancialDashboard = ({ salonId }: DirectFinancialDashboardProps) =>
 
   useEffect(() => {
     fetchTransactionsDirectly();
+    checkMissingTransactions();
   }, [salonId]);
 
   return (

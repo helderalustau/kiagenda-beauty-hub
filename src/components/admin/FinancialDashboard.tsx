@@ -1,6 +1,6 @@
 import React from 'react';
 import { Appointment } from '@/types/supabase-entities';
-import DirectFinancialDashboard from './DirectFinancialDashboard';
+import MultiSalonFinancialDashboard from './MultiSalonFinancialDashboard';
 
 interface FinancialDashboardProps {
   appointments: Appointment[];
@@ -23,18 +23,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
 
   const salonId = getSalonId();
 
-  if (!salonId) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-muted-foreground mb-2">⚠️ Erro</div>
-          <div>Não foi possível identificar o salão</div>
-        </div>
-      </div>
-    );
-  }
-
-  return <DirectFinancialDashboard salonId={salonId} />;
+  return <MultiSalonFinancialDashboard currentSalonId={salonId} />;
 };
 
 export default FinancialDashboard;
