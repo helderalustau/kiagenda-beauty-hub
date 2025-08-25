@@ -74,18 +74,23 @@ const SalonSpecificFinancialDashboard = ({ salonId }: SalonSpecificFinancialDash
       setSalonName(salonData?.name || 'Salão');
 
       // Buscar transações APENAS do salão logado
+      console.log('🔍 Buscando transações para salão:', salonId);
+      
       const { data: transactions, error } = await supabase
         .from('financial_transactions')
         .select('*')
         .eq('salon_id', salonId)
         .eq('transaction_type', 'income')
-        .eq('status', 'completed')
         .order('transaction_date', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro na query:', error);
+        throw error;
+      }
 
       console.log('💰 Transações encontradas para o salão:', transactions?.length || 0);
+      console.log('📋 Exemplo de transação:', transactions?.[0]);
 
       // Converter cada transação em uma linha da tabela
       const rows: TransactionRow[] = (transactions || []).map(transaction => {
