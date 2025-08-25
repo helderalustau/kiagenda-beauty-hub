@@ -28,6 +28,7 @@ import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 import PlanLimitReachedModal from '@/components/PlanLimitReachedModal';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import AppointmentDetailsModal from '@/components/admin/AppointmentDetailsModal';
 
 
 interface CleanDashboardOverviewProps {
@@ -50,6 +51,7 @@ const CleanDashboardOverview = ({
   const [appointmentStats, setAppointmentStats] = useState<any>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   
   // Buscar estatísticas de agendamentos com delay
   useEffect(() => {
@@ -358,46 +360,51 @@ const CleanDashboardOverview = ({
                 {todayAppointments
                   .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
                   .map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-primary">
-                          {appointment.appointment_time.substring(0, 5)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-xs">{getClientName(appointment)}</p>
-                        <p className="text-[10px] text-muted-foreground">{getServiceName(appointment)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(appointment.status)}
-                      {appointment.status === 'pending' && (
-                        <Button
-                          size="sm"
-                          onClick={() => onUpdateStatus(appointment.id, 'confirmed')}
-                          className="h-7 px-2 text-xs"
-                        >
-                          Confirmar
-                        </Button>
-                      )}
-                      {appointment.status === 'confirmed' && (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            console.log('🔥 CleanDashboard CONCLUIR CLICADO!', { 
-                              appointmentId: appointment.id, 
-                              status: appointment.status 
-                            });
-                            onUpdateStatus(appointment.id, 'completed');
-                          }}
-                          className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          Concluir
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                   <div key={appointment.id} className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedAppointment(appointment)}>
+                     <div className="flex items-center gap-2">
+                       <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
+                         <span className="text-xs font-medium text-primary">
+                           {appointment.appointment_time.substring(0, 5)}
+                         </span>
+                       </div>
+                       <div>
+                         <p className="font-medium text-xs">{getClientName(appointment)}</p>
+                         <p className="text-[10px] text-muted-foreground">{getServiceName(appointment)}</p>
+                       </div>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       {getStatusBadge(appointment.status)}
+                       {appointment.status === 'pending' && (
+                         <Button
+                           size="sm"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             onUpdateStatus(appointment.id, 'confirmed');
+                           }}
+                           className="h-7 px-2 text-xs"
+                         >
+                           Confirmar
+                         </Button>
+                       )}
+                       {appointment.status === 'confirmed' && (
+                         <Button
+                           size="sm"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             console.log('🔥 CleanDashboard CONCLUIR CLICADO!', { 
+                               appointmentId: appointment.id, 
+                               status: appointment.status 
+                             });
+                             onUpdateStatus(appointment.id, 'completed');
+                           }}
+                           className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                         >
+                           Concluir
+                         </Button>
+                       )}
+                     </div>
+                   </div>
                 ))}
               </div>
             )}
@@ -422,45 +429,52 @@ const CleanDashboardOverview = ({
               </div>
             ) : (
               <div className="space-y-3">
-                {upcomingAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium">
-                          {formatAppointmentDate(appointment.appointment_date)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{getClientName(appointment)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {getServiceName(appointment)} • {appointment.appointment_time.substring(0, 5)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(appointment.status)}
-                      {appointment.status === 'pending' && (
-                        <Button
-                          size="sm"
-                          onClick={() => onUpdateStatus(appointment.id, 'confirmed')}
-                          className="h-7 px-2 text-xs"
-                        >
-                          Confirmar
-                        </Button>
-                      )}
-                      {appointment.status === 'confirmed' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onUpdateStatus(appointment.id, 'completed')}
-                          className="h-7 px-2 text-xs"
-                        >
-                          Concluir
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                 {upcomingAppointments.map((appointment) => (
+                   <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedAppointment(appointment)}>
+                     <div className="flex items-center gap-3">
+                       <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
+                         <span className="text-xs font-medium">
+                           {formatAppointmentDate(appointment.appointment_date)}
+                         </span>
+                       </div>
+                       <div>
+                         <p className="font-medium text-sm">{getClientName(appointment)}</p>
+                         <p className="text-xs text-muted-foreground">
+                           {getServiceName(appointment)} • {appointment.appointment_time.substring(0, 5)}
+                         </p>
+                       </div>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       {getStatusBadge(appointment.status)}
+                       {appointment.status === 'pending' && (
+                         <Button
+                           size="sm"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             onUpdateStatus(appointment.id, 'confirmed');
+                           }}
+                           className="h-7 px-2 text-xs"
+                         >
+                           Confirmar
+                         </Button>
+                       )}
+                       {appointment.status === 'confirmed' && (
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             onUpdateStatus(appointment.id, 'completed');
+                           }}
+                           className="h-7 px-2 text-xs"
+                         >
+                           Concluir
+                         </Button>
+                       )}
+                     </div>
+                   </div>
+                 ))}
               </div>
             )}
           </CardContent>
@@ -484,29 +498,30 @@ const CleanDashboardOverview = ({
               </div>
             ) : (
               <div className="space-y-3">
-                {completedAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-foreground">
-                          {formatAppointmentDate(appointment.appointment_date)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{getClientName(appointment)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {getServiceName(appointment)} • {appointment.appointment_time.substring(0, 5)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(appointment.status)}
-                      <div className="text-xs text-primary font-medium">
-                        {formatCurrency((appointment as any).service?.price || 0)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                 {completedAppointments.map((appointment) => (
+                   <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedAppointment(appointment)}>
+                     <div className="flex items-center gap-3">
+                       <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
+                         <span className="text-xs font-medium text-foreground">
+                           {formatAppointmentDate(appointment.appointment_date)}
+                         </span>
+                       </div>
+                       <div>
+                         <p className="font-medium text-sm">{getClientName(appointment)}</p>
+                         <p className="text-xs text-muted-foreground">
+                           {getServiceName(appointment)} • {appointment.appointment_time.substring(0, 5)}
+                         </p>
+                       </div>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       {getStatusBadge(appointment.status)}
+                       <div className="text-xs text-primary font-medium">
+                         {formatCurrency((appointment as any).service?.price || 0)}
+                       </div>
+                     </div>
+                   </div>
+                 ))}
               </div>
             )}
           </CardContent>
@@ -532,6 +547,18 @@ const CleanDashboardOverview = ({
         maxAppointments={appointmentStats?.maxAppointments || 0}
         salonId={salon.id}
         salonName={salon.name}
+      />
+
+      {/* Modal de detalhes do agendamento */}
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        isOpen={!!selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+        onStatusUpdate={() => {
+          // Fechar modal e atualizar dados
+          setSelectedAppointment(null);
+          // Trigger refresh se necessário
+        }}
       />
     </div>
   );
