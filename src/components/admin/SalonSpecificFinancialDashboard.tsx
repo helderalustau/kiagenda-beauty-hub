@@ -52,10 +52,19 @@ const SalonSpecificFinancialDashboard = ({ salonId }: SalonSpecificFinancialDash
   };
 
   const fetchSalonSpecificData = async () => {
+    console.log('🔍 Iniciando fetchSalonSpecificData...');
+    
     const currentSalonId = getAdminInfo();
+    console.log('🏢 Salon ID do admin logado:', currentSalonId);
+    console.log('🎯 Salon ID solicitado:', salonId);
     
     if (!currentSalonId || currentSalonId !== salonId) {
-      console.error('Acesso negado: dados solicitados de salão diferente do logado');
+      console.error('❌ Acesso negado: dados solicitados de salão diferente do logado');
+      toast({
+        title: "Acesso Negado",
+        description: "Você só pode visualizar dados do seu próprio salão",
+        variant: "destructive"
+      });
       return;
     }
 
