@@ -34,12 +34,15 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
   };
 
   const salonId = getSalonId();
-  const { transactions, financialMetrics, loading: transactionsLoading } = useFinancialTransactions({ salonId });
+  console.log('💰 FinancialDashboard - SalonId obtido:', salonId);
+  
+  const { transactions, financialMetrics, loading: transactionsLoading, fetchTransactions } = useFinancialTransactions({ salonId });
 
-  console.log('💰 FinancialDashboard - Dados:', {
+  console.log('💰 FinancialDashboard - Dados de transações:', {
     appointments: appointments.length,
     transactions: transactions.length,
-    metrics: financialMetrics
+    metrics: financialMetrics,
+    salonId
   });
 
   const services = useMemo(() => {
@@ -223,25 +226,38 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     console.log('💰 Financial calculation - Status breakdown:', {
       completed: completedAppointments.length,
       confirmed: confirmedAppointments.length,
-      transactions: transactions.length
+      transactions: transactions.length,
+      financialMetrics
     });
     
-    // Calcular receita total usando apenas transações financeiras
-    const totalRevenue = transactions
-      .filter(t => t.transaction_type === 'income' && t.status === 'completed')
+    // Usar sempre os valores das métricas financeiras reais
+    const totalRevenue = financialMetrics.totalRevenue;
+    const todayRevenue = financialMetrics.todayRevenue;
+    
+    // Calcular receita pendente apenas de appointments confirmados sem transações
+    const pendingRevenue = confirmedAppointments
+      .filter(apt => !transactions.some(t => t.appointment_id === apt.id))
+      .reduce((sum, apt) => {
+        return sum + calculateAppointmentTotal(apt);
+      }, 0);
+    
+    const currentMonthRevenue = transactions
+      .filter(t => {
+        const transactionDate = new Date(t.transaction_date);
+        return t.transaction_type === 'income' && 
+               t.status === 'completed' && 
+               isSameMonth(transactionDate, now);
+      })
       .reduce((sum, t) => sum + Number(t.amount), 0);
     
-    const pendingRevenue = confirmedAppointments.reduce((sum, apt) => {
-      return sum + calculateAppointmentTotal(apt);
-    }, 0);
-    
-    const currentMonthRevenue = appointments
-      .filter(apt => apt.status === 'completed' && isSameMonth(new Date(apt.appointment_date), now))
-      .reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
-    
-    const lastMonthRevenue = appointments
-      .filter(apt => apt.status === 'completed' && isSameMonth(new Date(apt.appointment_date), subMonths(now, 1)))
-      .reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+    const lastMonthRevenue = transactions
+      .filter(t => {
+        const transactionDate = new Date(t.transaction_date);
+        return t.transaction_type === 'income' && 
+               t.status === 'completed' && 
+               isSameMonth(transactionDate, subMonths(now, 1));
+      })
+      .reduce((sum, t) => sum + Number(t.amount), 0);
     
     const growthPercentage = lastMonthRevenue > 0 
       ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
@@ -251,13 +267,22 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       ? totalRevenue / completedAppointments.length 
       : 0;
     
+    // Gerar dados mensais baseados em transações
     const monthlyData = [];
     for (let i = 5; i >= 0; i--) {
       const month = subMonths(now, i);
+      const revenue = transactions
+        .filter(t => {
+          const transactionDate = new Date(t.transaction_date);
+          return t.transaction_type === 'income' && 
+                 t.status === 'completed' && 
+                 isSameMonth(transactionDate, month);
+        })
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+      
       const monthAppointments = appointments.filter(apt => 
         apt.status === 'completed' && isSameMonth(new Date(apt.appointment_date), month)
       );
-      const revenue = monthAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
       
       monthlyData.push({
         month: format(month, 'MMM/yy', { locale: ptBR }),
@@ -267,13 +292,23 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       });
     }
     
+    // Gerar dados diários baseados em transações
     const dailyData = [];
     for (let i = 29; i >= 0; i--) {
       const day = subDays(now, i);
+      const dayStr = format(day, 'yyyy-MM-dd');
+      
+      const revenue = transactions
+        .filter(t => 
+          t.transaction_type === 'income' && 
+          t.status === 'completed' && 
+          t.transaction_date === dayStr
+        )
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+      
       const dayAppointments = appointments.filter(apt => 
         apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), day)
       );
-      const revenue = dayAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
       
       dailyData.push({
         day: format(day, 'dd/MM', { locale: ptBR }),
@@ -283,17 +318,23 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       });
     }
     
-    const serviceStats = completedAppointments.reduce((acc, apt) => {
-      const serviceName = apt.service?.name || 'Serviço não identificado';
-      const appointmentTotal = calculateAppointmentTotal(apt);
-      
-      if (!acc[serviceName]) {
-        acc[serviceName] = { count: 0, revenue: 0 };
-      }
-      acc[serviceName].count++;
-      acc[serviceName].revenue += appointmentTotal;
-      return acc;
-    }, {} as Record<string, { count: number; revenue: number }>);
+    // Estatísticas de serviços baseadas em transações
+    const serviceStats = transactions
+      .filter(t => t.transaction_type === 'income' && t.status === 'completed')
+      .reduce((acc, t) => {
+        const serviceName = t.metadata?.service_name || 'Serviço não identificado';
+        const isAdditional = t.metadata?.additional || false;
+        
+        if (!acc[serviceName]) {
+          acc[serviceName] = { count: 0, revenue: 0 };
+        }
+        
+        if (!isAdditional) {
+          acc[serviceName].count++;
+        }
+        acc[serviceName].revenue += Number(t.amount);
+        return acc;
+      }, {} as Record<string, { count: number; revenue: number }>);
     
     const servicesData = Object.entries(serviceStats)
       .map(([name, stats]) => ({
@@ -305,12 +346,14 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
     
-    console.log('💰 Final financial data:', {
+    console.log('💰 Final financial data calculado:', {
       totalRevenue,
       currentMonthRevenue,
       growthPercentage,
       averageTicket,
-      completedCount: completedAppointments.length
+      completedCount: completedAppointments.length,
+      pendingRevenue,
+      todayRevenue
     });
     
     return {
@@ -324,10 +367,14 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       dailyData,
       servicesData
     };
-  }, [filteredAppointments, appointments, transactions]);
+  }, [filteredAppointments, appointments, transactions, financialMetrics]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     console.log('🔄 Atualizando dados financeiros...');
+    // Recarregar transações financeiras
+    if (fetchTransactions) {
+      await fetchTransactions();
+    }
     toast({
       title: "Dados atualizados",
       description: "Os dados financeiros foram atualizados com sucesso",
@@ -364,9 +411,14 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         onRefresh={handleRefresh}
         onExport={handleExport}
         salonId={salonId}
-        onSyncComplete={() => {
+        onSyncComplete={async () => {
           console.log('🔄 Recarregando dados após sincronização...');
-          window.location.reload();
+          // Recarregar transações financeiras
+          if (fetchTransactions) {
+            await fetchTransactions();
+          }
+          // Recarregar a página para garantir que todos os dados sejam atualizados
+          setTimeout(() => window.location.reload(), 1000);
         }}
       />
 

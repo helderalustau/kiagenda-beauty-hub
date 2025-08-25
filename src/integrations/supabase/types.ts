@@ -717,6 +717,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_complete_old_appointments: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_incomplete_salons: {
         Args: Record<PropertyKey, never>
         Returns: number
