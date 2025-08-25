@@ -10,6 +10,7 @@ import { useClientLoginLogic } from '@/hooks/useClientLoginLogic';
 import { StateSelect } from "@/components/ui/state-select";
 import { CitySelect } from "@/components/ui/city-select";
 import { usePhoneValidation } from '@/hooks/usePhoneValidation';
+import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
 
 const ClientAuthForm = () => {
   const { handleLogin, handleRegister, loading } = useClientLoginLogic();
@@ -33,6 +34,7 @@ const ClientAuthForm = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const onLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +131,16 @@ const ClientAuthForm = () => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
+                
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-blue-600 hover:text-blue-700 underline"
+                  >
+                    Esqueceu sua senha?
+                  </button>
+                </div>
               </form>
             </TabsContent>
             
@@ -239,6 +251,13 @@ const ClientAuthForm = () => {
               </form>
             </TabsContent>
           </Tabs>
+
+          {/* Modal de Recuperação de Senha */}
+          <ForgotPasswordModal
+            isOpen={showForgotPassword}
+            onClose={() => setShowForgotPassword(false)}
+            userType="client"
+          />
         </CardContent>
       </Card>
     </div>

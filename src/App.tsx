@@ -10,6 +10,8 @@ import Index from "./pages/Index";
 import AdminLogin from "./pages/AdminLogin";
 import ClientLogin from "./pages/ClientLogin";
 import AdminRegistration from "./pages/AdminRegistration";
+import AdminResetPassword from "./pages/AdminResetPassword";
+import ClientResetPassword from "./pages/ClientResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
@@ -40,6 +42,8 @@ function App() {
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/admin-registration" element={<AdminRegistration />} />
+              <Route path="/admin-reset-password" element={<AdminResetPassword />} />
+              <Route path="/client-reset-password" element={<ClientResetPassword />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/client-dashboard" element={<ClientDashboard />} />
               <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />

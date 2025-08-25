@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
+import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
 
 interface AdminLoginFormProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -17,6 +18,8 @@ export const AdminLoginForm = ({
   loading,
   onCreateAccount
 }: AdminLoginFormProps) => {
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-md mx-auto">
@@ -71,9 +74,22 @@ export const AdminLoginForm = ({
               </p>
               
               <p className="text-sm text-gray-500">
-                Esqueceu sua senha? Entre em contato com o suporte.
+                Esqueceu sua senha?{' '}
+                <button 
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-blue-600 hover:text-blue-700 font-medium underline"
+                >
+                  Clique aqui para recuperar
+                </button>
               </p>
             </div>
+
+            {/* Modal de Recuperação de Senha */}
+            <ForgotPasswordModal
+              isOpen={showForgotPassword}
+              onClose={() => setShowForgotPassword(false)}
+              userType="admin"
+            />
           </CardContent>
         </Card>
       </div>
