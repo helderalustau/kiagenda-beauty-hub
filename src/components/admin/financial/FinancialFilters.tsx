@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Filter, Download, RefreshCw } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import FinancialSyncButton from './FinancialSyncButton';
 
 interface FinancialFiltersProps {
   selectedPeriod: string;
@@ -16,6 +17,8 @@ interface FinancialFiltersProps {
   services: Array<{ id: string; name: string }>;
   onRefresh: () => void;
   onExport: () => void;
+  salonId?: string;
+  onSyncComplete?: () => void;
 }
 
 const FinancialFilters = ({
@@ -25,7 +28,9 @@ const FinancialFilters = ({
   onServiceChange,
   services,
   onRefresh,
-  onExport
+  onExport,
+  salonId,
+  onSyncComplete
 }: FinancialFiltersProps) => {
   const getPeriodLabel = (period: string) => {
     const now = new Date();
@@ -108,6 +113,12 @@ const FinancialFilters = ({
               <Download className="h-4 w-4 mr-2" />
               Exportar
             </Button>
+            {salonId && (
+              <FinancialSyncButton 
+                salonId={salonId} 
+                onSyncComplete={onSyncComplete}
+              />
+            )}
           </div>
 
           <div className="flex items-center">

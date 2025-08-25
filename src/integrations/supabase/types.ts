@@ -775,6 +775,10 @@ export type Database = {
         }
         Returns: string
       }
+      sync_missing_financial_transactions: {
+        Args: { p_salon_id: string }
+        Returns: Json
+      }
       verify_password: {
         Args: { hash: string; password: string }
         Returns: boolean

@@ -363,6 +363,11 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
         services={services}
         onRefresh={handleRefresh}
         onExport={handleExport}
+        salonId={salonId}
+        onSyncComplete={() => {
+          console.log('🔄 Recarregando dados após sincronização...');
+          window.location.reload();
+        }}
       />
 
       <FinancialMetricsCards
