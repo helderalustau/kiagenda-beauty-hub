@@ -145,7 +145,41 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
   const dailySummaryData = useMemo(() => {
     const today = new Date();
     const yesterday = subDays(today, 1);
+    const todayStr = format(today, 'yyyy-MM-dd');
+    const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
 
+    console.log('💰 Calculando resumo diário:', {
+      transactions: transactions.length,
+      todayStr,
+      yesterdayStr
+    });
+
+    // Calcular receita usando transações financeiras primeiro
+    const todayRevenue = transactions.length > 0 
+      ? transactions
+          .filter(t => 
+            t.transaction_type === 'income' && 
+            t.status === 'completed' &&
+            t.transaction_date === todayStr
+          )
+          .reduce((sum, t) => sum + Number(t.amount), 0)
+      : appointments
+          .filter(apt => apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), today))
+          .reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+
+    const yesterdayRevenue = transactions.length > 0
+      ? transactions
+          .filter(t => 
+            t.transaction_type === 'income' && 
+            t.status === 'completed' &&
+            t.transaction_date === yesterdayStr
+          )
+          .reduce((sum, t) => sum + Number(t.amount), 0)
+      : appointments
+          .filter(apt => apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), yesterday))
+          .reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+
+    // Contar agendamentos
     const todayAppointments = appointments.filter(apt => 
       apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), today)
     );
@@ -154,11 +188,15 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       apt.status === 'completed' && isSameDay(new Date(apt.appointment_date), yesterday)
     );
 
-    const todayRevenue = todayAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
-    const yesterdayRevenue = yesterdayAppointments.reduce((sum, apt) => sum + calculateAppointmentTotal(apt), 0);
+    console.log('💰 Valores calculados:', {
+      todayRevenue,
+      yesterdayRevenue,
+      todayAppointments: todayAppointments.length,
+      yesterdayAppointments: yesterdayAppointments.length
+    });
 
     const todayData = {
-      date: format(today, 'yyyy-MM-dd'),
+      date: todayStr,
       revenue: todayRevenue,
       appointments: todayAppointments.length,
       averageTicket: todayAppointments.length > 0 ? todayRevenue / todayAppointments.length : 0,
@@ -166,7 +204,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     };
 
     const yesterdayData = {
-      date: format(yesterday, 'yyyy-MM-dd'),
+      date: yesterdayStr,
       revenue: yesterdayRevenue,
       appointments: yesterdayAppointments.length,
       averageTicket: yesterdayAppointments.length > 0 ? yesterdayRevenue / yesterdayAppointments.length : 0,
@@ -174,7 +212,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
     };
 
     return { todayData, yesterdayData };
-  }, [appointments]);
+  }, [appointments, transactions]);
 
   const financialData = useMemo(() => {
     const now = new Date();
@@ -188,14 +226,10 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       transactions: transactions.length
     });
     
-    // Calcular receita total prioritizando transações financeiras se existirem
-    const totalRevenue = transactions.length > 0 
-      ? transactions
-          .filter(t => t.transaction_type === 'income' && t.status === 'completed')
-          .reduce((sum, t) => sum + Number(t.amount), 0)
-      : completedAppointments.reduce((sum, apt) => {
-          return sum + calculateAppointmentTotal(apt);
-        }, 0);
+    // Calcular receita total usando apenas transações financeiras
+    const totalRevenue = transactions
+      .filter(t => t.transaction_type === 'income' && t.status === 'completed')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
     
     const pendingRevenue = confirmedAppointments.reduce((sum, apt) => {
       return sum + calculateAppointmentTotal(apt);

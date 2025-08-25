@@ -27,19 +27,17 @@ interface DailySummaryCardProps {
 }
 
 const DailySummaryCard = ({ todayData, yesterdayData, financialTransactions = [] }: DailySummaryCardProps) => {
-  // Recalcular receita de hoje usando transações financeiras quando disponível
+  // Usar sempre os dados corretos das transações financeiras
   const actualTodayRevenue = React.useMemo(() => {
-    if (financialTransactions.length === 0) return todayData.revenue;
+    console.log('💰 DailySummaryCard - Dados recebidos:', {
+      todayDataRevenue: todayData.revenue,
+      transactionsCount: financialTransactions.length,
+      todayStr: format(new Date(), 'yyyy-MM-dd')
+    });
     
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    return financialTransactions
-      .filter(t => 
-        t.transaction_type === 'income' && 
-        t.status === 'completed' &&
-        format(new Date(t.transaction_date), 'yyyy-MM-dd') === todayStr
-      )
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-  }, [financialTransactions, todayData.revenue]);
+    // Usar sempre os dados que vieram já calculados corretamente do dashboard
+    return todayData.revenue;
+  }, [todayData.revenue, financialTransactions]);
 
   const revenueGrowth = yesterdayData.revenue > 0 
     ? ((actualTodayRevenue - yesterdayData.revenue) / yesterdayData.revenue) * 100 
@@ -56,25 +54,29 @@ const DailySummaryCard = ({ todayData, yesterdayData, financialTransactions = []
     }).format(value);
   };
 
-  // Calcular dados dos últimos 7 dias para o gráfico
+  // Calcular dados dos últimos 7 dias para o gráfico usando transações financeiras
   const last7DaysData = React.useMemo(() => {
     const today = new Date();
     const data = [];
+    
+    console.log('💰 Calculando gráfico 7 dias:', {
+      transactionsTotal: financialTransactions.length
+    });
     
     for (let i = 6; i >= 0; i--) {
       const date = subDays(today, i);
       const dateStr = format(date, 'yyyy-MM-dd');
       
-      // Calcular receita do dia usando transações financeiras quando disponível
-      const dayRevenue = financialTransactions.length > 0
-        ? financialTransactions
-            .filter(t => 
-              t.transaction_type === 'income' && 
-              t.status === 'completed' &&
-              format(new Date(t.transaction_date), 'yyyy-MM-dd') === dateStr
-            )
-            .reduce((sum, t) => sum + Number(t.amount), 0)
-        : (i === 0 ? todayData.revenue : (i === 1 ? yesterdayData.revenue : 0));
+      // Usar sempre transações financeiras
+      const dayRevenue = financialTransactions
+        .filter(t => 
+          t.transaction_type === 'income' && 
+          t.status === 'completed' &&
+          t.transaction_date === dateStr
+        )
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+      
+      console.log(`💰 Dia ${dateStr}: R$ ${dayRevenue}`);
       
       data.push({
         day: format(date, 'dd/MM'),
@@ -84,7 +86,7 @@ const DailySummaryCard = ({ todayData, yesterdayData, financialTransactions = []
     }
     
     return data;
-  }, [financialTransactions, todayData.revenue, yesterdayData.revenue]);
+  }, [financialTransactions]);
 
 
   return (
