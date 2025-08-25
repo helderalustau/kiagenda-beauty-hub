@@ -1,6 +1,6 @@
 import React from 'react';
 import { Appointment } from '@/types/supabase-entities';
-import SalonSpecificFinancialDashboard from './SalonSpecificFinancialDashboard';
+import SimpleFinancialDashboard from './SimpleFinancialDashboard';
 
 interface FinancialDashboardProps {
   appointments: Appointment[];
@@ -23,7 +23,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
 
   const salonId = getSalonId();
 
-  return <SalonSpecificFinancialDashboard salonId={salonId} />;
+  return <SimpleFinancialDashboard salonId={salonId} />;
 };
 
 export default FinancialDashboard;
