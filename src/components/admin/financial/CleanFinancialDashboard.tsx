@@ -7,6 +7,7 @@ import { useFinancialData } from '@/hooks/useFinancialData';
 import FinancialStatsCards from './FinancialStatsCards';
 import TransactionsList from './TransactionsList';
 import FinancialSyncButton from './FinancialSyncButton';
+import RevenueChart from './RevenueChart';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -118,6 +119,9 @@ const CleanFinancialDashboard = ({ salonId }: CleanFinancialDashboardProps) => {
 
       {/* Cartões de estatísticas */}
       <FinancialStatsCards metrics={metrics} isLoading={loading} />
+
+      {/* Gráfico de evolução da receita */}
+      <RevenueChart transactions={transactions} />
 
       {/* Lista de transações */}
       <TransactionsList transactions={transactions} isLoading={loading} />

@@ -60,7 +60,7 @@ const FinancialStatsCards = ({ metrics, isLoading }: FinancialStatsCardsProps) =
     );
   }
 
-  const stats = [
+const stats = [
     {
       title: "Receita Total",
       value: formatCurrency(metrics.totalRevenue),
@@ -96,74 +96,32 @@ const FinancialStatsCards = ({ metrics, isLoading }: FinancialStatsCardsProps) =
       bgColor: "bg-orange-100",
       subtitle: `${metrics.pendingAppointments} confirmados`,
       trend: null
-    },
-    {
-      title: "Despesas Totais",
-      value: formatCurrency(metrics.totalExpenses),
-      icon: CreditCard,
-      color: "text-red-600",
-      bgColor: "bg-red-100",
-      subtitle: "Gastos operacionais",
-      trend: null
-    },
-    {
-      title: "Lucro Líquido",
-      value: formatCurrency(metrics.netProfit),
-      icon: Target,
-      color: metrics.netProfit >= 0 ? "text-green-600" : "text-red-600",
-      bgColor: metrics.netProfit >= 0 ? "bg-green-100" : "bg-red-100",
-      subtitle: `Margem: ${metrics.totalRevenue > 0 ? ((metrics.netProfit / metrics.totalRevenue) * 100).toFixed(1) : 0}%`,
-      trend: null
-    },
-    {
-      title: "Ticket Médio",
-      value: formatCurrency(metrics.averageTicket),
-      icon: CheckCircle,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-100",
-      subtitle: "Por atendimento",
-      trend: null
-    },
-    {
-      title: "Média Diária",
-      value: formatCurrency(metrics.dailyAverageRevenue),
-      icon: TrendingUp,
-      color: "text-teal-600",
-      bgColor: "bg-teal-100",
-      subtitle: "Receita média/dia",
-      trend: null
     }
   ];
 
   return (
     <div className="space-y-6">
       {/* Resumo Executivo */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
         <CardHeader>
-          <CardTitle className="flex items-center text-blue-900">
+          <CardTitle className="flex items-center text-green-900">
             <DollarSign className="h-6 w-6 mr-2" />
-            Resumo Financeiro Executivo
+            Resumo de Receitas
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">
+              <div className="text-4xl font-bold text-green-600">
                 {formatCurrency(metrics.totalRevenue)}
               </div>
-              <div className="text-sm text-gray-600 mt-1">Receita Total</div>
+              <div className="text-sm text-gray-600 mt-1">Receita Total Acumulada</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-red-600">
-                {formatCurrency(metrics.totalExpenses)}
+              <div className="text-4xl font-bold text-blue-600">
+                {formatCurrency(metrics.monthRevenue)}
               </div>
-              <div className="text-sm text-gray-600 mt-1">Despesas Totais</div>
-            </div>
-            <div className="text-center">
-              <div className={`text-3xl font-bold ${metrics.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                {formatCurrency(metrics.netProfit)}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">Lucro Líquido</div>
+              <div className="text-sm text-gray-600 mt-1">Receita do Mês Atual</div>
             </div>
           </div>
           
@@ -192,7 +150,7 @@ const FinancialStatsCards = ({ metrics, isLoading }: FinancialStatsCardsProps) =
         </CardContent>
       </Card>
 
-      {/* Cards de Estatísticas */}
+      {/* Cards de Estatísticas - Apenas Receitas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -258,24 +216,10 @@ const FinancialStatsCards = ({ metrics, isLoading }: FinancialStatsCardsProps) =
               </div>
             )}
             
-            {metrics.averageTicket > 100 && (
+            {metrics.todayRevenue > 500 && (
               <div className="flex items-center text-blue-700">
-                <Target className="h-4 w-4 mr-2" />
-                Ótimo ticket médio de {formatCurrency(metrics.averageTicket)}
-              </div>
-            )}
-            
-            {metrics.netProfit < 0 && (
-              <div className="flex items-center text-red-700">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Operação no prejuízo - revisar custos operacionais
-              </div>
-            )}
-
-            {metrics.totalRevenue > 0 && ((metrics.netProfit / metrics.totalRevenue) * 100) > 30 && (
-              <div className="flex items-center text-green-700">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Excelente margem de lucro ({((metrics.netProfit / metrics.totalRevenue) * 100).toFixed(1)}%)
+                Ótimo faturamento hoje: {formatCurrency(metrics.todayRevenue)}
               </div>
             )}
           </div>
