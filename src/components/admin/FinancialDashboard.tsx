@@ -281,6 +281,7 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
       <DailySummaryCard 
         todayData={dailySummaryData.todayData}
         yesterdayData={dailySummaryData.yesterdayData}
+        transactions={transactions}
       />
 
       <FinancialFilters
