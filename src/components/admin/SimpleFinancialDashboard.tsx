@@ -71,9 +71,11 @@ const SimpleFinancialDashboard = ({ salonId }: SimpleFinancialDashboardProps) =>
         const monthTransactions = transactions.filter(t => t.transaction_date.startsWith(currentMonth));
         const monthTotal = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
 
-        console.log('📈 Resumo calculado:', {
+        console.log('📈 SimpleFinancialDashboard - Resumo calculado:', {
           today: { count: todayTransactions.length, total: todayTotal },
-          month: { count: monthTransactions.length, total: monthTotal }
+          month: { count: monthTransactions.length, total: monthTotal },
+          salonId: salonId,
+          formattedMonth: formatCurrency(monthTotal)
         });
 
         setTodayRevenue(todayTotal);

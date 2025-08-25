@@ -24,6 +24,7 @@ import {
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData';
+import { supabase } from '@/integrations/supabase/client';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 import PlanLimitReachedModal from '@/components/PlanLimitReachedModal';
@@ -174,9 +175,44 @@ const CleanDashboardOverview = ({
            apt.status === 'completed';
   });
 
-  const monthlyRevenue = completedThisMonth.reduce((total, apt) => {
-    return total + ((apt as any).service?.price || 0);
-  }, 0);
+  // Estado para transações financeiras
+  const [monthlyRevenue, setMonthlyRevenue] = useState(0);
+  const [monthlyTransactionsCount, setMonthlyTransactionsCount] = useState(0);
+
+  // Buscar transações financeiras do mês
+  useEffect(() => {
+    const fetchFinancialData = async () => {
+      if (!salon?.id) return;
+      
+      try {
+        const { data: transactions } = await supabase
+          .from('financial_transactions')
+          .select('amount')
+          .eq('salon_id', salon.id)
+          .eq('transaction_type', 'income')
+          .eq('status', 'completed')
+          .gte('transaction_date', format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd'))
+          .lte('transaction_date', format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), 'yyyy-MM-dd'));
+
+        if (transactions) {
+          const revenue = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
+          setMonthlyRevenue(revenue);
+          setMonthlyTransactionsCount(transactions.length);
+          console.log('💰 CleanDashboard - Receita corrigida:', { 
+            revenue, 
+            count: transactions.length, 
+            salonId: salon.id,
+            formattedRevenue: formatCurrency(revenue)
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados financeiros:', error);
+      }
+    };
+
+    fetchFinancialData();
+  }, [salon?.id, appointments]);
+
 
   return (
     <div className="space-y-6 p-6 bg-background">
@@ -308,7 +344,7 @@ const CleanDashboardOverview = ({
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(monthlyRevenue)}</p>
                   <div className="flex items-center mt-1">
                     <TrendingUp className="h-3 w-3 text-primary mr-1" />
-                    <p className="text-xs text-muted-foreground">{completedThisMonth.length} concluídos</p>
+                    <p className="text-xs text-muted-foreground">{monthlyTransactionsCount} transações</p>
                   </div>
               </div>
               <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
