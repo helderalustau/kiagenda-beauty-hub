@@ -29,69 +29,69 @@ const FinancialMetricsCards = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card className="border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-green-100">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-green-800">Receita Total</CardTitle>
-          <DollarSign className="h-5 w-5 text-green-600" />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      <Card className="border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-primary/10 hover:shadow-md transition-all">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+          <CardTitle className="text-xs font-semibold text-foreground">Receita Total</CardTitle>
+          <DollarSign className="h-4 w-4 text-primary" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-700">
+        <CardContent className="pb-2">
+          <div className="text-lg font-bold text-foreground">
             {formatCurrency(totalRevenue)}
           </div>
-          <p className="text-xs text-green-600 mt-1">
-            {completedAppointments} atendimentos concluídos
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            {completedAppointments} atendimentos
           </p>
         </CardContent>
       </Card>
 
-      <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-blue-100">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-blue-800">Receita do Mês</CardTitle>
-          <Calendar className="h-5 w-5 text-blue-600" />
+      <Card className="border-l-4 border-l-accent bg-gradient-to-r from-accent/5 to-accent/10 hover:shadow-md transition-all">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+          <CardTitle className="text-xs font-semibold text-foreground">Receita do Mês</CardTitle>
+          <Calendar className="h-4 w-4 text-accent" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-blue-700">
+        <CardContent className="pb-2">
+          <div className="text-lg font-bold text-foreground">
             {formatCurrency(currentMonthRevenue)}
           </div>
-          <div className="flex items-center mt-1">
+          <div className="flex items-center mt-0.5">
             {growthPercentage >= 0 ? (
-              <ArrowUp className="h-3 w-3 text-green-500 mr-1" />
+              <ArrowUp className="h-2.5 w-2.5 text-green-600 mr-1" />
             ) : (
-              <ArrowDown className="h-3 w-3 text-red-500 mr-1" />
+              <ArrowDown className="h-2.5 w-2.5 text-red-500 mr-1" />
             )}
-            <span className={`text-xs ${growthPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {Math.abs(growthPercentage).toFixed(1)}% vs mês anterior
+            <span className={`text-[10px] ${growthPercentage >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {Math.abs(growthPercentage).toFixed(1)}% vs anterior
             </span>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-50 to-purple-100">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-purple-800">Ticket Médio</CardTitle>
-          <Target className="h-5 w-5 text-purple-600" />
+      <Card className="border-l-4 border-l-secondary bg-gradient-to-r from-secondary/5 to-secondary/10 hover:shadow-md transition-all">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+          <CardTitle className="text-xs font-semibold text-foreground">Ticket Médio</CardTitle>
+          <Target className="h-4 w-4 text-secondary" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-purple-700">
+        <CardContent className="pb-2">
+          <div className="text-lg font-bold text-foreground">
             {formatCurrency(averageTicket)}
           </div>
-          <p className="text-xs text-purple-600 mt-1">
-            Por atendimento realizado
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            Por atendimento
           </p>
         </CardContent>
       </Card>
 
-      <Card className="border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-100">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-orange-800">Receita Pendente</CardTitle>
-          <TrendingUp className="h-5 w-5 text-orange-600" />
+      <Card className="border-l-4 border-l-warning bg-gradient-to-r from-warning/5 to-warning/10 hover:shadow-md transition-all">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+          <CardTitle className="text-xs font-semibold text-foreground">Receita Pendente</CardTitle>
+          <TrendingUp className="h-4 w-4 text-warning" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-orange-700">
+        <CardContent className="pb-2">
+          <div className="text-lg font-bold text-foreground">
             {formatCurrency(pendingRevenue)}
           </div>
-          <p className="text-xs text-orange-600 mt-1">
+          <p className="text-[10px] text-muted-foreground mt-0.5">
             Agendamentos confirmados
           </p>
         </CardContent>

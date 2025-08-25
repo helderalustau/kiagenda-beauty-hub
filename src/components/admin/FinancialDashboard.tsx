@@ -272,10 +272,10 @@ const FinancialDashboard = ({ appointments }: FinancialDashboardProps) => {
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Dashboard Financeiro</h2>
-        <p className="text-gray-600 text-sm">Análise do desempenho financeiro</p>
+    <div className="space-y-3">
+      <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-3 border border-border/50">
+        <h2 className="text-lg font-bold text-foreground mb-0.5">💰 Dashboard Financeiro</h2>
+        <p className="text-muted-foreground text-xs">Análise detalhada do desempenho financeiro</p>
       </div>
 
       <DailySummaryCard 
