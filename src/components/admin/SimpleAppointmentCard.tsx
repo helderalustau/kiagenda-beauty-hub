@@ -87,7 +87,7 @@ const SimpleAppointmentCard = ({
     
     const variant = variants[status as keyof typeof variants] || variants.pending;
     return (
-      <Badge className={`${variant.color} text-[8px] px-1 py-0`}>
+      <Badge className={`${variant.color} text-xs px-2 py-1 font-medium`}>
         {variant.label}
       </Badge>
     );
@@ -131,39 +131,40 @@ const SimpleAppointmentCard = ({
   const additionalTotal = additionalServices.reduce((sum, s) => sum + s.price, 0);
   if (compact) {
     return (
-      <Card className={`border shadow-sm mb-0.5 hover:shadow-md transition-all ${getStatusColor(appointment.status)}`}>
-        <CardContent className="p-1">
+      <Card className={`border shadow-sm mb-2 hover:shadow-md transition-all ${getStatusColor(appointment.status)}`}>
+        <CardContent className="p-3">
           {/* Cabeçalho compacto */}
-          <div className="flex items-center justify-between mb-0.5">
-            <div className="flex items-center gap-0.5">
-              <Clock className="h-2 w-2 text-primary" />
-              <span className="font-semibold text-[8px]">{appointment.appointment_time}</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <span className="font-bold text-sm">{appointment.appointment_time}</span>
             </div>
             {getStatusBadge(appointment.status)}
           </div>
 
-          {/* Informações do cliente e serviço em linha única */}
-          <div className="flex items-center justify-between mb-0.5 text-[8px]">
-            <div className="flex items-center gap-0.5 flex-1 min-w-0">
-              <User className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-              <span className="font-medium truncate">
+          {/* Informações do cliente e serviço */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="font-semibold truncate text-sm">
                 {appointment.client?.name || appointment.client?.username || 'Cliente'}
               </span>
             </div>
-            <span className="font-bold text-primary text-[8px] ml-1">
+            <span className="font-bold text-primary text-sm ml-2">
               {formatCurrency(appointment.service?.price || 0)}
             </span>
           </div>
 
           {/* Nome do serviço */}
-          <div className="text-[8px] text-muted-foreground truncate">
+          <div className="text-sm text-muted-foreground truncate mb-2">
             {appointment.service?.name}
           </div>
+          
           {/* Resumo de adicionais */}
           {additionalServices.length > 0 && (
-            <div className="flex items-center justify-between mt-0.5 mb-0.5 text-[8px]">
-              <span className="text-muted-foreground">+ {additionalServices.length} serviço(s)</span>
-              <span className="text-accent font-semibold">+ {formatCurrency(additionalTotal)}</span>
+            <div className="flex items-center justify-between mt-2 mb-2">
+              <span className="text-sm text-muted-foreground">+ {additionalServices.length} serviço(s)</span>
+              <span className="text-accent font-semibold text-sm">+ {formatCurrency(additionalTotal)}</span>
             </div>
           )}
 
@@ -171,7 +172,7 @@ const SimpleAppointmentCard = ({
           {!isUpdating && (
             <>
               {appointment.status === 'pending' && (
-                <div className="flex gap-0.5 mt-0.5">
+                <div className="flex gap-2 mt-3">
                   <Button
                     size="sm"
                     onClick={() => {
@@ -179,9 +180,9 @@ const SimpleAppointmentCard = ({
                       handleStatusUpdate('confirmed');
                     }}
                     disabled={isUpdating}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 h-4 text-[8px] px-0.5"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 h-8 text-xs px-2 font-medium"
                   >
-                    ✓
+                    ✓ Confirmar
                   </Button>
                   <Button
                     size="sm"
@@ -190,9 +191,9 @@ const SimpleAppointmentCard = ({
                       handleStatusUpdate('completed');
                     }}
                     disabled={isUpdating}
-                    className="bg-accent hover:bg-accent/90 text-accent-foreground flex-1 h-4 text-[8px] px-0.5"
+                    className="bg-accent hover:bg-accent/90 text-accent-foreground flex-1 h-8 text-xs px-2 font-medium"
                   >
-                    ✓✓
+                    ✓✓ Concluir
                   </Button>
                   <Button
                     size="sm"
@@ -202,9 +203,9 @@ const SimpleAppointmentCard = ({
                       handleStatusUpdate('cancelled');
                     }}
                     disabled={isUpdating}
-                    className="flex-1 h-4 text-[8px] px-0.5"
+                    className="flex-1 h-8 text-xs px-2 font-medium"
                   >
-                    ✗
+                    ✗ Cancelar
                   </Button>
                 </div>
               )}
@@ -222,30 +223,30 @@ const SimpleAppointmentCard = ({
                     handleStatusUpdate('completed');
                   }}
                   disabled={isUpdating}
-                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-4 text-[8px] font-bold disabled:bg-muted disabled:cursor-not-allowed mt-0.5"
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-8 text-sm font-bold disabled:bg-muted disabled:cursor-not-allowed mt-3"
                 >
-                  {isUpdating ? 'PROCESSANDO...' : 'CONCLUIR'}
+                  {isUpdating ? 'PROCESSANDO...' : 'CONCLUIR ATENDIMENTO'}
                 </Button>
               )}
 
               {appointment.status === 'completed' && (
-                <div className="text-center py-0.5 mt-0.5">
-                  <span className="text-primary font-bold text-[8px]">✅ CONCLUÍDO</span>
+                <div className="text-center py-2 mt-3">
+                  <span className="text-primary font-bold text-sm">✅ CONCLUÍDO</span>
                 </div>
               )}
 
               {appointment.status === 'cancelled' && (
-                <div className="text-center py-0.5 mt-0.5">
-                  <span className="text-destructive font-bold text-[8px]">❌ CANCELADO</span>
+                <div className="text-center py-2 mt-3">
+                  <span className="text-destructive font-bold text-sm">❌ CANCELADO</span>
                 </div>
               )}
             </>
           )}
 
           {isUpdating && (
-            <div className="flex items-center justify-center py-0.5 mt-0.5">
-              <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-primary"></div>
-              <span className="ml-1 text-[8px] text-primary">Atualizando...</span>
+            <div className="flex items-center justify-center py-3 mt-3">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              <span className="ml-2 text-sm text-primary font-medium">Atualizando...</span>
             </div>
           )}
         </CardContent>

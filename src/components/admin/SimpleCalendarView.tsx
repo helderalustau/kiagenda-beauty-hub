@@ -148,31 +148,31 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
         <CardContent className="space-y-4">
           {/* Week Navigation */}
           <div className="flex items-center justify-between">
-            <Button onClick={() => navigateWeek('prev')} variant="outline" size="sm">
-              <ChevronLeft className="h-4 w-4" />
+            <Button onClick={() => navigateWeek('prev')} variant="outline" size="default" className="h-10">
+              <ChevronLeft className="h-5 w-5" />
             </Button>
-            <h3 className="font-semibold text-center">
+            <h3 className="font-bold text-lg text-center px-4">
               {weekDays[0]?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {' '}
               {weekDays[6]?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
             </h3>
-            <Button onClick={() => navigateWeek('next')} variant="outline" size="sm">
-              <ChevronRight className="h-4 w-4" />
+            <Button onClick={() => navigateWeek('next')} variant="outline" size="default" className="h-10">
+              <ChevronRight className="h-5 w-5" />
             </Button>
           </div>
 
           {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 placeholder="Buscar cliente ou serviço..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-12 h-10 text-sm"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-48 h-10">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -196,34 +196,34 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
           return (
             <Card 
               key={day.toISOString()} 
-              className={`bg-white shadow-sm min-h-[200px] ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+              className={`bg-white shadow-sm min-h-[280px] ${isToday ? 'ring-2 ring-blue-500' : ''}`}
             >
-              <CardHeader className="pb-2 pt-3">
+              <CardHeader className="pb-3 pt-4">
                 <div className="text-center">
-                  <p className={`text-sm font-medium ${isToday ? 'text-blue-600' : 'text-gray-600'}`}>
+                  <p className={`text-base font-semibold ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
                     {dayNames[index]}
                   </p>
-                  <p className={`text-lg font-bold ${isToday ? 'text-blue-800' : 'text-gray-900'}`}>
+                  <p className={`text-2xl font-bold ${isToday ? 'text-blue-800' : 'text-gray-900'}`}>
                     {day.getDate()}
                   </p>
                   {dayAppointments.length > 0 && (
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold mt-2 ${
                       isToday 
                         ? 'bg-blue-100 text-blue-800' 
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {dayAppointments.length}
+                      {dayAppointments.length} agendamento{dayAppointments.length > 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2 p-3 pt-0">
+              <CardContent className="space-y-3 p-4 pt-0">
                 {loading ? (
-                  <div className="flex justify-center py-4">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <div className="flex justify-center py-6">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                   </div>
                 ) : dayAppointments.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-4">Sem agendamentos</p>
+                  <p className="text-sm text-gray-500 text-center py-6 font-medium">Sem agendamentos</p>
                 ) : (
                   dayAppointments
                     .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
