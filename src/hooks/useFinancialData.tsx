@@ -25,6 +25,7 @@ interface Appointment {
   status: string;
   appointment_date: string;
   appointment_time: string;
+  notes?: string;
   service?: {
     name: string;
     price: number;
@@ -131,6 +132,7 @@ export const useFinancialData = (salonId: string) => {
           status,
           appointment_date,
           appointment_time,
+          notes,
           service:services(name, price),
           client:client_auth(name)
         `)
@@ -155,6 +157,43 @@ export const useFinancialData = (salonId: string) => {
     } catch (error) {
       console.error('❌ Erro ao carregar appointments:', error);
     }
+  };
+
+  // Função para calcular valor total de um appointment (principal + adicionais)
+  const calculateAppointmentTotalValue = (appointment: Appointment): number => {
+    let total = Number(appointment.service?.price || 0);
+    
+    // Parse dos serviços adicionais das notas
+    if (appointment.notes) {
+      const additionalServicesMatch = appointment.notes.match(/Serviços Adicionais:\s*(.+?)(?:\n\n|$)/s);
+      if (additionalServicesMatch) {
+        const servicesText = additionalServicesMatch[1];
+        const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/g);
+        
+        if (serviceMatches) {
+          serviceMatches.forEach(match => {
+            const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/);
+            if (parts) {
+              const price = parseFloat(parts[3].replace(',', ''));
+              total += price;
+              console.log('💰 Serviço adicional encontrado:', {
+                name: parts[1].trim(),
+                price,
+                appointment_id: appointment.id
+              });
+            }
+          });
+        }
+      }
+    }
+    
+    console.log('💰 Valor total calculado para appointment:', {
+      appointment_id: appointment.id,
+      service_price: appointment.service?.price,
+      total_with_additionals: total
+    });
+    
+    return total;
   };
 
   // Calcular métricas financeiras precisas
@@ -197,11 +236,27 @@ export const useFinancialData = (salonId: string) => {
       })
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    // Receita pendente (appointments confirmados sem transação)
-    const confirmedAppointments = appointments.filter(a => a.status === 'confirmed');
-    const pendingRevenue = confirmedAppointments
-      .filter(a => !transactions.some(t => t.appointment_id === a.id))
-      .reduce((sum, a) => sum + Number(a.service?.price || 0), 0);
+    // Receita pendente - AGORA INCLUINDO SERVIÇOS ADICIONAIS
+    const pendingAndConfirmedAppointments = appointments.filter(a => 
+      (a.status === 'pending' || a.status === 'confirmed') && 
+      !transactions.some(t => t.appointment_id === a.id)
+    );
+    
+    const pendingRevenue = pendingAndConfirmedAppointments.reduce((sum, a) => {
+      const totalValue = calculateAppointmentTotalValue(a);
+      return sum + totalValue;
+    }, 0);
+    
+    console.log('💰 Receita pendente detalhada:', {
+      appointments_count: pendingAndConfirmedAppointments.length,
+      appointments: pendingAndConfirmedAppointments.map(a => ({
+        id: a.id,
+        status: a.status,
+        service_price: a.service?.price,
+        total_value: calculateAppointmentTotalValue(a)
+      })),
+      total_pending: pendingRevenue
+    });
 
     // Despesas
     const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
@@ -306,13 +361,14 @@ export const useFinancialData = (salonId: string) => {
         (payload) => {
           console.log('🔄 Appointment atualizado (financeiro):', payload);
           
-          // Se appointment foi completed, forçar sincronização
+          // Se appointment foi completed, forçar sincronização e aguardar mais tempo
           if (payload.eventType === 'UPDATE' && payload.new?.status === 'completed') {
             console.log('✅ Appointment concluído, sincronizando dados financeiros...');
+            
             setTimeout(() => {
               fetchTransactions();
               fetchAppointments();
-            }, 1000); // Aguardar trigger executar
+            }, 3000); // Aguardar mais tempo para trigger executar
           } else {
             fetchAppointments();
           }
@@ -335,6 +391,7 @@ export const useFinancialData = (salonId: string) => {
     lastUpdate,
     syncData,
     fetchTransactions,
-    fetchAppointments
+    fetchAppointments,
+    calculateAppointmentTotalValue
   };
 };
