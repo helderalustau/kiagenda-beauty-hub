@@ -4,6 +4,7 @@ import { useSalonStatus } from './salon/useSalonStatus';
 import { useSalonBanner } from './salon/useSalonBanner';
 import { useSalonSetupCompletion } from './salon/useSalonSetupCompletion';
 import { useSalonCleanup } from './salon/useSalonCleanup';
+import { useSalonFinancialOperations } from './salon/useSalonFinancialOperations';
 
 export const useSalonData = () => {
   const crudHook = useSalonCRUD();
@@ -11,6 +12,7 @@ export const useSalonData = () => {
   const bannerHook = useSalonBanner();
   const setupHook = useSalonSetupCompletion();
   const cleanupHook = useSalonCleanup();
+  const financialHook = useSalonFinancialOperations();
 
   return {
     // State from CRUD hook
@@ -71,6 +73,9 @@ export const useSalonData = () => {
     
     // Cleanup operations
     cleanupSalonsWithoutAdmins: cleanupHook.cleanupSalonsWithoutAdmins,
-    cleanupIncompleteSalons: cleanupHook.cleanupIncompleteSalons
+    cleanupIncompleteSalons: cleanupHook.cleanupIncompleteSalons,
+    
+    // Financial operations
+    clearSalonFinancialData: financialHook.clearSalonFinancialData
   };
 };

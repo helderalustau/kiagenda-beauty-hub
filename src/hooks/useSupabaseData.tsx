@@ -67,6 +67,7 @@ export const useSupabaseData = () => {
     deleteSalon: salonData.deleteSalon,
     cleanupSalonsWithoutAdmins: salonData.cleanupSalonsWithoutAdmins,
     cleanupIncompleteSalons: salonData.cleanupIncompleteSalons,
+    clearSalonFinancialData: salonData.clearSalonFinancialData,
     
     // Service methods
     fetchSalonServices: serviceData.fetchSalonServices,
