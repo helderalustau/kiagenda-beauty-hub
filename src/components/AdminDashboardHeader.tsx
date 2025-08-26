@@ -48,7 +48,12 @@ const AdminDashboardHeader = ({
               </div>}
 
             {/* Botão de Refresh */}
-            {onRefresh}
+            {onRefresh && <div className="hidden lg:block">
+                <Button variant="outline" size="sm" onClick={onRefresh} className="flex items-center space-x-2" title="Atualizar dados">
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Atualizar</span>
+                </Button>
+              </div>}
 
             <Button variant="outline" size="sm" onClick={onBackToHome} className="hidden sm:flex items-center space-x-1">
               <ArrowLeft className="h-4 w-4" />
