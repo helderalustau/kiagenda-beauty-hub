@@ -164,7 +164,7 @@ const AppointmentDetailsModal = ({
                 Serviços Contratados
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 mx-[12px] my-0 py-0 px-[8px]">
               {/* Serviço Principal */}
               <div className="bg-white p-4 border border-blue-200 rounded-sm mx-0 py-0 px-[23px] my-0">
                 <div className="flex justify-between items-start mb-2">
