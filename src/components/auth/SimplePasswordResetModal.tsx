@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
 import { CheckCircle, Phone, Mail, ArrowLeft } from 'lucide-react';
 import { useSimplePasswordReset } from '@/hooks/useSimplePasswordReset';
+import { usePasswordResetValidation } from '@/hooks/usePasswordResetValidation';
 import { useToast } from '@/hooks/use-toast';
 
 interface SimplePasswordResetModalProps {
@@ -26,13 +27,16 @@ export const SimplePasswordResetModal: React.FC<SimplePasswordResetModalProps> =
   const [method, setMethod] = useState<'phone' | 'email'>('phone');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
   const [code, setCode] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [verifiedTokenId, setVerifiedTokenId] = useState('');
+  const [validatedUser, setValidatedUser] = useState<any>(null);
   
   const { loading, generatePhoneCode, verifyPhoneCode, sendEmailReset, resetPasswordWithToken } = useSimplePasswordReset();
+  const { loading: validationLoading, validateBeforeReset, validatePhoneEmailMatch } = usePasswordResetValidation();
   const { toast } = useToast();
 
   const handleClose = () => {
@@ -40,17 +44,33 @@ export const SimplePasswordResetModal: React.FC<SimplePasswordResetModalProps> =
     setMethod('phone');
     setPhone('');
     setEmail('');
+    setConfirmEmail('');
     setCode('');
     setGeneratedCode('');
     setNewPassword('');
     setConfirmPassword('');
     setVerifiedTokenId('');
+    setValidatedUser(null);
     onClose();
   };
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone.trim()) return;
+
+    // Validação antes de gerar código
+    const validation = await validateBeforeReset(phone, 'phone', userType);
+    
+    if (!validation.success) {
+      toast({
+        title: "Erro de validação",
+        description: validation.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setValidatedUser(validation.userData);
 
     const result = await generatePhoneCode(phone, userType);
     
@@ -72,7 +92,30 @@ export const SimplePasswordResetModal: React.FC<SimplePasswordResetModalProps> =
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !confirmEmail.trim()) return;
+
+    if (email !== confirmEmail) {
+      toast({
+        title: "Erro",
+        description: "Os emails não coincidem",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validação antes de enviar email
+    const validation = await validateBeforeReset(email, 'email', userType);
+    
+    if (!validation.success) {
+      toast({
+        title: "Erro de validação",
+        description: validation.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setValidatedUser(validation.userData);
 
     const result = await sendEmailReset(email, userType);
     
@@ -204,12 +247,23 @@ export const SimplePasswordResetModal: React.FC<SimplePasswordResetModalProps> =
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+            </div>
+            <div>
+              <Label htmlFor="confirmEmail">Confirmar email</Label>
+              <Input
+                id="confirmEmail"
+                type="email"
+                placeholder="Confirme seu email"
+                value={confirmEmail}
+                onChange={(e) => setConfirmEmail(e.target.value)}
+                required
+              />
               <p className="text-sm text-muted-foreground mt-1">
                 Um link de recuperação será enviado para seu email
               </p>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Enviando...' : 'Enviar link de recuperação'}
+            <Button type="submit" className="w-full" disabled={loading || validationLoading}>
+              {(loading || validationLoading) ? 'Enviando...' : 'Enviar link de recuperação'}
             </Button>
           </form>
         </TabsContent>
@@ -232,6 +286,11 @@ export const SimplePasswordResetModal: React.FC<SimplePasswordResetModalProps> =
         <p className="text-xs text-muted-foreground mt-2">
           Este código expira em 10 minutos
         </p>
+        {validatedUser && (
+          <p className="text-xs text-green-600 mt-1">
+            ✓ Código gerado para: {validatedUser.name}
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleCodeVerification} className="space-y-4">
