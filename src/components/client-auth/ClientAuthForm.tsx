@@ -11,6 +11,7 @@ import { StateSelect } from "@/components/ui/state-select";
 import { CitySelect } from "@/components/ui/city-select";
 import { usePhoneValidation } from '@/hooks/usePhoneValidation';
 import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
+import { SimplePasswordResetModal } from "@/components/auth/SimplePasswordResetModal";
 
 const ClientAuthForm = () => {
   const { handleLogin, handleRegister, loading } = useClientLoginLogic();
@@ -253,11 +254,11 @@ const ClientAuthForm = () => {
           </Tabs>
 
           {/* Modal de Recuperação de Senha */}
-          <ForgotPasswordModal
-            isOpen={showForgotPassword}
-            onClose={() => setShowForgotPassword(false)}
-            userType="client"
-          />
+      <SimplePasswordResetModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        userType="client"
+      />
         </CardContent>
       </Card>
     </div>

@@ -345,6 +345,45 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          identifier: string
+          is_used: boolean
+          token_type: string
+          token_value: string
+          updated_at: string
+          user_id: string | null
+          user_type: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          identifier: string
+          is_used?: boolean
+          token_type: string
+          token_value: string
+          updated_at?: string
+          user_id?: string | null
+          user_type: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          identifier?: string
+          is_used?: boolean
+          token_type?: string
+          token_value?: string
+          updated_at?: string
+          user_id?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
       plan_configurations: {
         Row: {
           created_at: string
@@ -723,6 +762,10 @@ export type Database = {
       }
       calculate_appointment_total_value: {
         Args: { notes: string; service_price: number }
+        Returns: number
+      }
+      cleanup_expired_tokens: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       cleanup_incomplete_salons: {

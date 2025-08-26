@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
+import { SimplePasswordResetModal } from "@/components/auth/SimplePasswordResetModal";
 
 interface AdminLoginFormProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -85,11 +85,11 @@ export const AdminLoginForm = ({
             </div>
 
             {/* Modal de Recuperação de Senha */}
-            <ForgotPasswordModal
-              isOpen={showForgotPassword}
-              onClose={() => setShowForgotPassword(false)}
-              userType="admin"
-            />
+      <SimplePasswordResetModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        userType="admin"
+      />
           </CardContent>
         </Card>
       </div>
