@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,62 +10,71 @@ import { ptBR } from "date-fns/locale";
 import { Appointment } from '@/types/supabase-entities';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-
 interface AppointmentDetailsModalProps {
   appointment: Appointment | null;
   isOpen: boolean;
   onClose: () => void;
   onStatusUpdate?: () => void;
 }
-
-const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate }: AppointmentDetailsModalProps) => {
-  const { toast } = useToast();
+const AppointmentDetailsModal = ({
+  appointment,
+  isOpen,
+  onClose,
+  onStatusUpdate
+}: AppointmentDetailsModalProps) => {
+  const {
+    toast
+  } = useToast();
   const [updating, setUpdating] = useState(false);
-
   if (!appointment) return null;
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'confirmed': return 'bg-green-50 text-green-700 border-green-200';
-      case 'completed': return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'cancelled': return 'bg-red-50 text-red-700 border-red-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
+      case 'pending':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'confirmed':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'completed':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'cancelled':
+        return 'bg-red-50 text-red-700 border-red-200';
+      default:
+        return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
-
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending': return 'Pendente';
-      case 'confirmed': return 'Confirmado';
-      case 'completed': return 'Concluído';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
+      case 'pending':
+        return 'Pendente';
+      case 'confirmed':
+        return 'Confirmado';
+      case 'completed':
+        return 'Concluído';
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return status;
     }
   };
-
-  const parseAdditionalServices = (notes: string): Array<{name: string, duration: number, price: number}> => {
+  const parseAdditionalServices = (notes: string): Array<{
+    name: string;
+    duration: number;
+    price: number;
+  }> => {
     if (!notes) return [];
-    
     const additionalServicesMatch = notes.match(/Serviços Adicionais:\s*(.+?)(?:\n\n|$)/s);
     if (!additionalServicesMatch) return [];
-    
     const servicesText = additionalServicesMatch[1];
     const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/g);
-    
     if (!serviceMatches) return [];
-    
     return serviceMatches.map(match => {
       const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/);
       if (!parts) return null;
-      
       return {
         name: parts[1].trim(),
         duration: parseInt(parts[2]),
@@ -74,39 +82,31 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
       };
     }).filter(Boolean);
   };
-
   const getClientNotes = (notes: string): string => {
     if (!notes) return '';
-    
     const additionalServicesIndex = notes.indexOf('Serviços Adicionais:');
     if (additionalServicesIndex === -1) return notes;
-    
     return notes.substring(0, additionalServicesIndex).trim();
   };
-
   const additionalServices = parseAdditionalServices(appointment.notes || '');
   const clientNotes = getClientNotes(appointment.notes || '');
   const mainServicePrice = (appointment.service as any)?.price || 0;
   const additionalServicesPrice = additionalServices.reduce((sum, service) => sum + service.price, 0);
   const totalPrice = mainServicePrice + additionalServicesPrice;
-  const totalDuration = ((appointment.service as any)?.duration_minutes || 0) + 
-    additionalServices.reduce((sum, service) => sum + service.duration, 0);
-
+  const totalDuration = ((appointment.service as any)?.duration_minutes || 0) + additionalServices.reduce((sum, service) => sum + service.duration, 0);
   const updateAppointmentStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({ status: newStatus })
-        .eq('id', appointment.id);
-
+      const {
+        error
+      } = await supabase.from('appointments').update({
+        status: newStatus
+      }).eq('id', appointment.id);
       if (error) throw error;
-
       toast({
         title: "Status atualizado",
-        description: `Agendamento ${getStatusText(newStatus).toLowerCase()} com sucesso.`,
+        description: `Agendamento ${getStatusText(newStatus).toLowerCase()} com sucesso.`
       });
-
       onStatusUpdate?.();
       onClose();
     } catch (error) {
@@ -120,9 +120,7 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
       setUpdating(false);
     }
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+  return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -137,7 +135,7 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">Status do Agendamento</CardTitle>
+                  <CardTitle className="font-semibold text-sm">Status do Agendamento</CardTitle>
                   <Badge className={`${getStatusColor(appointment.status)} text-sm px-3 py-1 border mt-2`}>
                     {getStatusText(appointment.status)}
                   </Badge>
@@ -145,7 +143,9 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
                 <div className="text-right">
                   <div className="flex items-center text-gray-600 text-sm mb-1">
                     <Calendar className="h-4 w-4 mr-1" />
-                    {format(new Date(appointment.appointment_date), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(new Date(appointment.appointment_date), "dd/MM/yyyy", {
+                    locale: ptBR
+                  })}
                   </div>
                   <div className="flex items-center text-gray-600 text-sm">
                     <Clock className="h-4 w-4 mr-1" />
@@ -166,13 +166,13 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Serviço Principal */}
-              <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="bg-white p-4 border border-blue-200 rounded-sm mx-0 py-0 px-[23px] my-0">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-blue-900 text-lg">
+                  <h4 className="font-semibold text-blue-900 text-sm my-[14px]">
                     {(appointment.service as any)?.name || 'Serviço'}
                   </h4>
                   <div className="text-right">
-                    <div className="text-green-600 font-bold text-lg">
+                    <div className="text-green-600 font-bold text-lg rounded-sm">
                       {formatCurrency(mainServicePrice)}
                     </div>
                     <div className="text-blue-600 text-sm">
@@ -180,16 +180,13 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
                     </div>
                   </div>
                 </div>
-                {(appointment.service as any)?.description && (
-                  <p className="text-gray-600 text-sm">
+                {(appointment.service as any)?.description && <p className="text-gray-600 text-sm">
                     {(appointment.service as any).description}
-                  </p>
-                )}
+                  </p>}
               </div>
 
               {/* Serviços Adicionais */}
-              {additionalServices.length > 0 && (
-                <>
+              {additionalServices.length > 0 && <>
                   <Separator />
                   <div>
                     <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
@@ -197,8 +194,7 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
                       Serviços Adicionais
                     </h4>
                     <div className="space-y-2">
-                      {additionalServices.map((service, index) => (
-                        <div key={index} className="bg-white rounded-lg p-3 border border-blue-100">
+                      {additionalServices.map((service, index) => <div key={index} className="bg-white rounded-lg p-3 border border-blue-100">
                           <div className="flex justify-between items-center">
                             <span className="font-medium text-blue-800">{service.name}</span>
                             <div className="text-right">
@@ -210,33 +206,28 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                   </div>
-                </>
-              )}
+                </>}
 
               <Separator />
 
               {/* Total */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 border border-green-200 rounded-sm px-[22px] py-[2px]">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h4 className="font-bold text-green-900 text-lg">Total do Agendamento</h4>
+                    <h4 className="font-bold text-green-900 text-sm">Total do Agendamento</h4>
                     <p className="text-green-700 text-sm">
                       Duração total: {totalDuration} minutos
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-green-600 font-bold text-2xl">
+                    <div className="text-green-600 font-bold text-2xl rounded-sm">
                       {formatCurrency(totalPrice)}
                     </div>
                     <div className="text-green-700 text-sm">
-                      {additionalServices.length > 0 
-                        ? `${1 + additionalServices.length} serviço${additionalServices.length > 0 ? 's' : ''}`
-                        : '1 serviço'
-                      }
+                      {additionalServices.length > 0 ? `${1 + additionalServices.length} serviço${additionalServices.length > 0 ? 's' : ''}` : '1 serviço'}
                     </div>
                   </div>
                 </div>
@@ -246,28 +237,25 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
 
           {/* Dados do Cliente */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
+            <CardHeader className="my-0 px-[4px] py-[2px]">
+              <CardTitle className="flex items-center text-sm">
                 <User className="h-5 w-5 mr-2" />
                 Dados do Cliente
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 rounded-sm">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 rounded-sm">
                   <User className="h-4 w-4 text-gray-500" />
                   <div>
                     <p className="text-sm text-gray-600">Nome</p>
                     <p className="font-medium">
-                      {(appointment as any).client?.name || 
-                       (appointment as any).client_auth?.name || 
-                       'Cliente não identificado'}
+                      {(appointment as any).client?.name || (appointment as any).client_auth?.name || 'Cliente não identificado'}
                     </p>
                   </div>
                 </div>
 
-                {((appointment as any).client?.phone || (appointment as any).client_auth?.phone) && (
-                  <div className="flex items-center space-x-3">
+                {((appointment as any).client?.phone || (appointment as any).client_auth?.phone) && <div className="flex items-center space-x-3 rounded-sm">
                     <Phone className="h-4 w-4 text-gray-500" />
                     <div>
                       <p className="text-sm text-gray-600">Telefone</p>
@@ -275,11 +263,9 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
                         {(appointment as any).client?.phone || (appointment as any).client_auth?.phone}
                       </p>
                     </div>
-                  </div>
-                )}
+                  </div>}
 
-                {((appointment as any).client?.email || (appointment as any).client_auth?.email) && (
-                  <div className="flex items-center space-x-3">
+                {((appointment as any).client?.email || (appointment as any).client_auth?.email) && <div className="flex items-center space-x-3 rounded-sm">
                     <Mail className="h-4 w-4 text-gray-500" />
                     <div>
                       <p className="text-sm text-gray-600">E-mail</p>
@@ -287,15 +273,13 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
                         {(appointment as any).client?.email || (appointment as any).client_auth?.email}
                       </p>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </div>
             </CardContent>
           </Card>
 
           {/* Observações do Cliente */}
-          {clientNotes && (
-            <Card>
+          {clientNotes && <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MessageSquare className="h-5 w-5 mr-2" />
@@ -305,55 +289,34 @@ const AppointmentDetailsModal = ({ appointment, isOpen, onClose, onStatusUpdate 
               <CardContent>
                 <p className="text-gray-700 whitespace-pre-wrap">{clientNotes}</p>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
 
           {/* Ações */}
-          {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
-            <Card>
+          {appointment.status !== 'completed' && appointment.status !== 'cancelled' && <Card>
               <CardHeader>
                 <CardTitle>Ações do Agendamento</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex gap-2 flex-wrap">
-                  {appointment.status === 'pending' && (
-                    <Button
-                      onClick={() => updateAppointmentStatus('confirmed')}
-                      disabled={updating}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
+                  {appointment.status === 'pending' && <Button onClick={() => updateAppointmentStatus('confirmed')} disabled={updating} className="bg-green-600 hover:bg-green-700">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Confirmar
-                    </Button>
-                  )}
+                    </Button>}
                   
-                  {appointment.status === 'confirmed' && (
-                    <Button
-                      onClick={() => updateAppointmentStatus('completed')}
-                      disabled={updating}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
+                  {appointment.status === 'confirmed' && <Button onClick={() => updateAppointmentStatus('completed')} disabled={updating} className="bg-blue-600 hover:bg-blue-700">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Marcar como Concluído
-                    </Button>
-                  )}
+                    </Button>}
 
-                  <Button
-                    onClick={() => updateAppointmentStatus('cancelled')}
-                    disabled={updating}
-                    variant="destructive"
-                  >
+                  <Button onClick={() => updateAppointmentStatus('cancelled')} disabled={updating} variant="destructive">
                     <XCircle className="h-4 w-4 mr-2" />
                     Cancelar
                   </Button>
                 </div>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default AppointmentDetailsModal;
