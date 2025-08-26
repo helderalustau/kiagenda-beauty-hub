@@ -1,26 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  TrendingUp,
-  Users,
-  Activity,
-  Timer,
-  DollarSign,
-  Star,
-  CalendarDays,
-  FileText,
-  BarChart3,
-  History,
-  AlertTriangle
-} from "lucide-react";
+import { Calendar, Clock, CheckCircle, XCircle, TrendingUp, Users, Activity, Timer, DollarSign, Star, CalendarDays, FileText, BarChart3, History, AlertTriangle } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Appointment, Service, Salon, AdminUser } from '@/hooks/useSupabaseData';
@@ -30,8 +13,6 @@ import { usePlanLimitsChecker } from '@/hooks/usePlanLimitsChecker';
 import PlanLimitReachedModal from '@/components/PlanLimitReachedModal';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import AppointmentDetailsModal from '@/components/admin/AppointmentDetailsModal';
-
-
 interface CleanDashboardOverviewProps {
   appointments: Appointment[];
   services: Service[];
@@ -39,26 +20,30 @@ interface CleanDashboardOverviewProps {
   adminUsers: AdminUser[];
   onUpdateStatus: (id: string, status: 'confirmed' | 'completed' | 'cancelled') => void;
 }
-
-const CleanDashboardOverview = ({ 
-  appointments, 
-  services, 
-  salon, 
+const CleanDashboardOverview = ({
+  appointments,
+  services,
+  salon,
   adminUsers,
-  onUpdateStatus 
+  onUpdateStatus
 }: CleanDashboardOverviewProps) => {
-  const { getPlanLimits, getPlanInfo } = usePlanConfigurations();
-  const { getSalonAppointmentStats } = usePlanLimitsChecker();
+  const {
+    getPlanLimits,
+    getPlanInfo
+  } = usePlanConfigurations();
+  const {
+    getSalonAppointmentStats
+  } = usePlanLimitsChecker();
   const [appointmentStats, setAppointmentStats] = useState<any>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  
+
   // Buscar estatísticas de agendamentos com delay
   useEffect(() => {
     if (salon?.id) {
       setIsLoadingStats(true);
-      
+
       // Adicionar um pequeno delay para evitar problema visual
       const timer = setTimeout(() => {
         console.log('🔍 Buscando estatísticas para salão:', salon.id, 'Status:', salon.is_open);
@@ -91,28 +76,26 @@ const CleanDashboardOverview = ({
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
-
   const getClientName = (appointment: Appointment) => {
     if (appointment.client?.name) return appointment.client.name;
     if (appointment.client?.username) return appointment.client.username;
     return 'Cliente';
   };
-
   const getServiceName = (appointment: Appointment) => {
     if ((appointment as any).service?.name) return (appointment as any).service.name;
     return 'Serviço';
   };
-
   const formatAppointmentDate = (dateString: string) => {
     try {
       const [year, month, day] = dateString.split('-').map(Number);
       const localDate = new Date(year, month - 1, day);
-      return format(localDate, "dd/MM", { locale: ptBR });
+      return format(localDate, "dd/MM", {
+        locale: ptBR
+      });
     } catch (error) {
       return dateString;
     }
   };
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -123,14 +106,12 @@ const CleanDashboardOverview = ({
   // Configuração do plano dinâmica
   const currentPlan = getPlanLimits(salon.plan);
   const planInfo = getPlanInfo(salon.plan);
-  
   const monthlyAppointments = appointments.filter(apt => {
     const aptDate = new Date(apt.appointment_date);
     const now = new Date();
     return aptDate.getMonth() === now.getMonth() && aptDate.getFullYear() === now.getFullYear();
   }).length;
-
-  const planUsagePercentage = Math.min((monthlyAppointments / currentPlan.max_appointments) * 100, 100);
+  const planUsagePercentage = Math.min(monthlyAppointments / currentPlan.max_appointments * 100, 100);
 
   // Agendamentos do dia
   const todayAppointments = appointments.filter(apt => {
@@ -142,27 +123,21 @@ const CleanDashboardOverview = ({
   const todayConfirmedAppointments = todayAppointments.filter(apt => apt.status === 'confirmed');
 
   // Próximos agendamentos
-  const upcomingAppointments = appointments
-    .filter(apt => {
-      const aptDateTime = new Date(apt.appointment_date + 'T' + apt.appointment_time);
-      return isAfter(aptDateTime, new Date()) && (apt.status === 'pending' || apt.status === 'confirmed');
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
-      const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
-      return dateA.getTime() - dateB.getTime();
-    })
-    .slice(0, 5);
+  const upcomingAppointments = appointments.filter(apt => {
+    const aptDateTime = new Date(apt.appointment_date + 'T' + apt.appointment_time);
+    return isAfter(aptDateTime, new Date()) && (apt.status === 'pending' || apt.status === 'confirmed');
+  }).sort((a, b) => {
+    const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
+    const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
+    return dateA.getTime() - dateB.getTime();
+  }).slice(0, 5);
 
   // Histórico de atendimentos (últimos 10 concluídos)
-  const completedAppointments = appointments
-    .filter(apt => apt.status === 'completed')
-    .sort((a, b) => {
-      const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
-      const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
-      return dateB.getTime() - dateA.getTime(); // Mais recentes primeiro
-    })
-    .slice(0, 10);
+  const completedAppointments = appointments.filter(apt => apt.status === 'completed').sort((a, b) => {
+    const dateA = new Date(a.appointment_date + 'T' + a.appointment_time);
+    const dateB = new Date(b.appointment_date + 'T' + b.appointment_time);
+    return dateB.getTime() - dateA.getTime(); // Mais recentes primeiro
+  }).slice(0, 10);
 
   // Estatísticas gerais
   const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
@@ -170,9 +145,7 @@ const CleanDashboardOverview = ({
   const completedThisMonth = appointments.filter(apt => {
     const aptDate = new Date(apt.appointment_date);
     const now = new Date();
-    return aptDate.getMonth() === now.getMonth() && 
-           aptDate.getFullYear() === now.getFullYear() && 
-           apt.status === 'completed';
+    return aptDate.getMonth() === now.getMonth() && aptDate.getFullYear() === now.getFullYear() && apt.status === 'completed';
   });
 
   // Estado para transações financeiras
@@ -186,34 +159,26 @@ const CleanDashboardOverview = ({
         console.log('⚠️ CleanDashboard - Salon ID não encontrado');
         return;
       }
-      
       console.log('🔍 CleanDashboard - Buscando dados financeiros para:', salon.id);
-      
       try {
         // USAR EXATAMENTE A MESMA QUERY DO SimpleFinancialDashboard
-        const { data: transactions, error } = await supabase
-          .from('financial_transactions')
-          .select('*')
-          .eq('salon_id', salon.id)
-          .eq('transaction_type', 'income');
-
+        const {
+          data: transactions,
+          error
+        } = await supabase.from('financial_transactions').select('*').eq('salon_id', salon.id).eq('transaction_type', 'income');
         if (error) {
           console.error('❌ CleanDashboard - Erro na query:', error);
           return;
         }
-
         console.log('💰 CleanDashboard - Transações encontradas:', transactions?.length || 0);
-
         if (transactions && transactions.length > 0) {
           const currentMonth = format(new Date(), 'yyyy-MM');
-          
+
           // Transações do mês - MESMA LÓGICA
           const monthTransactions = transactions.filter(t => t.transaction_date.startsWith(currentMonth));
           const monthTotal = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-
           setMonthlyRevenue(monthTotal);
           setMonthlyTransactionsCount(monthTransactions.length);
-          
           console.log('📊 CleanDashboard - Dados calculados:', {
             totalTransactions: transactions.length,
             monthTransactions: monthTransactions.length,
@@ -231,27 +196,24 @@ const CleanDashboardOverview = ({
         console.error('❌ CleanDashboard - Erro ao buscar dados financeiros:', error);
       }
     };
-
     fetchFinancialData();
   }, [salon?.id, appointments]);
-
-
-  return (
-    <div className="space-y-6 p-6 bg-background">
+  return <div className="space-y-6 p-6 bg-background">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Visão Geral</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", {
+            locale: ptBR
+          })}
           </p>
         </div>
       </div>
 
 
       {/* Alerta de limite atingido */}
-      {!isLoadingStats && appointmentStats?.limitReached && (
-        <Card className="border-red-500 bg-red-50">
+      {!isLoadingStats && appointmentStats?.limitReached && <Card className="border-red-500 bg-red-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -262,17 +224,12 @@ const CleanDashboardOverview = ({
                   {!salon.is_open && ' Seu estabelecimento foi fechado automaticamente.'}
                 </p>
               </div>
-              <Button 
-                size="sm" 
-                onClick={() => setShowLimitModal(true)}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
+              <Button size="sm" onClick={() => setShowLimitModal(true)} className="bg-red-600 hover:bg-red-700 text-white">
                 Fazer Upgrade
               </Button>
             </div>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       {/* Métricas principais */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -287,25 +244,14 @@ const CleanDashboardOverview = ({
                   {appointmentStats ? `${appointmentStats.currentAppointments} de ${appointmentStats.maxAppointments} agendamentos` : `${monthlyAppointments} de ${currentPlan.max_appointments} usados`}
                 </p>
               </div>
-              <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${
-                appointmentStats?.limitReached ? 'bg-red-100' : appointmentStats?.nearLimit ? 'bg-amber-100' : 'bg-primary/10'
-              }`}>
-                {appointmentStats?.limitReached ? (
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                ) : (
-                  <Star className={`h-6 w-6 ${appointmentStats?.nearLimit ? 'text-amber-600' : 'text-primary'}`} />
-                )}
+              <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${appointmentStats?.limitReached ? 'bg-red-100' : appointmentStats?.nearLimit ? 'bg-amber-100' : 'bg-primary/10'}`}>
+                {appointmentStats?.limitReached ? <AlertTriangle className="h-6 w-6 text-red-600" /> : <Star className={`h-6 w-6 ${appointmentStats?.nearLimit ? 'text-amber-600' : 'text-primary'}`} />}
               </div>
             </div>
-            <Progress 
-              value={appointmentStats?.percentage || planUsagePercentage} 
-              className={`mt-4 h-2 ${appointmentStats?.limitReached ? '[&>div]:bg-red-500' : appointmentStats?.nearLimit ? '[&>div]:bg-amber-500' : ''}`}
-            />
-            {appointmentStats?.limitReached && (
-              <p className="text-xs text-red-600 font-medium mt-2">
+            <Progress value={appointmentStats?.percentage || planUsagePercentage} className={`mt-4 h-2 ${appointmentStats?.limitReached ? '[&>div]:bg-red-500' : appointmentStats?.nearLimit ? '[&>div]:bg-amber-500' : ''}`} />
+            {appointmentStats?.limitReached && <p className="text-xs text-red-600 font-medium mt-2">
                 Limite atingido! Faça upgrade para continuar.
-              </p>
-            )}
+              </p>}
           </CardContent>
         </Card>
 
@@ -386,86 +332,59 @@ const CleanDashboardOverview = ({
                 <CalendarDays className="h-5 w-5" />
                 Agenda de Hoje
               </div>
-              {todayConfirmedAppointments.length > 0 && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    // Concluir todos os agendamentos confirmados de hoje
-                    todayConfirmedAppointments.forEach(apt => {
-                      if (apt.status === 'confirmed') {
-                        onUpdateStatus(apt.id, 'completed');
-                      }
-                    });
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white h-7 px-3 text-xs font-bold"
-                >
+              {todayConfirmedAppointments.length > 0 && <Button size="sm" onClick={() => {
+              // Concluir todos os agendamentos confirmados de hoje
+              todayConfirmedAppointments.forEach(apt => {
+                if (apt.status === 'confirmed') {
+                  onUpdateStatus(apt.id, 'completed');
+                }
+              });
+            }} className="bg-blue-600 hover:bg-blue-700 text-white h-7 px-3 text-xs font-bold">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Concluir Todos
-                </Button>
-              )}
+                </Button>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {todayAppointments.length === 0 ? (
-              <div className="text-center py-8">
+            {todayAppointments.length === 0 ? <div className="text-center py-8">
                 <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                   <Calendar className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">Nenhum agendamento para hoje</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {todayAppointments
-                  .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
-                  .map((appointment) => (
-                   <div key={appointment.id} className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => setSelectedAppointment(appointment)}>
+              </div> : <div className="space-y-3">
+                {todayAppointments.sort((a, b) => a.appointment_time.localeCompare(b.appointment_time)).map(appointment => <div key={appointment.id} onClick={() => setSelectedAppointment(appointment)} className="flex items-center justify-between p-2 border bg-card hover:bg-accent/50 transition-colors cursor-pointer rounded-sm">
                      <div className="flex items-center gap-2">
-                       <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
-                         <span className="text-xs font-medium text-primary">
+                       <div className="h-8 w-8 bg-primary/10 flex items-center justify-center rounded-sm">
+                         <span className="font-medium text-primary text-xs">
                            {appointment.appointment_time.substring(0, 5)}
                          </span>
                        </div>
                        <div>
-                         <p className="font-medium text-xs">{getClientName(appointment)}</p>
-                         <p className="text-[10px] text-muted-foreground">{getServiceName(appointment)}</p>
+                         <p className="font-medium text-sm">{getClientName(appointment)}</p>
+                         <p className="text-muted-foreground text-sm">{getServiceName(appointment)}</p>
                        </div>
                      </div>
                      <div className="flex items-center gap-2">
                        {getStatusBadge(appointment.status)}
-                       {appointment.status === 'pending' && (
-                         <Button
-                           size="sm"
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             onUpdateStatus(appointment.id, 'confirmed');
-                           }}
-                           className="h-7 px-2 text-xs"
-                         >
+                       {appointment.status === 'pending' && <Button size="sm" onClick={e => {
+                  e.stopPropagation();
+                  onUpdateStatus(appointment.id, 'confirmed');
+                }} className="h-7 px-2 text-xs">
                            Confirmar
-                         </Button>
-                       )}
-                       {appointment.status === 'confirmed' && (
-                         <Button
-                           size="sm"
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             console.log('🔥 CleanDashboard CONCLUIR CLICADO!', { 
-                               appointmentId: appointment.id, 
-                               status: appointment.status 
-                             });
-                             onUpdateStatus(appointment.id, 'completed');
-                           }}
-                           className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                         >
+                         </Button>}
+                       {appointment.status === 'confirmed' && <Button size="sm" onClick={e => {
+                  e.stopPropagation();
+                  console.log('🔥 CleanDashboard CONCLUIR CLICADO!', {
+                    appointmentId: appointment.id,
+                    status: appointment.status
+                  });
+                  onUpdateStatus(appointment.id, 'completed');
+                }} className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white">
                            Concluir
-                         </Button>
-                       )}
+                         </Button>}
                      </div>
-                   </div>
-                ))}
-              </div>
-            )}
+                   </div>)}
+              </div>}
           </CardContent>
         </Card>
 
@@ -478,18 +397,13 @@ const CleanDashboardOverview = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {upcomingAppointments.length === 0 ? (
-              <div className="text-center py-8">
+            {upcomingAppointments.length === 0 ? <div className="text-center py-8">
                 <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                   <Users className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">Nenhum agendamento próximo</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                 {upcomingAppointments.map((appointment) => (
-                   <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => setSelectedAppointment(appointment)}>
+              </div> : <div className="space-y-3">
+                 {upcomingAppointments.map(appointment => <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedAppointment(appointment)}>
                      <div className="flex items-center gap-3">
                        <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
                          <span className="text-xs font-medium">
@@ -505,36 +419,21 @@ const CleanDashboardOverview = ({
                      </div>
                      <div className="flex items-center gap-2">
                        {getStatusBadge(appointment.status)}
-                       {appointment.status === 'pending' && (
-                         <Button
-                           size="sm"
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             onUpdateStatus(appointment.id, 'confirmed');
-                           }}
-                           className="h-7 px-2 text-xs"
-                         >
+                       {appointment.status === 'pending' && <Button size="sm" onClick={e => {
+                  e.stopPropagation();
+                  onUpdateStatus(appointment.id, 'confirmed');
+                }} className="h-7 px-2 text-xs">
                            Confirmar
-                         </Button>
-                       )}
-                       {appointment.status === 'confirmed' && (
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             onUpdateStatus(appointment.id, 'completed');
-                           }}
-                           className="h-7 px-2 text-xs"
-                         >
+                         </Button>}
+                       {appointment.status === 'confirmed' && <Button size="sm" variant="outline" onClick={e => {
+                  e.stopPropagation();
+                  onUpdateStatus(appointment.id, 'completed');
+                }} className="h-7 px-2 text-xs">
                            Concluir
-                         </Button>
-                       )}
+                         </Button>}
                      </div>
-                   </div>
-                 ))}
-              </div>
-            )}
+                   </div>)}
+              </div>}
           </CardContent>
         </Card>
 
@@ -547,18 +446,13 @@ const CleanDashboardOverview = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {completedAppointments.length === 0 ? (
-              <div className="text-center py-8">
+            {completedAppointments.length === 0 ? <div className="text-center py-8">
                 <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                   <History className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">Nenhum atendimento concluído</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                 {completedAppointments.map((appointment) => (
-                   <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => setSelectedAppointment(appointment)}>
+              </div> : <div className="space-y-3">
+                 {completedAppointments.map(appointment => <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setSelectedAppointment(appointment)}>
                      <div className="flex items-center gap-3">
                        <div className="h-10 w-10 bg-secondary rounded-full flex items-center justify-center">
                          <span className="text-xs font-medium text-foreground">
@@ -578,48 +472,31 @@ const CleanDashboardOverview = ({
                          {formatCurrency((appointment as any).service?.price || 0)}
                        </div>
                      </div>
-                   </div>
-                 ))}
-              </div>
-            )}
+                   </div>)}
+              </div>}
           </CardContent>
         </Card>
       </div>
 
       {/* Modal de limite atingido */}
-      <PlanLimitReachedModal
-        isOpen={showLimitModal}
-        onClose={() => {
-          setShowLimitModal(false);
-          // Atualizar stats após fechar o modal (caso tenha havido upgrade)
-          if (salon?.id) {
-            getSalonAppointmentStats(salon.id).then(stats => {
-              if (stats.success) {
-                setAppointmentStats(stats);
-              }
-            });
+      <PlanLimitReachedModal isOpen={showLimitModal} onClose={() => {
+      setShowLimitModal(false);
+      // Atualizar stats após fechar o modal (caso tenha havido upgrade)
+      if (salon?.id) {
+        getSalonAppointmentStats(salon.id).then(stats => {
+          if (stats.success) {
+            setAppointmentStats(stats);
           }
-        }}
-        currentPlan={salon.plan}
-        currentAppointments={appointmentStats?.currentAppointments || 0}
-        maxAppointments={appointmentStats?.maxAppointments || 0}
-        salonId={salon.id}
-        salonName={salon.name}
-      />
+        });
+      }
+    }} currentPlan={salon.plan} currentAppointments={appointmentStats?.currentAppointments || 0} maxAppointments={appointmentStats?.maxAppointments || 0} salonId={salon.id} salonName={salon.name} />
 
       {/* Modal de detalhes do agendamento */}
-      <AppointmentDetailsModal
-        appointment={selectedAppointment}
-        isOpen={!!selectedAppointment}
-        onClose={() => setSelectedAppointment(null)}
-        onStatusUpdate={() => {
-          // Fechar modal e atualizar dados
-          setSelectedAppointment(null);
-          // Trigger refresh se necessário
-        }}
-      />
-    </div>
-  );
+      <AppointmentDetailsModal appointment={selectedAppointment} isOpen={!!selectedAppointment} onClose={() => setSelectedAppointment(null)} onStatusUpdate={() => {
+      // Fechar modal e atualizar dados
+      setSelectedAppointment(null);
+      // Trigger refresh se necessário
+    }} />
+    </div>;
 };
-
 export default CleanDashboardOverview;
