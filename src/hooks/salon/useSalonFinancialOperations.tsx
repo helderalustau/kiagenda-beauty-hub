@@ -43,8 +43,48 @@ export const useSalonFinancialOperations = () => {
     }
   };
 
+  const clearSalonAppointmentsHistory = async (salonId: string): Promise<{success: boolean, message?: string, deleted_appointments?: number}> => {
+    setLoading(true);
+    try {
+      console.log('Iniciando limpeza de histórico de atendimentos para o salão:', salonId);
+      
+      const { data, error } = await supabase.rpc('clear_salon_appointments_history', {
+        p_salon_id: salonId
+      });
+
+      if (error) {
+        console.error('Erro ao limpar histórico de atendimentos:', error);
+        return { 
+          success: false, 
+          message: 'Erro ao limpar histórico de atendimentos: ' + error.message 
+        };
+      }
+
+      console.log('Resultado da limpeza:', data);
+      
+      // Parse the data as it comes as JSON from the function
+      if (data && typeof data === 'object') {
+        return data as {success: boolean, message?: string, deleted_appointments?: number};
+      }
+      
+      return { 
+        success: true, 
+        message: 'Histórico de atendimentos limpo com sucesso!' 
+      };
+    } catch (error) {
+      console.error('Erro inesperado ao limpar histórico de atendimentos:', error);
+      return { 
+        success: false, 
+        message: 'Erro inesperado ao limpar histórico de atendimentos' 
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
-    clearSalonFinancialData
+    clearSalonFinancialData,
+    clearSalonAppointmentsHistory
   };
 };

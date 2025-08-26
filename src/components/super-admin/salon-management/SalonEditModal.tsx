@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Edit2, Trash2, AlertTriangle } from "lucide-react";
+import { Edit2, Trash2, AlertTriangle, Calendar, Loader2 } from "lucide-react";
 import { Salon, useSupabaseData } from '@/hooks/useSupabaseData';
+import { useSalonFinancialOperations } from '@/hooks/salon/useSalonFinancialOperations';
 
 interface SalonEditModalProps {
   salon: Salon | null;
@@ -19,10 +20,10 @@ interface SalonEditModalProps {
 }
 
 const SalonEditModal = ({ salon, isOpen, onClose, onSalonUpdated }: SalonEditModalProps) => {
-  const { updateSalon, clearSalonFinancialData } = useSupabaseData();
+  const { updateSalon } = useSupabaseData();
+  const financialOps = useSalonFinancialOperations();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [clearingFinancial, setClearingFinancial] = useState(false);
   
   const [formData, setFormData] = useState({
     name: salon?.name || '',
@@ -96,11 +97,9 @@ const SalonEditModal = ({ salon, isOpen, onClose, onSalonUpdated }: SalonEditMod
 
   const handleClearFinancialData = async () => {
     if (!salon) return;
-
-    setClearingFinancial(true);
     
     try {
-      const result = await clearSalonFinancialData(salon.id);
+      const result = await financialOps.clearSalonFinancialData(salon.id);
       
       if (result.success) {
         toast({
@@ -121,8 +120,34 @@ const SalonEditModal = ({ salon, isOpen, onClose, onSalonUpdated }: SalonEditMod
         description: "Erro interno ao limpar dados financeiros",
         variant: "destructive"
       });
-    } finally {
-      setClearingFinancial(false);
+    }
+  };
+
+  const handleClearAppointmentsHistory = async () => {
+    if (!salon) return;
+    
+    try {
+      const result = await financialOps.clearSalonAppointmentsHistory(salon.id);
+      
+      if (result.success) {
+        toast({
+          title: "Histórico de Atendimentos Limpo",
+          description: result.message || "Todo o histórico de atendimentos foi removido com sucesso!",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Erro ao limpar histórico de atendimentos",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error clearing appointments history:', error);
+      toast({
+        title: "Erro",
+        description: "Erro interno ao limpar histórico de atendimentos",
+        variant: "destructive"
+      });
     }
   };
 
@@ -175,55 +200,113 @@ const SalonEditModal = ({ salon, isOpen, onClose, onSalonUpdated }: SalonEditMod
               <AlertTriangle className="h-5 w-5 text-destructive" />
               <h3 className="text-lg font-semibold text-destructive">Área de Risco</h3>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Ações irreversíveis que afetam permanentemente os dados do estabelecimento.
+            </p>
             
-            <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
-              <h4 className="font-medium text-destructive mb-2">Limpar Dados Financeiros</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Esta ação irá <strong>remover permanentemente</strong> todas as transações financeiras deste estabelecimento. 
-                Esta operação não pode ser desfeita.
-              </p>
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    disabled={clearingFinancial}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {clearingFinancial ? 'Limpando...' : 'Limpar Dados Financeiros'}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-destructive" />
-                      Confirmar Limpeza de Dados
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Você está prestes a <strong>remover permanentemente</strong> todos os dados financeiros do estabelecimento <strong>"{salon?.name}"</strong>.
-                      <br /><br />
-                      Esta ação irá:
-                      <ul className="list-disc list-inside mt-2 space-y-1">
-                        <li>Deletar todas as transações financeiras</li>
-                        <li>Zerar o histórico de receitas</li>
-                        <li>Remover dados de faturamento</li>
-                      </ul>
-                      <br />
-                      <strong>Esta operação não pode ser desfeita!</strong>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleClearFinancialData}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            <div className="space-y-3">
+              {/* Limpar Dados Financeiros */}
+              <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                <h4 className="font-medium text-destructive mb-2">Limpar Dados Financeiros</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Remove permanentemente todas as transações financeiras do estabelecimento.
+                </p>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                      disabled={financialOps.loading}
                     >
-                      Sim, Limpar Dados
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      {financialOps.loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Limpar Dados Financeiros
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar Limpeza de Dados Financeiros</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação irá remover PERMANENTEMENTE todas as transações financeiras do estabelecimento "{salon?.name}". 
+                        Esta operação não pode ser desfeita.
+                        
+                        Tem certeza de que deseja continuar?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleClearFinancialData}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Sim, Limpar Dados
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
+              {/* Limpar Histórico de Atendimentos */}
+              <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                <h4 className="font-medium text-destructive mb-2">Limpar Histórico de Atendimentos</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Remove permanentemente todos os agendamentos e atendimentos do estabelecimento.
+                </p>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                      disabled={financialOps.loading}
+                    >
+                      {financialOps.loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Limpar Histórico de Atendimentos
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar Limpeza de Histórico de Atendimentos</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação irá remover PERMANENTEMENTE todos os atendimentos (agendamentos) do estabelecimento "{salon?.name}". 
+                        Isso inclui todo o histórico de clientes, horários e status dos atendimentos.
+                        Esta operação não pode ser desfeita.
+                        
+                        Tem certeza de que deseja continuar?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleClearAppointmentsHistory}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Sim, Limpar Histórico
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           </div>
 
