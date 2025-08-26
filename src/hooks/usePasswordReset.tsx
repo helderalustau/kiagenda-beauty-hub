@@ -11,30 +11,14 @@ export const usePasswordReset = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const sendAdminPasswordReset = async (email: string): Promise<PasswordResetResult> => {
+  const sendAdminPasswordResetEmail = async (email: string): Promise<PasswordResetResult> => {
     setLoading(true);
     
     try {
-      console.log('🔄 Solicitando reset de senha para admin:', email);
+      console.log('🔄 Enviando reset de senha por email para admin:', email);
       
-      // Verificar se o email existe na tabela admin_auth
-      const { data: adminData, error: searchError } = await supabase
-        .from('admin_auth')
-        .select('id, name, email')
-        .eq('email', email)
-        .single();
-
-      if (searchError || !adminData) {
-        console.error('❌ Admin não encontrado:', searchError);
-        return {
-          success: false,
-          message: 'E-mail não encontrado no sistema de administradores'
-        };
-      }
-
-      // Usar o sistema de auth do Supabase para enviar email de reset
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/admin-reset-password`
+      const { data, error } = await supabase.functions.invoke('send-password-reset-email', {
+        body: { email, userType: 'admin' }
       });
 
       if (error) {
@@ -45,10 +29,17 @@ export const usePasswordReset = () => {
         };
       }
 
+      if (!data.success) {
+        return {
+          success: false,
+          message: data.message
+        };
+      }
+
       console.log('✅ Email de reset enviado para admin:', email);
       return {
         success: true,
-        message: 'Email de recuperação enviado com sucesso! Verifique sua caixa de entrada.'
+        message: data.message
       };
 
     } catch (error) {
@@ -62,30 +53,56 @@ export const usePasswordReset = () => {
     }
   };
 
-  const sendClientPasswordReset = async (email: string): Promise<PasswordResetResult> => {
+  const sendAdminPasswordResetSMS = async (phone: string): Promise<PasswordResetResult> => {
     setLoading(true);
     
     try {
-      console.log('🔄 Solicitando reset de senha para cliente:', email);
+      console.log('🔄 Enviando reset de senha por SMS para admin:', phone);
       
-      // Verificar se o email existe na tabela client_auth
-      const { data: clientData, error: searchError } = await supabase
-        .from('client_auth')
-        .select('id, name, email')
-        .eq('email', email)
-        .single();
+      const { data, error } = await supabase.functions.invoke('send-password-reset-sms', {
+        body: { phone, userType: 'admin' }
+      });
 
-      if (searchError || !clientData) {
-        console.error('❌ Cliente não encontrado:', searchError);
+      if (error) {
+        console.error('❌ Erro ao enviar SMS de reset para admin:', error);
         return {
           success: false,
-          message: 'E-mail não encontrado no sistema de clientes'
+          message: 'Erro ao enviar SMS de recuperação'
         };
       }
 
-      // Usar o sistema de auth do Supabase para enviar email de reset
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/client-reset-password`
+      if (!data.success) {
+        return {
+          success: false,
+          message: data.message
+        };
+      }
+
+      console.log('✅ SMS de reset enviado para admin:', phone);
+      return {
+        success: true,
+        message: data.message
+      };
+
+    } catch (error) {
+      console.error('❌ Erro inesperado no reset de senha do admin:', error);
+      return {
+        success: false,
+        message: 'Erro inesperado. Tente novamente.'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendClientPasswordResetEmail = async (email: string): Promise<PasswordResetResult> => {
+    setLoading(true);
+    
+    try {
+      console.log('🔄 Enviando reset de senha por email para cliente:', email);
+      
+      const { data, error } = await supabase.functions.invoke('send-password-reset-email', {
+        body: { email, userType: 'client' }
       });
 
       if (error) {
@@ -96,10 +113,17 @@ export const usePasswordReset = () => {
         };
       }
 
+      if (!data.success) {
+        return {
+          success: false,
+          message: data.message
+        };
+      }
+
       console.log('✅ Email de reset enviado para cliente:', email);
       return {
         success: true,
-        message: 'Email de recuperação enviado com sucesso! Verifique sua caixa de entrada.'
+        message: data.message
       };
 
     } catch (error) {
@@ -112,6 +136,52 @@ export const usePasswordReset = () => {
       setLoading(false);
     }
   };
+
+  const sendClientPasswordResetSMS = async (phone: string): Promise<PasswordResetResult> => {
+    setLoading(true);
+    
+    try {
+      console.log('🔄 Enviando reset de senha por SMS para cliente:', phone);
+      
+      const { data, error } = await supabase.functions.invoke('send-password-reset-sms', {
+        body: { phone, userType: 'client' }
+      });
+
+      if (error) {
+        console.error('❌ Erro ao enviar SMS de reset para cliente:', error);
+        return {
+          success: false,
+          message: 'Erro ao enviar SMS de recuperação'
+        };
+      }
+
+      if (!data.success) {
+        return {
+          success: false,
+          message: data.message
+        };
+      }
+
+      console.log('✅ SMS de reset enviado para cliente:', phone);
+      return {
+        success: true,
+        message: data.message
+      };
+
+    } catch (error) {
+      console.error('❌ Erro inesperado no reset de senha do cliente:', error);
+      return {
+        success: false,
+        message: 'Erro inesperado. Tente novamente.'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Manter funções originais para compatibilidade (deprecadas)
+  const sendAdminPasswordReset = sendAdminPasswordResetEmail;
+  const sendClientPasswordReset = sendClientPasswordResetEmail;
 
   const updateAdminPassword = async (newPassword: string, token?: string): Promise<PasswordResetResult> => {
     setLoading(true);
@@ -185,6 +255,12 @@ export const usePasswordReset = () => {
 
   return {
     loading,
+    // Novas funções específicas
+    sendAdminPasswordResetEmail,
+    sendAdminPasswordResetSMS,
+    sendClientPasswordResetEmail,
+    sendClientPasswordResetSMS,
+    // Funções originais (para compatibilidade)
     sendAdminPasswordReset,
     sendClientPasswordReset,
     updateAdminPassword,

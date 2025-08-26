@@ -7,3 +7,9 @@ additional_redirect_urls = ["https://lovable.dev"]
 
 [functions.process-appointment-completion]
 verify_jwt = false
+
+[functions.send-password-reset-email]
+verify_jwt = false
+
+[functions.send-password-reset-sms]
+verify_jwt = false
