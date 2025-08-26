@@ -198,10 +198,32 @@ export const useSimplePasswordReset = () => {
         .eq('user_id', user.id)
         .eq('token_type', 'email');
 
-      // Usar reset nativo do Supabase
-      const redirectTo = `${window.location.origin}/${userType}-reset-password`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo
+      // Gerar token único para email
+      const emailToken = crypto.randomUUID();
+      
+      // Salvar token no banco antes de enviar email
+      const { error: tokenError } = await supabase
+        .from('password_reset_tokens')
+        .insert({
+          user_type: userType,
+          identifier: email,
+          token_type: 'email',
+          token_value: emailToken,
+          user_id: user.id,
+          expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hora
+        });
+
+      if (tokenError) {
+        console.error('❌ Erro ao salvar token:', tokenError);
+        return {
+          success: false,
+          message: 'Erro interno. Tente novamente.'
+        };
+      }
+
+      // Enviar email via edge function
+      const { error } = await supabase.functions.invoke('send-password-reset-email', {
+        body: { email, userType }
       });
 
       if (error) {
@@ -211,18 +233,6 @@ export const useSimplePasswordReset = () => {
           message: 'Erro ao enviar email. Verifique se o endereço está correto.'
         };
       }
-
-      // Registrar o envio do email para auditoria
-      await supabase
-        .from('password_reset_tokens')
-        .insert({
-          user_type: userType,
-          identifier: email,
-          token_type: 'email',
-          token_value: 'email_sent',
-          user_id: user.id,
-          expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hora
-        });
 
       console.log('✅ Email de reset enviado para usuário:', user.name);
       return {
