@@ -171,7 +171,13 @@ const EnhancedAppointmentCard = ({ appointment, onUpdateAppointment, isUpdating 
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         onStatusUpdate={() => {
-          // Refresh data if needed
+          console.log('🔄 EnhancedAppointmentCard: Status updated, refreshing data...');
+          // Forçar re-render do componente
+          setShowDetailsModal(false);
+          // Chamar callback de atualização se disponível
+          if (onUpdateAppointment) {
+            onUpdateAppointment(appointment.id, { status: appointment.status });
+          }
         }}
       />
     </>

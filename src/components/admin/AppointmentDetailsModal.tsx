@@ -94,23 +94,61 @@ const AppointmentDetailsModal = ({
   const additionalServicesPrice = additionalServices.reduce((sum, service) => sum + service.price, 0);
   const totalPrice = mainServicePrice + additionalServicesPrice;
   const totalDuration = ((appointment.service as any)?.duration_minutes || 0) + additionalServices.reduce((sum, service) => sum + service.duration, 0);
-  const updateAppointmentStatus = async (newStatus: string) => {
+const updateAppointmentStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
-      const {
-        error
-      } = await supabase.from('appointments').update({
-        status: newStatus
-      }).eq('id', appointment.id);
+      console.log('🔄 AppointmentDetailsModal: Updating status to:', newStatus);
+      
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({ status: newStatus })
+        .eq('id', appointment.id)
+        .select(`
+          *,
+          salon:salons(id, name, address, phone),
+          service:services(id, name, price, duration_minutes),
+          client:client_auth(id, username, name, phone, email)
+        `)
+        .single();
+      
       if (error) throw error;
+      
+      console.log('✅ AppointmentDetailsModal: Status updated successfully');
+      
+      // Se foi concluído, processar dados financeiros
+      if (newStatus === 'completed') {
+        console.log('💰 Processing financial data for completed appointment...');
+        
+        const { data: financialData, error: financialError } = await supabase.functions.invoke('process-appointment-completion', {
+          body: { appointmentId: appointment.id }
+        });
+        
+        if (financialError) {
+          console.error('❌ Financial processing error:', financialError);
+          toast({
+            title: "Aviso financeiro",
+            description: "Status atualizado, mas houve erro no processamento financeiro",
+            variant: "destructive"
+          });
+        } else {
+          console.log('✅ Financial processing successful:', financialData);
+        }
+      }
+      
       toast({
         title: "Status atualizado",
         description: `Agendamento ${getStatusText(newStatus).toLowerCase()} com sucesso.`
       });
+      
+      // Atualizar dados do appointment no estado local
+      if (data) {
+        Object.assign(appointment, data);
+      }
+      
       onStatusUpdate?.();
       onClose();
     } catch (error) {
-      console.error('Error updating appointment status:', error);
+      console.error('❌ Error updating appointment status:', error);
       toast({
         title: "Erro ao atualizar",
         description: "Não foi possível atualizar o status do agendamento.",
