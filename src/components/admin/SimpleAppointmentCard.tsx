@@ -215,7 +215,7 @@ const SimpleAppointmentCard = ({
               timestamp: new Date().toISOString()
             });
             handleStatusUpdate('completed');
-          }} disabled={isUpdating} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-8 text-sm font-bold disabled:bg-muted disabled:cursor-not-allowed mt-3">
+          }} disabled={isUpdating} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-8 font-bold disabled:bg-muted disabled:cursor-not-allowed mt-3 text-xs">
                   {isUpdating ? 'PROCESSANDO...' : 'CONCLUIR ATENDIMENTO'}
                 </Button>}
 
