@@ -83,22 +83,7 @@ const AdminDashboardContent = ({
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Agenda do Estabelecimento</h2>
           
-          {/* Resumo dos Agendamentos - Mostrando agendamentos de hoje para debug */}
-          <AdminAppointmentsSummary
-            appointments={appointments.filter(apt => {
-              // Mostrar agendamentos de hoje (incluindo completed) para ver as alterações
-              const today = new Date().toISOString().split('T')[0];
-              const aptDate = apt.appointment_date;
-              console.log('📅 Filtro de data:', { today, aptDate, match: aptDate === today });
-              return aptDate === today;
-            })}
-            selectedDate={new Date()}
-            loading={false}
-            showFutureOnly={false}
-            onUpdateStatus={handleUpdateStatus}
-          />
-          
-          {/* Calendário Principal - SEMPRE RENDERIZADO */}
+          {/* Calendário Principal */}
           <SimpleCalendarView 
             salonId={salon.id}
             onRefresh={onRefresh}
