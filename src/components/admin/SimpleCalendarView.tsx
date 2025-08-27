@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,36 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
     fetchAppointments,
     totalAppointments
   } = useSimpleAppointmentManager({ salonId });
+
+  // Setup realtime subscription for immediate updates
+  useEffect(() => {
+    if (!salonId) return;
+
+    console.log('🔔 SimpleCalendarView: Configurando subscription realtime para salon:', salonId);
+    
+    const channel = supabase
+      .channel(`calendar-updates-${salonId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'appointments',
+          filter: `salon_id=eq.${salonId}`
+        },
+        (payload) => {
+          console.log('📝 SimpleCalendarView: Agendamento atualizado via realtime:', payload);
+          // Refresh data to get latest state
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔌 SimpleCalendarView: Removendo subscription realtime');
+      supabase.removeChannel(channel);
+    };
+  }, [salonId, fetchAppointments]);
 
   console.log('🗓️ SimpleCalendarView: Rendering with', {
     salonId,

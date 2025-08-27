@@ -128,38 +128,36 @@ const EnhancedAppointmentCard = ({
           </div>
 
           {appointment.status === 'pending' && <div className="flex gap-3 mt-4">
-              <Button size="lg" onClick={() => onUpdateAppointment(appointment.id, {
-            status: 'confirmed'
-          })} disabled={isUpdating} className="bg-success hover:bg-success/90 text-white flex-1 font-semibold py-3">
+              <Button size="lg" onClick={async () => {
+                await onUpdateAppointment(appointment.id, { status: 'confirmed' });
+              }} disabled={isUpdating} className="bg-success hover:bg-success/90 text-white flex-1 font-semibold py-3">
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 Aprovar
               </Button>
-              <Button size="lg" variant="destructive" onClick={() => onUpdateAppointment(appointment.id, {
-            status: 'cancelled'
-          })} disabled={isUpdating} className="flex-1 font-semibold py-3">
+              <Button size="lg" variant="destructive" onClick={async () => {
+                await onUpdateAppointment(appointment.id, { status: 'cancelled' });
+              }} disabled={isUpdating} className="flex-1 font-semibold py-3">
                 <XCircle className="h-4 w-4 mr-2" />
                 Rejeitar
               </Button>
             </div>}
 
-          {appointment.status === 'confirmed' && <Button size="lg" onClick={() => onUpdateAppointment(appointment.id, {
-          status: 'completed'
-        })} disabled={isUpdating} className="w-full mt-4 bg-primary hover:bg-primary/90 font-semibold py-3 text-sm">
+          {appointment.status === 'confirmed' && <Button size="lg" onClick={async () => {
+            await onUpdateAppointment(appointment.id, { status: 'completed' });
+          }} disabled={isUpdating} className="w-full mt-4 bg-primary hover:bg-primary/90 font-semibold py-3 text-sm">
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Finalizar Atendimento - {formatCurrency(parsedAppointment.totalPrice)}
             </Button>}
         </CardContent>
       </Card>
 
-      <AppointmentDetailsModal appointment={appointment} isOpen={showDetailsModal} onClose={() => setShowDetailsModal(false)} onStatusUpdate={() => {
+      <AppointmentDetailsModal appointment={appointment} isOpen={showDetailsModal} onClose={() => setShowDetailsModal(false)} onStatusUpdate={async () => {
       console.log('🔄 EnhancedAppointmentCard: Status updated, refreshing data...');
-      // Forçar re-render do componente
       setShowDetailsModal(false);
-      // Chamar callback de atualização se disponível
+      
+      // Chamar callback de atualização para forçar refresh dos dados
       if (onUpdateAppointment) {
-        onUpdateAppointment(appointment.id, {
-          status: appointment.status
-        });
+        await onUpdateAppointment(appointment.id, { status: appointment.status });
       }
     }} />
     </>;

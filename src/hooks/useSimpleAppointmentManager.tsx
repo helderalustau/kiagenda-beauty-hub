@@ -215,11 +215,8 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
         duration: newStatus === 'completed' ? 6000 : 3000, // Mostra por mais tempo quando concluído
       });
 
-      // Refresh data from server after a short delay
-      setTimeout(() => {
-        console.log('🔄 SimpleAppointmentManager: Refreshing data after status update');
-        fetchAppointments();
-      }, 1000);
+      // Data será atualizada automaticamente via sistema realtime
+      console.log('✅ SimpleAppointmentManager: Status atualizado - sistema realtime sincronizará automaticamente');
 
       return true;
     } catch (error) {
