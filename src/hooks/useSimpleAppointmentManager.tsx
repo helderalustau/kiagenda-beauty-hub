@@ -215,8 +215,25 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
         duration: newStatus === 'completed' ? 6000 : 3000, // Mostra por mais tempo quando concluído
       });
 
-      // Data será atualizada automaticamente via sistema realtime
-      console.log('✅ SimpleAppointmentManager: Status atualizado - sistema realtime sincronizará automaticamente');
+      // Processamento financeiro para agendamentos concluídos
+      if (newStatus === 'completed') {
+        console.log('💰 Processando dados financeiros para agendamento concluído...');
+        try {
+          const { data: financialData, error: financialError } = await supabase.functions.invoke('process-appointment-completion', {
+            body: { appointmentId }
+          });
+          
+          if (financialError) {
+            console.error('❌ Erro no processamento financeiro:', financialError);
+          } else {
+            console.log('✅ Processamento financeiro bem-sucedido:', financialData);
+          }
+        } catch (financialError) {
+          console.error('❌ Erro inesperado no processamento financeiro:', financialError);
+        }
+      }
+
+      console.log('✅ SimpleAppointmentManager: Status atualizado - dados sincronizados em tempo real');
 
       return true;
     } catch (error) {

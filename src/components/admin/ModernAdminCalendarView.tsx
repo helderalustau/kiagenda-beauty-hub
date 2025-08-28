@@ -24,7 +24,7 @@ import AppointmentCard from './calendar/AppointmentCard';
 
 interface ModernAdminCalendarViewProps {
   appointments: Appointment[];
-  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => void;
+  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => Promise<boolean>;
   isUpdating: boolean;
 }
 

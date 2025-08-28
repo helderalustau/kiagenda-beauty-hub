@@ -152,7 +152,15 @@ const AdminAppointmentsSummary = ({
               <EnhancedAppointmentCard
                 key={appointment.id}
                 appointment={appointment}
-                onUpdateAppointment={(id, updates) => onUpdateStatus(id, updates.status)}
+                onUpdateAppointment={async (id, updates) => {
+                  try {
+                    await onUpdateStatus(id, updates.status);
+                    return true;
+                  } catch (error) {
+                    console.error('Erro ao atualizar status:', error);
+                    return false;
+                  }
+                }}
                 isUpdating={false}
               />
               ))}

@@ -11,7 +11,7 @@ interface DayViewProps {
   selectedDate: Date;
   appointmentsByDate: { [key: string]: Appointment[] };
   onDateChange: (date: Date) => void;
-  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => void;
+  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => Promise<boolean>;
   isUpdating: boolean;
 }
 

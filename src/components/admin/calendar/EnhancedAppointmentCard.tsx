@@ -11,7 +11,7 @@ interface EnhancedAppointmentCardProps {
   onUpdateAppointment: (id: string, updates: {
     status: string;
     notes?: string;
-  }) => void;
+  }) => Promise<boolean>;
   isUpdating: boolean;
 }
 const EnhancedAppointmentCard = ({
@@ -129,37 +129,41 @@ const EnhancedAppointmentCard = ({
 
           {appointment.status === 'pending' && <div className="flex gap-3 mt-4">
               <Button size="lg" onClick={async () => {
+                console.log('🔄 EnhancedAppointmentCard: Aprovando agendamento...', appointment.id);
                 await onUpdateAppointment(appointment.id, { status: 'confirmed' });
               }} disabled={isUpdating} className="bg-success hover:bg-success/90 text-white flex-1 font-semibold py-3">
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                Aprovar
+                {isUpdating ? 'Aprovando...' : 'Aprovar'}
               </Button>
               <Button size="lg" variant="destructive" onClick={async () => {
+                console.log('🔄 EnhancedAppointmentCard: Rejeitando agendamento...', appointment.id);
                 await onUpdateAppointment(appointment.id, { status: 'cancelled' });
               }} disabled={isUpdating} className="flex-1 font-semibold py-3">
                 <XCircle className="h-4 w-4 mr-2" />
-                Rejeitar
+                {isUpdating ? 'Rejeitando...' : 'Rejeitar'}
               </Button>
             </div>}
 
           {appointment.status === 'confirmed' && <Button size="lg" onClick={async () => {
+            console.log('🔄 EnhancedAppointmentCard: Concluindo serviço...', appointment.id);
             await onUpdateAppointment(appointment.id, { status: 'completed' });
           }} disabled={isUpdating} className="w-full mt-4 bg-primary hover:bg-primary/90 font-semibold py-3 text-sm">
               <CheckCircle2 className="h-4 w-4 mr-2" />
-              Finalizar Atendimento - {formatCurrency(parsedAppointment.totalPrice)}
+              {isUpdating ? 'Finalizando...' : `Finalizar Atendimento - ${formatCurrency(parsedAppointment.totalPrice)}`}
             </Button>}
         </CardContent>
       </Card>
 
-      <AppointmentDetailsModal appointment={appointment} isOpen={showDetailsModal} onClose={() => setShowDetailsModal(false)} onStatusUpdate={async () => {
-      console.log('🔄 EnhancedAppointmentCard: Status updated, refreshing data...');
-      setShowDetailsModal(false);
-      
-      // Chamar callback de atualização para forçar refresh dos dados
-      if (onUpdateAppointment) {
-        await onUpdateAppointment(appointment.id, { status: appointment.status });
-      }
-    }} />
+      <AppointmentDetailsModal 
+        appointment={appointment} 
+        isOpen={showDetailsModal} 
+        onClose={() => setShowDetailsModal(false)} 
+        onStatusUpdate={async (updatedAppointment) => {
+          console.log('🔄 EnhancedAppointmentCard: Status updated via modal:', updatedAppointment);
+          setShowDetailsModal(false);
+          // O sistema realtime já cuida da atualização
+        }} 
+      />
     </>;
 };
 export default EnhancedAppointmentCard;

@@ -143,13 +143,16 @@ const SimpleCalendarView = ({ salonId, onRefresh }: SimpleCalendarViewProps) => 
     
     if (success) {
       console.log('✅ SimpleCalendarView: Status atualizado - sistema realtime sincronizará automaticamente');
-      // REMOVIDO: onRefresh() - O sistema realtime já cuida das atualizações
-      // Evita refresh desnecessário que pode causar mudança de aba
     } else {
       console.error('❌ SimpleCalendarView: Falha ao atualizar status');
     }
     
     return success;
+  };
+
+  const handleUpdateAppointment = async (appointmentId: string, updates: { status: string; notes?: string }) => {
+    console.log('🔄 SimpleCalendarView: Atualizando agendamento:', { appointmentId, updates });
+    return await handleStatusUpdate(appointmentId, updates.status as any);
   };
 
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];

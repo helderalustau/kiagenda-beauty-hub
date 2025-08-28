@@ -12,7 +12,7 @@ import DayView from './calendar/DayView';
 
 interface OptimizedAdminCalendarViewProps {
   appointments: Appointment[];
-  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => void;
+  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => Promise<boolean>;
   isUpdating: boolean;
 }
 

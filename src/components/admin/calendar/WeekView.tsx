@@ -9,7 +9,7 @@ import AppointmentCard from './AppointmentCard';
 interface WeekViewProps {
   weekDays: Date[];
   appointmentsByDate: { [key: string]: Appointment[] };
-  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => void;
+  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => Promise<boolean>;
   isUpdating: boolean;
 }
 

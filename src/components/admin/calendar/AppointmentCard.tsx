@@ -5,7 +5,7 @@ import { Appointment } from '@/types/supabase-entities';
 
 interface AppointmentCardProps {
   appointment: Appointment;
-  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => void;
+  onUpdateAppointment: (id: string, updates: { status: string; notes?: string }) => Promise<boolean>;
   isUpdating: boolean;
 }
 

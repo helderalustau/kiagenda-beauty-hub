@@ -14,7 +14,7 @@ interface AppointmentDetailsModalProps {
   appointment: Appointment | null;
   isOpen: boolean;
   onClose: () => void;
-  onStatusUpdate?: () => void;
+  onStatusUpdate?: (updatedAppointment: Appointment) => void;
 }
 const AppointmentDetailsModal = ({
   appointment,
@@ -143,9 +143,9 @@ const updateAppointmentStatus = async (newStatus: string) => {
       // Atualizar dados do appointment no estado local
       if (data) {
         Object.assign(appointment, data);
+        onStatusUpdate?.(data as Appointment);
       }
       
-      onStatusUpdate?.();
       onClose();
     } catch (error) {
       console.error('❌ Error updating appointment status:', error);
