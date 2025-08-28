@@ -43,41 +43,94 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
     }
   }, []);
 
-  // Buscar slots ocupados
-  const fetchBookedSlots = useCallback(async (salonId: string, date: string): Promise<string[]> => {
+  // Buscar agendamentos com duração total
+  const fetchBookedAppointments = useCallback(async (salonId: string, date: string): Promise<any[]> => {
     try {
-      console.log(`🔍 Fetching booked slots for salon ${salonId} on ${date}`);
+      console.log(`🔍 Fetching booked appointments for salon ${salonId} on ${date}`);
       
       const { data, error } = await supabase
         .from('appointments')
-        .select('appointment_time')
+        .select('appointment_time, notes, services(duration_minutes)')
         .eq('salon_id', salonId)
         .eq('appointment_date', date)
         .in('status', ['pending', 'confirmed'])
         .order('appointment_time');
 
       if (error) {
-        console.error('❌ Error fetching booked slots:', error);
+        console.error('❌ Error fetching booked appointments:', error);
         return [];
       }
 
-      const bookedTimes = data?.map(appointment => appointment.appointment_time) || [];
-      console.log(`📅 Found ${bookedTimes.length} booked slots:`, bookedTimes);
-      return bookedTimes;
+      console.log(`📅 Found ${data?.length || 0} booked appointments:`, data);
+      return data || [];
     } catch (error) {
-      console.error('❌ Error in fetchBookedSlots:', error);
+      console.error('❌ Error in fetchBookedAppointments:', error);
       return [];
     }
   }, []);
 
-  // Filtrar slots disponíveis
-  const filterAvailableSlots = useCallback((allSlots: string[], bookedSlots: string[], date: Date) => {
+  // Função para extrair serviços adicionais das notas
+  const parseAdditionalServices = useCallback((notes: string): { duration: number }[] => {
+    if (!notes) return [];
+    
+    const additionalServicesMatch = notes.match(/Serviços Adicionais:\s*(.+?)(?:\n\n|$)/s);
+    if (!additionalServicesMatch) return [];
+    
+    const servicesText = additionalServicesMatch[1];
+    const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/g);
+    
+    if (!serviceMatches) return [];
+    
+    return serviceMatches.map(match => {
+      const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/);
+      if (!parts) return null;
+      
+      return {
+        duration: parseInt(parts[2])
+      };
+    }).filter(Boolean) as { duration: number }[];
+  }, []);
+
+  // Calcular duração total de um agendamento
+  const calculateTotalDuration = useCallback((appointment: any): number => {
+    const mainServiceDuration = appointment.services?.duration_minutes || 30;
+    const additionalServices = parseAdditionalServices(appointment.notes || '');
+    const additionalDuration = additionalServices.reduce((sum, service) => sum + service.duration, 0);
+    
+    return mainServiceDuration + additionalDuration;
+  }, [parseAdditionalServices]);
+
+  // Filtrar slots disponíveis baseado na duração total dos agendamentos
+  const filterAvailableSlots = useCallback((allSlots: string[], bookedAppointments: any[], date: Date) => {
     const currentTime = new Date();
     const isToday = date.toDateString() === currentTime.toDateString();
     
+    // Criar conjunto de slots ocupados baseado na duração total
+    const occupiedSlots = new Set<string>();
+    
+    bookedAppointments.forEach(appointment => {
+      const startTime = appointment.appointment_time;
+      const totalDuration = calculateTotalDuration(appointment);
+      
+      console.log(`📅 Processing appointment at ${startTime} with total duration: ${totalDuration}min`);
+      
+      // Marcar todos os slots de 30min ocupados por este agendamento
+      const [startHour, startMinute] = startTime.split(':').map(Number);
+      const startTimeInMinutes = startHour * 60 + startMinute;
+      const endTimeInMinutes = startTimeInMinutes + totalDuration;
+      
+      // Marcar slots em intervalos de 30 minutos
+      for (let time = startTimeInMinutes; time < endTimeInMinutes; time += 30) {
+        const hour = Math.floor(time / 60);
+        const minute = time % 60;
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        occupiedSlots.add(timeString);
+      }
+    });
+    
     return allSlots.filter(slot => {
-      // Se já está reservado, não disponibilizar
-      if (bookedSlots.includes(slot)) {
+      // Se está ocupado, não disponibilizar
+      if (occupiedSlots.has(slot)) {
         return false;
       }
       
@@ -95,7 +148,7 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
       
       return true;
     });
-  }, []);
+  }, [calculateTotalDuration]);
 
   // Buscar slots disponíveis - função principal
   const fetchAvailableSlots = useCallback(async () => {
@@ -141,16 +194,16 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
         return;
       }
       
-      // Buscar slots ocupados
+      // Buscar agendamentos ocupados
       // FIX: Usar componentes locais da data para evitar problemas de timezone
       const localYear = selectedDate.getFullYear();
       const localMonth = selectedDate.getMonth() + 1;
       const localDay = selectedDate.getDate();
       const dateString = `${localYear}-${localMonth.toString().padStart(2, '0')}-${localDay.toString().padStart(2, '0')}`;
-      const bookedSlots = await fetchBookedSlots(salon.id, dateString);
+      const bookedAppointments = await fetchBookedAppointments(salon.id, dateString);
       
       // Filtrar slots disponíveis
-      const availableSlots = filterAvailableSlots(allSlots, bookedSlots, selectedDate);
+      const availableSlots = filterAvailableSlots(allSlots, bookedAppointments, selectedDate);
       
       console.log(`✅ Final available slots (${availableSlots.length}):`, availableSlots);
       setAvailableSlots(availableSlots);
@@ -161,7 +214,7 @@ export const useOptimizedTimeSlots = (salon: Salon, selectedDate: Date | undefin
     } finally {
       setLoading(false);
     }
-  }, [salon?.id, salon?.opening_hours, selectedDate, generateTimeSlots, fetchBookedSlots, filterAvailableSlots]);
+  }, [salon?.id, salon?.opening_hours, selectedDate, generateTimeSlots, fetchBookedAppointments, filterAvailableSlots]);
 
   // Effect para buscar slots quando data ou salon mudar
   useEffect(() => {

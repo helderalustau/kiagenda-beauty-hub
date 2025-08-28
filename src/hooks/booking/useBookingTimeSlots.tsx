@@ -122,10 +122,10 @@ export const useBookingTimeSlots = (salon: Salon) => {
         return;
       }
       
-      // Buscar agendamentos já existentes
+      // Buscar agendamentos já existentes (incluindo notes para serviços adicionais)
       const { data: appointments, error } = await supabase
         .from('appointments')
-        .select('appointment_time')
+        .select('appointment_time, notes, services(duration_minutes)')
         .eq('salon_id', salon.id)
         .eq('appointment_date', dateString)
         .in('status', ['pending', 'confirmed']);
@@ -136,17 +136,71 @@ export const useBookingTimeSlots = (salon: Salon) => {
         console.log('⚠️ Showing all slots due to fetch error');
       }
 
-      const bookedTimes = appointments?.map(apt => apt.appointment_time) || [];
-      console.log('📅 Booked times:', bookedTimes);
+      // Função para extrair serviços adicionais das notas
+      const parseAdditionalServices = (notes: string): { duration: number }[] => {
+        if (!notes) return [];
+        
+        const additionalServicesMatch = notes.match(/Serviços Adicionais:\s*(.+?)(?:\n\n|$)/s);
+        if (!additionalServicesMatch) return [];
+        
+        const servicesText = additionalServicesMatch[1];
+        const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/g);
+        
+        if (!serviceMatches) return [];
+        
+        return serviceMatches.map(match => {
+          const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/);
+          if (!parts) return null;
+          
+          return {
+            duration: parseInt(parts[2])
+          };
+        }).filter(Boolean) as { duration: number }[];
+      };
+
+      // Calcular duração total de cada agendamento
+      const calculateTotalDuration = (appointment: any): number => {
+        const mainServiceDuration = appointment.services?.duration_minutes || 30;
+        const additionalServices = parseAdditionalServices(appointment.notes || '');
+        const additionalDuration = additionalServices.reduce((sum, service) => sum + service.duration, 0);
+        
+        return mainServiceDuration + additionalDuration;
+      };
+
+      // Criar lista de slots ocupados baseada na duração total
+      const occupiedSlots = new Set<string>();
+      
+      appointments?.forEach(appointment => {
+        const startTime = appointment.appointment_time;
+        const totalDuration = calculateTotalDuration(appointment);
+        
+        console.log(`📅 Appointment at ${startTime} with total duration: ${totalDuration}min`);
+        
+        // Marcar todos os slots de 30min ocupados por este agendamento
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const startTimeInMinutes = startHour * 60 + startMinute;
+        const endTimeInMinutes = startTimeInMinutes + totalDuration;
+        
+        // Marcar slots em intervalos de 30 minutos
+        for (let time = startTimeInMinutes; time < endTimeInMinutes; time += 30) {
+          const hour = Math.floor(time / 60);
+          const minute = time % 60;
+          const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          occupiedSlots.add(timeString);
+          console.log(`🚫 Blocking slot: ${timeString}`);
+        }
+      });
+      
+      console.log('📅 Total occupied slots:', Array.from(occupiedSlots));
       
       // Filtrar horários disponíveis
       const currentTime = new Date();
       const isToday = date.toDateString() === currentTime.toDateString();
       
       const availableSlots = allSlots.filter(slot => {
-        // Se já está ocupado, não mostrar
-        if (bookedTimes.includes(slot)) {
-          console.log(`❌ Slot ${slot} already booked`);
+        // Se está ocupado, não mostrar
+        if (occupiedSlots.has(slot)) {
+          console.log(`❌ Slot ${slot} is occupied`);
           return false;
         }
         

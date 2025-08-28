@@ -140,10 +140,10 @@ export const useAvailableTimeSlots = (
         return;
       }
 
-      // Buscar agendamentos já ocupados para esta data
+      // Buscar agendamentos já ocupados para esta data (incluindo notes para serviços adicionais)
       const { data: bookedAppointments, error: appointmentsError } = await supabase
         .from('appointments')
-        .select('appointment_time, service_id, services(duration_minutes)')
+        .select('appointment_time, service_id, notes, services(duration_minutes)')
         .eq('salon_id', salonId)
         .eq('appointment_date', dateString)
         .in('status', ['pending', 'confirmed']);
@@ -178,6 +178,38 @@ export const useAvailableTimeSlots = (
     }
   }, [salonId, selectedDate, serviceId, generateTimeSlots]);
 
+  // Função para extrair serviços adicionais das notas
+  const parseAdditionalServices = (notes: string): { duration: number; price: number }[] => {
+    if (!notes) return [];
+    
+    const additionalServicesMatch = notes.match(/Serviços Adicionais:\s*(.+?)(?:\n\n|$)/s);
+    if (!additionalServicesMatch) return [];
+    
+    const servicesText = additionalServicesMatch[1];
+    const serviceMatches = servicesText.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/g);
+    
+    if (!serviceMatches) return [];
+    
+    return serviceMatches.map(match => {
+      const parts = match.match(/([^(]+)\s*\((\d+)min\s*-\s*R\$\s*([\d,]+(?:\.\d{2})?)\)/);
+      if (!parts) return null;
+      
+      return {
+        duration: parseInt(parts[2]),
+        price: parseFloat(parts[3].replace(',', ''))
+      };
+    }).filter(Boolean) as { duration: number; price: number }[];
+  };
+
+  // Calcular duração total do agendamento (serviço principal + adicionais)
+  const calculateTotalDuration = (appointment: any): number => {
+    const mainServiceDuration = appointment.services?.duration_minutes || 30;
+    const additionalServices = parseAdditionalServices(appointment.notes || '');
+    const additionalDuration = additionalServices.reduce((sum, service) => sum + service.duration, 0);
+    
+    return mainServiceDuration + additionalDuration;
+  };
+
   // Filtrar slots disponíveis removendo conflitos
   const filterAvailableSlots = (
     allSlots: string[], 
@@ -204,12 +236,14 @@ export const useAvailableTimeSlots = (
       // Verificar se o slot está ocupado por algum agendamento
       for (const appointment of bookedAppointments) {
         const appointmentTime = appointment.appointment_time;
-        const serviceDuration = appointment.services?.duration_minutes || 30;
+        
+        // Calcular duração total do agendamento (principal + adicionais)
+        const totalDuration = calculateTotalDuration(appointment);
         
         // Calcular o horário de fim do agendamento
         const [appHour, appMinute] = appointmentTime.split(':').map(Number);
         const appointmentStartMinutes = appHour * 60 + appMinute;
-        const appointmentEndMinutes = appointmentStartMinutes + serviceDuration;
+        const appointmentEndMinutes = appointmentStartMinutes + totalDuration;
         
         // Calcular o horário do slot atual
         const [slotHour, slotMinute] = slot.split(':').map(Number);
@@ -224,7 +258,7 @@ export const useAvailableTimeSlots = (
           (slotStartMinutes < appointmentEndMinutes) && 
           (slotEndMinutes > appointmentStartMinutes)
         ) {
-          console.log(`❌ Slot ${slot} conflicts with appointment at ${appointmentTime}`);
+          console.log(`❌ Slot ${slot} conflicts with appointment at ${appointmentTime} (duration: ${totalDuration}min)`);
           return false;
         }
       }
