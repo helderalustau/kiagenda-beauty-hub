@@ -25,20 +25,20 @@ const DayView = ({
   const dayAppointments = appointmentsByDate[format(selectedDate, 'yyyy-MM-dd')] || [];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="space-y-2 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-4">
         <Input
           type="date"
           value={format(selectedDate, 'yyyy-MM-dd')}
           onChange={(e) => onDateChange(new Date(e.target.value))}
-          className="w-auto"
+          className="w-full sm:w-auto"
         />
-        <span className="font-medium">
+        <span className="font-medium text-sm sm:text-base">
           {format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
         </span>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
         {dayAppointments.map(appointment => (
           <AppointmentCard 
             key={appointment.id} 

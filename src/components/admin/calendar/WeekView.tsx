@@ -15,7 +15,7 @@ interface WeekViewProps {
 
 const WeekView = ({ weekDays, appointmentsByDate, onUpdateAppointment, isUpdating }: WeekViewProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-4">
       {weekDays.map(day => {
         const dateKey = format(day, 'yyyy-MM-dd');
         const dayAppointments = appointmentsByDate[dateKey] || [];
@@ -36,7 +36,7 @@ const WeekView = ({ weekDays, appointmentsByDate, onUpdateAppointment, isUpdatin
               )}
             </div>
             
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-1 sm:space-y-2 max-h-64 sm:max-h-96 overflow-y-auto">
               {dayAppointments.map(appointment => (
                 <AppointmentCard 
                   key={appointment.id} 
