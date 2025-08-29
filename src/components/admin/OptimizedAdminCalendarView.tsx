@@ -7,6 +7,7 @@ import { Appointment } from '@/types/supabase-entities';
 import CalendarStats from './calendar/CalendarStats';
 import CalendarFilters from './calendar/CalendarFilters';
 import CalendarNavigation from './calendar/CalendarNavigation';
+import GoogleCalendarView from './calendar/GoogleCalendarView';
 import WeekView from './calendar/WeekView';
 import DayView from './calendar/DayView';
 
@@ -74,55 +75,12 @@ const OptimizedAdminCalendarView = ({
       {/* Estatísticas */}
       <CalendarStats appointments={appointments} />
 
-      {/* Controles e Filtros */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <CardTitle className="flex items-center">
-              <CalendarIcon className="h-5 w-5 mr-2" />
-              Agenda de Atendimentos
-            </CardTitle>
-            
-            <CalendarFilters
-              searchTerm={searchTerm}
-              statusFilter={statusFilter}
-              onSearchChange={setSearchTerm}
-              onStatusFilterChange={setStatusFilter}
-            />
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          {/* Navegação */}
-          <CalendarNavigation
-            currentWeek={currentWeek}
-            viewMode={viewMode}
-            onWeekChange={setCurrentWeek}
-            onViewModeChange={setViewMode}
-          />
-
-          {/* Vista Semanal */}
-          {viewMode === 'week' && (
-            <WeekView
-              weekDays={weekDays}
-              appointmentsByDate={appointmentsByDate}
-              onUpdateAppointment={onUpdateAppointment}
-              isUpdating={isUpdating}
-            />
-          )}
-
-          {/* Vista Diária */}
-          {viewMode === 'day' && (
-            <DayView
-              selectedDate={selectedDate}
-              appointmentsByDate={appointmentsByDate}
-              onDateChange={setSelectedDate}
-              onUpdateAppointment={onUpdateAppointment}
-              isUpdating={isUpdating}
-            />
-          )}
-        </CardContent>
-      </Card>
+      {/* Google Calendar Style View */}
+      <GoogleCalendarView
+        appointments={filteredAppointments}
+        onUpdateAppointment={onUpdateAppointment}
+        isUpdating={isUpdating}
+      />
     </div>
   );
 };

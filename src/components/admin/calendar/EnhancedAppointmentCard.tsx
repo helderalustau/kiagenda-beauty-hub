@@ -162,16 +162,30 @@ const EnhancedAppointmentCard = ({
 
           {appointment.status === 'confirmed' && <Button 
             size="lg" 
-            onClick={async () => {
+            onClick={async (e) => {
+              // Efeito visual imediato
+              e.currentTarget.style.transform = 'scale(0.95)';
+              setTimeout(() => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }, 150);
+              
               setLocalUpdating('completing');
               console.log('🔄 EnhancedAppointmentCard: Concluindo serviço...', appointment.id);
-              await onUpdateAppointment(appointment.id, { status: 'completed' });
-              setLocalUpdating(null);
+              
+              try {
+                await onUpdateAppointment(appointment.id, { status: 'completed' });
+              } finally {
+                setLocalUpdating(null);
+              }
             }} 
             disabled={isUpdating || localUpdating !== null} 
-            className="w-full mt-4 bg-primary hover:bg-primary/90 font-semibold py-3 text-xs sm:text-sm transition-all duration-200 active:scale-95 animate-pulse"
+            className={`w-full mt-4 font-semibold py-4 text-sm transition-all duration-300 rounded-lg shadow-md ${
+              localUpdating === 'completing' 
+                ? 'bg-success/80 cursor-not-allowed animate-pulse' 
+                : 'bg-success hover:bg-success/90 hover:shadow-lg active:scale-95 transform'
+            }`}
           >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
+              <CheckCircle2 className="h-5 w-5 mr-2" />
               {localUpdating === 'completing' ? 'Finalizando...' : `Finalizar Atendimento - ${formatCurrency(parsedAppointment.totalPrice)}`}
             </Button>}
         </CardContent>
