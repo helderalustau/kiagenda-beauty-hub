@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,13 @@ const EnhancedAppointmentCard = ({
     parseAppointment,
     formatCurrency
   } = useAppointmentParser();
-  console.log('🎯 EnhancedAppointmentCard - Rendering for appointment:', appointment.id);
+  console.log('🎯 EnhancedAppointmentCard - Rendering for appointment:', appointment.id, 'Status:', appointment.status);
+  
+  // Log quando o status do appointment muda
+  useEffect(() => {
+    console.log('🔄 EnhancedAppointmentCard - Status changed for appointment:', appointment.id, 'New status:', appointment.status);
+  }, [appointment.status, appointment.id]);
+  
   const parsedAppointment = parseAppointment(appointment);
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -163,6 +169,9 @@ const EnhancedAppointmentCard = ({
           {appointment.status === 'confirmed' && <Button 
             size="lg" 
             onClick={async (e) => {
+              console.log('🎯 BUTTON CLICK - Before update, appointment status:', appointment.status);
+              console.log('🎯 BUTTON CLICK - Appointment ID:', appointment.id);
+              
               // Efeito visual imediato
               e.currentTarget.style.transform = 'scale(0.95)';
               setTimeout(() => {
@@ -170,11 +179,23 @@ const EnhancedAppointmentCard = ({
               }, 150);
               
               setLocalUpdating('completing');
-              console.log('🔄 EnhancedAppointmentCard: Concluindo serviço...', appointment.id);
               
               try {
-                await onUpdateAppointment(appointment.id, { status: 'completed' });
-              } finally {
+                console.log('🔄 CALLING onUpdateAppointment...');
+                const result = await onUpdateAppointment(appointment.id, { status: 'completed' });
+                console.log('✅ onUpdateAppointment RESULT:', result);
+                console.log('🎯 AFTER UPDATE - appointment should now be completed');
+                
+                if (result) {
+                  console.log('🎉 UPDATE SUCCESS - forcing state refresh');
+                  // Forçar re-render
+                  setLocalUpdating(null);
+                } else {
+                  console.error('❌ UPDATE FAILED');
+                  setLocalUpdating(null);
+                }
+              } catch (error) {
+                console.error('❌ UPDATE ERROR:', error);
                 setLocalUpdating(null);
               }
             }} 

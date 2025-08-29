@@ -195,11 +195,28 @@ export const useSimpleAppointmentManager = ({ salonId }: UseSimpleAppointmentMan
       });
       
       // Update local state immediately for better UX
-      setAppointments(prev => prev.map(apt => 
-        apt.id === appointmentId 
-          ? { ...apt, status: newStatus, updated_at: new Date().toISOString() }
-          : apt
-      ));
+      console.log('🔄 UPDATING LOCAL STATE - Before:', {
+        appointmentId,
+        currentStatus: appointments.find(a => a.id === appointmentId)?.status,
+        newStatus,
+        totalAppointments: appointments.length
+      });
+      
+      setAppointments(prev => {
+        const updated = prev.map(apt => 
+          apt.id === appointmentId 
+            ? { ...apt, status: newStatus, updated_at: new Date().toISOString() }
+            : apt
+        );
+        
+        console.log('🔄 UPDATED LOCAL STATE - After:', {
+          appointmentId,
+          updatedAppointment: updated.find(a => a.id === appointmentId)?.status,
+          totalAppointments: updated.length
+        });
+        
+        return updated;
+      });
 
       // Show success message with financial integration info
       const statusMessages = {
