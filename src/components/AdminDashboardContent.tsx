@@ -3,7 +3,7 @@ import React from 'react';
 import { TabsContent } from "@/components/ui/tabs";
 import { Appointment, Service } from '@/hooks/useSupabaseData';
 import { Salon } from '@/types/supabase-entities';
-import SimpleCalendarView from './admin/SimpleCalendarView';
+import OptimizedAdminCalendarView from './admin/OptimizedAdminCalendarView';
 import FinancialDashboard from './admin/FinancialDashboard';
 import ServiceManager from './ServiceManager';
 import AdminAppointmentsSummary from './AdminAppointmentsSummary';
@@ -84,9 +84,16 @@ const AdminDashboardContent = ({
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Agenda do Estabelecimento</h2>
           
           {/* Calendário Principal */}
-          <SimpleCalendarView 
-            salonId={salon.id}
-            onRefresh={onRefresh}
+          <OptimizedAdminCalendarView 
+            appointments={appointments}
+            onUpdateAppointment={async (id, updates) => {
+              const result = await updateAppointmentStatus(id, updates.status as any);
+              if (result.success) {
+                await onRefresh();
+              }
+              return result.success;
+            }}
+            isUpdating={false}
           />
         </div>
       </TabsContent>

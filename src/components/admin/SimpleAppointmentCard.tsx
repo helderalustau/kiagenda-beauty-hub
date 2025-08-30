@@ -316,7 +316,7 @@ const SimpleAppointmentCard = ({
             timestamp: new Date().toISOString()
           });
           handleStatusUpdate('completed');
-        }} disabled={isUpdating} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-3 disabled:bg-gray-400 disabled:cursor-not-allowed">
+        }} disabled={isUpdating} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-3 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg active:animate-success-pulse">
                 <CheckCircle2 className="h-5 w-5 mr-2" />
                 {isUpdating ? 'FINALIZANDO ATENDIMENTO...' : 'FINALIZAR ATENDIMENTO'}
               </Button>}
