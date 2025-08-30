@@ -54,7 +54,12 @@ export const useRealtimeAppointmentUpdates = ({
         },
         (payload) => {
           console.log('📝 Appointment updated:', payload);
-          onAppointmentUpdate();
+          console.log('🔄 REALTIME: Triggering appointment update refresh');
+          
+          // Forçar atualização imediata
+          setTimeout(() => {
+            onAppointmentUpdate();
+          }, 100);
           
           if (clientId) {
             if (payload.new.status === 'confirmed') {
@@ -74,6 +79,15 @@ export const useRealtimeAppointmentUpdates = ({
                 title: "🎉 Atendimento Concluído!",
                 description: "Seu atendimento foi finalizado com sucesso.",
                 duration: 8000,
+              });
+            }
+          } else if (salonId) {
+            // Notificação para admin quando appointment é atualizado
+            if (payload.new.status === 'completed') {
+              toast({
+                title: "✅ Atendimento Finalizado!",
+                description: "O atendimento foi concluído com sucesso.",
+                duration: 5000,
               });
             }
           }

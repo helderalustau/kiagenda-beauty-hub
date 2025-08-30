@@ -172,11 +172,17 @@ const EnhancedAppointmentCard = ({
               console.log('🎯 BUTTON CLICK - Before update, appointment status:', appointment.status);
               console.log('🎯 BUTTON CLICK - Appointment ID:', appointment.id);
               
-              // Efeito visual imediato
-              e.currentTarget.style.transform = 'scale(0.95)';
+              // Efeito visual imediato mais intenso
+              const button = e.currentTarget;
+              button.style.transform = 'scale(0.9)';
+              button.style.transition = 'all 0.1s ease-out';
+              
               setTimeout(() => {
-                e.currentTarget.style.transform = 'scale(1)';
-              }, 150);
+                button.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                  button.style.transform = 'scale(1)';
+                }, 100);
+              }, 100);
               
               setLocalUpdating('completing');
               
@@ -187,9 +193,14 @@ const EnhancedAppointmentCard = ({
                 console.log('🎯 AFTER UPDATE - appointment should now be completed');
                 
                 if (result) {
-                  console.log('🎉 UPDATE SUCCESS - forcing state refresh');
-                  // Forçar re-render
-                  setLocalUpdating(null);
+                  console.log('🎉 UPDATE SUCCESS - status should change automatically');
+                  // Feedback visual de sucesso
+                  button.style.background = 'linear-gradient(45deg, #10b981, #059669)';
+                  button.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.5)';
+                  
+                  setTimeout(() => {
+                    setLocalUpdating(null);
+                  }, 500);
                 } else {
                   console.error('❌ UPDATE FAILED');
                   setLocalUpdating(null);
@@ -200,14 +211,19 @@ const EnhancedAppointmentCard = ({
               }
             }} 
             disabled={isUpdating || localUpdating !== null} 
-            className={`w-full mt-4 font-semibold py-4 text-sm transition-all duration-300 rounded-lg shadow-md ${
+            className={`w-full mt-4 font-semibold py-4 text-sm transition-all duration-200 rounded-lg shadow-md relative overflow-hidden ${
               localUpdating === 'completing' 
-                ? 'bg-success/80 cursor-not-allowed animate-pulse' 
-                : 'bg-success hover:bg-success/90 hover:shadow-lg active:scale-95 transform'
+                ? 'bg-gradient-to-r from-success via-emerald-500 to-success cursor-not-allowed animate-pulse ring-2 ring-success/50' 
+                : 'bg-gradient-to-r from-success to-emerald-600 hover:from-success/90 hover:to-emerald-600/90 hover:shadow-xl active:scale-95 transform hover-scale'
             }`}
           >
               <CheckCircle2 className="h-5 w-5 mr-2" />
               {localUpdating === 'completing' ? 'Finalizando...' : `Finalizar Atendimento - ${formatCurrency(parsedAppointment.totalPrice)}`}
+              
+              {/* Efeito de brilho durante loading */}
+              {localUpdating === 'completing' && (
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              )}
             </Button>}
         </CardContent>
       </Card>
