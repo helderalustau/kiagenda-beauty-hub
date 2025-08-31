@@ -39,6 +39,25 @@ const CleanDashboardOverview = ({
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
+  // Função para refresh das estatísticas
+  const refreshStats = async () => {
+    if (salon?.id) {
+      setIsLoadingStats(true);
+      try {
+        console.log('🔄 Refreshing estatísticas para salão:', salon.id);
+        const stats = await getSalonAppointmentStats(salon.id);
+        console.log('📊 Estatísticas atualizadas:', stats);
+        if (stats.success) {
+          setAppointmentStats(stats);
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar estatísticas:', error);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    }
+  };
+
   // Buscar estatísticas de agendamentos com delay
   useEffect(() => {
     if (salon?.id) {
@@ -372,13 +391,17 @@ const CleanDashboardOverview = ({
                 }} className="h-7 px-2 text-xs">
                            Confirmar
                          </Button>}
-                        {appointment.status === 'confirmed' && <Button size="sm" onClick={e => {
+                        {appointment.status === 'confirmed' && <Button size="sm" onClick={async (e) => {
                   e.stopPropagation();
                   console.log('🔥 CleanDashboard CONCLUIR CLICADO!', {
                     appointmentId: appointment.id,
                     status: appointment.status
                   });
-                  onUpdateStatus(appointment.id, 'completed');
+                  await onUpdateStatus(appointment.id, 'completed');
+                  // Refresh das estatísticas após conclusão
+                  setTimeout(() => {
+                    refreshStats();
+                  }, 500);
                 }} className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg active:animate-success-pulse">
                            <CheckCircle className="h-3 w-3 mr-1" />
                            Concluir
@@ -426,13 +449,17 @@ const CleanDashboardOverview = ({
                 }} className="h-7 px-2 text-xs">
                            Confirmar
                          </Button>}
-                        {appointment.status === 'confirmed' && <Button size="sm" variant="outline" onClick={e => {
+                        {appointment.status === 'confirmed' && <Button size="sm" variant="outline" onClick={async (e) => {
                   e.stopPropagation();
                   console.log('🔥 CleanDashboard PRÓXIMOS CONCLUIR CLICADO!', {
                     appointmentId: appointment.id,
                     status: appointment.status
                   });
-                  onUpdateStatus(appointment.id, 'completed');
+                  await onUpdateStatus(appointment.id, 'completed');
+                  // Refresh das estatísticas após conclusão
+                  setTimeout(() => {
+                    refreshStats();
+                  }, 500);
                 }} className="h-7 px-2 text-xs transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg active:animate-success-pulse border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
                            <CheckCircle className="h-3 w-3 mr-1" />
                            Concluir
