@@ -18,7 +18,7 @@ interface CleanDashboardOverviewProps {
   services: Service[];
   salon: Salon;
   adminUsers: AdminUser[];
-  onUpdateStatus: (id: string, status: 'confirmed' | 'completed' | 'cancelled') => Promise<void>;
+  onUpdateStatus: (id: string, status: 'confirmed' | 'completed' | 'cancelled') => Promise<boolean>;
 }
 const CleanDashboardOverview = ({
   appointments,
@@ -421,14 +421,21 @@ const CleanDashboardOverview = ({
                   
                   try {
                     console.log('🔄 Iniciando atualização via onUpdateStatus...');
-                    await onUpdateStatus(appointment.id, 'completed');
-                    console.log('✅ onUpdateStatus concluído com sucesso');
+                    const result = await onUpdateStatus(appointment.id, 'completed');
+                    console.log('✅ onUpdateStatus result:', result);
                     
-                    // Refresh das estatísticas após conclusão
-                    setTimeout(() => {
-                      console.log('🔄 Atualizando estatísticas...');
-                      refreshStats();
-                    }, 500);
+                    if (result) {
+                      console.log('🎉 UPDATE SUCCESS - status atualizado com sucesso');
+                      // Refresh das estatísticas após conclusão
+                      setTimeout(() => {
+                        console.log('🔄 Atualizando estatísticas...');
+                        refreshStats();
+                      }, 500);
+                    } else {
+                      console.error('❌ UPDATE FAILED');
+                      // Reverter otimistic update em caso de falha
+                      updateLocalAppointmentStatus(appointment.id, 'confirmed');
+                    }
                   } catch (error) {
                     console.error('❌ Erro ao atualizar status:', error);
                     // Reverter otimistic update em caso de erro
@@ -494,14 +501,21 @@ const CleanDashboardOverview = ({
                   
                   try {
                     console.log('🔄 Iniciando atualização via onUpdateStatus (próximos)...');
-                    await onUpdateStatus(appointment.id, 'completed');
-                    console.log('✅ onUpdateStatus (próximos) concluído com sucesso');
+                    const result = await onUpdateStatus(appointment.id, 'completed');
+                    console.log('✅ onUpdateStatus (próximos) result:', result);
                     
-                    // Refresh das estatísticas após conclusão
-                    setTimeout(() => {
-                      console.log('🔄 Atualizando estatísticas (próximos)...');
-                      refreshStats();
-                    }, 500);
+                    if (result) {
+                      console.log('🎉 UPDATE SUCCESS (próximos) - status atualizado com sucesso');
+                      // Refresh das estatísticas após conclusão
+                      setTimeout(() => {
+                        console.log('🔄 Atualizando estatísticas (próximos)...');
+                        refreshStats();
+                      }, 500);
+                    } else {
+                      console.error('❌ UPDATE FAILED (próximos)');
+                      // Reverter otimistic update em caso de falha
+                      updateLocalAppointmentStatus(appointment.id, 'confirmed');
+                    }
                   } catch (error) {
                     console.error('❌ Erro ao atualizar status (próximos):', error);
                     // Reverter otimistic update em caso de erro
@@ -511,9 +525,9 @@ const CleanDashboardOverview = ({
                            <CheckCircle className="h-3 w-3 mr-1" />
                            Concluir
                          </Button>}
-                     </div>
-                   </div>)}
-              </div>}
+                      </div>
+                    </div>)}
+               </div>}
           </CardContent>
         </Card>
 

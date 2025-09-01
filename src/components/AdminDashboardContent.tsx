@@ -35,15 +35,13 @@ const AdminDashboardContent = ({
     salonName: salon?.name
   });
 
-  const handleUpdateStatus = async (id: string, status: string): Promise<void> => {
+  const handleUpdateStatus = async (id: string, status: string): Promise<boolean> => {
     try {
       console.log('🔄 Dashboard: Atualizando status:', { id, status });
       const result = await updateAppointmentStatus(id, status as any);
       if (result.success) {
-        console.log('✅ Dashboard: Status atualizado com sucesso - mantendo na aba atual');
-        // REMOVIDO: await onRefresh(); 
-        // O sistema de realtime já atualiza os dados automaticamente
-        // Não precisamos forçar refresh que pode causar mudança de aba
+        console.log('✅ Dashboard: Status atualizado com sucesso');
+        return true;
       } else {
         console.error('❌ Dashboard: Falha ao atualizar status:', result.message);
         throw new Error(result.message || 'Erro ao atualizar status');
