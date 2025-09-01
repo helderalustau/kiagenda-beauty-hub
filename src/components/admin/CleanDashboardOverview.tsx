@@ -18,7 +18,7 @@ interface CleanDashboardOverviewProps {
   services: Service[];
   salon: Salon;
   adminUsers: AdminUser[];
-  onUpdateStatus: (id: string, status: 'confirmed' | 'completed' | 'cancelled') => void;
+  onUpdateStatus: (id: string, status: 'confirmed' | 'completed' | 'cancelled') => Promise<void>;
 }
 const CleanDashboardOverview = ({
   appointments,
@@ -412,16 +412,28 @@ const CleanDashboardOverview = ({
                   e.stopPropagation();
                   console.log('🔥 CleanDashboard CONCLUIR CLICADO!', {
                     appointmentId: appointment.id,
-                    status: appointment.status
+                    status: appointment.status,
+                    timestamp: new Date().toISOString()
                   });
+                  
                   // Atualização otimista (visual imediata)
                   updateLocalAppointmentStatus(appointment.id, 'completed');
                   
-                  await onUpdateStatus(appointment.id, 'completed');
-                  // Refresh das estatísticas após conclusão
-                  setTimeout(() => {
-                    refreshStats();
-                  }, 500);
+                  try {
+                    console.log('🔄 Iniciando atualização via onUpdateStatus...');
+                    await onUpdateStatus(appointment.id, 'completed');
+                    console.log('✅ onUpdateStatus concluído com sucesso');
+                    
+                    // Refresh das estatísticas após conclusão
+                    setTimeout(() => {
+                      console.log('🔄 Atualizando estatísticas...');
+                      refreshStats();
+                    }, 500);
+                  } catch (error) {
+                    console.error('❌ Erro ao atualizar status:', error);
+                    // Reverter otimistic update em caso de erro
+                    updateLocalAppointmentStatus(appointment.id, 'confirmed');
+                  }
                 }} className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg active:animate-success-pulse">
                            <CheckCircle className="h-3 w-3 mr-1" />
                            Concluir
@@ -473,16 +485,28 @@ const CleanDashboardOverview = ({
                   e.stopPropagation();
                   console.log('🔥 CleanDashboard PRÓXIMOS CONCLUIR CLICADO!', {
                     appointmentId: appointment.id,
-                    status: appointment.status
+                    status: appointment.status,
+                    timestamp: new Date().toISOString()
                   });
+                  
                   // Atualização otimista (visual imediata)
                   updateLocalAppointmentStatus(appointment.id, 'completed');
                   
-                  await onUpdateStatus(appointment.id, 'completed');
-                  // Refresh das estatísticas após conclusão
-                  setTimeout(() => {
-                    refreshStats();
-                  }, 500);
+                  try {
+                    console.log('🔄 Iniciando atualização via onUpdateStatus (próximos)...');
+                    await onUpdateStatus(appointment.id, 'completed');
+                    console.log('✅ onUpdateStatus (próximos) concluído com sucesso');
+                    
+                    // Refresh das estatísticas após conclusão
+                    setTimeout(() => {
+                      console.log('🔄 Atualizando estatísticas (próximos)...');
+                      refreshStats();
+                    }, 500);
+                  } catch (error) {
+                    console.error('❌ Erro ao atualizar status (próximos):', error);
+                    // Reverter otimistic update em caso de erro
+                    updateLocalAppointmentStatus(appointment.id, 'confirmed');
+                  }
                 }} className="h-7 px-2 text-xs transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg active:animate-success-pulse border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
                            <CheckCircle className="h-3 w-3 mr-1" />
                            Concluir
