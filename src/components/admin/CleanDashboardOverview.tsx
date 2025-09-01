@@ -38,6 +38,23 @@ const CleanDashboardOverview = ({
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [localAppointments, setLocalAppointments] = useState<Appointment[]>(appointments);
+
+  // Sincronizar appointments locais com props
+  useEffect(() => {
+    setLocalAppointments(appointments);
+  }, [appointments]);
+
+  // Função para atualizar status otimisticamente
+  const updateLocalAppointmentStatus = (appointmentId: string, newStatus: 'confirmed' | 'completed' | 'cancelled') => {
+    setLocalAppointments(prev => 
+      prev.map(appointment => 
+        appointment.id === appointmentId 
+          ? { ...appointment, status: newStatus }
+          : appointment
+      )
+    );
+  };
 
   // Função para refresh das estatísticas
   const refreshStats = async () => {
@@ -132,8 +149,8 @@ const CleanDashboardOverview = ({
   }).length;
   const planUsagePercentage = Math.min(monthlyAppointments / currentPlan.max_appointments * 100, 100);
 
-  // Agendamentos do dia
-  const todayAppointments = appointments.filter(apt => {
+  // Agendamentos do dia (usando estado local para atualizações imediatas)
+  const todayAppointments = localAppointments.filter(apt => {
     const appointmentDate = new Date(apt.appointment_date + 'T00:00:00');
     return isToday(appointmentDate);
   });
@@ -141,8 +158,8 @@ const CleanDashboardOverview = ({
   // Agendamentos confirmados de hoje
   const todayConfirmedAppointments = todayAppointments.filter(apt => apt.status === 'confirmed');
 
-  // Próximos agendamentos
-  const upcomingAppointments = appointments.filter(apt => {
+  // Próximos agendamentos (usando estado local para atualizações imediatas)
+  const upcomingAppointments = localAppointments.filter(apt => {
     const aptDateTime = new Date(apt.appointment_date + 'T' + apt.appointment_time);
     return isAfter(aptDateTime, new Date()) && (apt.status === 'pending' || apt.status === 'confirmed');
   }).sort((a, b) => {
@@ -391,12 +408,15 @@ const CleanDashboardOverview = ({
                 }} className="h-7 px-2 text-xs">
                            Confirmar
                          </Button>}
-                        {appointment.status === 'confirmed' && <Button size="sm" onClick={async (e) => {
+                         {appointment.status === 'confirmed' && <Button size="sm" onClick={async (e) => {
                   e.stopPropagation();
                   console.log('🔥 CleanDashboard CONCLUIR CLICADO!', {
                     appointmentId: appointment.id,
                     status: appointment.status
                   });
+                  // Atualização otimista (visual imediata)
+                  updateLocalAppointmentStatus(appointment.id, 'completed');
+                  
                   await onUpdateStatus(appointment.id, 'completed');
                   // Refresh das estatísticas após conclusão
                   setTimeout(() => {
@@ -449,12 +469,15 @@ const CleanDashboardOverview = ({
                 }} className="h-7 px-2 text-xs">
                            Confirmar
                          </Button>}
-                        {appointment.status === 'confirmed' && <Button size="sm" variant="outline" onClick={async (e) => {
+                         {appointment.status === 'confirmed' && <Button size="sm" variant="outline" onClick={async (e) => {
                   e.stopPropagation();
                   console.log('🔥 CleanDashboard PRÓXIMOS CONCLUIR CLICADO!', {
                     appointmentId: appointment.id,
                     status: appointment.status
                   });
+                  // Atualização otimista (visual imediata)
+                  updateLocalAppointmentStatus(appointment.id, 'completed');
+                  
                   await onUpdateStatus(appointment.id, 'completed');
                   // Refresh das estatísticas após conclusão
                   setTimeout(() => {
