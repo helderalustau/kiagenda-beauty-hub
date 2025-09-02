@@ -52,38 +52,55 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
   };
 
   const loadFinancialData = async () => {
+    if (!salonId) {
+      console.warn('Salon ID não fornecido para carregar dados financeiros');
+      return;
+    }
+
     setLoading(true);
     try {
+      console.log('🏪 Carregando dados financeiros para salon:', salonId);
+      
       // Buscar nome do salão
-      const { data: salon } = await supabase
+      const { data: salon, error: salonError } = await supabase
         .from('salons')
         .select('name')
         .eq('id', salonId)
         .single();
       
-      if (salon) {
+      if (salonError) {
+        console.error('Erro ao buscar salão:', salonError);
+      } else if (salon) {
         setSalonName(salon.name);
+        console.log('📍 Salão encontrado:', salon.name);
       }
 
       // Buscar transações dos últimos 12 meses
+      const startDate = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
+      console.log('📅 Buscando transações desde:', startDate, 'para salon:', salonId);
+      
       const { data: transactionData, error } = await supabase
         .from('financial_transactions')
         .select('*')
         .eq('salon_id', salonId)
         .eq('transaction_type', 'income')
         .eq('status', 'completed')
-        .gte('transaction_date', format(subMonths(new Date(), 12), 'yyyy-MM-dd'))
+        .gte('transaction_date', startDate)
         .order('transaction_date', { ascending: true });
 
       if (error) {
+        console.error('Erro ao buscar transações:', error);
         throw error;
       }
+
+      console.log('💰 Transações encontradas:', transactionData?.length || 0);
+      console.log('📊 Dados das transações:', transactionData);
 
       setTransactions(transactionData || []);
       
       toast({
         title: "Dados carregados",
-        description: `${transactionData?.length || 0} transações encontradas`,
+        description: `${transactionData?.length || 0} transações encontradas para ${salon?.name || 'o estabelecimento'}`,
       });
 
     } catch (error) {
