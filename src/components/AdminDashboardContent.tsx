@@ -39,16 +39,22 @@ const AdminDashboardContent = ({
     try {
       console.log('🔄 Dashboard: Atualizando status:', { id, status });
       const result = await updateAppointmentStatus(id, status as any);
+      console.log('📊 Dashboard: Resultado completo:', result);
+      
       if (result.success) {
         console.log('✅ Dashboard: Status atualizado com sucesso');
+        // Trigger onRefresh to update the data
+        setTimeout(() => {
+          onRefresh();
+        }, 1000);
         return true;
       } else {
         console.error('❌ Dashboard: Falha ao atualizar status:', result.message);
-        throw new Error(result.message || 'Erro ao atualizar status');
+        return false;
       }
     } catch (error) {
       console.error('❌ Dashboard: Erro ao atualizar status:', error);
-      throw error;
+      return false;
     }
   };
 
