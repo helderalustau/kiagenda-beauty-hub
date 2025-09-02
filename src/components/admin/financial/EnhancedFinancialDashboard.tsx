@@ -136,11 +136,18 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
     return last12Months;
   }, [transactions]);
 
-  // Top 5 serviços mais procurados
+  // Top 5 serviços mais procurados no mês atual
   const topServices = useMemo(() => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
     const serviceMap = new Map<string, { count: number; revenue: number }>();
 
-    transactions.forEach(transaction => {
+    // Filtrar apenas transações do mês atual que são de serviços concluídos
+    const currentMonthTransactions = transactions.filter(transaction => 
+      transaction.transaction_date.startsWith(currentMonth) &&
+      transaction.metadata?.appointment_id // Garantir que é de um atendimento
+    );
+
+    currentMonthTransactions.forEach(transaction => {
       // Extrair nome do serviço da descrição ou metadata
       let serviceName = 'Serviço Geral';
       
