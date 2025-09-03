@@ -14,20 +14,6 @@ interface EnhancedFinancialDashboardProps {
   salonId: string;
 }
 
-interface MonthlyData {
-  month: string;
-  revenue: number;
-  appointments: number;
-  growth: number;
-}
-
-interface ServiceData {
-  name: string;
-  count: number;
-  revenue: number;
-  percentage: number;
-}
-
 interface FinancialTransaction {
   id: string;
   amount: number;
@@ -42,6 +28,7 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [salonName, setSalonName] = useState('');
+  const [pieChartData, setPieChartData] = useState<any[]>([]);
   const { toast } = useToast();
 
   const formatCurrency = (value: number) => {
@@ -94,8 +81,6 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
       }
 
       console.log('💰 Transações encontradas:', transactionData?.length || 0);
-      console.log('📊 Dados das transações:', transactionData);
-
       setTransactions(transactionData || []);
       
       toast({
@@ -153,52 +138,82 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
     return last12Months;
   }, [transactions]);
 
+  // Buscar dados do gráfico de pizza diretamente dos appointments
+  useEffect(() => {
+    const fetchPieChartData = async () => {
+      if (!salonId) return;
+      
+      const currentMonthStart = startOfMonth(new Date());
+      const currentMonthEnd = endOfMonth(new Date());
+      
+      console.log('🥧 Buscando serviços mais procurados para o período:', 
+                  format(currentMonthStart, 'dd/MM/yyyy'), 'a', format(currentMonthEnd, 'dd/MM/yyyy'));
+      
+      try {
+        const { data: appointments, error } = await supabase
+          .from('appointments')
+          .select(`
+            id,
+            appointment_date,
+            service_id,
+            status,
+            services!inner(name)
+          `)
+          .eq('salon_id', salonId)
+          .eq('status', 'completed')
+          .gte('appointment_date', format(currentMonthStart, 'yyyy-MM-dd'))
+          .lte('appointment_date', format(currentMonthEnd, 'yyyy-MM-dd'));
+
+        if (error) {
+          console.error('Erro ao buscar appointments:', error);
+          return;
+        }
+
+        console.log('📊 Appointments finalizados no mês:', appointments?.length || 0);
+        
+        // Contar serviços por nome
+        const serviceCount: { [key: string]: number } = {};
+        
+        appointments?.forEach(appointment => {
+          const serviceName = appointment.services?.name;
+          if (serviceName) {
+            serviceCount[serviceName] = (serviceCount[serviceName] || 0) + 1;
+          }
+        });
+
+        console.log('📈 Contagem de serviços:', serviceCount);
+
+        // Converter para array e ordenar por quantidade
+        const chartData = Object.entries(serviceCount)
+          .map(([name, count], index) => ({
+            name,
+            value: count,
+            fill: COLORS[index % COLORS.length]
+          }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 5);
+
+        setPieChartData(chartData);
+      } catch (error) {
+        console.error('Erro ao processar dados do gráfico de pizza:', error);
+      }
+    };
+
+    fetchPieChartData();
+  }, [salonId]);
+
   // Top 5 serviços mais procurados no mês atual
   const topServices = useMemo(() => {
-    const currentMonth = format(new Date(), 'yyyy-MM');
-    const serviceMap = new Map<string, { count: number; revenue: number }>();
+    return pieChartData.map((item) => ({
+      name: item.name,
+      count: item.value,
+      revenue: 0,
+      percentage: pieChartData.length > 0 ? (item.value / pieChartData.reduce((sum, s) => sum + s.value, 0)) * 100 : 0
+    }));
+  }, [pieChartData]);
 
-    // Filtrar apenas transações do mês atual que são de serviços concluídos
-    const currentMonthTransactions = transactions.filter(transaction => 
-      transaction.transaction_date.startsWith(currentMonth) &&
-      transaction.metadata?.appointment_id // Garantir que é de um atendimento
-    );
-
-    currentMonthTransactions.forEach(transaction => {
-      // Extrair nome do serviço da descrição ou metadata
-      let serviceName = 'Serviço Geral';
-      
-      if (transaction.metadata?.service_name) {
-        serviceName = transaction.metadata.service_name;
-      } else if (transaction.description) {
-        const match = transaction.description.match(/Serviço(?:\s+adicional)?:\s*([^-]+)/);
-        if (match) {
-          serviceName = match[1].trim();
-        }
-      }
-
-      const current = serviceMap.get(serviceName) || { count: 0, revenue: 0 };
-      serviceMap.set(serviceName, {
-        count: current.count + 1,
-        revenue: current.revenue + Number(transaction.amount)
-      });
-    });
-
-    const totalRevenue = Array.from(serviceMap.values()).reduce((sum, service) => sum + service.revenue, 0);
-
-    return Array.from(serviceMap.entries())
-      .map(([name, data]) => ({
-        name,
-        count: data.count,
-        revenue: data.revenue,
-        percentage: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [transactions]);
-
-  // Métricas atuais
-  const currentMetrics = useMemo(() => {
+  // Métricas principais
+  const metrics = useMemo(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const currentMonth = format(new Date(), 'yyyy-MM');
     
@@ -269,10 +284,10 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
           </CardHeader>
           <CardContent className="pt-0">
             <div className="text-2xl font-bold text-green-900">
-              {formatCurrency(currentMetrics.todayRevenue)}
+              {formatCurrency(metrics.todayRevenue)}
             </div>
             <p className="text-xs text-green-700 mt-1">
-              {currentMetrics.todayCount} serviços
+              {metrics.todayCount} atendimentos
             </p>
           </CardContent>
         </Card>
@@ -286,10 +301,10 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
           </CardHeader>
           <CardContent className="pt-0">
             <div className="text-2xl font-bold text-blue-900">
-              {formatCurrency(currentMetrics.monthRevenue)}
+              {formatCurrency(metrics.monthRevenue)}
             </div>
             <p className="text-xs text-blue-700 mt-1">
-              {currentMetrics.monthCount} serviços
+              {metrics.monthCount} atendimentos
             </p>
           </CardContent>
         </Card>
@@ -303,10 +318,10 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
           </CardHeader>
           <CardContent className="pt-0">
             <div className="text-2xl font-bold text-purple-900">
-              {formatCurrency(currentMetrics.averageTicket)}
+              {formatCurrency(metrics.averageTicket)}
             </div>
             <p className="text-xs text-purple-700 mt-1">
-              Valor médio do mês
+              Valor médio mensal
             </p>
           </CardContent>
         </Card>
@@ -315,158 +330,147 @@ const EnhancedFinancialDashboard = ({ salonId }: EnhancedFinancialDashboardProps
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-orange-800 flex items-center">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Total 12 Meses
+              Total Geral
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="text-2xl font-bold text-orange-900">
-              {formatCurrency(currentMetrics.totalRevenue)}
+              {formatCurrency(metrics.totalRevenue)}
             </div>
             <p className="text-xs text-orange-700 mt-1">
-              Últimos 12 meses
+              Receita acumulada
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Gráficos */}
-      <Tabs defaultValue="monthly" className="w-full">
+      {/* Tabs com Gráficos */}
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="monthly">📊 Resultado Mensal</TabsTrigger>
-          <TabsTrigger value="services">🎯 Top 5 Serviços</TabsTrigger>
-          <TabsTrigger value="growth">📈 Crescimento</TabsTrigger>
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="monthly">Por Mês</TabsTrigger>
+          <TabsTrigger value="services">Serviços</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="monthly" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2" />
-                Faturamento dos Últimos 12 Meses
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip 
-                    formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
-                    labelFormatter={(label) => `Mês: ${label}`}
-                  />
-                  <Bar 
-                    dataKey="revenue" 
-                    fill="hsl(var(--primary))" 
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="services" className="space-y-4">
+        <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Gráfico de Receita Mensal */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  🥇 Top 5 Serviços Mais Procurados
+                <CardTitle className="flex items-center text-lg">
+                  <BarChart3 className="h-5 w-5 mr-2 text-primary" />
+                  Receita por Mês
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={topServices}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percentage }) => `${name.slice(0, 15)}... (${percentage.toFixed(1)}%)`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="count"
-                    >
-                      {topServices.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number, name) => [
-                        `${value} atendimentos`, 
-                        name === 'count' ? 'Quantidade' : name
-                      ]} 
-                    />
-                  </PieChart>
+                  <BarChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Bar dataKey="revenue" fill="#8884d8" />
+                  </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
+            {/* Gráfico Pizza - Top 5 Serviços */}
             <Card>
               <CardHeader>
-                <CardTitle>Detalhamento dos Serviços</CardTitle>
+                <CardTitle className="flex items-center text-lg">
+                  📊 Top 5 Serviços do Mês
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Serviços mais procurados em {format(new Date(), 'MMMM yyyy', { locale: ptBR })}
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {topServices.map((service, index) => (
-                    <div key={service.name} className="flex items-center justify-between p-4 bg-secondary/10 rounded-lg border">
-                      <div className="flex items-center space-x-3">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }} 
-                        />
-                        <div>
-                          <p className="font-medium text-sm">{service.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {service.count} atendimentos
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {service.percentage.toFixed(1)}% do total
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-primary">{formatCurrency(service.revenue)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatCurrency(service.revenue / service.count)} médio
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {pieChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={pieChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: ${value}`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                    Nenhum serviço encontrado para este mês
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="growth" className="space-y-4">
+        <TabsContent value="monthly">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                📈 Taxa de Crescimento Mensal
-              </CardTitle>
+              <CardTitle>Análise Mensal Detalhada</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => `${value}%`} />
-                  <Tooltip 
-                    formatter={(value: number) => [`${value.toFixed(1)}%`, 'Crescimento']}
-                    labelFormatter={(label) => `Mês: ${label}`}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="growth" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                  />
+                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Line type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="services">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ranking de Serviços</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Os serviços mais procurados neste mês
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {topServices.map((service, index) => (
+                  <div key={service.name} className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
+                    <div className="flex items-center space-x-3">
+                      <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
+                        {index + 1}
+                      </Badge>
+                      <div>
+                        <h4 className="font-medium">{service.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {service.count} atendimento{service.count !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-primary">
+                        {service.percentage.toFixed(1)}%
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {topServices.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum serviço encontrado para este período
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone } from "lucide-react";
+import { MapPin, Phone, Calendar, Star, Users, Clock } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 
 interface SalonBookingCardProps {
@@ -31,71 +31,114 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
   };
 
   return (
-    <Card className="border-0 bg-white/90 backdrop-blur-sm shadow-2xl">
-      <CardHeader className="text-center pb-6">
-        <div className="flex justify-between items-start mb-4">
-          <CardTitle className="text-3xl font-bold text-gray-900">
-            {salon.name}
-          </CardTitle>
-          <Badge className={getPlanColor(salon.plan)}>
-            {getPlanName(salon.plan)}
-          </Badge>
-        </div>
-        <div className="text-lg text-gray-600">
-          Responsável: {salon.owner_name}
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        <div className="grid gap-4">
-          <div className="flex items-center space-x-3 text-gray-600">
-            <MapPin className="h-5 w-5" />
-            <span>{salon.address}</span>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
+      {/* Banner Circular no Topo */}
+      <div className="relative pt-8 pb-6">
+        <div className="flex justify-center">
+          <div className="relative">
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-2xl">
+              {salon.banner_image_url ? (
+                <img
+                  src={salon.banner_image_url}
+                  alt={`Banner do ${salon.name}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
+                  <Users className="w-12 h-12 text-white" />
+                </div>
+              )}
+            </div>
+            {/* Badge do Plano */}
+            <div className="absolute -top-2 -right-2">
+              <Badge className={`${getPlanColor(salon.plan)} px-2 py-1 text-xs font-bold shadow-lg`}>
+                {getPlanName(salon.plan)}
+              </Badge>
+            </div>
           </div>
-          
-          <div className="flex items-center space-x-3 text-gray-600">
-            <Phone className="h-5 w-5" />
-            <span>{salon.contact_phone || salon.phone}</span>
-          </div>
         </div>
+      </div>
 
-        <div className="text-center">
-          <div className="mb-6">
+      {/* Informações do Estabelecimento */}
+      <Card className="mx-4 border-0 bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl">
+        <CardContent className="p-6">
+          {/* Nome e Responsável */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {salon.name}
+            </h1>
+            <p className="text-gray-600 text-sm">
+              Responsável: {salon.owner_name}
+            </p>
+          </div>
+
+          {/* Informações de Contato */}
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center space-x-3 text-gray-600">
+              <MapPin className="h-4 w-4 text-purple-500" />
+              <span className="text-sm">{salon.address}</span>
+            </div>
+            
+            <div className="flex items-center space-x-3 text-gray-600">
+              <Phone className="h-4 w-4 text-purple-500" />
+              <span className="text-sm">{salon.contact_phone || salon.phone}</span>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="text-center mb-6">
             {salon.is_open ? (
-              <Badge className="bg-green-100 text-green-800 border-green-200 px-4 py-2 text-lg">
+              <Badge className="bg-green-100 text-green-800 border-green-200 px-4 py-2 text-sm">
                 Aceitando Agendamentos
               </Badge>
             ) : (
-              <Badge className="bg-red-100 text-red-800 border-red-200 px-4 py-2 text-lg">
+              <Badge className="bg-red-100 text-red-800 border-red-200 px-4 py-2 text-sm">
                 Fechado
               </Badge>
             )}
           </div>
 
+          {/* Ícones de Ação - Estilo Beacons */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <button
+              onClick={onOpenBookingModal}
+              disabled={!salon.is_open}
+              className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-300 ${
+                salon.is_open 
+                  ? 'bg-gradient-to-br from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700' 
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <Calendar className="w-6 h-6 mb-2" />
+              <span className="text-xs font-medium">Agendar</span>
+            </button>
+
+            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-700">
+              <Star className="w-6 h-6 mb-2" />
+              <span className="text-xs font-medium">Avaliações</span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 text-green-700">
+              <Clock className="w-6 h-6 mb-2" />
+              <span className="text-xs font-medium">Horários</span>
+            </div>
+          </div>
+
+          {/* Botão Principal */}
           <Button
             onClick={onOpenBookingModal}
             disabled={!salon.is_open}
-            className={`w-full py-4 text-lg font-semibold transition-all duration-300 ${
+            className={`w-full py-4 text-lg font-semibold rounded-2xl transition-all duration-300 ${
               salon.is_open 
-                ? 'bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl' 
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
             {salon.is_open ? 'Agendar Serviço' : 'Não Disponível'}
           </Button>
-        </div>
-
-        {salon.banner_image_url && (
-          <div className="mt-6">
-            <img
-              src={salon.banner_image_url}
-              alt={`Banner do ${salon.name}`}
-              className="w-full h-48 object-cover rounded-lg"
-            />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
