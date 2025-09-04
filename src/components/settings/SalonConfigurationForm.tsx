@@ -213,6 +213,17 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
         </div>
 
         <div>
+          <Label htmlFor="instagram_username">Instagram</Label>
+          <Input
+            id="instagram_username"
+            value={formData.instagram_username}
+            onChange={(e) => handleInputChange('instagram_username', e.target.value)}
+            placeholder="seuinstagram"
+          />
+          <p className="text-xs text-gray-500 mt-1">Digite apenas o usuário do Instagram (sem @)</p>
+        </div>
+
+        <div>
           <Label htmlFor="address">Endereço *</Label>
           <Textarea
             id="address"
@@ -254,16 +265,6 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="instagram_username">Instagram</Label>
-          <Input
-            id="instagram_username"
-            value={formData.instagram_username}
-            onChange={(e) => handleInputChange('instagram_username', e.target.value)}
-            placeholder="@seuinstagram"
-          />
-          <p className="text-xs text-gray-500 mt-1">Digite apenas o usuário do Instagram (sem @)</p>
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex items-center justify-between">
