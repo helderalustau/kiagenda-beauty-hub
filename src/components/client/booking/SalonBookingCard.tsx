@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Calendar, Star, Users, Clock } from "lucide-react";
+import { MapPin, Phone, Calendar, Star, Users, Clock, Instagram } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 
 interface SalonBookingCardProps {
@@ -100,18 +100,30 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
 
           {/* Ícones de Ação - Estilo Beacons */}
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <button
-              onClick={onOpenBookingModal}
-              disabled={!salon.is_open}
-              className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-300 ${
-                salon.is_open 
-                  ? 'bg-gradient-to-br from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700' 
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <Calendar className="w-6 h-6 mb-2" />
-              <span className="text-xs font-medium">Agendar</span>
-            </button>
+            {salon.instagram_username ? (
+              <a
+                href={`https://instagram.com/${salon.instagram_username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 text-pink-700 transition-all duration-300"
+              >
+                <Instagram className="w-6 h-6 mb-2" />
+                <span className="text-xs font-medium">Instagram</span>
+              </a>
+            ) : (
+              <button
+                onClick={onOpenBookingModal}
+                disabled={!salon.is_open}
+                className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-300 ${
+                  salon.is_open 
+                    ? 'bg-gradient-to-br from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700' 
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Calendar className="w-6 h-6 mb-2" />
+                <span className="text-xs font-medium">Agendar</span>
+              </button>
+            )}
 
             <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-700">
               <Star className="w-6 h-6 mb-2" />
@@ -134,7 +146,7 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {salon.is_open ? 'Agendar Serviço' : 'Não Disponível'}
+            {salon.is_open ? 'Agendar' : 'Não Disponível'}
           </Button>
         </CardContent>
       </Card>

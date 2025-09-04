@@ -52,6 +52,7 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
     city: salon.city || '',
     state: salon.state || '',
     street_number: salon.street_number || '',
+    instagram_username: salon.instagram_username || '',
     is_open: salon.is_open || false,
     notification_sound: salon.notification_sound || 'default'
   });
@@ -251,6 +252,17 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
               onChange={(e) => handleInputChange('street_number', e.target.value)}
             />
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="instagram_username">Instagram</Label>
+          <Input
+            id="instagram_username"
+            value={formData.instagram_username}
+            onChange={(e) => handleInputChange('instagram_username', e.target.value)}
+            placeholder="@seuinstagram"
+          />
+          <p className="text-xs text-gray-500 mt-1">Digite apenas o usuário do Instagram (sem @)</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

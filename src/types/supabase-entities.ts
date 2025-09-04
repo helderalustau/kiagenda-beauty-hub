@@ -11,6 +11,7 @@ export interface Salon {
   city?: string;
   state?: string;
   contact_phone?: string;
+  instagram_username?: string;
   opening_hours?: any;
   is_open?: boolean;
   setup_completed?: boolean;
