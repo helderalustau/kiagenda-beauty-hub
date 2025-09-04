@@ -100,9 +100,9 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
 
           {/* Ícones de Ação - Estilo Beacons */}
           <div className="grid grid-cols-3 gap-4 mb-6">
-            {salon.instagram_username ? (
+            {salon.instagram_username && salon.instagram_username.trim() !== '' ? (
               <a
-                href={`https://instagram.com/${salon.instagram_username}`}
+                href={`https://instagram.com/${salon.instagram_username.replace('@', '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 text-pink-700 transition-all duration-300"
