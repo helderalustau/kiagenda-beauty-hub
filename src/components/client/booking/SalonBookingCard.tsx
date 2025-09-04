@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Calendar, Star, Users, Clock, Instagram } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MapPin, Phone, Calendar, Star, Users, Clock, Instagram, X } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 
 interface SalonBookingCardProps {
@@ -12,6 +13,8 @@ interface SalonBookingCardProps {
 }
 
 const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) => {
+  const [showHoursPopup, setShowHoursPopup] = useState(false);
+
   const getPlanColor = (plan: string) => {
     switch (plan) {
       case 'bronze': return 'bg-amber-100 text-amber-800';
@@ -28,6 +31,41 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
       case 'gold': return 'Ouro';
       default: return plan;
     }
+  };
+
+  const formatOpeningHours = () => {
+    if (!salon.opening_hours) return null;
+    
+    const daysOfWeek = [
+      { key: 'monday', label: 'Segunda-feira' },
+      { key: 'tuesday', label: 'Terça-feira' },
+      { key: 'wednesday', label: 'Quarta-feira' },
+      { key: 'thursday', label: 'Quinta-feira' },
+      { key: 'friday', label: 'Sexta-feira' },
+      { key: 'saturday', label: 'Sábado' },
+      { key: 'sunday', label: 'Domingo' }
+    ];
+
+    return daysOfWeek.map(day => {
+      const daySchedule = salon.opening_hours[day.key];
+      if (!daySchedule) return null;
+      
+      if (daySchedule.closed) {
+        return (
+          <div key={day.key} className="flex justify-between py-2 border-b border-gray-100">
+            <span className="font-medium">{day.label}</span>
+            <span className="text-red-500">Fechado</span>
+          </div>
+        );
+      }
+
+      return (
+        <div key={day.key} className="flex justify-between py-2 border-b border-gray-100">
+          <span className="font-medium">{day.label}</span>
+          <span className="text-green-600">{daySchedule.open} - {daySchedule.close}</span>
+        </div>
+      );
+    }).filter(Boolean);
   };
 
   return (
@@ -130,10 +168,13 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
               <span className="text-xs font-medium">Avaliações</span>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 text-green-700">
+            <button
+              onClick={() => setShowHoursPopup(true)}
+              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 text-green-700 hover:from-green-200 hover:to-emerald-200 transition-all duration-300"
+            >
               <Clock className="w-6 h-6 mb-2" />
               <span className="text-xs font-medium">Horários</span>
-            </div>
+            </button>
           </div>
 
           {/* Botão Principal */}
@@ -150,6 +191,33 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
           </Button>
         </CardContent>
       </Card>
+
+      {/* Popup de Horários */}
+      <Dialog open={showHoursPopup} onOpenChange={setShowHoursPopup}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              Horários de Funcionamento
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowHoursPopup(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1">
+            {salon.opening_hours ? (
+              formatOpeningHours()
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                Horários não cadastrados
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
