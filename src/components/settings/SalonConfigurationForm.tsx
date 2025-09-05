@@ -43,6 +43,13 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
   const { updateSalon } = useSupabaseData();
   const { toast } = useToast();
   
+  console.log('🔧 SalonConfigurationForm - Renderizando com salon:', {
+    id: salon.id,
+    name: salon.name,
+    instagram_username: salon.instagram_username,
+    plan: salon.plan
+  });
+  
   const [formData, setFormData] = useState({
     name: salon.name || '',
     owner_name: salon.owner_name || '',
