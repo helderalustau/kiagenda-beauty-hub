@@ -163,142 +163,188 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
 
       {/* Formulário de Configurações */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="name">Nome do Estabelecimento *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="owner_name">Nome do Responsável *</Label>
-            <Input
-              id="owner_name"
-              value={formData.owner_name}
-              onChange={(e) => handleInputChange('owner_name', e.target.value)}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="phone">Telefone Principal *</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="(XX) XXXXX-XXXX"
-              required
-              maxLength={15}
-            />
-            <p className="text-xs text-gray-500 mt-1">Apenas números válidos</p>
-          </div>
-          
-          <div>
-            <Label htmlFor="contact_phone">Telefone de Contato</Label>
-            <Input
-              id="contact_phone"
-              value={formData.contact_phone}
-              onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-              placeholder="(XX) XXXXX-XXXX"
-              maxLength={15}
-            />
-            <p className="text-xs text-gray-500 mt-1">Apenas números válidos</p>
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="instagram_username">Instagram</Label>
-          <Input
-            id="instagram_username"
-            value={formData.instagram_username}
-            onChange={(e) => handleInputChange('instagram_username', e.target.value)}
-            placeholder="seuinstagram"
-          />
-          <p className="text-xs text-gray-500 mt-1">Digite apenas o usuário do Instagram (sem @)</p>
-        </div>
-
-        <div>
-          <Label htmlFor="address">Endereço *</Label>
-          <Textarea
-            id="address"
-            value={formData.address}
-            onChange={(e) => handleInputChange('address', e.target.value)}
-            rows={2}
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="city">Cidade</Label>
-            <Input
-              id="city"
-              value={formData.city}
-              onChange={(e) => handleInputChange('city', e.target.value)}
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="state">Estado (Sigla)</Label>
-            <Input
-              id="state"
-              value={formData.state}
-              onChange={(e) => handleInputChange('state', e.target.value.toUpperCase())}
-              maxLength={2}
-              placeholder="SP"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="street_number">Número</Label>
-            <Input
-              id="street_number"
-              value={formData.street_number}
-              onChange={(e) => handleInputChange('street_number', e.target.value)}
-            />
-          </div>
-        </div>
-
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="is_open">Status do Estabelecimento</Label>
-              <p className="text-sm text-gray-600">
-                {formData.is_open ? 'Aceitando agendamentos' : 'Não aceitando agendamentos'}
-              </p>
+        {/* Informações Básicas */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações Básicas</CardTitle>
+            <CardDescription>Dados principais do estabelecimento</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Nome do Estabelecimento *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="owner_name">Nome do Responsável *</Label>
+                <Input
+                  id="owner_name"
+                  value={formData.owner_name}
+                  onChange={(e) => handleInputChange('owner_name', e.target.value)}
+                  required
+                />
+              </div>
             </div>
-            <Switch
-              id="is_open"
-              checked={formData.is_open}
-              onCheckedChange={(checked) => handleInputChange('is_open', checked)}
-            />
-          </div>
 
-          <div>
-            <Label htmlFor="notification_sound">Som de Notificação</Label>
-            <Select
-              value={formData.notification_sound}
-              onValueChange={(value) => handleInputChange('notification_sound', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Padrão</SelectItem>
-                <SelectItem value="bell">Sino</SelectItem>
-                <SelectItem value="chime">Campainha</SelectItem>
-                <SelectItem value="alert">Alerta</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            <div>
+              <Label htmlFor="plan">Plano Atual</Label>
+              <Input
+                id="plan"
+                value={salon.plan === 'bronze' ? 'Bronze' : salon.plan === 'prata' ? 'Prata' : 'Gold'}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Para alterar o plano, entre em contato com o suporte</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Instagram */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Instagram</CardTitle>
+            <CardDescription>Configure seu perfil do Instagram para aparecer no booking</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <Label htmlFor="instagram_username">Usuário do Instagram</Label>
+              <Input
+                id="instagram_username"
+                value={formData.instagram_username}
+                onChange={(e) => handleInputChange('instagram_username', e.target.value)}
+                placeholder="seuinstagram"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Digite apenas o usuário do Instagram (sem @)</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contato e Localização */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Contato e Localização</CardTitle>
+            <CardDescription>Informações de contato e endereço</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="phone">Telefone Principal *</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="(XX) XXXXX-XXXX"
+                  required
+                  maxLength={15}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Apenas números válidos</p>
+              </div>
+              
+              <div>
+                <Label htmlFor="contact_phone">Telefone de Contato</Label>
+                <Input
+                  id="contact_phone"
+                  value={formData.contact_phone}
+                  onChange={(e) => handleInputChange('contact_phone', e.target.value)}
+                  placeholder="(XX) XXXXX-XXXX"
+                  maxLength={15}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Apenas números válidos</p>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="address">Endereço *</Label>
+              <Textarea
+                id="address"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                rows={2}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="city">Cidade</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="state">Estado (Sigla)</Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) => handleInputChange('state', e.target.value.toUpperCase())}
+                  maxLength={2}
+                  placeholder="SP"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="street_number">Número</Label>
+                <Input
+                  id="street_number"
+                  value={formData.street_number}
+                  onChange={(e) => handleInputChange('street_number', e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Configurações Avançadas */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Configurações Avançadas</CardTitle>
+            <CardDescription>Status e preferências do estabelecimento</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="is_open">Status do Estabelecimento</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {formData.is_open ? 'Aceitando agendamentos' : 'Não aceitando agendamentos'}
+                  </p>
+                </div>
+                <Switch
+                  id="is_open"
+                  checked={formData.is_open}
+                  onCheckedChange={(checked) => handleInputChange('is_open', checked)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notification_sound">Som de Notificação</Label>
+                <Select
+                  value={formData.notification_sound}
+                  onValueChange={(value) => handleInputChange('notification_sound', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Padrão</SelectItem>
+                    <SelectItem value="bell">Sino</SelectItem>
+                    <SelectItem value="chime">Campainha</SelectItem>
+                    <SelectItem value="alert">Alerta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Button type="submit" disabled={loading} className="w-full">
           {loading ? (
