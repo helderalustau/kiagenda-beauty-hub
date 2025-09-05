@@ -550,6 +550,7 @@ export type Database = {
           created_at: string
           created_by_super_admin: boolean | null
           id: string
+          instagram_username: string | null
           is_open: boolean | null
           max_attendants: number | null
           name: string
@@ -575,6 +576,7 @@ export type Database = {
           created_at?: string
           created_by_super_admin?: boolean | null
           id?: string
+          instagram_username?: string | null
           is_open?: boolean | null
           max_attendants?: number | null
           name: string
@@ -600,6 +602,7 @@ export type Database = {
           created_at?: string
           created_by_super_admin?: boolean | null
           id?: string
+          instagram_username?: string | null
           is_open?: boolean | null
           max_attendants?: number | null
           name?: string
