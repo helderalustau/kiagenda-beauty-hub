@@ -112,7 +112,7 @@ const SettingsPage = ({
                 </CardHeader>
                 <CardContent className="p-6">
                   <SalonConfigurationForm 
-                    key={`salon-config-${salon.id}-${Date.now()}`} 
+                    key={`salon-config-${salon.id}-${salon.updated_at || Date.now()}`} 
                     salon={salon} 
                     onSalonChange={handleSalonChange} 
                   />

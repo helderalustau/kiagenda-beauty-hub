@@ -43,11 +43,12 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
   const { updateSalon } = useSupabaseData();
   const { toast } = useToast();
   
-  console.log('🔧 SalonConfigurationForm - Renderizando com salon:', {
+  console.log('🔧 SalonConfigurationForm - VERSÃO FORÇADA - Renderizando com salon:', {
     id: salon.id,
     name: salon.name,
     instagram_username: salon.instagram_username,
-    plan: salon.plan
+    plan: salon.plan,
+    timestamp: new Date().toISOString()
   });
   
   const [formData, setFormData] = useState({
@@ -161,6 +162,12 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
 
   return (
     <div className="space-y-6">
+      {/* ⚠️ ALERTA DE DEBUG - REMOVER DEPOIS */}
+      <div className="bg-red-100 border-2 border-red-500 p-4 rounded-lg">
+        <p className="text-red-700 font-bold">🚨 COMPONENTE ATUALIZADO - VERSÃO {new Date().toLocaleTimeString()}</p>
+        <p className="text-red-600">Instagram atual: {salon.instagram_username || 'NÃO CONFIGURADO'}</p>
+      </div>
+      
       {/* Banner Manager */}
       <SalonBannerManager
         salonId={salon.id}
@@ -212,22 +219,24 @@ const SalonConfigurationForm = ({ salon, onSalonChange }: SalonConfigurationForm
           </CardContent>
         </Card>
 
-        {/* Instagram */}
-        <Card>
+        {/* ===== SEÇÃO INSTAGRAM - NOVA IMPLEMENTAÇÃO ===== */}
+        <Card className="border-2 border-pink-200 bg-pink-50/50">
           <CardHeader>
-            <CardTitle>Instagram</CardTitle>
-            <CardDescription>Configure seu perfil do Instagram para aparecer no booking</CardDescription>
+            <CardTitle className="text-pink-700">📱 Instagram</CardTitle>
+            <CardDescription>Configure seu perfil do Instagram para aparecer no booking dos clientes</CardDescription>
           </CardHeader>
           <CardContent>
             <div>
-              <Label htmlFor="instagram_username">Usuário do Instagram</Label>
+              <Label htmlFor="instagram_username" className="font-semibold">Usuário do Instagram</Label>
               <Input
                 id="instagram_username"
                 value={formData.instagram_username}
                 onChange={(e) => handleInputChange('instagram_username', e.target.value)}
-                placeholder="seuinstagram"
+                placeholder="exemplo: seusalon (sem @)"
+                className="mt-2"
               />
-              <p className="text-xs text-muted-foreground mt-1">Digite apenas o usuário do Instagram (sem @)</p>
+              <p className="text-xs text-muted-foreground mt-2">⚠️ Digite apenas o usuário do Instagram (sem o símbolo @)</p>
+              <p className="text-xs text-pink-600 mt-1">💡 Quando preenchido, aparecerá um link para o Instagram na tela de agendamento</p>
             </div>
           </CardContent>
         </Card>
