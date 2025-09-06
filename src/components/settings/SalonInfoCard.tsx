@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Salon } from '@/types/supabase-entities';
-import { Save, MapPin, Phone, User } from "lucide-react";
+import { Save, MapPin, Phone, User, Instagram } from "lucide-react";
 
 interface SalonInfoCardProps {
   salon: Salon;
@@ -26,7 +26,8 @@ const SalonInfoCard = ({ salon, onUpdate }: SalonInfoCardProps) => {
     address: salon.address || '',
     city: salon.city || '',
     state: salon.state || '',
-    plan: salon.plan || 'bronze' as 'bronze' | 'prata' | 'gold'
+    plan: salon.plan || 'bronze' as 'bronze' | 'prata' | 'gold',
+    instagram_username: salon.instagram_username || ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,6 +46,7 @@ const SalonInfoCard = ({ salon, onUpdate }: SalonInfoCardProps) => {
           city: formData.city,
           state: formData.state,
           plan: formData.plan,
+          instagram_username: formData.instagram_username,
           updated_at: new Date().toISOString()
         })
         .eq('id', salon.id);
@@ -116,6 +118,24 @@ const SalonInfoCard = ({ salon, onUpdate }: SalonInfoCardProps) => {
                 <SelectItem value="gold">Gold</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* ===== CAMPO INSTAGRAM ADICIONADO AQUI ===== */}
+          <div>
+            <Label htmlFor="instagram_username" className="flex items-center space-x-2">
+              <Instagram className="h-4 w-4 text-pink-600" />
+              <span>Instagram</span>
+            </Label>
+            <Input
+              id="instagram_username"
+              value={formData.instagram_username}
+              onChange={(e) => setFormData(prev => ({ ...prev, instagram_username: e.target.value }))}
+              placeholder="seuperfil (sem @)"
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Digite apenas o nome do usuário do Instagram (sem o @). Ex: salaobeleza
+            </p>
           </div>
         </div>
 
