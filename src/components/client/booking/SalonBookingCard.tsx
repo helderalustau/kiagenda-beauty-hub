@@ -138,7 +138,7 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
 
           {/* Ícones de Ação - Estilo Beacons */}
           <div className="grid grid-cols-3 gap-4 mb-6">
-            {/* Instagram ou Agendar */}
+            {/* Instagram */}
             {salon.instagram_username && salon.instagram_username.trim() !== '' ? (
               <a
                 href={`https://instagram.com/${salon.instagram_username.replace('@', '')}`}
@@ -150,18 +150,7 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
                 <span className="text-xs font-medium">Instagram</span>
               </a>
             ) : (
-              <button
-                onClick={onOpenBookingModal}
-                disabled={!salon.is_open}
-                className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-300 ${
-                  salon.is_open 
-                    ? 'bg-gradient-to-br from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700' 
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                <Calendar className="w-6 h-6 mb-2" />
-                <span className="text-xs font-medium">Agendar</span>
-              </button>
+              <div></div>
             )}
 
             {/* Avaliações */}
