@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/use-toast";
 import { MapPin, Phone, Calendar, Star, Users, Clock, Instagram, X } from "lucide-react";
 import { Salon } from '@/hooks/useSupabaseData';
 
@@ -150,7 +151,17 @@ const SalonBookingCard = ({ salon, onOpenBookingModal }: SalonBookingCardProps) 
                 <span className="text-xs font-medium">Instagram</span>
               </a>
             ) : (
-              <div></div>
+              <button
+                onClick={() => toast({
+                  title: "Instagram não encontrado",
+                  description: "Este estabelecimento ainda não cadastrou seu Instagram.",
+                  variant: "default"
+                })}
+                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 text-pink-700 transition-all duration-300"
+              >
+                <Instagram className="w-6 h-6 mb-2" />
+                <span className="text-xs font-medium">Instagram</span>
+              </button>
             )}
 
             {/* Avaliações */}
