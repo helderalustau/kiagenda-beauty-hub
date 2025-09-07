@@ -501,6 +501,54 @@ export type Database = {
         }
         Relationships: []
       }
+      push_notification_tokens: {
+        Row: {
+          active: boolean
+          admin_id: string
+          created_at: string
+          id: string
+          salon_id: string
+          settings: Json | null
+          subscription_data: Json
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          admin_id: string
+          created_at?: string
+          id?: string
+          salon_id: string
+          settings?: Json | null
+          subscription_data: Json
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          admin_id?: string
+          created_at?: string
+          id?: string
+          salon_id?: string
+          settings?: Json | null
+          subscription_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_notification_tokens_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "admin_auth"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_notification_tokens_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salon_users: {
         Row: {
           active: boolean

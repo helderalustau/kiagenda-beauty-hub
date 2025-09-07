@@ -139,17 +139,12 @@ export const usePushNotifications = () => {
         throw new Error('Dados do admin ou salão não encontrados');
       }
 
-      const { error } = await supabase
-        .from('push_notification_tokens')
-        .upsert({
-          admin_id: adminData.id,
-          salon_id: salonData.id,
-          subscription_data: pushSubscription.toJSON(),
-          settings: settings,
-          active: true
-        }, {
-          onConflict: 'admin_id,salon_id'
-        });
+      const { error } = await supabase.rpc('upsert_push_token', {
+        p_admin_id: adminData.id,
+        p_salon_id: salonData.id,
+        p_subscription_data: pushSubscription.toJSON(),
+        p_settings: settings
+      });
 
       if (error) throw error;
 
@@ -187,11 +182,10 @@ export const usePushNotifications = () => {
       const salonData = JSON.parse(localStorage.getItem('salonData') || '{}');
 
       if (adminData.id && salonData.id) {
-        const { error } = await supabase
-          .from('push_notification_tokens')
-          .update({ active: false })
-          .eq('admin_id', adminData.id)
-          .eq('salon_id', salonData.id);
+        const { error } = await supabase.rpc('deactivate_push_token', {
+          p_admin_id: adminData.id,
+          p_salon_id: salonData.id
+        });
 
         if (error) throw error;
       }
@@ -285,11 +279,11 @@ export const usePushNotifications = () => {
         const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
         const salonData = JSON.parse(localStorage.getItem('salonData') || '{}');
 
-        const { error } = await supabase
-          .from('push_notification_tokens')
-          .update({ settings: updatedSettings })
-          .eq('admin_id', adminData.id)
-          .eq('salon_id', salonData.id);
+        const { error } = await supabase.rpc('update_push_settings', {
+          p_admin_id: adminData.id,
+          p_salon_id: salonData.id,
+          p_settings: updatedSettings
+        });
 
         if (error) throw error;
 
