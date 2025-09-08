@@ -64,8 +64,8 @@ const SuperAdminSupportSettings = () => {
             type="tel"
             value={supportPhone}
             onChange={(e) => handlePhoneChange(e.target.value)}
-            placeholder="(11) 99999-9999"
-            maxLength={15}
+            placeholder="+55 (11) 99999-9999"
+            maxLength={20}
           />
           <p className="text-sm text-gray-500">
             Este número será usado no botão de suporte flutuante dos administradores

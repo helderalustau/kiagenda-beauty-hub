@@ -225,7 +225,7 @@ const SalonUsersManager = ({ salonId, maxUsers, onUpgrade }: SalonUsersManagerPr
                 <label className="block text-sm font-medium mb-2">Telefone</label>
                 <Input
                   type="tel"
-                  placeholder="(11) 99999-9999"
+                  placeholder="+55 (11) 99999-9999"
                   value={newUserData.phone}
                   onChange={(e) => setNewUserData({...newUserData, phone: e.target.value})}
                 />

@@ -1,17 +1,25 @@
 
 export const usePhoneFormatter = () => {
-  // Format phone number with Brazilian mask - automatic formatting
+  // Format phone number with International Brazilian mask - automatic formatting
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
-    const numbers = value.replace(/\D/g, '');
+    let numbers = value.replace(/\D/g, '');
     
-    // Apply Brazilian phone mask: (XX) XXXXX-XXXX or (XX) XXXX-XXXX
+    // Remove o código do país se já estiver presente
+    if (numbers.startsWith('55') && numbers.length > 11) {
+      numbers = numbers.substring(2);
+    }
+    
+    // Limita a 11 dígitos
+    numbers = numbers.substring(0, 11);
+    
+    // Apply International Brazilian phone mask: +55 (XX) XXXXX-XXXX or +55 (XX) XXXX-XXXX
     if (numbers.length === 0) return '';
-    if (numbers.length <= 2) return `(${numbers}`;
-    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    if (numbers.length <= 10) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
-    // For 11 digits (mobile): (XX) XXXXX-XXXX
-    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+    if (numbers.length <= 2) return `+55 (${numbers}`;
+    if (numbers.length <= 6) return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    if (numbers.length <= 10) return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+    // For 11 digits (mobile): +55 (XX) XXXXX-XXXX
+    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
   };
 
   // Extract only numbers from phone

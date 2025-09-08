@@ -92,7 +92,7 @@ const ClientProfileModal = ({ isOpen, onClose, clientData, onSave }: ClientProfi
               id="phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="(11) 99999-9999"
+              placeholder="+55 (11) 99999-9999"
             />
           </div>
           

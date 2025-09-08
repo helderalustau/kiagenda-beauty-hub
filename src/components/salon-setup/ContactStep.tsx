@@ -19,21 +19,28 @@ interface ContactStepProps {
   updateFormData: (updates: Partial<FormData>) => void;
 }
 
-// Função para formatar telefone brasileiro
+// Função para formatar telefone internacional brasileiro
 const formatBrazilianPhone = (value: string): string => {
-  const numbers = value.replace(/\D/g, '');
-  const limitedNumbers = numbers.slice(0, 11);
+  let numbers = value.replace(/\D/g, '');
   
-  if (limitedNumbers.length === 0) return '';
-  if (limitedNumbers.length <= 2) return `(${limitedNumbers}`;
-  if (limitedNumbers.length <= 6) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2)}`;
-  if (limitedNumbers.length <= 10) return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 6)}-${limitedNumbers.slice(6)}`;
-  return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7)}`;
+  // Remove o código do país se já estiver presente
+  if (numbers.startsWith('55') && numbers.length > 11) {
+    numbers = numbers.substring(2);
+  }
+  
+  // Limita a 11 dígitos
+  numbers = numbers.substring(0, 11);
+  
+  if (numbers.length === 0) return '';
+  if (numbers.length <= 2) return `+55 (${numbers}`;
+  if (numbers.length <= 6) return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+  if (numbers.length <= 10) return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+  return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
 };
 
 const ContactStep = ({ formData, updateFormData }: ContactStepProps) => {
   const handlePhoneChange = (value: string) => {
-    // Aplicar formatação brasileira automaticamente
+    // Aplicar formatação internacional brasileira automaticamente
     const formatted = formatBrazilianPhone(value);
     updateFormData({ contact_phone: formatted });
   };
@@ -59,11 +66,11 @@ const ContactStep = ({ formData, updateFormData }: ContactStepProps) => {
             <Label htmlFor="contact_phone">Telefone Principal</Label>
             <Input
               id="contact_phone"
-              placeholder="(83) 99802-2115"
+              placeholder="+55 (83) 99802-2115"
               value={formData.contact_phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
               className="text-sm"
-              maxLength={15}
+              maxLength={20}
             />
             <p className="text-xs text-gray-500 mt-1">
               Digite apenas números - a formatação é automática

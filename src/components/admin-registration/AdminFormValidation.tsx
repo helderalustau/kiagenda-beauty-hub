@@ -43,10 +43,19 @@ export const validateAdminForm = (formData: AdminFormData): Partial<AdminFormDat
 };
 
 export const formatPhone = (value: string): string => {
-  const digits = value.replace(/\D/g, '');
+  let digits = value.replace(/\D/g, '');
+  
+  // Remove o código do país se já estiver presente
+  if (digits.startsWith('55') && digits.length > 11) {
+    digits = digits.substring(2);
+  }
+  
+  // Limita a 11 dígitos
+  digits = digits.substring(0, 11);
+  
   if (digits.length <= 10) {
-    return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   } else {
-    return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   }
 };

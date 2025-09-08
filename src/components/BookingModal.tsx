@@ -295,11 +295,11 @@ const BookingModal = ({ isOpen, onClose, salon, onBookingSuccess }: BookingModal
                   <Input
                     id="clientPhone"
                     type="tel"
-                    placeholder="(11) 99999-9999"
+                    placeholder="+55 (11) 99999-9999"
                     value={clientPhone}
                     onChange={handlePhoneChange}
                     className="pl-10 h-10"
-                    maxLength={15}
+                    maxLength={20}
                     required
                   />
                 </div>

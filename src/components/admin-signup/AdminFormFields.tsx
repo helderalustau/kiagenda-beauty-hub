@@ -122,7 +122,7 @@ const AdminFormFields = ({
           <Input
             id="phone"
             type="tel"
-            placeholder="(11) 99999-9999"
+            placeholder="+55 (11) 99999-9999"
             value={formData.phone}
             onChange={(e) => onInputChange('phone', e.target.value)}
             className={`transition-all ${
@@ -131,7 +131,7 @@ const AdminFormFields = ({
                 : 'focus:border-blue-500'
             }`}
             disabled={submitting}
-            maxLength={15}
+            maxLength={20}
           />
           {errors.phone && (
             <p className="text-sm text-red-500 flex items-center gap-1">

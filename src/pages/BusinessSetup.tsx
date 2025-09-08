@@ -166,7 +166,7 @@ const BusinessSetup = () => {
                   id="phone"
                   value={businessData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="(11) 99999-9999"
+                  placeholder="+55 (11) 99999-9999"
                 />
               </div>
               
@@ -336,7 +336,7 @@ const BusinessSetup = () => {
                   id="whatsapp"
                   value={businessData.whatsapp}
                   onChange={(e) => handleInputChange('whatsapp', e.target.value)}
-                  placeholder="(11) 99999-9999"
+                  placeholder="+55 (11) 99999-9999"
                 />
               </div>
               

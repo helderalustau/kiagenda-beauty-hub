@@ -274,7 +274,7 @@ const SalonLink = () => {
                         <Input
                           id="client-phone-reg"
                           type="tel"
-                          placeholder="(11) 99999-9999"
+                          placeholder="+55 (11) 99999-9999"
                           value={clientForm.telefone}
                           onChange={(e) => setClientForm({...clientForm, telefone: e.target.value})}
                         />
