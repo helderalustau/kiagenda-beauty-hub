@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Shield, Crown, Star, Check } from "lucide-react";
+import { Calendar, Users, Shield, Crown, Star, Check, User, Store } from "lucide-react";
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { getAllPlansInfo, loading } = usePlanConfigurations();
   
   const plans = getAllPlansInfo();
@@ -69,13 +71,21 @@ const Index = () => {
                 variant="outline" 
                 className="border-blue-600 text-blue-600 hover:bg-blue-50"
               >
-                Acesso do Cliente
+                {isMobile ? (
+                  <User className="h-4 w-4" />
+                ) : (
+                  "Acesso do Cliente"
+                )}
               </Button>
               <Button 
                 onClick={() => navigate('/admin-login')}
                 className="bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700"
               >
-                Área Administrativa
+                {isMobile ? (
+                  <Store className="h-4 w-4" />
+                ) : (
+                  "Área Administrativa"
+                )}
               </Button>
             </div>
           </div>
