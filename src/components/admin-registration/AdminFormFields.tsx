@@ -141,7 +141,7 @@ const AdminFormFields = ({
         <Input
           id="phone"
           type="tel"
-          placeholder="+55 (11) 99999-9999"
+          placeholder="(11) 99999-9999"
           value={formData.phone}
           onChange={(e) => onInputChange('phone', e.target.value)}
           disabled={submitting}

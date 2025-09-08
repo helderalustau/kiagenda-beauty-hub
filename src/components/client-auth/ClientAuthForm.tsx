@@ -196,7 +196,7 @@ const ClientAuthForm = () => {
                       id="register-phone"
                       value={registerData.phone}
                       onChange={(e) => handleRegisterInputChange('phone', e.target.value)}
-                      placeholder="+55 (11) 99999-9999"
+                      placeholder="(11) 99999-9999"
                       className={`pl-10 ${!validatePhone(registerData.phone) && registerData.phone ? 'border-red-500' : ''}`}
                       disabled={loading}
                       required

@@ -2,27 +2,17 @@
 export const formatPhone = (phone: string): string => {
   if (!phone) return '';
   
-  // Remove todos os caracteres não numéricos
-  let digits = phone.replace(/\D/g, '');
+  // Remove tudo que não é número
+  const digits = phone.replace(/\D/g, '');
   
-  // Remove o código do país se já estiver presente
-  if (digits.startsWith('55') && digits.length > 11) {
-    digits = digits.substring(2);
+  // Se tem 11 dígitos (celular): (XX)XXXXX-XXXX
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
   }
   
-  // Se não tem DDD, não formata
-  if (digits.length < 10) return phone;
-  
-  // Garante que tenha no máximo 11 dígitos
-  digits = digits.substring(0, 11);
-  
-  // Formata baseado no número de dígitos
-  if (digits.length === 11) {
-    // Celular: +55 (XX) XXXXX-XXXX
-    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  } else if (digits.length === 10) {
-    // Fixo: +55 (XX) XXXX-XXXX
-    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  // Se tem 10 dígitos (fixo): (XX)XXXX-XXXX
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
   }
   
   // Retorna o número original se não tem formato padrão

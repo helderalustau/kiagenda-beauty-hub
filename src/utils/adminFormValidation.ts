@@ -44,20 +44,11 @@ export const validateAdminForm = (formData: AdminSignupData): Partial<AdminSignu
 };
 
 export const formatPhone = (value: string) => {
-  let digits = value.replace(/\D/g, '');
-  
-  // Remove o código do país se já estiver presente
-  if (digits.startsWith('55') && digits.length > 11) {
-    digits = digits.substring(2);
-  }
-  
-  // Limita a 11 dígitos
-  digits = digits.substring(0, 11);
-  
+  const digits = value.replace(/\D/g, '');
   if (digits.length <= 10) {
-    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
   } else {
-    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
   }
 };
 

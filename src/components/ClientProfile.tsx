@@ -140,7 +140,7 @@ const ClientProfile = ({ client, onUpdate }: ClientProfileProps) => {
                 id="phone"
                 value={editingClient.phone || ''}
                 onChange={(e) => setEditingClient({...editingClient, phone: e.target.value})}
-                placeholder="+55 (11) 99999-9999"
+                placeholder="(11) 99999-9999"
               />
             </div>
             <div>

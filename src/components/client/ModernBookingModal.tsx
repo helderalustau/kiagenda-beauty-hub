@@ -346,7 +346,7 @@ const ModernBookingModal = ({ isOpen, onClose, salon, services, onBookingSuccess
                       id="phone"
                       value={clientData.phone}
                       onChange={(e) => setClientData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="+55 (00) 00000-0000"
+                      placeholder="(00)00000-0000"
                       required
                     />
                   </div>

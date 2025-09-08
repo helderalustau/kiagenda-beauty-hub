@@ -111,7 +111,7 @@ const SuperAdminCreateSalonDialog = ({ onCreateSalon, isSubmitting }: SuperAdmin
               id="phone"
               value={newSalon.phone}
               onChange={(e) => setNewSalon({...newSalon, phone: e.target.value})}
-              placeholder="+55 (11) 99999-9999"
+              placeholder="(11) 99999-9999"
             />
           </div>
           

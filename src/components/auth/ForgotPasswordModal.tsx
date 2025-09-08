@@ -168,7 +168,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+55 (11) 99999-9999"
+                        placeholder="(11) 99999-9999"
                         className="pl-10"
                         required
                         disabled={loading}

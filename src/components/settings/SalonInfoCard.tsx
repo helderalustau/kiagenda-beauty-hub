@@ -153,7 +153,7 @@ const SalonInfoCard = ({ salon, onUpdate }: SalonInfoCardProps) => {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              placeholder="+55 (11) 99999-9999"
+              placeholder="(11) 99999-9999"
               required
             />
           </div>
@@ -165,7 +165,7 @@ const SalonInfoCard = ({ salon, onUpdate }: SalonInfoCardProps) => {
               type="tel"
               value={formData.contact_phone}
               onChange={(e) => setFormData(prev => ({ ...prev, contact_phone: e.target.value }))}
-              placeholder="+55 (11) 99999-9999"
+              placeholder="(11) 99999-9999"
             />
           </div>
 
