@@ -48,7 +48,6 @@ export const ClientLoginHeader = ({ onBackToHome }: ClientLoginHeaderProps) => {
           <p className="text-blue-100 text-lg max-w-md mx-auto">
             {isFromBooking 
               ? 'Para continuar com seu agendamento, faça login ou crie uma nova conta'
-              : 'Acesse sua conta para visualizar seus agendamentos'
             }
           </p>
 
