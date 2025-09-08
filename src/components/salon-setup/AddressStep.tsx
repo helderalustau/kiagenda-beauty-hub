@@ -50,7 +50,7 @@ const AddressStep = ({ formData, updateFormData }: AddressStepProps) => {
             <Label htmlFor="street_number">Rua e Número *</Label>
             <Input
               id="street_number"
-              placeholder="Ex: RUA JOAQUIM RODRIGUES 107"
+              placeholder="RUA, NUMERO"
               value={formData.street_number}
               onChange={(e) => handleInputChange('street_number', e.target.value)}
               className="text-sm"
@@ -65,7 +65,7 @@ const AddressStep = ({ formData, updateFormData }: AddressStepProps) => {
               <Label htmlFor="city">Cidade *</Label>
               <Input
                 id="city"
-                placeholder="Ex: BELEM"
+                placeholder="Ex: CIDADE"
                 value={formData.city}
                 onChange={(e) => handleInputChange('city', e.target.value)}
                 className="text-sm"
