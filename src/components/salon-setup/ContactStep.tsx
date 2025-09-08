@@ -59,7 +59,7 @@ const ContactStep = ({ formData, updateFormData }: ContactStepProps) => {
             <Label htmlFor="contact_phone">Telefone Principal</Label>
             <Input
               id="contact_phone"
-              placeholder="(83) 99802-2115"
+              placeholder="(DDD) 99999-9999"
               value={formData.contact_phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
               className="text-sm"
