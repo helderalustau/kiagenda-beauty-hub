@@ -97,7 +97,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-5xl font-bold text-gray-900 mb-6">
-              Transforme seu <span className="bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">Salão</span> em uma <span className="bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">Experiência Digital</span>
+              Transforme seu <span className="bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">Negócio</span> em uma <span className="bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">Experiência Digital</span>
             </h2>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
               Gerencie agendamentos, clientes e serviços com a mais moderna plataforma de gestão para salões de beleza
