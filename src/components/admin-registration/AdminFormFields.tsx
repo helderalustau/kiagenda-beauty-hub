@@ -101,7 +101,7 @@ const AdminFormFields = ({
         <Input
           id="name"
           type="text"
-          placeholder=Login"
+          placeholder="Login"
           value={formData.name}
           onChange={(e) => onInputChange('name', e.target.value)}
           disabled={submitting}
