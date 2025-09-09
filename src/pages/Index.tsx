@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Shield, Crown, Star, Check, User, Store } from "lucide-react";
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { useIsMobile } from '@/hooks/use-mobile';
+import UserTypeSelectionModal from '@/components/UserTypeSelectionModal';
 
 const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { getAllPlansInfo, loading } = usePlanConfigurations();
+  const [showUserTypeModal, setShowUserTypeModal] = useState(false);
   
   const plans = getAllPlansInfo();
 
@@ -104,7 +106,7 @@ const Index = () => {
             </p>
             <div className="flex items-center justify-center space-x-4">
               <Button 
-                onClick={() => navigate('/plan-selection')}
+                onClick={() => setShowUserTypeModal(true)}
                 size="lg" 
                 className="bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700 text-lg px-8 py-3"
               >
@@ -266,6 +268,11 @@ const Index = () => {
           </div>
         </div>
       </footer>
+      
+      <UserTypeSelectionModal 
+        open={showUserTypeModal}
+        onOpenChange={setShowUserTypeModal}
+      />
     </div>
   );
 };
