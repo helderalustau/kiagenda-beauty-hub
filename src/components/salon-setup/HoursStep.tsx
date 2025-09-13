@@ -32,6 +32,7 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
   } = useOpeningHours(salonId, formData.opening_hours);
 
   const [selectedDayForCopy, setSelectedDayForCopy] = React.useState<string | null>(null);
+  const [selectedDayForLunchCopy, setSelectedDayForLunchCopy] = React.useState<string | null>(null);
 
   const getDayName = (day: string) => {
     const names: { [key: string]: string } = {
@@ -72,6 +73,17 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
     });
     
     setSelectedDayForCopy(null);
+  };
+
+  const handleApplyLunchToAllDays = (sourceDay: string) => {
+    const sourceLunchBreak = openingHours[sourceDay as keyof typeof openingHours].lunchBreak;
+    const otherDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].filter(day => day !== sourceDay);
+    
+    otherDays.forEach(day => {
+      updateDaySchedule(day as keyof typeof openingHours, 'lunchBreak', sourceLunchBreak);
+    });
+    
+    setSelectedDayForLunchCopy(null);
   };
 
   return (
@@ -176,6 +188,9 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
                             ...hours.lunchBreak,
                             enabled: checked
                           });
+                          if (checked && day === 'monday') {
+                            setSelectedDayForLunchCopy(day);
+                          }
                         }}
                       />
                       <span className="text-sm text-gray-600">Pausa para almoço</span>
@@ -193,6 +208,9 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
                                 ...hours.lunchBreak,
                                 start: e.target.value
                               });
+                              if (day === 'monday') {
+                                setSelectedDayForLunchCopy(day);
+                              }
                             }}
                             className="w-20 text-xs"
                           />
@@ -207,10 +225,37 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
                                 ...hours.lunchBreak,
                                 end: e.target.value
                               });
+                              if (day === 'monday') {
+                                setSelectedDayForLunchCopy(day);
+                              }
                             }}
                             className="w-20 text-xs"
                           />
                         </div>
+                      </div>
+                    )}
+
+                    {selectedDayForLunchCopy === day && hours.lunchBreak?.enabled && (
+                      <div className="mt-3 flex items-center space-x-2 bg-orange-50 px-3 py-2 rounded-lg">
+                        <span className="text-xs text-orange-700">
+                          Deseja repetir esta pausa para almoço para os demais dias da semana?
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApplyLunchToAllDays(day)}
+                          className="text-xs px-2 py-1 h-6"
+                        >
+                          Sim
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSelectedDayForLunchCopy(null)}
+                          className="text-xs px-2 py-1 h-6"
+                        >
+                          Não
+                        </Button>
                       </div>
                     )}
                   </div>
