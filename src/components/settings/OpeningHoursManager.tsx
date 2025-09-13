@@ -35,6 +35,7 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
     closed: true,
     customHours: { open: '08:00', close: '18:00' }
   });
+  const [applyToAllDays, setApplyToAllDays] = useState(false);
 
   const getDayName = (day: string) => {
     const names: { [key: string]: string } = {
@@ -63,6 +64,21 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
     }
   };
 
+  const handleApplyToAllDays = (checked: boolean) => {
+    setApplyToAllDays(checked);
+    if (checked) {
+      const mondayHours = openingHours.monday;
+      const otherDays = ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      
+      otherDays.forEach(day => {
+        updateDaySchedule(day as keyof typeof openingHours, 'open', mondayHours.open);
+        updateDaySchedule(day as keyof typeof openingHours, 'close', mondayHours.close);
+        updateDaySchedule(day as keyof typeof openingHours, 'closed', mondayHours.closed);
+        updateDaySchedule(day as keyof typeof openingHours, 'lunchBreak', mondayHours.lunchBreak);
+      });
+    }
+  };
+
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
@@ -80,8 +96,9 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
               Horários Regulares
             </h3>
             
-            {dayOrder.map((day) => {
+            {dayOrder.map((day, index) => {
               const hours = openingHours[day as keyof typeof openingHours];
+              const isMonday = day === 'monday';
               return (
                 <div key={day} className="border rounded-lg bg-white shadow-sm">
                   <div className="flex items-center space-x-4 p-4">
@@ -89,6 +106,19 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
                       <span className="font-medium text-gray-700">
                         {getDayName(day)}
                       </span>
+                      {isMonday && (
+                        <div className="mt-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={applyToAllDays}
+                              onCheckedChange={handleApplyToAllDays}
+                            />
+                            <span className="text-xs text-gray-500">
+                              Aplicar para todos os dias
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center space-x-2">
