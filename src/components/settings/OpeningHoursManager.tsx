@@ -35,7 +35,7 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
     closed: true,
     customHours: { open: '08:00', close: '18:00' }
   });
-  const [applyToAllDays, setApplyToAllDays] = useState(false);
+  const [selectedDayForCopy, setSelectedDayForCopy] = useState<string | null>(null);
 
   const getDayName = (day: string) => {
     const names: { [key: string]: string } = {
@@ -64,19 +64,18 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
     }
   };
 
-  const handleApplyToAllDays = (checked: boolean) => {
-    setApplyToAllDays(checked);
-    if (checked) {
-      const mondayHours = openingHours.monday;
-      const otherDays = ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-      
-      otherDays.forEach(day => {
-        updateDaySchedule(day as keyof typeof openingHours, 'open', mondayHours.open);
-        updateDaySchedule(day as keyof typeof openingHours, 'close', mondayHours.close);
-        updateDaySchedule(day as keyof typeof openingHours, 'closed', mondayHours.closed);
-        updateDaySchedule(day as keyof typeof openingHours, 'lunchBreak', mondayHours.lunchBreak);
-      });
-    }
+  const handleApplyToAllDays = (sourceDay: string) => {
+    const sourceHours = openingHours[sourceDay as keyof typeof openingHours];
+    const otherDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].filter(day => day !== sourceDay);
+    
+    otherDays.forEach(day => {
+      updateDaySchedule(day as keyof typeof openingHours, 'open', sourceHours.open);
+      updateDaySchedule(day as keyof typeof openingHours, 'close', sourceHours.close);
+      updateDaySchedule(day as keyof typeof openingHours, 'closed', sourceHours.closed);
+      updateDaySchedule(day as keyof typeof openingHours, 'lunchBreak', sourceHours.lunchBreak);
+    });
+    
+    setSelectedDayForCopy(null);
   };
 
   return (
@@ -98,7 +97,6 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
             
             {dayOrder.map((day, index) => {
               const hours = openingHours[day as keyof typeof openingHours];
-              const isMonday = day === 'monday';
               return (
                 <div key={day} className="border rounded-lg bg-white shadow-sm">
                   <div className="flex items-center space-x-4 p-4">
@@ -106,19 +104,6 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
                       <span className="font-medium text-gray-700">
                         {getDayName(day)}
                       </span>
-                      {isMonday && (
-                        <div className="mt-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              checked={applyToAllDays}
-                              onCheckedChange={handleApplyToAllDays}
-                            />
-                            <span className="text-xs text-gray-500">
-                              Aplicar para todos os dias
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                     
                     <div className="flex items-center space-x-2">
@@ -132,29 +117,57 @@ const OpeningHoursManager = ({ salonId, initialHours }: OpeningHoursManagerProps
                     </div>
                     
                     {!hours.closed && (
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-600">Das:</span>
-                          <Input
-                            type="time"
-                            value={hours.open}
-                            onChange={(e) => {
-                              updateDaySchedule(day as keyof typeof openingHours, 'open', e.target.value);
-                            }}
-                            className="w-24"
-                          />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">Das:</span>
+                            <Input
+                              type="time"
+                              value={hours.open}
+                              onChange={(e) => {
+                                updateDaySchedule(day as keyof typeof openingHours, 'open', e.target.value);
+                                setSelectedDayForCopy(day);
+                              }}
+                              className="w-24"
+                            />
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">Às:</span>
+                            <Input
+                              type="time"
+                              value={hours.close}
+                              onChange={(e) => {
+                                updateDaySchedule(day as keyof typeof openingHours, 'close', e.target.value);
+                                setSelectedDayForCopy(day);
+                              }}
+                              className="w-24"
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-600">Às:</span>
-                          <Input
-                            type="time"
-                            value={hours.close}
-                            onChange={(e) => {
-                              updateDaySchedule(day as keyof typeof openingHours, 'close', e.target.value);
-                            }}
-                            className="w-24"
-                          />
-                        </div>
+                        
+                        {selectedDayForCopy === day && (
+                          <div className="mt-3 flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg">
+                            <span className="text-xs text-blue-700">
+                              Deseja repetir esse horário para os demais dias da semana?
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleApplyToAllDays(day)}
+                              className="text-xs px-2 py-1 h-6"
+                            >
+                              Sim
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedDayForCopy(null)}
+                              className="text-xs px-2 py-1 h-6"
+                            >
+                              Não
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

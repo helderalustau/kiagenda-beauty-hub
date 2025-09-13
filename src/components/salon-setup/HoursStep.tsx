@@ -31,6 +31,8 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
     resetChanges
   } = useOpeningHours(salonId, formData.opening_hours);
 
+  const [selectedDayForCopy, setSelectedDayForCopy] = React.useState<string | null>(null);
+
   const getDayName = (day: string) => {
     const names: { [key: string]: string } = {
       'monday': 'Segunda-feira',
@@ -56,6 +58,20 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
   const handleReset = () => {
     resetChanges();
     updateFormData({ opening_hours: formData.opening_hours });
+  };
+
+  const handleApplyToAllDays = (sourceDay: string) => {
+    const sourceHours = openingHours[sourceDay as keyof typeof openingHours];
+    const otherDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].filter(day => day !== sourceDay);
+    
+    otherDays.forEach(day => {
+      updateDaySchedule(day as keyof typeof openingHours, 'open', sourceHours.open);
+      updateDaySchedule(day as keyof typeof openingHours, 'close', sourceHours.close);
+      updateDaySchedule(day as keyof typeof openingHours, 'closed', sourceHours.closed);
+      updateDaySchedule(day as keyof typeof openingHours, 'lunchBreak', sourceHours.lunchBreak);
+    });
+    
+    setSelectedDayForCopy(null);
   };
 
   return (
@@ -92,29 +108,57 @@ const HoursStep = ({ formData, updateFormData, salonId }: HoursStepProps) => {
                 </div>
                 
                 {!hours.closed && (
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Das:</span>
-                      <Input
-                        type="time"
-                        value={hours.open}
-                        onChange={(e) => {
-                          updateDaySchedule(day as keyof typeof openingHours, 'open', e.target.value);
-                        }}
-                        className="w-24"
-                      />
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">Das:</span>
+                        <Input
+                          type="time"
+                          value={hours.open}
+                          onChange={(e) => {
+                            updateDaySchedule(day as keyof typeof openingHours, 'open', e.target.value);
+                            setSelectedDayForCopy(day);
+                          }}
+                          className="w-24"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">Às:</span>
+                        <Input
+                          type="time"
+                          value={hours.close}
+                          onChange={(e) => {
+                            updateDaySchedule(day as keyof typeof openingHours, 'close', e.target.value);
+                            setSelectedDayForCopy(day);
+                          }}
+                          className="w-24"
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Às:</span>
-                      <Input
-                        type="time"
-                        value={hours.close}
-                        onChange={(e) => {
-                          updateDaySchedule(day as keyof typeof openingHours, 'close', e.target.value);
-                        }}
-                        className="w-24"
-                      />
-                    </div>
+                    
+                    {selectedDayForCopy === day && (
+                      <div className="mt-3 flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg">
+                        <span className="text-xs text-blue-700">
+                          Deseja repetir esse horário para os demais dias da semana?
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApplyToAllDays(day)}
+                          className="text-xs px-2 py-1 h-6"
+                        >
+                          Sim
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSelectedDayForCopy(null)}
+                          className="text-xs px-2 py-1 h-6"
+                        >
+                          Não
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
